@@ -3,7 +3,7 @@ package de.hpi.dataset_versioning.data.exploration
 import java.io.File
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.LoadedRelationalDataset
+import de.hpi.dataset_versioning.data.OldLoadedRelationalDataset
 import de.hpi.dataset_versioning.data.parser.JsonDataParser
 import de.hpi.dataset_versioning.io.IOService
 

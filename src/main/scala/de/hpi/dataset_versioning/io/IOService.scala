@@ -9,7 +9,7 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 import com.google.gson.JsonParser
 import com.google.gson.stream.JsonReader
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.{DatasetInstance, LoadedRelationalDataset}
+import de.hpi.dataset_versioning.data.{DatasetInstance, OldLoadedRelationalDataset}
 import de.hpi.dataset_versioning.data.diff.syntactic.DiffManager
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.DatasetMetadata
@@ -25,6 +25,8 @@ import scala.reflect.io.Directory
 import scala.language.postfixOps
 
 object IOService extends StrictLogging{
+
+
 
   def readCleanedDatasetLineages() = DatasetVersionHistory.fromJsonObjectPerLineFile(IOService.getCleanedVersionHistoryFile().getAbsolutePath)
 
@@ -67,7 +69,7 @@ object IOService extends StrictLogging{
   val STANDARD_TIME_FRAME_END = LocalDate.parse("2020-04-30", IOService.dateTimeFormatter)
   val cachedMetadata = mutable.Map[LocalDate,mutable.Map[String,DatasetMetadata]]() //TODO: shrink this cache at some point - use caching library?: https://stackoverflow.com/questions/3651313/how-to-cache-results-in-scala
   val cachedCustomMetadata = mutable.Map[(LocalDate,LocalDate),CustomMetadataCollection]() //TODO: shrink this cache at some point - use caching library?: https://stackoverflow.com/questions/3651313/how-to-cache-results-in-scala
-  val datasetCache = mutable.Map[DatasetInstance,LoadedRelationalDataset]()
+  val datasetCache = mutable.Map[DatasetInstance,OldLoadedRelationalDataset]()
 
   def DATA_DIR = socrataDir + "/data/"
   def METADATA_DIR = socrataDir + "/metadata/"
@@ -87,7 +89,7 @@ object IOService extends StrictLogging{
   def getSnapshotMetadataDir(date: LocalDate) = createAndReturn(new File(SNAPSHOT_METADATA_DIR + date.format(dateTimeFormatter)))
   def getSimplifiedDataDir(data: LocalDate) = createAndReturn(new File(SIMPLIFIED_UNCOMPRESSED_DATA_DIR + s"/${IOService.dateTimeFormatter.format(data)}"))
   //get files:
-  def getSimplifiedDatasetFile(datasetInstance: DatasetInstance): String = new File(SIMPLIFIED_UNCOMPRESSED_DATA_DIR + datasetInstance.date.format(dateTimeFormatter) + s"/${datasetInstance.id}.json?")
+  def getSimplifiedDatasetFile(datasetInstance: DatasetInstance): String = new File(SIMPLIFIED_UNCOMPRESSED_DATA_DIR + datasetInstance.date.format(dateTimeFormatter) + s"/${datasetInstance.id}.json?").getAbsolutePath
 
 
   def extractDataToMinimalWorkingDir(date: LocalDate) = {
@@ -180,7 +182,7 @@ object IOService extends StrictLogging{
           ds.get
         }
         else {
-          val ds = new LoadedRelationalDataset(datasetInstance.id, datasetInstance.date)
+          val ds = new OldLoadedRelationalDataset(datasetInstance.id, datasetInstance.date)
           ds.erroneous = true
           ds
         }
@@ -204,7 +206,7 @@ object IOService extends StrictLogging{
     ds
   }
 
-  def cacheDataset(ds:LoadedRelationalDataset) = {
+  def cacheDataset(ds:OldLoadedRelationalDataset) = {
     datasetCache.put(new DatasetInstance(ds.id,ds.version),ds)
     if(datasetCache.size%100 == 0){
       logger.trace(s"Current Dataset Cache Size: ${datasetCache.size}")

@@ -6,7 +6,7 @@ import java.time.LocalDate
 import com.google.gson.{JsonParser, JsonPrimitive}
 import com.google.gson.stream.JsonReader
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.LoadedRelationalDataset
+import de.hpi.dataset_versioning.data.OldLoadedRelationalDataset
 import de.hpi.dataset_versioning.data.parser.exceptions.{ContainsArrayException, FirstElementNotObjectException, SchemaMismatchException}
 import de.hpi.dataset_versioning.io.IOService
 
@@ -57,7 +57,7 @@ class JsonDataParser extends StrictLogging{
     println(s"distinct Schemata:  ${schemata.size}")
   }
 
-  def tryParseJsonFile(file:File, id:String, version:LocalDate, strictSchema:Boolean=false, allowArrays:Boolean=true):Option[LoadedRelationalDataset] = {
+  def tryParseJsonFile(file:File, id:String, version:LocalDate, strictSchema:Boolean=false, allowArrays:Boolean=true):Option[OldLoadedRelationalDataset] = {
     try {
       val ds = parseJsonFile(file,id:String, version, strictSchema, allowArrays)
       Some(ds)
@@ -70,23 +70,23 @@ class JsonDataParser extends StrictLogging{
   }
 
   //TODO: include known metadata!
-  def parseJsonFile(file:File, id:String, version:LocalDate, strictSchema:Boolean=false, allowArrays:Boolean=true):LoadedRelationalDataset = {
+  def parseJsonFile(file:File, id:String, version:LocalDate, strictSchema:Boolean=false, allowArrays:Boolean=true):OldLoadedRelationalDataset = {
     val reader = new JsonReader(new FileReader(file))
     val parser = new JsonParser();
     val array = parser.parse(reader).getAsJsonArray
     val it = array.iterator()
     if(!it.hasNext){
       reader.close()
-      new LoadedRelationalDataset(id,version) //return empty dataset
+      new OldLoadedRelationalDataset(id,version) //return empty dataset
     } else {
-      var dataset:LoadedRelationalDataset = null
+      var dataset:OldLoadedRelationalDataset = null
       if(strictSchema) {
         //everything must conform to the schema of the first row
         val first = it.next()
         if (!first.isJsonObject)
           throw new FirstElementNotObjectException()
         val obj = first.getAsJsonObject
-        val ds = new LoadedRelationalDataset(id,version)
+        val ds = new OldLoadedRelationalDataset(id,version)
         ds.setSchema(obj)
         ds.appendRow(obj)
         while (it.hasNext) {
@@ -97,7 +97,7 @@ class JsonDataParser extends StrictLogging{
         dataset = ds
       } else{
         //every row that does not have a field that other rows gets a missing value inserted
-        val ds = new LoadedRelationalDataset(id,version)
+        val ds = new OldLoadedRelationalDataset(id,version)
         ds.setSchema(array)
         while (it.hasNext) {
           val curObj = it.next().getAsJsonObject

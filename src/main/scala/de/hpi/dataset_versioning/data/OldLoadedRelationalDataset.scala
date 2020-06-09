@@ -5,7 +5,6 @@ import java.time.LocalDate
 
 import com.google.gson._
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.diff.semantic.TupleMatcher
 import de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`.Column
 import de.hpi.dataset_versioning.data.metadata.custom.{ColumnCustomMetadata, CustomMetadata}
 import de.hpi.dataset_versioning.data.parser.exceptions.SchemaMismatchException
@@ -17,9 +16,9 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
-class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:ArrayBuffer[scala.collection.IndexedSeq[JsonElement]]=ArrayBuffer()) extends StrictLogging{
+class OldLoadedRelationalDataset(val id:String, val version:LocalDate, val rows:ArrayBuffer[scala.collection.IndexedSeq[JsonElement]]=ArrayBuffer()) extends StrictLogging{
 
-  def isProjectionOf(other: LoadedRelationalDataset, columnMapping: mutable.HashMap[String, String]): Boolean = {
+  def isProjectionOf(other: OldLoadedRelationalDataset, columnMapping: mutable.HashMap[String, String]): Boolean = {
     if(other.ncols < ncols || columnMapping.size!=ncols)
       false
     else{
@@ -34,7 +33,7 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
   def getRowMultiSet = rows.groupBy(identity)
     .mapValues(_.size)
 
-  def isEqualTo(other: LoadedRelationalDataset, columnMapping: mutable.HashMap[String, String]): Boolean = {
+  def isEqualTo(other: OldLoadedRelationalDataset, columnMapping: mutable.HashMap[String, String]): Boolean = {
     //we need to compare all tuples in the order specified by the mapping
     if(other.ncols != ncols || columnMapping.size!=ncols)
       false
@@ -72,7 +71,7 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
 
   def getTupleSpecificHash: Int = {
     val tupleMultiset = toMultiset(rows
-      .map(tuple => toMultiset(tuple.map(LoadedRelationalDataset.getCellValueAsString(_)))))
+      .map(tuple => toMultiset(tuple.map(OldLoadedRelationalDataset.getCellValueAsString(_)))))
       /*.sorted(new Ordering[Seq[String]] {
       override def compare(x: Seq[String], y: Seq[String]): Int = {
         val it = x.zip(y).iterator
@@ -92,7 +91,7 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
     CustomMetadata(id,None,intID,version,rows.size,getSchemaSpecificHashValue,getTupleSpecificHash,columnMetadata.toMap)
   }
 
-  def constructRow(r1: collection.IndexedSeq[JsonElement], ds1: LoadedRelationalDataset, r2: collection.IndexedSeq[JsonElement], ds2: LoadedRelationalDataset, newColumnOrder: collection.IndexedSeq[(String, Int, LoadedRelationalDataset)]): collection.IndexedSeq[JsonElement] = {
+  def constructRow(r1: collection.IndexedSeq[JsonElement], ds1: OldLoadedRelationalDataset, r2: collection.IndexedSeq[JsonElement], ds2: OldLoadedRelationalDataset, newColumnOrder: collection.IndexedSeq[(String, Int, OldLoadedRelationalDataset)]): collection.IndexedSeq[JsonElement] = {
     val newRow = newColumnOrder.map{case (_,i,sourceDS) =>{
       if(sourceDS==ds1)
         r1(i)
@@ -111,10 +110,10 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
    * @param otherJoinColIndex
    * @return
    */
-  def join(other: LoadedRelationalDataset, myJoinColIndex: Short, otherJoinColIndex: Short):LoadedRelationalDataset = {
+  def join(other: OldLoadedRelationalDataset, myJoinColIndex: Short, otherJoinColIndex: Short):OldLoadedRelationalDataset = {
     val myJoinCol = colNames(myJoinColIndex)
     val otherJoinCol = other.colNames(otherJoinColIndex)
-    val joinDataset = new LoadedRelationalDataset(id + s"_joinedOn($myJoinCol,$otherJoinCol)_with_" +other.id ,version)
+    val joinDataset = new OldLoadedRelationalDataset(id + s"_joinedOn($myJoinCol,$otherJoinCol)_with_" +other.id ,version)
     val newColumnOrder = (colNames.zipWithIndex.map{case (a,b) => (a,b,this)}
       ++ other.colNames.zipWithIndex.map{case (a,b) => (a,b,other)})
         .sortBy(t => t._3.id + "." + t._1)
@@ -123,9 +122,9 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
     joinDataset.erroneous = erroneous || other.erroneous
     joinDataset.containsArrays = containsArrays || other.containsArrays
     joinDataset.containedNestedObjects = containedNestedObjects | other.containedNestedObjects
-    val byKey = other.rows.groupBy(c => LoadedRelationalDataset.getCellValueAsString(c(otherJoinColIndex)))
+    val byKey = other.rows.groupBy(c => OldLoadedRelationalDataset.getCellValueAsString(c(otherJoinColIndex)))
     rows.foreach(r => {
-      val valueInJoinColumn = LoadedRelationalDataset.getCellValueAsString(r(myJoinColIndex))
+      val valueInJoinColumn = OldLoadedRelationalDataset.getCellValueAsString(r(myJoinColIndex))
       byKey.getOrElse(valueInJoinColumn,Seq())
         .foreach(matchingRow => {
           joinDataset.rows += constructRow(r,this,matchingRow,other,newColumnOrder)
@@ -163,7 +162,7 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
    * @param other
    * @return
    */
-  def tupleSetEqual(other: LoadedRelationalDataset): Boolean = {
+  def tupleSetEqual(other: OldLoadedRelationalDataset): Boolean = {
     rows.toSet == other.rows.toSet
   }
 
@@ -171,7 +170,7 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
   def getProjection(newID:String, columnRenames: IndexedSeq[(String,String)]) = {
     val (myColNames,projectedColnames) = columnRenames.unzip
     assert(myColNames.toSet.subsetOf(colNameSet))
-    val projected = new LoadedRelationalDataset(newID,version)
+    val projected = new OldLoadedRelationalDataset(newID,version)
     projected.colNames = projectedColnames
     projected.colNameSet = projectedColnames.toSet
     projected.containedNestedObjects = containedNestedObjects
@@ -199,7 +198,7 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
     val pr = new PrintWriter(file)
     pr.println(toCSVLineString(colNames))
     rows.foreach( r => {
-      pr.println(toCSVLineString(r.map(LoadedRelationalDataset.getCellValueAsString(_))))
+      pr.println(toCSVLineString(r.map(OldLoadedRelationalDataset.getCellValueAsString(_))))
     })
     pr.close()
   }
@@ -212,7 +211,7 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
     val values = scala.collection.mutable.ArrayBuffer[String]()
     for (i <- 0 until rows.size) {
       val jsonValue = rows(i)(j)
-      values+= LoadedRelationalDataset.getCellValueAsString(jsonValue)
+      values+= OldLoadedRelationalDataset.getCellValueAsString(jsonValue)
     }
     values
   }
@@ -227,22 +226,6 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
         }
       }
     }
-  }
-
-  def calculateDataDiff(successor: LoadedRelationalDataset) = {
-    val myTuples = getTupleMultiSet
-    val otherTuples = successor.getTupleMultiSet
-    val tupleMatcher = new TupleMatcher()
-    val diff = tupleMatcher.matchTuples(myTuples,otherTuples)
-    //schema differences:
-    if(successor.colNameSet!=colNameSet){
-      if((!successor.colNameSet.diff(colNameSet).isEmpty))
-        diff.schemaChange.projection = Some((colNames,successor.colNames))
-      val inserts = colNameSet.diff(successor.colNameSet).toSeq.sorted
-      if(!inserts.isEmpty)
-        diff.schemaChange.columnInsert = Some(inserts)
-    }
-    diff
   }
 
   def getAsTableString(rows: Set[Set[(String, JsonElement)]]) = {
@@ -367,14 +350,14 @@ class LoadedRelationalDataset(val id:String, val version:LocalDate, val rows:Arr
   }
 
 }
-object LoadedRelationalDataset {
+object OldLoadedRelationalDataset {
   val NULL_VALUE = ""
 
   def getCellValueAsString(jsonValue:JsonElement):String = {
     jsonValue match {
       case primitive: JsonPrimitive => primitive.getAsString
       case array: JsonArray =>array.toString
-      case _: JsonNull => LoadedRelationalDataset.NULL_VALUE
+      case _: JsonNull => OldLoadedRelationalDataset.NULL_VALUE
       case _ => throw new AssertionError("Switch case finds unhalndeld option")
     }
   }

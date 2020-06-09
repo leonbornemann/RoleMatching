@@ -9,6 +9,7 @@ assemblyMergeStrategy in assembly := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x => MergeStrategy.first
 }
+javacOptions ++= Seq("-source", "1.5")
 
 // https://mvnrepository.com/artifact/org.json4s/json4s-jackson
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.7.0-M4"

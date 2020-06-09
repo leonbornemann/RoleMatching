@@ -3,7 +3,7 @@ package de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.metadata.custom.ColumnDatatype
-import de.hpi.dataset_versioning.data.{JsonWritable, LoadedRelationalDataset}
+import de.hpi.dataset_versioning.data.{JsonWritable, OldLoadedRelationalDataset}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -42,6 +42,6 @@ case class Column(id: String, version: String, attrName: String, values:collecti
     LSHEnsembleDomain(id,version,attrName,values.toSet)
   }
 
-  def isIntOrDoubleOrNull(string:String) = string == LoadedRelationalDataset.NULL_VALUE || string.matches("-?[0-9]+|-?[0-9]+[\\.,][0-9]+")
+  def isIntOrDoubleOrNull(string:String) = string == OldLoadedRelationalDataset.NULL_VALUE || string.matches("-?[0-9]+|-?[0-9]+[\\.,][0-9]+")
 
 }

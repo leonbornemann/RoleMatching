@@ -83,38 +83,29 @@ object DiffPairExport extends App with StrictLogging{
   private def checkForInterestingDiff(correlationInfo: ChangeCorrelationInfo, lA: DatasetVersionHistory, lB: DatasetVersionHistory, curDiffTimestamp: LocalDate):Boolean = {
     val prevVersionA = lA.versionsWithChanges.takeWhile(_.isBefore(curDiffTimestamp)).last
     val prevVersionB = lB.versionsWithChanges.takeWhile(_.isBefore(curDiffTimestamp)).last
-    val dsABeforeChange = IOService.tryLoadDataset(data.DatasetInstance(lA.id, prevVersionA), true)
-    val dsAAfterChange = IOService.tryLoadDataset(data.DatasetInstance(lA.id, curDiffTimestamp), true)
-    val dsBBeforeChange = IOService.tryLoadDataset(data.DatasetInstance(lB.id, prevVersionB), true)
-    val dsBAfterChange = IOService.tryLoadDataset(data.DatasetInstance(lB.id, curDiffTimestamp), true)
-    if (Seq(dsAAfterChange, dsABeforeChange, dsBAfterChange, dsBBeforeChange).exists(_.erroneous)) {
-      logger.debug(s"Skipping version $curDiffTimestamp, because one dataset was erroneous")
-      logger.debug(s"Error while parsing existed?: ${
-        Seq(dsAAfterChange, dsABeforeChange, dsBAfterChange, dsBBeforeChange).map(d => {
-          (d.id, d.version, d.erroneous)
-        })
-      }")
+    val dsABeforeChange = IOService.loadSimplifiedRelationalDataset(data.DatasetInstance(lA.id, prevVersionA))
+    val dsAAfterChange = IOService.loadSimplifiedRelationalDataset(data.DatasetInstance(lA.id, curDiffTimestamp))
+    val dsBBeforeChange = IOService.loadSimplifiedRelationalDataset(data.DatasetInstance(lB.id, prevVersionB))
+    val dsBAfterChange = IOService.loadSimplifiedRelationalDataset(data.DatasetInstance(lB.id, curDiffTimestamp))
+    val diffA = dsABeforeChange.calculateDataDiff(dsAAfterChange)
+    val diffB = dsBBeforeChange.calculateDataDiff(dsBAfterChange)
+    val similarity = diffB.calculateDiffSimilarity(diffA)
+    val schemaSimilarityThreshold = 0.001
+    val newValueSimilarityThreshold = 0.2
+    val deletedValueSimilarityThreshold = 0.4
+    val fieldUpdateSimilarityThreshold = 0.05
+    //DiffSimilarity(schemaSimilarity:Double,newValueSimilarity:Double,deletedValueSimilarity:Double,fieldUpdateSimilarity:Double) {
+    if(similarity.schemaSimilarity>schemaSimilarityThreshold || similarity.newValueSimilarity>newValueSimilarityThreshold || similarity.deletedValueSimilarity > deletedValueSimilarityThreshold || similarity.fieldUpdateSimilarity > fieldUpdateSimilarityThreshold){
+      exporter.exportDiffPairToTableView(dsABeforeChange, dsAAfterChange, diffA,
+        dsBBeforeChange, dsBAfterChange, diffB,
+        correlationInfo,
+        similarity,
+        new File(s"$targetDir/${lA.id}_AND_${lB.id}_$curDiffTimestamp.html"))
+      true
+    } else{
       false
-    } else {
-      val diffA = dsABeforeChange.calculateDataDiff(dsAAfterChange)
-      val diffB = dsBBeforeChange.calculateDataDiff(dsBAfterChange)
-      val similarity = diffB.calculateDiffSimilarity(diffA)
-      val schemaSimilarityThreshold = 0.001
-      val newValueSimilarityThreshold = 0.2
-      val deletedValueSimilarityThreshold = 0.4
-      val fieldUpdateSimilarityThreshold = 0.05
-      //DiffSimilarity(schemaSimilarity:Double,newValueSimilarity:Double,deletedValueSimilarity:Double,fieldUpdateSimilarity:Double) {
-      if(similarity.schemaSimilarity>schemaSimilarityThreshold || similarity.newValueSimilarity>newValueSimilarityThreshold || similarity.deletedValueSimilarity > deletedValueSimilarityThreshold || similarity.fieldUpdateSimilarity > fieldUpdateSimilarityThreshold){
-        exporter.exportDiffPairToTableView(dsABeforeChange, dsAAfterChange, diffA,
-          dsBBeforeChange, dsBAfterChange, diffB,
-          correlationInfo,
-          similarity,
-          new File(s"$targetDir/${lA.id}_AND_${lB.id}_$curDiffTimestamp.html"))
-        true
-      } else{
-        false
-      }
     }
+
   }
 }
 

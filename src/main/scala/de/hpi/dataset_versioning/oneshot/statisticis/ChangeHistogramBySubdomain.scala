@@ -12,7 +12,6 @@ object ChangeHistogramBySubdomain extends App {
   val idToVersions = histories.map(h => (h.id,h))
     .toMap
   val md = IOService.getOrLoadCustomMetadataForStandardTimeFrame()
-
   var byDomain = idToVersions
     .groupBy{case (k,list) => {
       val allVersions = list.versionsWithChanges

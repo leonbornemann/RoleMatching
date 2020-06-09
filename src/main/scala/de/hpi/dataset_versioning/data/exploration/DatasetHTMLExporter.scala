@@ -16,9 +16,9 @@ import scala.io.Source
 class DatasetHTMLExporter() {
 
   val diffStyleDelete = "<div style=\"color:red;text-decoration:line-through;resize:none;\">"
-  val diffStyleInsert = "<div style=\"color:green;resize:none;\">"
+  val diffStyleInsert = "<div style=\"color:blue;resize:none;\">"
   val diffStyleUpdate = "<div style=\"color:blue;resize:none;\">"
-  val diffStyleValuesInBoth = "<div style=\"color:gold;resize:none;\">"
+  val diffStyleValuesInBoth = "<div style=\"color:green;font-weight: bold;resize:none;\">"
   val diffStyleNormal = "<div style=\"resize:none;\">"
 
   val idToLineageMap = IOService.readCleanedDatasetLineages()
@@ -73,8 +73,14 @@ class DatasetHTMLExporter() {
     val resultColSet = diff.colIdToAppearance
       .toIndexedSeq
       .sortBy{case (_,(prev,new_)) => {
-        if(new_.isDefined) new_.get.name
-        else prev.get.name
+        if(!new_.isDefined) {
+          assert(diff.columnDeletes.contains(prev.get))
+          "\u1D958" + prev.get.name //a somewhat hacky solution that should guarantee to push all deleted columns to the end
+        } else if(!prev.isDefined){
+          assert(diff.insertedColumns.contains(new_.get))
+          "\u1D957" + new_.get.name //a somewhat hacky solution that should guarantee to push all inserted columns to the end but before deletes
+        }
+        else new_.get.name
       }}
     pr.println("<tr>")
     resultColSet.foreach{case (id,(prev,cur)) => {
@@ -88,7 +94,7 @@ class DatasetHTMLExporter() {
         pr.println(escapeHTML(prev.get.name))
         pr.println("</div></th>")
       } else{
-        pr.println("<th><div style=\"color:green;\">")
+        pr.println("<th>" + diffStyleInsert)
         pr.println(escapeHTML(cur.get.name))
         pr.println("</div></th>")
       }
@@ -115,21 +121,26 @@ class DatasetHTMLExporter() {
       def compare(a: RelationalDatasetRow, b: RelationalDatasetRow) = {
         val rowSummaryA = RowSummary.getRowSummary(resultingColOrder,a,byRowAndCol,diffOverleap)
         val rowSummaryB = RowSummary.getRowSummary(resultingColOrder,b,byRowAndCol,diffOverleap)
-        rowSummaryA.compareTo(rowSummaryB)
+        val result = rowSummaryA.compareTo(rowSummaryB)
+        result
       }
     }
-
-    val sortedRows = diff.v2.rows.sorted(RowOrdering.reverse)
+    val deletedColIDs = diff.columnDeletes.map(_.id)
+    val sortedRows = diff.v2.rows.sorted(RowOrdering)
     sortedRows.foreach(r => {
     //updates.foreach { case(from,to) => {
       pr.println("<tr>")
       val htmlCells = mutable.ArrayBuffer[String]() ++= Seq.fill[String](resultingColOrder.size)("-")
+      if(diff.v1.id == "test-0002" && r.id==3)
+        print()
       resultingColOrder.foreach { case (colID, colIndex) => {
         var curCell = "-"
-        val intersectionDiffP = "<p style=\"color:gold;\">"
+        val intersectionDiffP = "<p style=\"color:green;font-weight: bold;\">"
         val sb = new mutable.StringBuilder()
         sb.append("<td>")
         val associatedChange = byRowAndCol.get((r.id,colID))
+        if(colIndex==3)
+          print()
         if(associatedChange.isDefined && associatedChange.get.isUpdate){
           //we have an update:
           val prevValue = associatedChange.get.prevValue
@@ -146,8 +157,12 @@ class DatasetHTMLExporter() {
           val curValue = associatedChange.get.newValue
           sb.append(diffStyleInsert)
           appendFormattedNewValue(diffOverleap, intersectionDiffP, sb, curValue)
-        } else{
+        } else if(!deletedColIDs.contains(colID)){
+          //we need to recognize if the column was deleted
+          sb.append(diffStyleNormal)
           appendFormattedNewValue(diffOverleap, intersectionDiffP, sb, r.fields(colIndex))
+        } else{
+          sb.append(diffStyleNormal)
         }
         sb.append("</div></td>")
         curCell = sb.toString()
@@ -285,12 +300,12 @@ class DatasetHTMLExporter() {
             exportCorrelationInfoToHTMLPrinter(dp,dsAAfterChange.id,diffSimilarity,pr)
           if(l.contains("METAINFO1")) {
             println()
-            //exportDiffMetadataToHTMLPrinter(dsABeforeChange,dsAAfterChange,pr)
+            exportDiffMetadataToHTMLPrinter(dsABeforeChange,dsAAfterChange,pr)
           } else if(l.contains("TABLECONTENT1"))
             exportDiffToHTMLPrinter(dsABeforeChange,dsAAfterChange,diffA,diffSimilarity,pr)
           if(l.contains("METAINFO2")) {
             println()
-            //exportDiffMetadataToHTMLPrinter(dsBBeforeChange,dsBAfterChange,pr)
+            exportDiffMetadataToHTMLPrinter(dsBBeforeChange,dsBAfterChange,pr)
           } else if(l.contains("TABLECONTENT2"))
             exportDiffToHTMLPrinter(dsBBeforeChange,dsBAfterChange,diffB,diffSimilarity,pr)
         } else
@@ -360,7 +375,7 @@ class DatasetHTMLExporter() {
     def compareTo(b: RowSummary): Int = {
       val seq = Seq(overlappingUpdates,overlappingInserts,overlappingDeletes,updates,inserts,deletes)
         .zip(Seq(b.overlappingUpdates,b.overlappingInserts,b.overlappingDeletes,b.updates,b.inserts,b.deletes))
-        .map{case (i,j) =>  i.compareTo(j)}
+        .map{case (i,j) =>  j.compareTo(i)}
         .filter(i => i!=0)
       if(seq.isEmpty) 0
       else seq.head
@@ -378,10 +393,11 @@ class DatasetHTMLExporter() {
     def getRowSummary(resultingColOrder:Map[Int,Int],row:RelationalDatasetRow,changeByRowAndCol:Map[(Long,Int),Change],diffOverleap:DiffSimilarity) = {
       resultingColOrder.map { case (colID, _) => {
         val associatedChange = changeByRowAndCol.get((row.id, colID))
-        if (!associatedChange.isDefined) RowSummary(0, 0, 0, 0, 0, 0)
+        if (!associatedChange.isDefined)
+          RowSummary(0, 0, 0, 0, 0, 0)
         else if (associatedChange.get.isUpdate && diffOverleap.updateOverlap.contains(associatedChange.get.getValueTuple))
           RowSummary(1, 0, 0, 0, 0, 0)
-        else if (associatedChange.get.isInsert && !diffOverleap.newValueOverlap.contains(associatedChange.get.newValue))
+        else if (associatedChange.get.isInsert && diffOverleap.newValueOverlap.contains(associatedChange.get.newValue))
           RowSummary(0, 1, 0, 0, 0, 0)
         else if (associatedChange.get.isDelete && diffOverleap.oldValueOverlap.contains(associatedChange.get.prevValue))
           RowSummary(0, 0, 1, 0, 0, 0)

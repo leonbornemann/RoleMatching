@@ -150,7 +150,7 @@ class ChangeCube(val v1:RelationalDataset, val v2:RelationalDataset,
   def entireRowDeletes  = {
     val prevColset = v1.attributes.map(_.id).toSet
     val byRow = deletes.groupBy(_.e)
-      .filter(_._2.map(_.pID)==columnDeletes)
+      .filter(_._2.map(_.pID).toSet==prevColset)
     byRow.keySet
   }
 

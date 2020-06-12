@@ -21,3 +21,5 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 libraryDependencies += "org.json4s" %% "json4s-ext" % "3.7.0-M4"
 // https://mvnrepository.com/artifact/org.apache.commons/commons-math3
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
+// https://mvnrepository.com/artifact/org.apache.commons/commons-csv
+libraryDependencies += "org.apache.commons" % "commons-csv" % "1.8"

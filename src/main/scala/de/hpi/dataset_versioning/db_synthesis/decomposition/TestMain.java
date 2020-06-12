@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.db_synthesis.normalization;
+package de.hpi.dataset_versioning.db_synthesis.decomposition;
 
 import de.hpi.dataset_versioning.data.DatasetInstance;
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset;

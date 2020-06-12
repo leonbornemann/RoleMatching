@@ -25,7 +25,26 @@ import scala.reflect.io.Directory
 import scala.language.postfixOps
 
 object IOService extends StrictLogging{
+  def getSimplifiedCSVExportFile(instance: DatasetInstance) = DBSynthesis_IOService.getDecompositionCSVExportFile(instance)
 
+
+  def getStandardTimeRange = {
+    val res = mutable.ArrayBuffer[LocalDate]()
+    var cur = STANDARD_TIME_FRAME_START
+    while(cur.toEpochDay <= STANDARD_TIME_FRAME_END.toEpochDay){
+      res+=cur
+      cur = cur.plusDays(1)
+    }
+    res
+  }
+
+  def getAllSimplifiedDataVersions(id: String) = {
+    val files = getStandardTimeRange
+      .map(d => (d,new File(getSimplifiedDatasetFile(DatasetInstance(id,d)))))
+      .filter(t => t._2.exists())
+      .toMap
+    files
+  }
 
 
   def readCleanedDatasetLineages() = DatasetVersionHistory.fromJsonObjectPerLineFile(IOService.getCleanedVersionHistoryFile().getAbsolutePath)
@@ -381,4 +400,7 @@ object IOService extends StrictLogging{
     .toSet
     .toIndexedSeq
     .sortBy((t:LocalDate) => t.toEpochDay)
+
+  def getDatasetInfoFile = new File(SNAPSHOT_METADATA_DIR + "/changeCountWithSubdomain.csv")
+
 }

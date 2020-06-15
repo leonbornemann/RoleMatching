@@ -28,10 +28,11 @@ case class RelationalDataset(id:String,
     val csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)
     csvPrinter.printRecord((attributes.map(_.name).toArray):_*)
     rows.foreach(r => {
-      csvPrinter.printRecord((r.fields.toArray ):_*)
+      csvPrinter.printRecord((r.arraysToString.toArray ):_*)
     })
     csvPrinter.close(true)
   }
+
 
 }
 

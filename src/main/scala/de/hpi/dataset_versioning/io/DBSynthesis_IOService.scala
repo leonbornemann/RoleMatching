@@ -15,7 +15,7 @@ object DBSynthesis_IOService {
 
   def dateToStr(date: LocalDate) = IOService.dateTimeFormatter.format(date)
 
-  def getDecompositionCSVExportFile(instance: DatasetInstance) = new File(DECOMPOSITION_EXPORT_CSV_DIR + s"${dateToStr(instance.date)}_${instance.id}")
+  def getDecompositionCSVExportFile(instance: DatasetInstance) = new File(DECOMPOSITION_EXPORT_CSV_DIR + s"${dateToStr(instance.date)}_${instance.id}.csv")
 
 
   def socrataDir = IOService.socrataDir

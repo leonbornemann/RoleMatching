@@ -17,6 +17,6 @@ public class TestMain {
         File f = IOService.getJoinCandidateFile();
         System.out.println(f.getAbsolutePath());
         //you will need:
-        RelationalDataset ds = IOService.loadSimplifiedRelationalDataset(new DatasetInstance("your dataset id", LocalDate.parse("the latest version of this dataset")));
+        //RelationalDataset ds = IOService.loadSimplifiedRelationalDataset(new DatasetInstance("your dataset id", LocalDate.parse("the latest version of this dataset")));
     }
 }

@@ -18,5 +18,8 @@ case class Resource(name:String, id:String,
                     provenance:Provenance.Value,
                     download_count:Option[Long]
                    ) {
+  def columnNameToPosition = {
+    columns_field_name.zipWithIndex.toMap
+  }
 
 }

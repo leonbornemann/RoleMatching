@@ -6,11 +6,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import de.hpi.dataset_versioning.data.simplified.Attribute;
+import de.hpi.dataset_versioning.db_synthesis.decomposition.normalization.DecomposedTable;
+import de.hpi.dataset_versioning.io.IOService;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
 import de.metanome.algorithm_integration.configuration.ConfigurationSettingFileInput;
 import de.metanome.algorithm_integration.input.RelationalInputGenerator;
@@ -22,22 +28,27 @@ import de.metanome.backend.result_receiver.ResultCache;
 import de.uni_potsdam.hpi.utils.FileUtils;
 import de.metanome.algorithm_integration.results.basic_statistic_values.BasicStatisticValue;
 import org.json.JSONObject;
-
+import scala.Option;
+import scala.collection.Set;
+import scala.collection.mutable.ArrayBuffer;
+import scala.collection.mutable.HashSet;
 
 
 public class Main {
 
 	public static void main(String[] args) {
 		Config conf = new Config();
+		conf.inputFolderPath = args[0];
+		conf.measurementsFolderPath = args[1];
 		//conf.isHumanInTheLoop = true;
 		//if (args.length != 0)
 		//conf.setDataset(args[0]);
-
+		System.out.println();
 		try (Stream<Path> walk = Files.walk(Paths.get(conf.inputFolderPath))) {
 
 			List<String> result = walk.filter(Files::isRegularFile)
+					.sorted(Comparator.comparing(f -> Long.valueOf(f.toFile().length())))
 					.map(x -> x.getFileName().toString().replace(".csv","")).collect(Collectors.toList());
-
 			result.forEach(dataset-> {
 				conf.inputDatasetName=dataset;
 				executeNormi(conf);
@@ -82,8 +93,13 @@ public class Main {
 				final FileWriter writer = new FileWriter(resultFile, true);
 				
 				//results.map(result -> result.toString()).forEach(fd -> writeToFile(writer, fd));
-				results.forEach(fd -> writeToFile(writer, conf.inputDatasetName ,fd));
-				
+				int decomposedTableID = 0;
+				List<Result> collectedResults = results.collect(Collectors.toList());
+				for (Result fd : collectedResults) {
+					writeToFile(writer, conf.inputDatasetName,decomposedTableID, fd);
+					decomposedTableID++;
+				}
+				System.out.println("Finished " + conf.inputDatasetName);
 				writer.close();
 				results.close();
 			}
@@ -143,8 +159,8 @@ public class Main {
 			throw new RuntimeException(e);
 		}
 	}
-	private static void writeToFile(FileWriter writer, String DS, Result line) {
-		try {
+	private static void writeToFile(FileWriter writer, String DS, int decomposedTableID, Result line) {
+//		try {
 			BasicStatistic r= (BasicStatistic) line;
 			//replace here if you need to change JSON format
 
@@ -154,15 +170,53 @@ public class Main {
 			//method-2 simplified JSON
 			//because we use only FDs within the same tables i removed the table id from all fields but the id
 			JSONObject jo = new JSONObject();
-			jo.put("Table_id", DS);
-			jo.put("Schema", r.getColumnCombination().toString().replace(".csv","").replace(DS+".",""));
-			for (Map.Entry<String, BasicStatisticValue> entry : r.getStatisticMap().entrySet()) {
-				jo.put(entry.getKey().toString(), entry.getValue().toString().replace(".csv","").replace(DS+".",""));
-			}
+			//parse apart id and version:
+			String originalID = DS.split("_")[1];
+			LocalDate version = LocalDate.parse(DS.split("_")[0], IOService.dateTimeFormatter());
+			ArrayBuffer<Attribute> schema = getSchemaList(DS, r);
+			scala.collection.Set<String> pk = getPrimaryKey(DS,r);
+			scala.collection.Set<String> fks = getForeignKey(DS,r);
+			DecomposedTable res = new DecomposedTable(originalID,version,decomposedTableID, schema,pk,fks);
+			res.appendToWriter(writer,false,true);
+//			jo.put("Table_id", DS);
+//			jo.put("Schema", r.getColumnCombination().toString().replace(".csv","").replace(DS+".",""));
+//			for (Map.Entry<String, BasicStatisticValue> entry : r.getStatisticMap().entrySet()) {
+//				jo.put(entry.getKey().toString(), entry.getValue().toString().replace(".csv","").replace(DS+".",""));
+//			}
+//			writer.write(jo.toString()+System.lineSeparator());
+//		} catch (IOException e) {
+//			throw new RuntimeException(e);
+//		}
+	}
 
-			writer.write(jo.toString()+System.lineSeparator());
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+	private static Set<String> getForeignKey(String DS, BasicStatistic r) {
+		HashSet<String> fk = new HashSet<>();
+		for (Map.Entry<String, BasicStatisticValue> entry : r.getStatisticMap().entrySet()) {
+			if(entry.getKey()=="ForeignKey"){
+				String fkStr = entry.getValue().toString().replace(".csv","").replace(DS+".","");
+				Arrays.asList(fkStr.split(",")).stream().map(s -> s.trim()).forEach(s -> fk.add(s));
+			}
 		}
+		return fk;
+	}
+
+	private static Set<String> getPrimaryKey(String DS, BasicStatistic r) {
+		HashSet<String> pk = new HashSet<>();
+		for (Map.Entry<String, BasicStatisticValue> entry : r.getStatisticMap().entrySet()) {
+			if(entry.getKey()=="PrimaryKey"){
+				String pkStr = entry.getValue().toString().replace(".csv","").replace(DS+".","");
+				Arrays.asList(pkStr.split(",")).stream().map(s -> s.trim()).forEach(s -> pk.add(s));
+			}
+		}
+		return pk;
+	}
+
+	private static ArrayBuffer<Attribute> getSchemaList(String DS, BasicStatistic r) {
+		ArrayBuffer<Attribute> schemaAsScala = new ArrayBuffer<Attribute>();
+		String schemaString = r.getColumnCombination().toString().replace(".csv","").replace(DS+".","");
+		schemaString = schemaString.substring(1,schemaString.length()-1);
+		List<String> schema = Arrays.asList(schemaString.split(","));
+		schema.forEach(s -> schemaAsScala.addOne(new Attribute(s,-1, Option.apply(-1))));
+		return schemaAsScala;
 	}
 }

@@ -23,12 +23,14 @@ trait JsonWritable[T<:AnyRef] {
     writer.close()
   }
 
-  def appendToWriter(writer:java.io.Writer,pretty:Boolean=false) = {
+  def appendToWriter(writer:java.io.Writer,pretty:Boolean=false,addLineBreak:Boolean=false) = {
     val writerS = new StringWriter()
     if(pretty)
       org.json4s.jackson.Serialization.writePretty(this,writerS)
     else
       org.json4s.jackson.Serialization.write(this,writerS)
     writer.append(writerS.toString)
+    if(addLineBreak)
+      writer.append("\n")
   }
 }

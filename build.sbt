@@ -23,3 +23,6 @@ libraryDependencies += "org.json4s" %% "json4s-ext" % "3.7.0-M4"
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 // https://mvnrepository.com/artifact/org.apache.commons/commons-csv
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.8"
+// https://mvnrepository.com/artifact/org.json/json
+libraryDependencies += "org.json" % "json" % "20200518"
+

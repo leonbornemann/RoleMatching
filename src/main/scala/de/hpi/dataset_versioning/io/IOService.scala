@@ -25,6 +25,9 @@ import scala.reflect.io.Directory
 import scala.language.postfixOps
 
 object IOService extends StrictLogging{
+
+  def getChangeFile(id: String) = CHANGE_DIR + s"/$id.json"
+
   def getSimplifiedCSVExportFile(instance: DatasetInstance) = DBSynthesis_IOService.getDecompositionCSVExportFile(instance)
 
 
@@ -86,8 +89,8 @@ object IOService extends StrictLogging{
   val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   val STANDARD_TIME_FRAME_START = LocalDate.parse("2019-11-01", IOService.dateTimeFormatter)
   val STANDARD_TIME_FRAME_END = LocalDate.parse("2020-04-30", IOService.dateTimeFormatter)
-  val cachedMetadata = mutable.Map[LocalDate,mutable.Map[String,DatasetMetadata]]() //TODO: shrink this cache at some point - use caching library?: https://stackoverflow.com/questions/3651313/how-to-cache-results-in-scala
-  val cachedCustomMetadata = mutable.Map[(LocalDate,LocalDate),CustomMetadataCollection]() //TODO: shrink this cache at some point - use caching library?: https://stackoverflow.com/questions/3651313/how-to-cache-results-in-scala
+  val cachedMetadata = mutable.Map[LocalDate,mutable.Map[String,DatasetMetadata]]()
+  val cachedCustomMetadata = mutable.Map[(LocalDate,LocalDate),CustomMetadataCollection]()
   val datasetCache = mutable.Map[DatasetInstance,OldLoadedRelationalDataset]()
 
   def DATA_DIR = socrataDir + "/data/"
@@ -101,6 +104,7 @@ object IOService extends StrictLogging{
   def MINIMAL_UNCOMPRESSED_DATA_DIR = WORKING_DIR + "/minimalHistory/"
   def EXPORT_DIR = socrataDir + "/export_join_candidate/"
   def SIMPLIFIED_UNCOMPRESSED_DATA_DIR = WORKING_DIR + "/simplifiedData/"
+  def CHANGE_DIR = WORKING_DIR + "/changes/"
 
   def getUncompressedDiffDir(date: LocalDate) = createAndReturn(new File(DIFF_DIR_UNCOMPRESSED + date.format(dateTimeFormatter) + "_diff"))
   def getUncompressedDataDir(date: LocalDate) = createAndReturn(new File(DATA_DIR_UNCOMPRESSED + date.format(dateTimeFormatter)))

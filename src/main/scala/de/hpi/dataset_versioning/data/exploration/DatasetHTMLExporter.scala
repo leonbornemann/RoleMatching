@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import com.google.gson.{JsonElement, JsonPrimitive}
 import de.hpi.dataset_versioning.data.OldLoadedRelationalDataset
-import de.hpi.dataset_versioning.data.change.{Change, ChangeCube}
+import de.hpi.dataset_versioning.data.change.{Change, DiffAsChangeCube}
 import de.hpi.dataset_versioning.data.diff.semantic.DiffSimilarity
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.simplified.{Attribute, RelationalDataset, RelationalDatasetRow}
@@ -68,7 +68,7 @@ class DatasetHTMLExporter() {
     pr.println("</div></p>")
   }
 
-  def exportDiffToHTMLPrinter(dsBeforeChange: RelationalDataset, dsAfterChange: RelationalDataset, diff: ChangeCube, diffOverlap:DiffSimilarity, pr: PrintWriter) = {
+  def exportDiffToHTMLPrinter(dsBeforeChange: RelationalDataset, dsAfterChange: RelationalDataset, diff: DiffAsChangeCube, diffOverlap:DiffSimilarity, pr: PrintWriter) = {
     //very simple schema based col-matching
     val resultColSet = diff.colIdToAppearance
       .toIndexedSeq
@@ -108,7 +108,7 @@ class DatasetHTMLExporter() {
 
 
 
-  def addUpdatedTuplesToHTMLTable(diff:ChangeCube, resultingColOrder: Map[Int, Int],diffOverleap:DiffSimilarity, pr: PrintWriter) = {
+  def addUpdatedTuplesToHTMLTable(diff:DiffAsChangeCube, resultingColOrder: Map[Int, Int], diffOverleap:DiffSimilarity, pr: PrintWriter) = {
     //at the end:
 
     val byRowAndCol = (diff.updates ++ diff.inserts ++ diff.deletes)
@@ -223,7 +223,7 @@ class DatasetHTMLExporter() {
     }
   }
 
-  def exportDiffTableView(dsBeforeChange: RelationalDataset, dsAfterChange: RelationalDataset, diff: ChangeCube, outFile: File) = {
+  def exportDiffTableView(dsBeforeChange: RelationalDataset, dsAfterChange: RelationalDataset, diff: DiffAsChangeCube, outFile: File) = {
     val template = "/html_output_templates/ScollableTableTemplate.html"
     val pr = new PrintWriter(outFile)
     val is = getClass.getResourceAsStream(template)
@@ -282,10 +282,10 @@ class DatasetHTMLExporter() {
 
   def exportDiffPairToTableView(dsABeforeChange: RelationalDataset,
                                 dsAAfterChange: RelationalDataset,
-                                diffA: ChangeCube,
+                                diffA: DiffAsChangeCube,
                                 dsBBeforeChange: RelationalDataset,
                                 dsBAfterChange: RelationalDataset,
-                                diffB: ChangeCube,
+                                diffB: DiffAsChangeCube,
                                 dp:ChangeCorrelationInfo,
                                 diffSimilarity:DiffSimilarity,
                                 outFile: File) = {

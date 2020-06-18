@@ -15,13 +15,17 @@ import scala.io.Source
 class DatasetVersionHistory(val id:String,
                             val versionsWithChanges:mutable.ArrayBuffer[LocalDate] = mutable.ArrayBuffer[LocalDate](),
                             var deletions:mutable.ArrayBuffer[LocalDate] = mutable.ArrayBuffer[LocalDate]()) extends JsonWritable[DatasetVersionHistory]{
+  def allVersionsIncludingDeletes = (versionsWithChanges.toSet ++ deletions.toSet)
+    .toIndexedSeq
+    .sortBy(_.toEpochDay)
+
 
   def makeVersionsDeletes(versionsToIgnore: mutable.HashSet[LocalDate]) = {
     versionsToIgnore.toSeq.sortBy(_.toEpochDay).foreach(v => {
       val index = versionsWithChanges.indexOf(v)
       val removedVersion = versionsWithChanges.remove(index)
       val i = deletions.lastIndexWhere(d => d.toEpochDay<removedVersion.toEpochDay)+1
-      deletions.insert(i,removedVersion) //TODO: test if this shifts everything right and if we can insert at length
+      deletions.insert(i,removedVersion)
     })
     //clean up deletes
     if(versionsWithChanges.isEmpty)

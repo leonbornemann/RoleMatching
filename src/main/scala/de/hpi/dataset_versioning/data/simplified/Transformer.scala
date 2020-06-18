@@ -74,7 +74,7 @@ class Transformer() extends StrictLogging{
     }
   }
 
-  private def transformVersion(id: String, version: LocalDate) = {
+  def transformVersion(id: String, version: LocalDate) = {
     val ds = IOService.tryLoadDataset(DatasetInstance(id, version), true)
     val improved = ds.toImproved
     val outDir = IOService.getSimplifiedDataDir(version)

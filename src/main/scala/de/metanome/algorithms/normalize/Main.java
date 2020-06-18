@@ -28,6 +28,7 @@ import de.metanome.backend.result_receiver.ResultCache;
 import de.uni_potsdam.hpi.utils.FileUtils;
 import de.metanome.algorithm_integration.results.basic_statistic_values.BasicStatisticValue;
 import org.json.JSONObject;
+import scala.None;
 import scala.Option;
 import scala.collection.Set;
 import scala.collection.mutable.ArrayBuffer;
@@ -177,7 +178,7 @@ public class Main {
 			scala.collection.Set<String> pk = getPrimaryKey(DS,r);
 			scala.collection.Set<String> fks = getForeignKey(DS,r);
 			DecomposedTable res = new DecomposedTable(originalID,version,decomposedTableID, schema,pk,fks);
-			res.appendToWriter(writer,false,true);
+			res.appendToWriter(writer,false,true,true);
 //			jo.put("Table_id", DS);
 //			jo.put("Schema", r.getColumnCombination().toString().replace(".csv","").replace(DS+".",""));
 //			for (Map.Entry<String, BasicStatisticValue> entry : r.getStatisticMap().entrySet()) {
@@ -216,7 +217,7 @@ public class Main {
 		String schemaString = r.getColumnCombination().toString().replace(".csv","").replace(DS+".","");
 		schemaString = schemaString.substring(1,schemaString.length()-1);
 		List<String> schema = Arrays.asList(schemaString.split(","));
-		schema.forEach(s -> schemaAsScala.addOne(new Attribute(s,-1, Option.apply(-1))));
+		schema.forEach(s -> schemaAsScala.addOne(new Attribute(s,-1, Option.empty(),Option.empty())));
 		return schemaAsScala;
 	}
 }

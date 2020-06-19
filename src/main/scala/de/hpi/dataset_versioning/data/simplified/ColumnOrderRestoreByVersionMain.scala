@@ -16,7 +16,7 @@ object ColumnOrderRestoreByVersionMain extends App with StrictLogging{
   val id = if(args.length==2) Some(args(2)) else None
   val restorer = new ColumnOrderRestorer()
   if(id.isDefined){
-    logger.debug(s"Redoing Column Ordering for single File: $f")
+    logger.debug(s"Redoing Column Ordering for single dataset version: $id and $version")
     restorer.restoreInDataset(id.get,version)
   } else {
     logger.debug(s"Redoing Column Ordering for all datasets in version  $version")

@@ -5,21 +5,20 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
+import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
+import de.hpi.dataset_versioning.data.simplified.ColumnOrderRestoreByVersionMain.version
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable
 
-object ColumnOrderRestore extends App with StrictLogging{
+class ColumnOrderRestorer extends StrictLogging{
 
-  IOService.socrataDir = args(0)
-  val version = LocalDate.parse(args(1),IOService.dateTimeFormatter)
-  val dir = IOService.getSimplifiedDataDir(version)
-  val id = if(args.length==2) Some(args(2)) else None
-  IOService.cacheMetadata(version)
+
   var attrExactPositionFound:Long = 0
   var attrWithoutLeadingUnderscoreFound:Long = 0
   var attrTailFound:Long = 0
   var attrPositionNotFound:Long = 0
+
 
   def setPosition(a: Attribute,pos:Int, usedPositions: mutable.HashSet[Int]) = {
     if(!usedPositions.contains(pos)) {
@@ -31,16 +30,13 @@ object ColumnOrderRestore extends App with StrictLogging{
     }
   }
 
-  if(id.isDefined){
-    val f = IOService.getSimplifiedDatasetFile(DatasetInstance(id.get,version))
-    logger.debug(s"Redoing Column Ordering for single File: $f")
-    restoreColumnOrderForFile(new File(f))
-  } else {
-    logger.debug(s"Redoing Column Ordering for all datasets in version  $version")
-    var count = 0
+  def restoreAllInVersion(version:LocalDate) = {
+    IOService.cacheMetadata(version)
+    val dir = IOService.getSimplifiedDataDir(version)
+    var count =0
     dir.listFiles.foreach(f => {
       count += 1
-      restoreColumnOrderForFile(f)
+      restoreInDataset(IOService.filenameToID(f),version)
       if (count % 1000 == 0) {
         val total = Seq(attrPositionNotFound, attrTailFound, attrWithoutLeadingUnderscoreFound, attrExactPositionFound).sum.toDouble
         logger.debug(s"${attrExactPositionFound / total},${attrWithoutLeadingUnderscoreFound / total},${attrTailFound / total},${attrPositionNotFound / total}")
@@ -48,8 +44,20 @@ object ColumnOrderRestore extends App with StrictLogging{
     })
   }
 
-  def restoreColumnOrderForFile(f:File) = {
-    val id = IOService.filenameToID(f)
+  def restoreForAllForIdList(ids:Set[String]) = {
+    val histories = DatasetVersionHistory.load()
+    val versionToIds = histories
+      .filter(h => ids.contains(h.id))
+      .flatMap(h => h.versionsWithChanges.map(v => (h.id,v)))
+      .groupMap(_._2)(_._1)
+    versionToIds.foreach{case (v,ids) => {
+      ids.foreach( id => restoreInDataset(id,v))
+      IOService.cachedMetadata.clear()
+    }}
+  }
+
+  def restoreInDataset(id:String, version:LocalDate) = {
+    IOService.cacheMetadata(version)
     var ds: RelationalDataset = null
     try {
       ds = IOService.loadSimplifiedRelationalDataset(DatasetInstance(id, version))
@@ -111,4 +119,5 @@ object ColumnOrderRestore extends App with StrictLogging{
     ds.attributes = ds.attributes.sortBy(_.position.get)
     ds.toJsonFile(new File(IOService.getSimplifiedDatasetFile(DatasetInstance(id, version))))
   }
+
 }

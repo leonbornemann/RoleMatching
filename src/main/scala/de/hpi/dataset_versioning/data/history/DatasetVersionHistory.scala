@@ -54,6 +54,8 @@ class DatasetVersionHistory(val id:String,
 }
 
 object DatasetVersionHistory extends JsonReadable[DatasetVersionHistory] with StrictLogging{
+  def load() = fromJsonObjectPerLineFile(IOService.getCleanedVersionHistoryFile().getAbsolutePath)
+
 
   def removeIgnoredVersionsBasedOnMissingCustomMetadata(list: Seq[DatasetVersionHistory],reportFile:PrintWriter) = {
     val md = IOService.getOrLoadCustomMetadataForStandardTimeFrame()

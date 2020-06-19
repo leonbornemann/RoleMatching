@@ -9,9 +9,12 @@ import org.json4s.ext.EnumNameSerializer
 
 trait JsonWritable[T<:AnyRef] {
 
-  implicit val formats = DefaultFormats + new EnumNameSerializer(Provenance) + new EnumNameSerializer(ColumnDatatype) + LocalDateSerializer + DatasetInstanceKeySerializer
-
-
+  implicit val formats = (DefaultFormats
+    + new EnumNameSerializer(Provenance)
+    + new EnumNameSerializer(ColumnDatatype)
+    + LocalDateSerializer
+    + DatasetInstanceKeySerializer
+    + LocalDateKeySerializer)
 
   def toJson() = {
     org.json4s.jackson.Serialization.write(this)

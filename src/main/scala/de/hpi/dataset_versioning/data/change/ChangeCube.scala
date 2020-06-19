@@ -47,16 +47,15 @@ case class ChangeCube(datasetID:String,
 
 object ChangeCube extends JsonReadable[ChangeCube] with StrictLogging {
   def loadAllChanges(ids: Seq[String]) = {
-//    val changeCubes = mutable.ArrayBuffer[ChangeCube]()
-//    ids.foreach(id => {
-//      val cube = ChangeCube(id,)
-//      cube.datasetID = Some(id)
-//      logger.debug(s"Loading changes for $id")
-//      val changes = Change.fromJsonObjectPerLineFile(IOService.getChangeFile(id))
-//      cube.addChanges(changes)
-//      changeCubes +=cube
-//    })
-//    changeCubes
+    val changeCubes = mutable.ArrayBuffer[ChangeCube]()
+    var count = 0
+    ids.foreach(id => {
+      logger.debug(s"Loading changes for $id")
+      changeCubes += ChangeCube.fromJsonFile(IOService.getChangeFile(id))
+      count+=1
+      logger.debug(s"Loaded $count/${ids.size} changes")
+    })
+    changeCubes
   }
 
 }

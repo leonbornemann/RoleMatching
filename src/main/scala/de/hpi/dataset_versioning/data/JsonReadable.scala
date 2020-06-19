@@ -12,7 +12,12 @@ import scala.io.Source
 
 trait JsonReadable[T<:AnyRef] {
 
-  implicit val formats = DefaultFormats + new EnumNameSerializer(Provenance) + new EnumNameSerializer(ColumnDatatype) + LocalDateSerializer + DatasetInstanceKeySerializer
+  implicit val formats = (DefaultFormats
+    + new EnumNameSerializer(Provenance)
+    + new EnumNameSerializer(ColumnDatatype)
+    + LocalDateSerializer
+    + DatasetInstanceKeySerializer
+    + LocalDateKeySerializer)
 
 
   def fromJsonString(json: String)(implicit m:Manifest[T]) = {

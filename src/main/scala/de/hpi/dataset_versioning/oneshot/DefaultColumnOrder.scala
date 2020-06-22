@@ -1,12 +1,23 @@
 package de.hpi.dataset_versioning.oneshot
 
 import java.io.{File, PrintWriter}
+import java.time.LocalDate
 
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.io.Source
 
 object DefaultColumnOrder extends App {
+
+//  IOService.socrataDir = args(0)
+//  private val date = LocalDate.parse("2019-11-01", IOService.dateTimeFormatter)
+//  IOService.cacheMetadata(date)
+//  val md = IOService.cachedMetadata(date)("2b3m-wnm2")
+//    md
+//    .resource
+//    .columns_name
+//    .foreach(println(_))
+//  println()
 
   val files = new File("/san2/data/data-prep/socrata-csv/data")
     .listFiles()

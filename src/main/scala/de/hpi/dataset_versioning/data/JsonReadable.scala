@@ -1,6 +1,6 @@
 package de.hpi.dataset_versioning.data
 
-import java.io.{File, FileInputStream}
+import java.io.{BufferedReader, File, FileInputStream}
 
 import de.hpi.dataset_versioning.data.metadata.Provenance
 import de.hpi.dataset_versioning.data.metadata.custom.{ColumnDatatype, DatasetInstanceKeySerializer}
@@ -31,9 +31,10 @@ trait JsonReadable[T<:AnyRef] {
     json.extract[T]
   }
 
-  def fromJsonObjectPerLineFile(path:String)(implicit m:Manifest[T]):Seq[T] = {
+  def fromJsonObjectPerLineFile(path:String)(implicit m:Manifest[T]):collection.Seq[T] = {
+    val result = scala.collection.mutable.ArrayBuffer[T]()
     Source.fromFile(path).getLines()
-      .toSeq
-      .map(fromJsonString(_))
+      .foreach(l => result.addOne(fromJsonString(l)))
+    result
   }
 }

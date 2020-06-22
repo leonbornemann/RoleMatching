@@ -57,7 +57,7 @@ object DatasetVersionHistory extends JsonReadable[DatasetVersionHistory] with St
   def load() = fromJsonObjectPerLineFile(IOService.getCleanedVersionHistoryFile().getAbsolutePath)
 
 
-  def removeIgnoredVersionsBasedOnMissingCustomMetadata(list: Seq[DatasetVersionHistory],reportFile:PrintWriter) = {
+  def removeIgnoredVersionsBasedOnMissingCustomMetadata(list: collection.Seq[DatasetVersionHistory],reportFile:PrintWriter) = {
     val md = IOService.getOrLoadCustomMetadataForStandardTimeFrame()
     val lineagesToRemove = mutable.HashSet[DatasetVersionHistory]()
     var count = 0
@@ -94,7 +94,7 @@ object DatasetVersionHistory extends JsonReadable[DatasetVersionHistory] with St
   }
 
 
-  def removeVersionIgnoreBasedOnHashEquality(list: Seq[DatasetVersionHistory],ignoreFile:File) = {
+  def removeVersionIgnoreBasedOnHashEquality(list: collection.Seq[DatasetVersionHistory],ignoreFile:File) = {
     val md = IOService.getOrLoadCustomMetadataForStandardTimeFrame
     val versionsToIgnore = mutable.HashMap[String,mutable.HashSet[DatasetInstance]]()
     list.foreach(lineage => {

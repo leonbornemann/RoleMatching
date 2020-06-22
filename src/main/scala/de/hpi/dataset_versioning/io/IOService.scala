@@ -98,6 +98,7 @@ object IOService extends StrictLogging{
   def SNAPSHOT_METADATA_DIR = socrataDir + "/snapshotMetadata/"
   def DIFF_DIR = socrataDir + "/diff/"
   def WORKING_DIR:String = socrataDir + "/workingDir/"
+  def TMP_WORKING_DIR:String = WORKING_DIR + "/tmp/"
   def VERSION_HISTORY_METADATA_DIR = socrataDir + "/versionHistory/"
   def DATA_DIR_UNCOMPRESSED = WORKING_DIR + "/snapshots/"
   def DIFF_DIR_UNCOMPRESSED = WORKING_DIR + "/diffs/"

@@ -11,9 +11,27 @@ import scala.collection.mutable
 
 case class ChangeCube(datasetID:String,
                       colIDTOAttributeMap:mutable.HashMap[Int,mutable.HashMap[LocalDate,Attribute]]=mutable.HashMap(),
-                      inserts:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change](),
-                      deletes:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change](),
-                      updates:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change]()) extends JsonWritable[ChangeCube] with StrictLogging{
+                      var inserts:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change](),
+                      var deletes:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change](),
+                      var updates:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change]()) extends JsonWritable[ChangeCube] with StrictLogging{
+
+  def isEmpty: Boolean = inserts.isEmpty && deletes.isEmpty && updates.isEmpty
+
+  def firstTimestamp: Option[LocalDate] = {
+    if(isEmpty) None
+    else{
+      val minI = if(inserts.isEmpty) LocalDate.MAX else inserts.minBy(_.t.toEpochDay).t
+      val minD = if(deletes.isEmpty) LocalDate.MAX else deletes.minBy(_.t.toEpochDay).t
+      val minU = if(updates.isEmpty) LocalDate.MAX else updates.minBy(_.t.toEpochDay).t
+      Some(Seq(minI,minD,minU).minBy(_.toEpochDay))
+    }
+  }
+
+  def filterChanges(filterFunction: Change => Boolean) = {
+    inserts = inserts.filter(filterFunction)
+    deletes = deletes.filter(filterFunction)
+    updates = updates.filter(filterFunction)
+  }
 
   def addAll(other: ChangeCube) = {
     inserts ++= other.inserts
@@ -24,7 +42,6 @@ case class ChangeCube(datasetID:String,
       myMap.addAll(map)
     }}
   }
-
 
   def addToAttributeNameMapping(v:LocalDate,attributes:collection.Iterable[Attribute]) ={
     attributes.foreach(a => {
@@ -46,6 +63,9 @@ case class ChangeCube(datasetID:String,
 }
 
 object ChangeCube extends JsonReadable[ChangeCube] with StrictLogging {
+
+  def load(id:String) = ChangeCube.fromJsonFile(IOService.getChangeFile(id))
+
   def loadAllChanges(ids: Seq[String]) = {
     val changeCubes = mutable.ArrayBuffer[ChangeCube]()
     var count = 0

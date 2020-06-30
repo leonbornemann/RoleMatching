@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.db_synthesis.decomposition.normalization
+package de.hpi.dataset_versioning.db_synthesis.top_down.decomposition.normalization
 
 import java.time.LocalDate
 

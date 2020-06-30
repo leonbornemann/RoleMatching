@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.db_synthesis.main
+package de.hpi.dataset_versioning.db_synthesis.top_down.main
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
@@ -6,7 +6,7 @@ import java.time.LocalDate
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.{Change, ChangeCube}
 import de.hpi.dataset_versioning.data.change.ChangeExportMain.subdomain
-import de.hpi.dataset_versioning.db_synthesis.decomposition.DatasetInfo
+import de.hpi.dataset_versioning.db_synthesis.top_down.decomposition.DatasetInfo
 import de.hpi.dataset_versioning.io.IOService
 
 object ChangeExplorationMain extends App with StrictLogging{
@@ -48,7 +48,7 @@ object ChangeExplorationMain extends App with StrictLogging{
       val changeCube = ChangeCube.load(id)
       val firstTimestamp = changeCube.firstTimestamp
       if (firstTimestamp.isDefined)
-        changeCube.filterChanges((c: Change) => c.t != firstTimestamp.get)
+        changeCube.filterChangesInPlace((c: Change) => c.t != firstTimestamp.get)
       logger.debug(s"Loaded $count/${subdomainIds.size} changes")
       count += 1
       changeCube

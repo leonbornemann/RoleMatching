@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.db_synthesis.decomposition
+package de.hpi.dataset_versioning.db_synthesis.top_down.decomposition
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
@@ -15,7 +15,7 @@ object CsvExportMain extends App with StrictLogging{
     .foreach(dsInfo => {
       try {
         val ds = IOService.loadSimplifiedRelationalDataset(DatasetInstance(dsInfo.id, dsInfo.getLatestVersion))
-        ds.toCSV(IOService.getSimplifiedCSVExportFile(DatasetInstance(dsInfo.id,dsInfo.getLatestVersion)))
+        ds.toCSV(IOService.getSimplifiedCSVExportFile(DatasetInstance(dsInfo.id,dsInfo.getLatestVersion),subdomain))
         logger.debug(s"Finsihed Exporting ${ds.id} (version ${ds.version})")
       } catch {
         case _:Throwable => logger.debug(s"exception wile trying to load ${dsInfo.id} (version ${dsInfo.getLatestVersion})")

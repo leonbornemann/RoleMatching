@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.hpi.dataset_versioning.data.simplified.Attribute;
-import de.hpi.dataset_versioning.db_synthesis.decomposition.normalization.DecomposedTable;
+import de.hpi.dataset_versioning.db_synthesis.top_down.decomposition.normalization.DecomposedTable;
 import de.hpi.dataset_versioning.io.IOService;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
 import de.metanome.algorithm_integration.configuration.ConfigurationSettingFileInput;
@@ -28,7 +28,6 @@ import de.metanome.backend.result_receiver.ResultCache;
 import de.uni_potsdam.hpi.utils.FileUtils;
 import de.metanome.algorithm_integration.results.basic_statistic_values.BasicStatisticValue;
 import org.json.JSONObject;
-import scala.None;
 import scala.Option;
 import scala.collection.Set;
 import scala.collection.mutable.ArrayBuffer;

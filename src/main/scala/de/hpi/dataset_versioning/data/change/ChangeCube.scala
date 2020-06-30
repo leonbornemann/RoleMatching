@@ -15,6 +15,19 @@ case class ChangeCube(datasetID:String,
                       var deletes:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change](),
                       var updates:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change]()) extends JsonWritable[ChangeCube] with StrictLogging{
 
+  def changeCount(countInitialInserts: Boolean) = {
+    val totalNumberChanges = inserts.size + deletes.size + updates.size
+    if(countInitialInserts) {
+      totalNumberChanges
+    }
+    else {
+      val initialInserts = inserts.groupBy(c => (c.e,c.pID))
+        .size
+      totalNumberChanges - initialInserts
+    }
+  }
+
+
   def isEmpty: Boolean = inserts.isEmpty && deletes.isEmpty && updates.isEmpty
 
   def firstTimestamp: Option[LocalDate] = {
@@ -27,10 +40,11 @@ case class ChangeCube(datasetID:String,
     }
   }
 
-  def filterChanges(filterFunction: Change => Boolean) = {
+  def filterChangesInPlace(filterFunction: Change => Boolean) = {
     inserts = inserts.filter(filterFunction)
     deletes = deletes.filter(filterFunction)
     updates = updates.filter(filterFunction)
+    this
   }
 
   def addAll(other: ChangeCube) = {
@@ -41,6 +55,7 @@ case class ChangeCube(datasetID:String,
       val myMap = colIDTOAttributeMap.getOrElseUpdate(cID,mutable.HashMap[LocalDate,Attribute]())
       myMap.addAll(map)
     }}
+    this
   }
 
   def addToAttributeNameMapping(v:LocalDate,attributes:collection.Iterable[Attribute]) ={

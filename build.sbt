@@ -25,4 +25,7 @@ libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.8"
 // https://mvnrepository.com/artifact/org.json/json
 libraryDependencies += "org.json" % "json" % "20200518"
+// https://mvnrepository.com/artifact/org.scala-graph/graph-core
+libraryDependencies += "org.scala-graph" %% "graph-core" % "1.13.2"
+
 

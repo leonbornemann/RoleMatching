@@ -8,12 +8,24 @@ import de.hpi.dataset_versioning.data.{DatasetInstance, JsonReadable, JsonWritab
 import de.hpi.dataset_versioning.io.IOService
 import org.apache.commons.csv.{CSVFormat, CSVPrinter, CSVRecord}
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 case class RelationalDataset(id:String,
                              version:LocalDate,
                              var attributes:collection.IndexedSeq[Attribute],
-                             rows:collection.IndexedSeq[RelationalDatasetRow]) extends JsonWritable[RelationalDataset] {
+                             var rows:mutable.ArrayBuffer[RelationalDatasetRow]) extends JsonWritable[RelationalDataset] {
+
+  def sortColumnsByAttributePosition() = {
+    assert(attributes.map(_.position.get).sorted.toIndexedSeq == (0 until attributes.size))
+    val oldAttributeOrder = attributes
+    val newAttributeOrder = attributes.sortBy(_.position.get)
+    val oldToNewOrder = oldAttributeOrder.zipWithIndex.map{case (a,oldIndex) => (oldIndex,a.position.get)}
+        .toMap
+    rows.foreach(r => r.reorderColumns(oldToNewOrder))
+    attributes = newAttributeOrder
+  }
+
 
   def rowsAreMatched: Boolean = rows.forall(r => r.id != -1)
 
@@ -55,7 +67,7 @@ object RelationalDataset extends JsonReadable[RelationalDataset] {
   }
 
   def createEmpty(id: String, date: LocalDate): RelationalDataset = {
-    RelationalDataset(id,date,IndexedSeq(),IndexedSeq())
+    RelationalDataset(id,date,IndexedSeq(),mutable.ArrayBuffer())
   }
 
 }

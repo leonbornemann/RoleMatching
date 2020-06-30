@@ -1,11 +1,8 @@
-package de.hpi.dataset_versioning.db_synthesis.decomposition;
+package de.hpi.dataset_versioning.db_synthesis.top_down.decomposition;
 
-import de.hpi.dataset_versioning.data.DatasetInstance;
-import de.hpi.dataset_versioning.data.simplified.RelationalDataset;
 import de.hpi.dataset_versioning.io.IOService;
 
 import java.io.File;
-import java.time.LocalDate;
 
 public class TestMain {
 

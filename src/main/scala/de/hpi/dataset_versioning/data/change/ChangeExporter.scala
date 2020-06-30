@@ -27,7 +27,7 @@ class ChangeExporter extends StrictLogging{
       var curDs = IOService.loadSimplifiedRelationalDataset(DatasetInstance(id, firstVersion))
       val changeFile = IOService.getChangeFile(id)
       if (!ignoreInitialInsert) {
-        changeCube.addAll(appendChangesToFile(RelationalDataset.createEmpty(id, LocalDate.MIN), curDs))
+        changeCube.addAll(getChanges(RelationalDataset.createEmpty(id, LocalDate.MIN), curDs))
       }
       for (i <- 1 until allVersions.size - 1) {
         val curVersion = allVersions(i)
@@ -35,7 +35,7 @@ class ChangeExporter extends StrictLogging{
           nextDs = IOService.loadSimplifiedRelationalDataset(DatasetInstance(id, curVersion))
         else
           nextDs = RelationalDataset.createEmpty(id, curVersion) //we have a delete
-        val curChanges = appendChangesToFile(curDs, nextDs)
+        val curChanges = getChanges(curDs, nextDs)
         changeCube.addAll(curChanges)
         curDs = nextDs
       }
@@ -43,8 +43,8 @@ class ChangeExporter extends StrictLogging{
     }
   }
 
-  private def appendChangesToFile(prevDs: RelationalDataset, nextDs: RelationalDataset) = {
-    val changes = DiffAsChangeCube.fromDatasetVersions(prevDs, nextDs,false) //TODO: change this back
+  private def getChanges(prevDs: RelationalDataset, nextDs: RelationalDataset) = {
+    val changes = DiffAsChangeCube.fromDatasetVersions(prevDs, nextDs) //TODO: change this back
       .changeCube
     changes
   }

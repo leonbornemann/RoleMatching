@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.db_synthesis.decomposition
+package de.hpi.dataset_versioning.db_synthesis.top_down.decomposition
 
 import java.time.LocalDate
 import java.time.format.DateTimeParseException

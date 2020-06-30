@@ -25,10 +25,15 @@ import scala.reflect.io.Directory
 import scala.language.postfixOps
 
 object IOService extends StrictLogging{
+  def getSchemaHistoryDir() = new File(CUSTOM_METADATA_DIR + s"/schemaHistories/")
+  def getSchemaHistoryFile(id:String) = new File(s"${getSchemaHistoryDir.getAbsolutePath}/$id.json")
+
+  def getCSVFile(id: String) = new File(socrataDir + s"/csv/$id.csv?")
+
 
   def getChangeFile(id: String) = CHANGE_DIR + s"/$id.json"
 
-  def getSimplifiedCSVExportFile(instance: DatasetInstance) = DBSynthesis_IOService.getDecompositionCSVExportFile(instance)
+  def getSimplifiedCSVExportFile(instance: DatasetInstance,subdomain:String) = DBSynthesis_IOService.getDecompositionCSVExportFile(instance,subdomain)
 
 
   def getStandardTimeRange = {
@@ -95,6 +100,7 @@ object IOService extends StrictLogging{
 
   def DATA_DIR = socrataDir + "/data/"
   def METADATA_DIR = socrataDir + "/metadata/"
+  def CUSTOM_METADATA_DIR = socrataDir + "/customMetadata/"
   def SNAPSHOT_METADATA_DIR = socrataDir + "/snapshotMetadata/"
   def DIFF_DIR = socrataDir + "/diff/"
   def WORKING_DIR:String = socrataDir + "/workingDir/"

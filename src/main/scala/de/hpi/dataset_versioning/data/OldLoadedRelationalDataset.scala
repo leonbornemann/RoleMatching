@@ -62,7 +62,6 @@ class OldLoadedRelationalDataset(val id:String, val version:LocalDate, val rows:
     }
   }
 
-
   def getSchemaSpecificHashValue: Int = {
     columnMetadata.toIndexedSeq.sortBy(_._1).hashCode()
   }

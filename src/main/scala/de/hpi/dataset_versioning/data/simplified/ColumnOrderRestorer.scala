@@ -1,6 +1,6 @@
 package de.hpi.dataset_versioning.data.simplified
 
-import java.io.File
+import java.io.{File, FileReader}
 import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
@@ -8,6 +8,8 @@ import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.simplified.ColumnOrderRestoreByVersionMain.version
 import de.hpi.dataset_versioning.io.IOService
+import org.apache.commons.csv.{CSVFormat, CSVParser}
+import collection.JavaConverters._
 
 import scala.collection.mutable
 
@@ -56,68 +58,105 @@ class ColumnOrderRestorer extends StrictLogging{
     }}
   }
 
-  def restoreInDataset(id:String, version:LocalDate) = {
+  def getBaseNameToPosition(id: String): collection.Map[String, Int] = {
+    val csvFile = IOService.getCSVFile(id)
+    if(!csvFile.exists())
+      Map()
+    else {
+      val reader = new FileReader(csvFile)
+      val parser = CSVParser.parse(reader, CSVFormat.DEFAULT.withQuote('\"'))
+      val headers = parser.iterator().next()
+      val headerToPosition = (0 until headers.size()).map( i=> (headers.get(i),i))
+          .toMap
+        //.map{case (k,v) => (k,v.intValue())}
+      reader.close()
+      headerToPosition
+    }
+  }
+
+  def correctInDataset(ds:RelationalDataset) = {
+    val dsOld = IOService.tryLoadDataset(DatasetInstance(ds.id,ds.version),true)
+    assert(dsOld.colNames.size == ds.attributes.size)
+    ds.attributes.zip(dsOld.colNames)
+      .foreach{case (a,newName) => {
+        a.name = newName
+        a.humanReadableName = None
+        a.id = -1
+      }}
+    //just overwrite the names I guess?
+    //we need to redo only the column matching!
+  }
+
+  def restoreInDataset(id:String, version:LocalDate,runCorrection:Boolean = false) = {
     IOService.cacheMetadata(version)
+    val mdForDs = IOService.cachedMetadata(version).get(id)
     var ds: RelationalDataset = null
     try {
       ds = IOService.loadSimplifiedRelationalDataset(DatasetInstance(id, version))
     } catch {
       case e: Throwable => {
-        println(id)
-        throw e
+        logger.debug(s"Error while loading $id, (version $version)")
       }
     }
-    val mdForDS = IOService.cachedMetadata(version)(id)
-    val baseNameToPosition = mdForDS.resource.columnNameToPosition
-    val usedPositions = mutable.HashSet[Int]()
-    val matchedAttributes = mutable.HashSet[Attribute]()
-    ds.attributes.foreach(a => {
-      if (baseNameToPosition.contains(a.name)) {
-        val pos = baseNameToPosition(a.name)
-        val wasSet = setPosition(a, pos, usedPositions)
-        if (wasSet) matchedAttributes.add(a)
-        attrExactPositionFound += 1
+    if(ds!=null) {
+      if (runCorrection) {
+        correctInDataset(ds)
       }
-    })
-    ds.attributes.diff(matchedAttributes.toSeq).foreach(a => {
-      val key = a.name.substring(1)
-      if (a.name.startsWith("_") && baseNameToPosition.contains(key)) {
-        val pos = baseNameToPosition(key)
-        val wasSet = setPosition(a, pos, usedPositions)
-        attrWithoutLeadingUnderscoreFound += 1
-        if (wasSet) matchedAttributes.add(a)
-      }
-    })
-    ds.attributes.diff(matchedAttributes.toSeq).foreach(a => {
-      val tokens = a.name.split("_")
-      if (tokens.size > 0) {
-        val key = tokens(tokens.size - 1)
+      val baseNameToPosition: collection.Map[String, Int] = getBaseNameToPosition(id)
+      val usedPositions = mutable.HashSet[Int]()
+      val matchedAttributes = mutable.HashSet[Attribute]()
+      ds.attributes.foreach(a => {
+        if (baseNameToPosition.contains(a.name)) {
+          val pos = baseNameToPosition(a.name)
+          val wasSet = setPosition(a, pos, usedPositions)
+          if (wasSet) matchedAttributes.add(a)
+          attrExactPositionFound += 1
+        }
+      })
+      ds.attributes.diff(matchedAttributes.toSeq).foreach(a => {
+        val key = a.name.substring(1)
         if (a.name.startsWith("_") && baseNameToPosition.contains(key)) {
           val pos = baseNameToPosition(key)
           val wasSet = setPosition(a, pos, usedPositions)
-          attrTailFound += 1
+          attrWithoutLeadingUnderscoreFound += 1
           if (wasSet) matchedAttributes.add(a)
         }
+      })
+      ds.attributes.diff(matchedAttributes.toSeq).foreach(a => {
+        val tokens = a.name.split("_")
+        if (tokens.size > 0) {
+          val key = tokens(tokens.size - 1)
+          if (a.name.startsWith("_") && baseNameToPosition.contains(key)) {
+            val pos = baseNameToPosition(key)
+            val wasSet = setPosition(a, pos, usedPositions)
+            attrTailFound += 1
+            if (wasSet) matchedAttributes.add(a)
+          }
+        }
+      })
+      var curDefaultPosition = ds.attributes.size
+      ds.attributes.diff(matchedAttributes.toSeq).foreach(a => {
+        a.position = Some(curDefaultPosition)
+        curDefaultPosition += 1
+        attrPositionNotFound += 1
+      })
+      //now the attribute positions are correctly ordered, but not necessarily with correct values
+      ds.attributes.sortBy(_.position.get)
+        .zipWithIndex
+        .foreach { case (a, pos) => a.position = Some(pos) }
+      //store the attributes in new order --> we need to do this for all values as well!
+      ds.sortColumnsByAttributePosition()
+      //also store the humanreadable name if we matched it:
+      if (mdForDs.isDefined) {
+        matchedAttributes.foreach(a => {
+          val mdColnameToID = mdForDs.get.resource.columns_field_name.zipWithIndex
+            .toMap
+          if (mdColnameToID.contains(a.name))
+            a.humanReadableName = Some(mdForDs.get.resource.columns_name(mdColnameToID(a.name)))
+        })
       }
-    })
-    //also store the humanreadable name if we matched it:
-    matchedAttributes.foreach(a => a.humanReadableName = Some(mdForDS.resource.columns_name(a.position.get)))
-    var curDefaultPosition = ds.attributes.size
-    ds.attributes.diff(matchedAttributes.toSeq).foreach(a => {
-      a.position = Some(curDefaultPosition)
-      curDefaultPosition += 1
-      attrPositionNotFound += 1
-    })
-    //now the attribute positions are correctly ordered, but not necessarily with correct values
-    ds.attributes.sortBy(_.position.get)
-      .zipWithIndex
-      .foreach { case (a, pos) => a.position = Some(pos) }
-    if (ds.attributes.map(_.position.get).sorted.toIndexedSeq != (0 until ds.attributes.size))
-      println()
-    assert(ds.attributes.map(_.position.get).sorted.toIndexedSeq == (0 until ds.attributes.size))
-    //store the attributes in new order
-    ds.attributes = ds.attributes.sortBy(_.position.get)
-    ds.toJsonFile(new File(IOService.getSimplifiedDatasetFile(DatasetInstance(id, version))))
+      ds.toJsonFile(new File(IOService.getSimplifiedDatasetFile(DatasetInstance(id, version)) + "_repaired.json?"))
+    }
   }
 
 }

@@ -12,7 +12,7 @@ import scala.io.Source
 
 trait JsonReadable[T<:AnyRef] {
 
-  implicit val formats = (DefaultFormats
+  implicit val formats = (DefaultFormats.preservingEmptyValues
     + new EnumNameSerializer(Provenance)
     + new EnumNameSerializer(ColumnDatatype)
     + LocalDateSerializer

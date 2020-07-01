@@ -24,6 +24,8 @@ object FieldLineage {
   }
 
   def fromCangeList(field: Field, changeList: ArrayBuffer[Change]) = {
+    if(changeList.exists(_.newValue=="PRIUS") && field.tableID=="tfm3-3j95" && field.entityID==1010)
+      println()
     val lineage = mutable.TreeMap[LocalDate,Any]()
     changeList.foreach(c => lineage.addOne((c.t,c.newValue)))
     new FieldLineage(field,lineage)

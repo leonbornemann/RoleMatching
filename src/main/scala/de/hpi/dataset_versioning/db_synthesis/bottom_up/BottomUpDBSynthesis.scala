@@ -1,12 +1,17 @@
 package de.hpi.dataset_versioning.db_synthesis.bottom_up
 
 import java.io.PrintWriter
+import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.data.change.{Change, ChangeCube}
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.SchemaHistory
 import de.hpi.dataset_versioning.db_synthesis.top_down.decomposition.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.top_down.main.ChangeExplorationMain.{logger, subdomain}
+
+import scala.collection.mutable
+import scala.io.Source
 
 class BottomUpDBSynthesis(subdomain: String) extends StrictLogging{
 
@@ -25,6 +30,7 @@ class BottomUpDBSynthesis(subdomain: String) extends StrictLogging{
     val subdomainIds = subDomainInfo(subdomain)
       .map(_.id)
       .toIndexedSeq
+      .take(2)
     var viewFieldCount = 0
     val fieldLineages = subdomainIds.flatMap(id => {
       logger.debug(s"Loading changes for $id")
@@ -39,19 +45,25 @@ class BottomUpDBSynthesis(subdomain: String) extends StrictLogging{
     val finalGroups = potentialGroups.flatMap(group => FieldLineage.partitionToEquivalenceClasses(group))
     //TODO: finalGroups still contains many instances of groups where there is the same column of the same table multiple times
     logger.debug(s"Found ${finalGroups.map(g => getMinimalEdgeCount(g)).sum} database fields (best possible synthesized Database). Number of view fields: $viewFieldCount")
-    val a = finalGroups.filter(g => g.map(_.field.tableID).toSet.size>1 && g.head.lineage.size>1)
+    //val a = finalGroups.filter(g => g.map(_.field.tableID).toSet.size>1 && g.head.lineage.size>1)
     val schemaInfo = SchemaHistory.loadAll()
-    a.take(100).foreach(l => { //TODO: fox the 100
+    val pr = new PrintWriter("fieldLineageEquality.json")
+    finalGroups.take(2).foreach(l => { //TODO: fox the 100
       val datasetColumns = l.map(fl => (fl.field.tableID,fl.field.attributeID)).toSet
       val cols = datasetColumns.map{case (id,cID) => {
         val schema = schemaInfo(id)
         val column = schema.superSchema.filter(_.id==cID).head
-        (id,column.name,column.humanReadableName.getOrElse(null))
+        DatasetColumn(id,column.name,column.humanReadableName.getOrElse(null))
       }}
-      println(cols)
-      println(l.head.lineage.values)
+      val info = FieldLineageOccurrenceInfo(l.head.lineage.toIndexedSeq,cols,l.head.field)
+      info.appendToWriter(pr,false,true,false)
     })
+    pr.close()
     println() //TODO: explore a little more here - map these to the actual column names of the datasets (maybe create this as actual computed metadata)
+    val lines = Source.fromFile("fieldLineageEquality.json").getLines().toSeq
+    println(FieldLineageOccurrenceInfo.fromJsonString(lines(0)))
+    val lol = FieldLineageOccurrenceInfo.fromJsonObjectPerLineFile("fieldLineageEquality.json")
+    println(lol)
     //    finalGroups
 //      .map(_.size)
 //

@@ -30,7 +30,6 @@ class BottomUpDBSynthesis(subdomain: String) extends StrictLogging{
     val subdomainIds = subDomainInfo(subdomain)
       .map(_.id)
       .toIndexedSeq
-      .take(2)
     var viewFieldCount = 0
     val fieldLineages = subdomainIds.flatMap(id => {
       logger.debug(s"Loading changes for $id")
@@ -48,7 +47,7 @@ class BottomUpDBSynthesis(subdomain: String) extends StrictLogging{
     //val a = finalGroups.filter(g => g.map(_.field.tableID).toSet.size>1 && g.head.lineage.size>1)
     val schemaInfo = SchemaHistory.loadAll()
     val pr = new PrintWriter("fieldLineageEquality.json")
-    finalGroups.take(2).foreach(l => { //TODO: fox the 100
+    finalGroups.foreach(l => {
       val datasetColumns = l.map(fl => (fl.field.tableID,fl.field.attributeID)).toSet
       val cols = datasetColumns.map{case (id,cID) => {
         val schema = schemaInfo(id)
@@ -59,15 +58,6 @@ class BottomUpDBSynthesis(subdomain: String) extends StrictLogging{
       info.appendToWriter(pr,false,true,false)
     })
     pr.close()
-    println() //TODO: explore a little more here - map these to the actual column names of the datasets (maybe create this as actual computed metadata)
-    val lines = Source.fromFile("fieldLineageEquality.json").getLines().toSeq
-    println(FieldLineageOccurrenceInfo.fromJsonString(lines(0)))
-    val lol = FieldLineageOccurrenceInfo.fromJsonObjectPerLineFile("fieldLineageEquality.json")
-    println(lol)
-    //    finalGroups
-//      .map(_.size)
-//
-
   }
 
 }

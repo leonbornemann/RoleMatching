@@ -2,6 +2,7 @@ package de.hpi.dataset_versioning.data
 
 import java.io.{BufferedReader, File, FileInputStream}
 
+import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.metadata.Provenance
 import de.hpi.dataset_versioning.data.metadata.custom.{ColumnDatatype, DatasetInstanceKeySerializer}
 import org.json4s.jackson.JsonMethods.parse

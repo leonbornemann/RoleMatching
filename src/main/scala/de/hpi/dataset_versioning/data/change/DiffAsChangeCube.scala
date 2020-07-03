@@ -40,13 +40,13 @@ class DiffAsChangeCube(val v1:RelationalDataset, val v2:RelationalDataset,
     val prevFieldsByCOlID = getFieldsByColID(prev, attributesPrev)
     val curFieldsByCOlID = getFieldsByColID(current,attributesCurrent)
     curFieldsByCOlID.keySet.union(prevFieldsByCOlID.keySet).foreach(colID => {
-      val oldValue = prevFieldsByCOlID.getOrElse(colID,None)
-      val newValue = curFieldsByCOlID.getOrElse(colID,None)
-      assert( oldValue != None || newValue !=None)
-      if(newValue==None)
-        changeCube.deletes += Change(changeTimestamp,prev.id,colID,oldValue,None)
-      else if(oldValue == None)
-        changeCube.inserts += Change(changeTimestamp,current.id,colID,None,newValue)
+      val oldValue = prevFieldsByCOlID.getOrElse(colID,ReservedChangeValues.NOT_EXISTANT)
+      val newValue = curFieldsByCOlID.getOrElse(colID,ReservedChangeValues.NOT_EXISTANT)
+      assert( oldValue != ReservedChangeValues.NOT_EXISTANT || newValue !=ReservedChangeValues.NOT_EXISTANT)
+      if(newValue==ReservedChangeValues.NOT_EXISTANT)
+        changeCube.deletes += Change(changeTimestamp,prev.id,colID,oldValue,ReservedChangeValues.NOT_EXISTANT)
+      else if(oldValue == ReservedChangeValues.NOT_EXISTANT)
+        changeCube.inserts += Change(changeTimestamp,current.id,colID,ReservedChangeValues.NOT_EXISTANT,newValue)
       else if(oldValue != newValue)
         changeCube.updates += Change(changeTimestamp,prev.id,colID,oldValue,newValue)
     })
@@ -61,14 +61,14 @@ class DiffAsChangeCube(val v1:RelationalDataset, val v2:RelationalDataset,
   def addDelete(version: LocalDate, row: RelationalDatasetRow, attributes: collection.IndexedSeq[Attribute]) = {
     assert(row.fields.size == attributes.size)
     for( i <- (0 until row.fields.size)){
-      changeCube.deletes += Change(version,row.id,attributes(i).id,row.fields(i),None)
+      changeCube.deletes += Change(version,row.id,attributes(i).id,row.fields(i),ReservedChangeValues.NOT_EXISTANT)
     }
   }
 
   def addInserts(version:LocalDate, row: RelationalDatasetRow, attributes: collection.IndexedSeq[Attribute]) = {
     assert(row.fields.size == attributes.size)
     for( i <- (0 until row.fields.size)){
-      changeCube.inserts += Change(version,row.id,attributes(i).id,None,row.fields(i))
+      changeCube.inserts += Change(version,row.id,attributes(i).id,ReservedChangeValues.NOT_EXISTANT,row.fields(i))
     }
   }
 

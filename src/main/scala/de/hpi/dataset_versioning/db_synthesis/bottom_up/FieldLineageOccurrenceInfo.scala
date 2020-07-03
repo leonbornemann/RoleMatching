@@ -6,6 +6,6 @@ import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 
 import scala.collection.mutable
 
-case class FieldLineageOccurrenceInfo(lineage: collection.IndexedSeq[(LocalDate, Any)], cols: Set[DatasetColumn],f:Field) extends JsonWritable[FieldLineageOccurrenceInfo]
+case class FieldLineageOccurrenceInfo(lineage: collection.IndexedSeq[(LocalDate, Any)], cols: Set[DatasetColumn], field:Field) extends JsonWritable[FieldLineageOccurrenceInfo]
 
 object FieldLineageOccurrenceInfo extends JsonReadable[FieldLineageOccurrenceInfo]

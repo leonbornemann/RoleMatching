@@ -3,8 +3,8 @@ import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.DiffAsChangeCube
 import de.hpi.dataset_versioning.data.simplified.{Attribute, RelationalDataset}
-import de.hpi.dataset_versioning.db_synthesis.top_down.decomposition.normalization.DecomposedTable
-import de.hpi.dataset_versioning.db_synthesis.top_down.merge.measures.InferredChangeCountReduction
+import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.normalization.DecomposedTable
+import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.merge.measures.InferredChangeCountReduction
 import de.hpi.dataset_versioning.io.IOService
 
 object InferredChangeCountReductionTest extends App {

@@ -15,6 +15,10 @@ case class ChangeCube(datasetID:String,
                       var deletes:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change](),
                       var updates:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change]()) extends JsonWritable[ChangeCube] with StrictLogging{
 
+  def toTemporalTable() = {
+    TemporalTable.from(this)
+  }
+
   def changeCount(countInitialInserts: Boolean) = {
     val totalNumberChanges = inserts.size + deletes.size + updates.size
     if(countInitialInserts) {

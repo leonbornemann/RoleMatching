@@ -29,7 +29,7 @@ class ChangeExporter extends StrictLogging{
       if (!ignoreInitialInsert) {
         changeCube.addAll(getChanges(RelationalDataset.createEmpty(id, LocalDate.MIN), curDs))
       }
-      for (i <- 1 until allVersions.size - 1) {
+      for (i <- 1 until allVersions.size) {
         val curVersion = allVersions(i)
         if (versionExists(id, curVersion))
           nextDs = IOService.loadSimplifiedRelationalDataset(DatasetInstance(id, curVersion))

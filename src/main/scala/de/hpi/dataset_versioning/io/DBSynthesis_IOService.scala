@@ -6,11 +6,16 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.DatasetInstance
 
 object DBSynthesis_IOService {
+  def getDiscoveredFDFiles(id: String) = new File(FDDIR)
+    .listFiles()
+    .filter(_.getName.contains(id))
+
 
   def DB_SYNTHESIS_DIR = socrataDir + "/db_synthesis"
 
   def DECOMPOSTION_DIR = DB_SYNTHESIS_DIR + "/decomposition"
 
+  def FDDIR = DECOMPOSTION_DIR + "/fds/"
   def DECOMPOSITION_EXPORT_CSV_DIR = DECOMPOSTION_DIR + "/csv/"
   def DECOMPOSITION_RESULT_DIR = DECOMPOSTION_DIR + "/results/"
 

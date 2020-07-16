@@ -1,14 +1,14 @@
 package de.hpi.dataset_versioning.db_synthesis.bottom_up
 
-import java.io.PrintWriter
+import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.data.change.{Change, ChangeCube}
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.SchemaHistory
-import de.hpi.dataset_versioning.db_synthesis.top_down.decomposition.DatasetInfo
-import de.hpi.dataset_versioning.db_synthesis.top_down.main.ChangeExplorationMain.{logger, subdomain}
+import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.DatasetInfo
+import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.main.ChangeExplorationMain.{logger, subdomain}
 
 import scala.collection.mutable
 import scala.io.Source
@@ -54,7 +54,7 @@ class BottomUpDBSynthesis(subdomain: String) extends StrictLogging{
         val column = schema.superSchema.filter(_.id==cID).head
         DatasetColumn(id,column.name,column.humanReadableName.getOrElse(null))
       }}
-      val info = FieldLineageOccurrenceInfo(l.head.lineage.toIndexedSeq,cols,l.head.field)
+      val info = FieldLineageOccurrenceInfo(l.head.lineage.lineage.toIndexedSeq,cols,l.head.field)
       info.appendToWriter(pr,false,true,false)
     })
     pr.close()

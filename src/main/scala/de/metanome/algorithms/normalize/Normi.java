@@ -1,6 +1,7 @@
 package de.metanome.algorithms.normalize;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -15,6 +16,8 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import de.hpi.dataset_versioning.data.change.TemporalTable;
+import de.hpi.dataset_versioning.io.IOService;
 import de.metanome.algorithm_integration.AlgorithmConfigurationException;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
 import de.metanome.algorithm_integration.ColumnIdentifier;
@@ -141,8 +144,9 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 	//	FdExtender fdExtender = new NaiveFdExtender(this.persister, this.tempExtendedResultsPath);
 	//	FdExtender fdExtender = new PushingFdExtender(this.persister, this.tempExtendedResultsPath);
 		FdExtender fdExtender = new PullingFdExtender(this.persister, this.tempExtendedResultsPath, this.columnIdentifiers.size(), true);
+		fds = filterFds(fds);
+		//each FD --> Set[Column] -> Set[Column]
 		fds = fdExtender.calculateClosure(fds, true);
-		
 		// Statistics
 		int numExtendedFds = fds.keySet().size();
 		float avgExtendedFdsLhsLength = fds.keySet().stream().mapToLong(BitSet::cardinality).sum() / (float)numExtendedFds;
@@ -180,6 +184,27 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 			
 			this.resultReceiver.receiveResult(result);
 		}
+	}
+
+	private Map<BitSet, BitSet> filterFds(Map<BitSet, BitSet> fds) {
+		TemporalTable temporalTable = TemporalTable.load(getID(this.tableName));
+		Set<BitSet> toKeep = temporalTable.validateDiscoveredFDs(fds,this.columnIdentifiers,getTimestamp(this.tableName));
+		Map<BitSet, BitSet> validFds = fds.keySet().stream()
+				.filter(fd -> toKeep.contains(fd))
+				.collect(Collectors.toMap(fd -> fd, fd -> fds.get(fd)));
+		return validFds;
+	}
+
+	private LocalDate getTimestamp(String tableName) {
+		return LocalDate.parse(tableName.split("_")[0], IOService.dateTimeFormatter());
+	}
+
+	private String getID(String tableName) {
+		return tableName.split("_")[0].split("\\.")[0];
+	}
+
+	private boolean filterFD(BitSet fd) {
+		return false;
 	}
 
 	private String BitSetAttributesToString(BitSet bitSetAttributes) {

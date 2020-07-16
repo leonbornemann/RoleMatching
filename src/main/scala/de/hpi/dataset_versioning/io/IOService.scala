@@ -25,6 +25,10 @@ import scala.reflect.io.Directory
 import scala.language.postfixOps
 
 object IOService extends StrictLogging{
+  def getSimplifiedDatasetIDSInVersion(curVersion: LocalDate) = getSimplifiedDataDir(curVersion).listFiles()
+    .filter(_.getName.endsWith(".json?"))
+    .map(filenameToID(_))
+
   def getSchemaHistoryDir() = new File(CUSTOM_METADATA_DIR + s"/schemaHistories/")
   def getSchemaHistoryFile(id:String) = new File(s"${getSchemaHistoryDir.getAbsolutePath}/$id.json")
 
@@ -394,7 +398,7 @@ object IOService extends StrictLogging{
     .sortBy(_.toEpochDay)
 
   def getSortedDatalakeVersions() = {
-    val dates = (getSortedZippedDatalakeSnapshots ++ getSortedZippedDiffs)
+    val dates = (getSortedZippedDatalakeSnapshots ++ getSortedZippedDiffs ++ getSortedMinimalUmcompressedVersions ++ getSortedSimplifiedVersions)
     dates.toSet
       .toIndexedSeq
       .sortBy((t:LocalDate) => t.toEpochDay)
@@ -402,6 +406,13 @@ object IOService extends StrictLogging{
 
   def getSortedMinimalUmcompressedVersions = {
     new File(MINIMAL_UNCOMPRESSED_DATA_DIR)
+      .listFiles()
+      .map(f => LocalDate.parse(f.getName.split("_")(0), dateTimeFormatter))
+      .sortBy(_.toEpochDay)
+  }
+
+  def getSortedSimplifiedVersions = {
+    new File(SIMPLIFIED_UNCOMPRESSED_DATA_DIR)
       .listFiles()
       .map(f => LocalDate.parse(f.getName.split("_")(0), dateTimeFormatter))
       .sortBy(_.toEpochDay)

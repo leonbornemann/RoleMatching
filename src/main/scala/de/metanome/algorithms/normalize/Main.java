@@ -57,7 +57,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		executeNormi(conf);
+		//executeNormi(conf);
 /**/		
 	//	executeSchema();
     }

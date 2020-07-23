@@ -44,7 +44,7 @@ public class Main {
 		//if (args.length != 0)
 		//conf.setDataset(args[0]);
 		System.out.println();
-		try (Stream<Path> walk = Files.walk(Paths.get(conf.inputFolderPath))) {
+		/*try (Stream<Path> walk = Files.walk(Paths.get(conf.inputFolderPath))) {
 
 			List<String> result = walk.filter(Files::isRegularFile)
 					.sorted(Comparator.comparing(f -> Long.valueOf(f.toFile().length())))
@@ -52,8 +52,19 @@ public class Main {
 			result.forEach(dataset-> {
 				conf.inputDatasetName=dataset;
 				executeNormi(conf);
-			});
+			});*/
+		try (Stream<Path> walk = Files.walk(Paths.get(conf.inputFolderPath))) {
 
+			List<Path> result = walk
+					.filter(Files::isRegularFile)
+					.sorted(Comparator.comparing(f -> Long.valueOf(f.toFile().length())))
+					.collect(Collectors.toList());
+
+			result.forEach(dataset -> {
+				conf.inputDatasetName = dataset.getFileName().toString().replace(".csv", "");
+				conf.inputFolderPath=dataset.getParent()+File.separator;
+				executeNormi(conf);
+			});
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -79,7 +90,8 @@ public class Main {
 			
 			// A human in the loop works only outside of Metanome. Hence, this is not a Metanome parameter
 			normi.setIsHumanInTheLoop(conf.isHumanInTheLoop);
-			
+			String[] parts = conf.inputFolderPath.split(File.separator);
+			normi.setsubFolder(parts[parts.length-1]);
 			normi.execute();
 			
 			if (conf.writeResults) {

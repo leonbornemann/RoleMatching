@@ -51,6 +51,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 	};
 
 	private String tableName;
+	private String subFolder;
 	private List<ColumnIdentifier> columnIdentifiers;
 
 	private String tempResultsPath;
@@ -70,6 +71,10 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 
 	public void setIsHumanInTheLoop(boolean isHumanInTheLoop) {
 		this.isHumanInTheLoop = isHumanInTheLoop;
+	}
+
+	public void setsubFolder(String id) {
+		this.subFolder = id;
 	}
 	
 	@Override
@@ -115,7 +120,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		
 		this.initialize();
 
-		System.out.println(">>> " + this.tableName + " <<<");
+		System.out.println(">>> " + this.subFolder+ File.separator+this.tableName + " <<<");
 		
 		// Statistics
 //		System.out.println("Exact duplicates: " + this.findExactDuplicates());
@@ -123,7 +128,8 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		System.out.println();
 		System.out.println("///// FD-Discovery ///////");
 		System.out.println();
-		
+
+
 		FdDiscoverer fdDiscoverer = new HyFDFdDiscoverer(this.converter, this.persister, this.tempResultsPath);
 		Map<BitSet, BitSet> fds = fdDiscoverer.calculateFds(this.inputGenerator, this.nullEqualsNull, true);
 		
@@ -263,9 +269,9 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 			number2name.put(Integer.valueOf(columnIdentifierNumber), identifier);
 			columnIdentifierNumber++;
 		}
-		
-		this.tempResultsPath = "temp" + File.separator + this.tableName + "-hyfd.txt";
-		this.tempExtendedResultsPath = "temp" + File.separator + this.tableName + "-hyfd_extended.txt";
+
+		this.tempResultsPath = "temp" +File.separator +this.subFolder+File.separator+ tableName + "-hyfd.txt";
+		this.tempExtendedResultsPath = "temp" + File.separator +this.subFolder+File.separator+ this.tableName + "-hyfd_extended.txt";
 		
 		this.converter = new NormiConversion(this.columnIdentifiers, name2number, number2name);
 		this.persister = new NormiPersistence(this.columnIdentifiers);
@@ -805,4 +811,6 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		return duplicates;
 	}
 
+	public static class Main_FD {
+	}
 }

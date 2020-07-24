@@ -2,6 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
+import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.io.IOService
 
 object CsvExportMain extends App with StrictLogging{
@@ -10,15 +11,20 @@ object CsvExportMain extends App with StrictLogging{
   val subdomain = args(1) //org.cityofchicago
   val byDomain = DatasetInfo.readDatasetInfoBySubDomain
   val toExport = byDomain(subdomain)
-  logger.debug(s"Found ${toExport.size} datasets")
-  toExport.filter(_.isNotDeletedAtFinalTimestamp)
-    .foreach(dsInfo => {
+  val versionHistory = DatasetVersionHistory.load()
+      .map(vh => (vh.id,vh))
+      .toMap
+  toExport.foreach(dsInfo => {
+    val dsID = dsInfo.id
+    val vh = versionHistory(dsID)
+    vh.versionsWithChanges.foreach(v => {
       try {
-        val ds = IOService.loadSimplifiedRelationalDataset(DatasetInstance(dsInfo.id, dsInfo.getLatestVersion))
-        ds.toCSV(IOService.getSimplifiedCSVExportFile(DatasetInstance(dsInfo.id,dsInfo.getLatestVersion),subdomain))
-        logger.debug(s"Finsihed Exporting ${ds.id} (version ${ds.version})")
-      } catch {
-        case _:Throwable => logger.debug(s"exception wile trying to load ${dsInfo.id} (version ${dsInfo.getLatestVersion})")
+        val ds = IOService.loadSimplifiedRelationalDataset(DatasetInstance(dsID, v))
+        ds.toCSV(IOService.getSimplifiedCSVExportFile(DatasetInstance(dsInfo.id, v), subdomain)) //TODO: column changes (?) - name ist still enough as we know the timestamp
+      }  catch {
+        case _:Throwable => logger.debug(s"exception wile trying to load ${dsInfo.id} (version $v)")
       }
     })
+    logger.debug(s"Finsihed Exporting all versions of ${dsID}")
+  })
 }

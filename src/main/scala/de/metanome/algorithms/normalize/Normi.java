@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import de.hpi.dataset_versioning.data.change.TemporalTable;
+import de.hpi.dataset_versioning.db_synthesis.top_down.FDValidator;
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService;
 import de.hpi.dataset_versioning.io.IOService;
 import de.metanome.algorithm_integration.AlgorithmConfigurationException;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
@@ -144,7 +146,8 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 	//	FdExtender fdExtender = new NaiveFdExtender(this.persister, this.tempExtendedResultsPath);
 	//	FdExtender fdExtender = new PushingFdExtender(this.persister, this.tempExtendedResultsPath);
 		FdExtender fdExtender = new PullingFdExtender(this.persister, this.tempExtendedResultsPath, this.columnIdentifiers.size(), true);
-		fds = filterFds(fds);
+		//TODO: change this
+		//fds = filterFds(fds);
 		//each FD --> Set[Column] -> Set[Column]
 		fds = fdExtender.calculateClosure(fds, true);
 		// Statistics
@@ -186,14 +189,19 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		}
 	}
 
-	private Map<BitSet, BitSet> filterFds(Map<BitSet, BitSet> fds) {
-		TemporalTable temporalTable = TemporalTable.load(getID(this.tableName));
-		Set<BitSet> toKeep = temporalTable.validateDiscoveredFDs(fds,this.columnIdentifiers,getTimestamp(this.tableName));
-		Map<BitSet, BitSet> validFds = fds.keySet().stream()
-				.filter(fd -> toKeep.contains(fd))
-				.collect(Collectors.toMap(fd -> fd, fd -> fds.get(fd)));
-		return validFds;
+	private Map<BitSet, BitSet> intersectFDs(String id) {
+		FDValidator validator = new FDValidator(id);
+		return validator.getFDIntersection();
 	}
+
+//	private Map<BitSet, BitSet> filterFds(Map<BitSet, BitSet> fds) {
+//		TemporalTable temporalTable = TemporalTable.load(getID(this.tableName));
+//		Set<BitSet> toKeep = temporalTable.validateDiscoveredFDs(fds,this.columnIdentifiers,getTimestamp(this.tableName));
+//		Map<BitSet, BitSet> validFds = fds.keySet().stream()
+//				.filter(fd -> toKeep.contains(fd))
+//				.collect(Collectors.toMap(fd -> fd, fd -> fds.get(fd)));
+//		return validFds;
+//	}
 
 	private LocalDate getTimestamp(String tableName) {
 		return LocalDate.parse(tableName.split("_")[0], IOService.dateTimeFormatter());

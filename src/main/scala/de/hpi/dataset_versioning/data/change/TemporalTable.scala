@@ -60,45 +60,6 @@ class TemporalTable(val id:String,val attributes:collection.IndexedSeq[Attribute
     index
   }
 
-  def columnDeletions = {
-
-  }
-
-  def validateDiscoveredFDs(fds:java.util.Map[java.util.BitSet,java.util.BitSet],
-                            metanomeColIdentifiers:java.util.List[ColumnIdentifier],
-                            fdDiscoveryTimestamp:LocalDate):java.util.Set[java.util.BitSet] = {
-
-    val fdNameToColIndex = attributes.zipWithIndex.map{case (al,i) => {
-      val attr = al.valueAt(fdDiscoveryTimestamp)._2.attr.get
-      (attr.name,i)
-    }}.toMap
-    //val attrToChangeTimes =
-    val indexByChangeTimestamp = buildIndexByChangeTimestamp
-      .map{case (k,v) => (k,v.groupBy(_._2))}
-    val fdsFiltered = fds.asScala.filter(fd => {
-      val leftColIndices = (0 until metanomeColIdentifiers.size())
-        .filter(i => fd._1.get(i))
-        .map(i => fdNameToColIndex(metanomeColIdentifiers.get(i).getColumnIdentifier))
-      val rightColIndices = (0 until metanomeColIdentifiers.size())
-        .filter(i => fd._2.get(i))
-        .map(i => fdNameToColIndex(metanomeColIdentifiers.get(i).getColumnIdentifier))
-      if(leftColIndices.exists(i => TimeInterval.notIncludedIN(activeTimeIntervals,attributes(i).activeTimeIntervals))){
-        false
-      } else {
-        //TODO: how do we efficiently validate all fds?
-        val fdSurveillanceState = new FDValiditySurveillance()
-        //TODO: we need to consider every timestamp, where any participating column in the FD changes except for fdDiscoveryTimestamp
-
-//        indexByChangeTimestamp.foreach{case (ts,changingTuplesByColumn) =>{
-//                if(leftColIndices.exists(i => change))
-//        }}
-        true
-      }
-    }).map(_._1)
-    fdsFiltered.toSet.asJava
-  }
-
-
   def getFieldLineageReferences = {
     (0 until rows.size).flatMap(i => (0 until attributes.size).map(j => FieldLineageReference(this,i,j)))
   }

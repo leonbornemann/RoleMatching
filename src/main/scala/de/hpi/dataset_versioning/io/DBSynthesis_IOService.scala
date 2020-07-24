@@ -10,7 +10,6 @@ object DBSynthesis_IOService {
     .listFiles()
     .filter(_.getName.contains(id))
 
-
   def DB_SYNTHESIS_DIR = socrataDir + "/db_synthesis"
 
   def DECOMPOSTION_DIR = DB_SYNTHESIS_DIR + "/decomposition"
@@ -22,13 +21,12 @@ object DBSynthesis_IOService {
   def dateToStr(date: LocalDate) = IOService.dateTimeFormatter.format(date)
 
   def getDecompositionCSVExportFile(instance: DatasetInstance,subdomain:String) = {
-    new File(DECOMPOSITION_EXPORT_CSV_DIR + "/" + subdomain + "/").mkdir()
-    new File(DECOMPOSITION_EXPORT_CSV_DIR + "/" + subdomain + "/" + s"${dateToStr(instance.date)}_${instance.id}.csv")
+    val dir = new File(DECOMPOSITION_EXPORT_CSV_DIR + "/" + subdomain + s"/${instance.id}/")
+    dir.mkdirs()
+    new File(dir.getAbsolutePath + s"/${dateToStr(instance.date)}.csv")
   }
 
   def getDecompositionResultFiles() = new File(DECOMPOSITION_RESULT_DIR).listFiles().filter(_.getName.endsWith(".json"))
 
   def socrataDir = IOService.socrataDir
-
-
 }

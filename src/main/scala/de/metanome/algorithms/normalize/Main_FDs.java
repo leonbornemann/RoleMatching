@@ -93,13 +93,13 @@ public class Main_FDs {
         }
 
         String[] parts = conf.inputFolderPath.split(File.separator);
-        String tempResultsPath = "temp" +File.separator + parts[1]+File.separator+ tableName + "-hyfd.txt";
+        String tempResultsPath = "temp" +File.separator + parts[parts.length-1]+File.separator+ tableName + "-hyfd.txt";
 
         NormiConversion converter = new NormiConversion(columnIdentifiers, name2number, number2name);
         NormiPersistence persister = new NormiPersistence(columnIdentifiers);
 
 
-        System.out.println(">>> " + tableName + " <<<");
+        System.out.println(">>> " + conf.inputFolderPath+tableName + " <<<");
 
         System.out.println();
         System.out.println("///// FD-Discovery ///////");

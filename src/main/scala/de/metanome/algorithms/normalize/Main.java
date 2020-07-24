@@ -40,6 +40,7 @@ public class Main {
 		Config conf = new Config();
 		conf.inputFolderPath = args[0];
 		conf.measurementsFolderPath = args[1];
+		String tempResultDir = args[2];
 		//conf.isHumanInTheLoop = true;
 		//if (args.length != 0)
 		//conf.setDataset(args[0]);
@@ -63,7 +64,7 @@ public class Main {
 			result.forEach(dataset -> {
 				conf.inputDatasetName = dataset.getFileName().toString().replace(".csv", "");
 				conf.inputFolderPath=dataset.getParent()+File.separator;
-				executeNormi(conf);
+				executeNormi(conf,tempResultDir);
 			});
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -73,10 +74,10 @@ public class Main {
 	//	executeSchema();
     }
 	
-	private static void executeNormi(Config conf) {
+	private static void executeNormi(Config conf, String tempResultDir) {
 		try {
 			Normi normi = new Normi();
-			
+			normi.tempResultDir = tempResultDir;
 			RelationalInputGenerator relationalInputGenerator = null;
 			ResultCache resultReceiver = new ResultCache("MetanomeMock", null);
 			
@@ -121,21 +122,6 @@ public class Main {
 		}
 		catch (IOException e) {
 			e.printStackTrace();
-		}
-	}
-	
-	private static void executeSchema() {
-		Config conf = new Config();
-		conf.isHumanInTheLoop = false;
-		conf.inputFileSeparator = ',';
-		conf.inputFileHasHeader = true;
-		conf.inputFolderPath = conf.inputFolderPath + "schema" + File.separator;
-		
-		File folder = new File(conf.inputFolderPath);
-		for (String fullFileName : folder.list()) {
-			conf.inputDatasetName = fullFileName.split("\\.")[0];
-			
-			executeNormi(conf);
 		}
 	}
 	

@@ -52,6 +52,8 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		INPUT_GENERATOR
 	};
 
+	String tempResultDir;
+
 	private String tableName;
 	private String subFolder;
 	private List<ColumnIdentifier> columnIdentifiers;
@@ -113,7 +115,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 	private void handleUnknownConfiguration(String identifier, String value) throws AlgorithmConfigurationException {
 		throw new AlgorithmConfigurationException("Unknown configuration: " + identifier + " -> " + value);
 	}
-	
+
 	@Override
 	public void execute() throws AlgorithmExecutionException {
 		System.out.println();
@@ -278,8 +280,8 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 			columnIdentifierNumber++;
 		}
 
-		this.tempResultsPath = "temp" +File.separator +this.subFolder+File.separator+ tableName + "-hyfd.txt";
-		this.tempExtendedResultsPath = "temp" + File.separator +this.subFolder+File.separator+ this.tableName + "-hyfd_extended.txt";
+		this.tempResultsPath = tempResultDir +File.separator +this.subFolder+File.separator+ tableName + "-hyfd.txt";
+		this.tempExtendedResultsPath = tempResultDir + File.separator +this.subFolder+File.separator+ this.tableName + "-hyfd_extended.txt";
 		
 		this.converter = new NormiConversion(this.columnIdentifiers, name2number, number2name);
 		this.persister = new NormiPersistence(this.columnIdentifiers);

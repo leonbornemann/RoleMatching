@@ -28,7 +28,7 @@ class PrefixTree() {
       None
   }
 
-  def intersectFDs(toIntersectWith: Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]):collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]] = {
+  def intersectFDs(toIntersectWith: collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]):collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]] = {
     val intersection = mutable.HashMap[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]()
     //first pass: exact matches
     toIntersectWith.foreach(fd => {

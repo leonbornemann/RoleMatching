@@ -4,19 +4,26 @@ import java.io.File
 import java.time.LocalDate
 import java.util
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.TemporalTable
+import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
-import collection.JavaConverters._
+import de.metanome.algorithms.normalize.Main
 
+import collection.JavaConverters._
 import scala.collection.mutable
 
-class FDValidator(id:String) {
+class FDValidator(subdomain:String,id:String) extends StrictLogging{
 
-  val temporalTable = TemporalTable.load(id)
+  val temporalSchema = TemporalSchema.load(id)
 
   var prefixTree = new PrefixTree()
 
-  def readFDs(f: File) :Map[java.util.BitSet, java.util.BitSet] = ???
+  def readFDs(id:String,date:LocalDate) :collection.Map[java.util.BitSet, java.util.BitSet] = {
+    val fdFile = DBSynthesis_IOService.getFDFile(subdomain,id,date)
+    val csvFile = DBSynthesis_IOService.getExportedCSVFile(subdomain,id,date)
+    de.metanome.algorithms.normalize.Main.getFdsForFile(id,csvFile.toPath,fdFile.toPath).asScala
+  }
 
   def translateFDPart(left: util.BitSet, posToID: Map[Int, Int]) = {
     var i = left.nextSetBit(0)
@@ -29,11 +36,13 @@ class FDValidator(id:String) {
     colIDs.sorted
   }
 
-  def translateFDs(fds: Map[util.BitSet, util.BitSet], date: LocalDate):Map[collection.IndexedSeq[Int],collection.IndexedSeq[Int]] = {
-    val posToID = temporalTable.attributes.map(al => {
-      val attr = al.valueAt(date)._2.attr.get
-      (attr.position.get,attr.id)
-    }).toMap
+  def translateFDs(fds: collection.Map[util.BitSet, util.BitSet], date: LocalDate):collection.Map[collection.IndexedSeq[Int],collection.IndexedSeq[Int]] = {
+    val posToID = temporalSchema.attributes
+      .withFilter(al => al.valueAt(date)._2.attr.isDefined)
+      .map(al => {
+        val attr = al.valueAt(date)._2.attr.get
+        (attr.position.get,attr.id)
+      }).toMap
     fds.map{case (left,right) => {
       (translateFDPart(left,posToID),translateFDPart(right,posToID))
     }}
@@ -41,41 +50,52 @@ class FDValidator(id:String) {
 
   def reverseTranslateFDPart(left: collection.IndexedSeq[Int], idToPos: Map[Int, Int]) = {
     val bs = new util.BitSet()
-    left.foreach(id => bs.set(idToPos(id)))
-    bs
+    var isComplete = true
+    left.foreach(id => {
+      if(!idToPos.contains(id)) {
+        isComplete = false
+        logger.warn(s"Skipping column $id, because it is not present in the final version")
+      } else
+        bs.set(idToPos(id))
+    }) //TODO: there could be a non-match here what do we do then?
+    (bs,isComplete)
   }
 
   def reverseTranslateFDs(fds: Iterator[(collection.IndexedSeq[Int], collection.IndexedSeq[Int])], date: LocalDate): util.Map[util.BitSet, util.BitSet] = {
-    val idToPos = temporalTable.attributes.map(al => {
+    val idToPos = temporalSchema.attributes.map(al => {
       val attr = al.valueAt(date)._2.attr.get
       (attr.id,attr.position.get)
     }).toMap
-    fds.toSeq.map{case (left,right) => {
+    val translated = fds.toSeq.map{case (left,right) => {
       (reverseTranslateFDPart(left,idToPos),reverseTranslateFDPart(right,idToPos))
-    }}.toMap.asJava
+    }}
+    val filtered = translated
+      .filter(t => t._1._2 && t._2._1.nextSetBit(0) != -1) //filter out all fds that are not completely there on the LHS and have at least one column on the RHS
+      .map(t => (t._1._1,t._2._1))
+    if(filtered.size!=translated.size)
+      logger.warn(s"Filtered out ${translated.size - filtered.size} fds because at least one column on the LHS was not present or RHS was empty")
+    //TODO: it is not that simple - how do we deal with inserted/deleted columns when last table is normalized?
+    filtered.toMap.asJava
   }
 
   def getFDIntersection: java.util.Map[java.util.BitSet, java.util.BitSet] = {
-    val files = new File(DBSynthesis_IOService.FDDIR + File.separator + id)
-      .listFiles()
-      .toIndexedSeq
+    val files = DBSynthesis_IOService.getSortedFDFiles(subdomain,id)
     //initialize fds:
     val f = files(0)
-    val firstFDs = readFDs(f)
-    val date = LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter)
-    //TODO: translate FD bitsets to column ids:
-    val fdsWithCOLIDS = translateFDs(firstFDs,date)
+    var curDate = LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter)
+    val firstFDs = readFDs(id,curDate)
+    val fdsWithCOLIDS = translateFDs(firstFDs,curDate)
     prefixTree.initializeFDSet(fdsWithCOLIDS)
     for(i <- 1 until files.size){
       val f = files(i)
-      val newFDs = readFDs(f)
-      val date = LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter)
-      val fdsWithCOLIDS = translateFDs(newFDs,date)
+      curDate = LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter)
+      val newFDs = readFDs(id,curDate)
+      val fdsWithCOLIDS = translateFDs(newFDs,curDate)
       val intersectedFDs = prefixTree.intersectFDs(fdsWithCOLIDS)
       prefixTree = new PrefixTree
       prefixTree.initializeFDSet(intersectedFDs)
     }
     //translate back:
-    reverseTranslateFDs(prefixTree.root.iterator,date)
+    reverseTranslateFDs(prefixTree.root.iterator,curDate)
   }
 }

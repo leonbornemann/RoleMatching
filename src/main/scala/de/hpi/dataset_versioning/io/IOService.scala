@@ -25,6 +25,8 @@ import scala.reflect.io.Directory
 import scala.language.postfixOps
 
 object IOService extends StrictLogging{
+  def getTemporalSchemaFile(id: String) = new File(CUSTOM_METADATA_DIR + s"/temporalSchemata/$id.json")
+
   def getSimplifiedDatasetIDSInVersion(curVersion: LocalDate) = getSimplifiedDataDir(curVersion).listFiles()
     .filter(_.getName.endsWith(".json?"))
     .map(filenameToID(_))

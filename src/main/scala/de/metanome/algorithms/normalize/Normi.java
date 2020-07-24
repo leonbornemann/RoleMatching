@@ -118,41 +118,49 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 
 	@Override
 	public void execute() throws AlgorithmExecutionException {
+		Map<BitSet, BitSet> fds = discoverFds();
+		runNormalization(fds);
+	}
+
+	public Map<BitSet, BitSet> discoverFds() throws AlgorithmExecutionException {
 		System.out.println();
 		System.out.println("///// Initialization /////");
 		System.out.println();
-		
+
 		this.initialize();
 
 		System.out.println(">>> " + this.subFolder+ File.separator+this.tableName + " <<<");
-		
+
 		// Statistics
 //		System.out.println("Exact duplicates: " + this.findExactDuplicates());
-		
+
 		System.out.println();
 		System.out.println("///// FD-Discovery ///////");
 		System.out.println();
 
 
 		FdDiscoverer fdDiscoverer = new HyFDFdDiscoverer(this.converter, this.persister, this.tempResultsPath);
-		Map<BitSet, BitSet> fds = fdDiscoverer.calculateFds(this.inputGenerator, this.nullEqualsNull, true);
-		
+		return fdDiscoverer.calculateFds(this.inputGenerator, this.nullEqualsNull, true);
+	}
+
+	void runNormalization(Map<BitSet, BitSet> fds) throws AlgorithmExecutionException {
 		// Statistics
+		this.initialize();
 		int numFds = (int)fds.values().stream().mapToLong(BitSet::cardinality).sum();
 		float avgFdsLhsLength = fds.entrySet().stream().mapToLong(entry -> entry.getKey().cardinality() * entry.getValue().cardinality()).sum() / (float)numFds;
 		float avgFdsRhsLength = 1.0f;
-		
+
 		// Statistics
 		int numAggregatedFds = fds.keySet().size();
 		float avgAggregatedFdsLhsLength = fds.keySet().stream().mapToLong(BitSet::cardinality).sum() / (float)numAggregatedFds;
 		float avgAggregatedFdsRhsLength = fds.values().stream().mapToLong(BitSet::cardinality).sum() / (float)numAggregatedFds;
-		
+
 		System.out.println();
 		System.out.println("///// Key-Analysis ///////");
 		System.out.println();
-		
-	//	FdExtender fdExtender = new NaiveFdExtender(this.persister, this.tempExtendedResultsPath);
-	//	FdExtender fdExtender = new PushingFdExtender(this.persister, this.tempExtendedResultsPath);
+
+		//	FdExtender fdExtender = new NaiveFdExtender(this.persister, this.tempExtendedResultsPath);
+		//	FdExtender fdExtender = new PushingFdExtender(this.persister, this.tempExtendedResultsPath);
 		FdExtender fdExtender = new PullingFdExtender(this.persister, this.tempExtendedResultsPath, this.columnIdentifiers.size(), true);
 		//TODO: change this
 		//fds = filterFds(fds);
@@ -162,54 +170,40 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		int numExtendedFds = fds.keySet().size();
 		float avgExtendedFdsLhsLength = fds.keySet().stream().mapToLong(BitSet::cardinality).sum() / (float)numExtendedFds;
 		float avgExtendedFdsRhsLength = fds.values().stream().mapToLong(BitSet::cardinality).sum() / (float)numExtendedFds;
-		
+
 		List<BitSet> fdKeys = this.extractKeys(fds, this.columnIdentifiers.size());
 		int numFdKeys = fdKeys.size();
 		float avgFdKeyLength = fdKeys.stream().mapToLong(BitSet::cardinality).sum() / (float)numFdKeys;
-		
+
 		System.out.println();
 		System.out.println("# FDs: " + numFds + " (avg lhs size: " + avgFdsLhsLength + "; avg rhs size: " + avgFdsRhsLength + ")");
 		System.out.println("# aggregated FDs: " + numAggregatedFds + " (avg lhs size: " + avgAggregatedFdsLhsLength + "; avg rhs size: " + avgAggregatedFdsRhsLength + ")");
 		System.out.println("# extended FDs: " + numExtendedFds + " (avg lhs size: " + avgExtendedFdsLhsLength + "; avg rhs size: " + avgExtendedFdsRhsLength + ")");
 		System.out.println("# FD-Keys: " + numFdKeys + " (avg size: " + avgFdKeyLength + ")");
-		
+
 		System.out.println();
 		System.out.println("///// BCNF-Building //////");
 		System.out.println();
-		
+
 		List<Schema> bcnf = this.buildBcnf(fds);
-		
+
 		// Print final schemata
 		System.out.println();
 		this.print(bcnf);
-		
+
 		// Output final schemata
 		for (Schema schema : bcnf) {
 			Map<String, BasicStatisticValue> keys = new HashMap<>(schema.getReferencedSchemata().size() + 1);
 			keys.put("PrimaryKey", new BasicStatisticValueString(this.BitSetAttributesToString(schema.getPrimaryKey().getLhs())));
-			
+
 			for (Schema referencedSchema : schema.getReferencedSchemata())
 				keys.put("ForeignKey", new BasicStatisticValueString(this.BitSetAttributesToString(referencedSchema.getPrimaryKey().getLhs())));
-			
+
 			BasicStatistic result = new BasicStatistic(keys, this.getColumnIdentifiersFor(schema.getAttributes()));
-			
+
 			this.resultReceiver.receiveResult(result);
 		}
 	}
-
-	private Map<BitSet, BitSet> intersectFDs(String id) {
-		FDValidator validator = new FDValidator(id);
-		return validator.getFDIntersection();
-	}
-
-//	private Map<BitSet, BitSet> filterFds(Map<BitSet, BitSet> fds) {
-//		TemporalTable temporalTable = TemporalTable.load(getID(this.tableName));
-//		Set<BitSet> toKeep = temporalTable.validateDiscoveredFDs(fds,this.columnIdentifiers,getTimestamp(this.tableName));
-//		Map<BitSet, BitSet> validFds = fds.keySet().stream()
-//				.filter(fd -> toKeep.contains(fd))
-//				.collect(Collectors.toMap(fd -> fd, fd -> fds.get(fd)));
-//		return validFds;
-//	}
 
 	private LocalDate getTimestamp(String tableName) {
 		return LocalDate.parse(tableName.split("_")[0], IOService.dateTimeFormatter());

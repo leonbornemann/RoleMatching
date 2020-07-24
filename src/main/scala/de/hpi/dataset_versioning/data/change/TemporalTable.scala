@@ -2,12 +2,13 @@ package de.hpi.dataset_versioning.data.change
 
 import java.time.LocalDate
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.{FieldLineage, ValueLineage}
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 import de.metanome.algorithm_integration.ColumnIdentifier
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.io.Source
 
@@ -66,7 +67,7 @@ class TemporalTable(val id:String,val attributes:collection.IndexedSeq[Attribute
 
 }
 
-object TemporalTable {
+object TemporalTable extends StrictLogging{
   def load(id: String) = from(ChangeCube.load(id))
 
 
@@ -90,15 +91,18 @@ object TemporalTable {
       .toSet
       .toIndexedSeq
       .sorted
-    assert(allEntityIDs == (0 until allEntityIDs.size))
+    if(allEntityIDs != (0 until allEntityIDs.size)){
+      logger.warn("entity ids are not strictly increasing numbers")
+    }
     val rows = mutable.ArrayBuffer[TemporalRow]()
     //create blank rows:
+    val entityIDToRowIndex = allEntityIDs.zipWithIndex.toMap
     allEntityIDs.foreach(e => rows += new TemporalRow(e,mutable.IndexedSeq.fill[ValueLineage](ncols)(new ValueLineage())))
     //fill them with content
     val allTimestamps = mutable.TreeSet[LocalDate]()
     allChanges.foreach(c => {
       val colPosition = colIdToPosition(c.pID)
-      rows(c.e.toInt).fields(colPosition).lineage.put(c.t,c.newValue)
+      rows(entityIDToRowIndex(c.e)).fields(colPosition).lineage.put(c.t,c.newValue)
       allTimestamps.add(c.t)
     })
     //TODO: adapt attribute lineage representation to this one

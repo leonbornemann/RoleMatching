@@ -21,7 +21,6 @@ object SchemaHistory extends JsonReadable[SchemaHistory] with StrictLogging {
       .toMap
   }
 
-
   def buildFromDatasetVersions(h:DatasetVersionHistory): SchemaHistory = {
     val schemaMap = mutable.HashMap[Int,Attribute]()
     h.versionsWithChanges.foreach(v => {

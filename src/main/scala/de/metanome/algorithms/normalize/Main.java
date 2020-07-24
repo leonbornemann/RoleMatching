@@ -1,22 +1,23 @@
 package de.metanome.algorithms.normalize;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.hpi.dataset_versioning.data.simplified.Attribute;
+import de.hpi.dataset_versioning.db_synthesis.top_down.FDValidator;
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.normalization.DecomposedTable;
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService;
 import de.hpi.dataset_versioning.io.IOService;
+import de.metanome.algorithm_integration.AlgorithmConfigurationException;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
 import de.metanome.algorithm_integration.configuration.ConfigurationSettingFileInput;
 import de.metanome.algorithm_integration.input.RelationalInputGenerator;
@@ -36,11 +37,17 @@ import scala.collection.mutable.HashSet;
 
 public class Main {
 
+	private static String subdomain;
+	private static Config conf;
+
 	public static void main(String[] args) {
-		Config conf = new Config();
-		conf.inputFolderPath = args[0];
-		conf.measurementsFolderPath = args[1];
-		String tempResultDir = args[2];
+		IOService.socrataDir_$eq(args[0]);
+		subdomain = args[1];
+		conf = new Config();
+		///home/leon/data/dataset_versioning/socrata/fromServer/db_synthesis/decomposition/csv/org.cityofchicago/
+		conf.inputFolderPath = DBSynthesis_IOService.getExportedCSVSubdomainDir(subdomain).getAbsolutePath() + File.separator;
+		///home/leon/data/dataset_versioning/socrata/fromServer/db_synthesis/decomposition/measurements/
+		conf.measurementsFolderPath = DBSynthesis_IOService.getMeasurementsDir(subdomain).getAbsolutePath() + File.separator;
 		//conf.isHumanInTheLoop = true;
 		//if (args.length != 0)
 		//conf.setDataset(args[0]);
@@ -58,89 +65,58 @@ public class Main {
 
 			List<Path> result = walk
 					.filter(Files::isRegularFile)
-					.sorted(Comparator.comparing(f -> Long.valueOf(f.toFile().length())))
+					.sorted(Comparator.comparing(f -> LocalDate.parse(f.getFileName().toString().split("\\.")[0],IOService.dateTimeFormatter()).toEpochDay()))
 					.collect(Collectors.toList());
-
-			result.forEach(dataset -> {
-				conf.inputDatasetName = dataset.getFileName().toString().replace(".csv", "");
-				conf.inputFolderPath=dataset.getParent()+File.separator;
-				executeNormi(conf,tempResultDir);
-			});
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		//executeNormi(conf);
-/**/		
-	//	executeSchema();
-    }
-	
-	private static void executeNormi(Config conf, String tempResultDir) {
-		try {
+			String dsID = result.get(0).getParent().getFileName().toString();
+			FDValidator validator = new FDValidator(subdomain,dsID);
+			Map<BitSet, BitSet> fds = validator.getFDIntersection();
+			//execute for the last one:
+			Path lastDataset = result.get(result.size()-1);
+			LocalDate dateOfLast = LocalDate.parse(lastDataset.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter());
+			Path datasetVersionCSV = DBSynthesis_IOService.getExportedCSVFile(subdomain, dsID, dateOfLast).toPath();
+			Path datasetVersionFD = DBSynthesis_IOService.getFDFile(subdomain,dsID,dateOfLast).toPath();
+			conf.inputDatasetName = datasetVersionCSV.getFileName().toString().replace(".csv", "");
+			conf.inputFolderPath=datasetVersionCSV.getParent()+File.separator;
 			Normi normi = new Normi();
-			normi.tempResultDir = tempResultDir;
-			RelationalInputGenerator relationalInputGenerator = null;
-			ResultCache resultReceiver = new ResultCache("MetanomeMock", null);
-			
-			relationalInputGenerator = new DefaultFileInputGenerator(new ConfigurationSettingFileInput(
-					conf.inputFolderPath + conf.inputDatasetName + conf.inputFileEnding, true,
-					conf.inputFileSeparator, conf.inputFileQuotechar, conf.inputFileEscape, conf.inputFileStrictQuotes, 
-					conf.inputFileIgnoreLeadingWhiteSpace, conf.inputFileSkipLines, conf.inputFileHasHeader, conf.inputFileSkipDifferingLines, conf.inputFileNullString));
-			
-			normi.setRelationalInputConfigurationValue(Normi.Identifier.INPUT_GENERATOR.name(), relationalInputGenerator);
+			ResultCache resultReceiver = configureNormi(conf,datasetVersionFD.getParent().getParent().toString(),normi);
 			normi.setResultReceiver(resultReceiver);
-			
-			// A human in the loop works only outside of Metanome. Hence, this is not a Metanome parameter
-			normi.setIsHumanInTheLoop(conf.isHumanInTheLoop);
-			String[] parts = conf.inputFolderPath.split(File.separator);
-			normi.setsubFolder(parts[parts.length-1]);
-			normi.execute();
-			
+			normi.runNormalization(fds);
 			if (conf.writeResults) {
 				//final String outputPath = conf.measurementsFolderPath + conf.inputDatasetName + File.separator;
 				final String outputPath = conf.measurementsFolderPath;
 				Stream<Result> results = resultReceiver.fetchNewResults().stream();
-				
+
 				final File resultFile = new File(outputPath + conf.resultFileName);
 				FileUtils.createFile(outputPath + conf.resultFileName, false);
-				
+
 				final FileWriter writer = new FileWriter(resultFile, true);
-				
+
 				//results.map(result -> result.toString()).forEach(fd -> writeToFile(writer, fd));
 				int decomposedTableID = 0;
 				List<Result> collectedResults = results.collect(Collectors.toList());
 				for (Result fd : collectedResults) {
-					writeToFile(writer, conf.inputDatasetName,decomposedTableID, fd);
+					writeToFile(writer,dsID,conf.inputDatasetName,dateOfLast,decomposedTableID, fd);
 					decomposedTableID++;
 				}
 				System.out.println("Finished " + conf.inputDatasetName);
 				writer.close();
 				results.close();
 			}
-		}
-		catch (AlgorithmExecutionException e) {
+		} catch (IOException | AlgorithmExecutionException e) {
 			e.printStackTrace();
 		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private static void executeClosureEvaluation(Config conf) {
+		//executeNormi(conf);
+/**/		
+	//	executeSchema();
+    }
+
+    public static Map<BitSet, BitSet> getFdsForFile(String datasetID,Path datasetVersionCSV,Path datasetVersionFD){
+		conf.inputDatasetName = datasetVersionCSV.getFileName().toString().replace(".csv", "");
+		conf.inputFolderPath=datasetVersionCSV.getParent()+File.separator;
 		try {
 			Normi normi = new Normi();
-			
-			RelationalInputGenerator relationalInputGenerator = null;
-			ResultCache resultReceiver = new ResultCache("MetanomeMock", null);
-			
-			relationalInputGenerator = new DefaultFileInputGenerator(new ConfigurationSettingFileInput(
-					conf.inputFolderPath + conf.inputDatasetName + conf.inputFileEnding, true,
-					conf.inputFileSeparator, conf.inputFileQuotechar, conf.inputFileEscape, conf.inputFileStrictQuotes, 
-					conf.inputFileIgnoreLeadingWhiteSpace, conf.inputFileSkipLines, conf.inputFileHasHeader, conf.inputFileSkipDifferingLines, conf.inputFileNullString));
-			
-			normi.setRelationalInputConfigurationValue(Normi.Identifier.INPUT_GENERATOR.name(), relationalInputGenerator);
-			normi.setResultReceiver(resultReceiver);
-			
-			normi.evaluateCalculateClosure(30);
+			configureNormi(conf, datasetVersionFD.getParent().getParent().toString(), normi);
+			return normi.discoverFds();
 		}
 		catch (AlgorithmExecutionException e) {
 			e.printStackTrace();
@@ -148,6 +124,27 @@ public class Main {
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+		return null;
+	}
+
+	private static ResultCache configureNormi(Config conf, String tempResultDir, Normi normi) throws FileNotFoundException, AlgorithmConfigurationException {
+		normi.tempResultDir = tempResultDir;
+		RelationalInputGenerator relationalInputGenerator = null;
+		ResultCache resultReceiver = new ResultCache("MetanomeMock", null);
+
+		relationalInputGenerator = new DefaultFileInputGenerator(new ConfigurationSettingFileInput(
+				conf.inputFolderPath + conf.inputDatasetName + conf.inputFileEnding, true,
+				conf.inputFileSeparator, conf.inputFileQuotechar, conf.inputFileEscape, conf.inputFileStrictQuotes,
+				conf.inputFileIgnoreLeadingWhiteSpace, conf.inputFileSkipLines, conf.inputFileHasHeader, conf.inputFileSkipDifferingLines, conf.inputFileNullString));
+
+		normi.setRelationalInputConfigurationValue(Normi.Identifier.INPUT_GENERATOR.name(), relationalInputGenerator);
+		normi.setResultReceiver(resultReceiver);
+
+		// A human in the loop works only outside of Metanome. Hence, this is not a Metanome parameter
+		normi.setIsHumanInTheLoop(conf.isHumanInTheLoop);
+		String[] parts = conf.inputFolderPath.split(File.separator);
+		normi.setsubFolder(parts[parts.length-1]);
+		return resultReceiver;
 	}
 
 	private static void writeToFile(FileWriter writer, String line) {
@@ -157,7 +154,8 @@ public class Main {
 			throw new RuntimeException(e);
 		}
 	}
-	private static void writeToFile(FileWriter writer, String DS, int decomposedTableID, Result line) {
+
+	private static void writeToFile(FileWriter writer,String DS,String originalID, LocalDate version, int decomposedTableID, Result line) {
 //		try {
 			BasicStatistic r= (BasicStatistic) line;
 			//replace here if you need to change JSON format
@@ -169,8 +167,6 @@ public class Main {
 			//because we use only FDs within the same tables i removed the table id from all fields but the id
 			JSONObject jo = new JSONObject();
 			//parse apart id and version:
-			String originalID = DS.split("_")[1];
-			LocalDate version = LocalDate.parse(DS.split("_")[0], IOService.dateTimeFormatter());
 			ArrayBuffer<Attribute> schema = getSchemaList(DS, r);
 			scala.collection.Set<String> pk = getPrimaryKey(DS,r);
 			scala.collection.Set<String> fks = getForeignKey(DS,r);

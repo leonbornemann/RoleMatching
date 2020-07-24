@@ -29,7 +29,7 @@ class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,Attr
     activeTimeIntervals
   }
 
-  def valueAt(timestamp: LocalDate) = lineage.maxBefore(timestamp).get
+  def valueAt(timestamp: LocalDate) = if(lineage.contains(timestamp)) (timestamp,lineage(timestamp)) else lineage.maxBefore(timestamp).get
 
 
   override def toString: String = "[" + lineage.values.toSeq.map(_.displayName).mkString("|") + "]"

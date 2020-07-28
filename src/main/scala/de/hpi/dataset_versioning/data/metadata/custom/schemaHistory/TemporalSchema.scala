@@ -7,6 +7,17 @@ import de.hpi.dataset_versioning.data.change.{AttributeLineage, AttributeState, 
 import de.hpi.dataset_versioning.io.IOService
 
 case class TemporalSchema(val id:String,val attributes:collection.IndexedSeq[AttributeLineage]) extends JsonWritable[TemporalSchema] {
+  def byID = attributes.map(al => (al.attrId,al))
+    .toMap
+
+
+  def nameToAttributeState(version:LocalDate) = {
+    attributes
+      .map(al => al.valueAt(version)._2)
+      .filter(!_.isNE)
+      .map(as => (as.attr.get.name,as.attr.get))
+      .toMap
+  }
 
   def writeToStandardFile() = {
     val file = IOService.getTemporalSchemaFile(id)

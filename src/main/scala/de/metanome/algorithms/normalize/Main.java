@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema;
 import de.hpi.dataset_versioning.data.simplified.Attribute;
 import de.hpi.dataset_versioning.db_synthesis.top_down.FDValidator;
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.normalization.DecomposedTable;
@@ -39,15 +40,17 @@ public class Main {
 
 	private static String subdomain;
 	private static Config conf;
+	private static String datasetID;
 
 	public static void main(String[] args) {
 		IOService.socrataDir_$eq(args[0]);
 		subdomain = args[1];
+		datasetID = args[2];
 		conf = new Config();
 		///home/leon/data/dataset_versioning/socrata/fromServer/db_synthesis/decomposition/csv/org.cityofchicago/
 		conf.inputFolderPath = DBSynthesis_IOService.getExportedCSVSubdomainDir(subdomain).getAbsolutePath() + File.separator;
 		///home/leon/data/dataset_versioning/socrata/fromServer/db_synthesis/decomposition/measurements/
-		conf.measurementsFolderPath = DBSynthesis_IOService.getMeasurementsDir(subdomain).getAbsolutePath() + File.separator;
+		conf.measurementsFolderPath = DBSynthesis_IOService.getDecomposedTablesDir(subdomain).getAbsolutePath() + File.separator;
 		//conf.isHumanInTheLoop = true;
 		//if (args.length != 0)
 		//conf.setDataset(args[0]);
@@ -61,56 +64,53 @@ public class Main {
 				conf.inputDatasetName=dataset;
 				executeNormi(conf);
 			});*/
-		try (Stream<Path> walk = Files.walk(Paths.get(conf.inputFolderPath))) {
 
-			List<Path> result = walk
-					.filter(Files::isRegularFile)
-					.sorted(Comparator.comparing(f -> LocalDate.parse(f.getFileName().toString().split("\\.")[0],IOService.dateTimeFormatter()).toEpochDay()))
-					.collect(Collectors.toList());
-			String dsID = result.get(0).getParent().getFileName().toString();
-			FDValidator validator = new FDValidator(subdomain,dsID);
-			Map<BitSet, BitSet> fds = validator.getFDIntersection();
-			//execute for the last one:
-			Path lastDataset = result.get(result.size()-1);
-			LocalDate dateOfLast = LocalDate.parse(lastDataset.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter());
-			Path datasetVersionCSV = DBSynthesis_IOService.getExportedCSVFile(subdomain, dsID, dateOfLast).toPath();
-			Path datasetVersionFD = DBSynthesis_IOService.getFDFile(subdomain,dsID,dateOfLast).toPath();
-			conf.inputDatasetName = datasetVersionCSV.getFileName().toString().replace(".csv", "");
-			conf.inputFolderPath=datasetVersionCSV.getParent()+File.separator;
-			Normi normi = new Normi();
-			ResultCache resultReceiver = configureNormi(conf,datasetVersionFD.getParent().getParent().toString(),normi);
-			normi.setResultReceiver(resultReceiver);
-			normi.runNormalization(fds);
-			if (conf.writeResults) {
-				//final String outputPath = conf.measurementsFolderPath + conf.inputDatasetName + File.separator;
-				final String outputPath = conf.measurementsFolderPath;
-				Stream<Result> results = resultReceiver.fetchNewResults().stream();
+		try (Stream<Path> walk = Files.walk(Paths.get(conf.inputFolderPath + File.separator + datasetID))) {
 
-				final File resultFile = new File(outputPath + conf.resultFileName);
-				FileUtils.createFile(outputPath + conf.resultFileName, false);
-
-				final FileWriter writer = new FileWriter(resultFile, true);
-
-				//results.map(result -> result.toString()).forEach(fd -> writeToFile(writer, fd));
-				int decomposedTableID = 0;
-				List<Result> collectedResults = results.collect(Collectors.toList());
-				for (Result fd : collectedResults) {
-					writeToFile(writer,dsID,conf.inputDatasetName,dateOfLast,decomposedTableID, fd);
-					decomposedTableID++;
-				}
-				System.out.println("Finished " + conf.inputDatasetName);
-				writer.close();
-				results.close();
-			}
+			executeNormalizationForID(walk);
 		} catch (IOException | AlgorithmExecutionException e) {
 			e.printStackTrace();
 		}
-		//executeNormi(conf);
-/**/		
-	//	executeSchema();
+
     }
 
-    public static Map<BitSet, BitSet> getFdsForFile(String datasetID,Path datasetVersionCSV,Path datasetVersionFD){
+	private static void executeNormalizationForID(Stream<Path> walk) throws AlgorithmExecutionException, IOException {
+		List<Path> result = walk
+				.filter(Files::isRegularFile)
+				.sorted(Comparator.comparing(f -> LocalDate.parse(f.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter()).toEpochDay()))
+				.collect(Collectors.toList());
+		FDValidator validator = new FDValidator(subdomain, datasetID);
+		Map<BitSet, BitSet> fds = validator.getFDIntersection();
+		//execute for the last one:
+		Path lastDataset = result.get(result.size() - 1);
+		LocalDate dateOfLast = LocalDate.parse(lastDataset.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter());
+		Path datasetVersionCSV = DBSynthesis_IOService.getExportedCSVFile(subdomain, datasetID, dateOfLast).toPath();
+		Path datasetVersionFD = DBSynthesis_IOService.getFDFile(subdomain, datasetID, dateOfLast).toPath();
+		conf.inputDatasetName = datasetVersionCSV.getFileName().toString().replace(".csv", "");
+		conf.inputFolderPath = datasetVersionCSV.getParent() + File.separator;
+		Normi normi = new Normi();
+		ResultCache resultReceiver = configureNormi(conf, datasetVersionFD.getParent().getParent().toString(), normi);
+		normi.setResultReceiver(resultReceiver);
+		normi.runNormalization(fds);
+		if (conf.writeResults) {
+			//final String outputPath = conf.measurementsFolderPath + conf.inputDatasetName + File.separator;
+			Stream<Result> results = resultReceiver.fetchNewResults().stream();
+			final File resultFile = DBSynthesis_IOService.getDecomposedTableFile(subdomain,datasetID,dateOfLast);
+			final FileWriter writer = new FileWriter(resultFile, false);
+			//results.map(result -> result.toString()).forEach(fd -> writeToFile(writer, fd));
+			int decomposedTableID = 0;
+			List<Result> collectedResults = results.collect(Collectors.toList());
+			for (Result fd : collectedResults) {
+				writeToFile(writer, datasetID, dateOfLast, decomposedTableID, fd);
+				decomposedTableID++;
+			}
+			System.out.println("Finished " + conf.inputDatasetName);
+			writer.close();
+			results.close();
+		}
+	}
+
+	public static Map<BitSet, BitSet> getFdsForFile(String datasetID,Path datasetVersionCSV,Path datasetVersionFD){
 		conf.inputDatasetName = datasetVersionCSV.getFileName().toString().replace(".csv", "");
 		conf.inputFolderPath=datasetVersionCSV.getParent()+File.separator;
 		try {
@@ -155,7 +155,7 @@ public class Main {
 		}
 	}
 
-	private static void writeToFile(FileWriter writer,String DS,String originalID, LocalDate version, int decomposedTableID, Result line) {
+	private static void writeToFile(FileWriter writer,String DS, LocalDate version, int decomposedTableID, Result line) {
 //		try {
 			BasicStatistic r= (BasicStatistic) line;
 			//replace here if you need to change JSON format
@@ -167,10 +167,10 @@ public class Main {
 			//because we use only FDs within the same tables i removed the table id from all fields but the id
 			JSONObject jo = new JSONObject();
 			//parse apart id and version:
-			ArrayBuffer<Attribute> schema = getSchemaList(DS, r);
+			ArrayBuffer<Attribute> schema = getSchemaList(DS,version, r);
 			scala.collection.Set<String> pk = getPrimaryKey(DS,r);
 			scala.collection.Set<String> fks = getForeignKey(DS,r);
-			DecomposedTable res = new DecomposedTable(originalID,version,decomposedTableID, schema,pk,fks);
+			DecomposedTable res = new DecomposedTable(DS,version,decomposedTableID, schema,pk,fks);
 			res.appendToWriter(writer,false,true,true);
 //			jo.put("Table_id", DS);
 //			jo.put("Schema", r.getColumnCombination().toString().replace(".csv","").replace(DS+".",""));
@@ -205,12 +205,19 @@ public class Main {
 		return pk;
 	}
 
-	private static ArrayBuffer<Attribute> getSchemaList(String DS, BasicStatistic r) {
+	private static ArrayBuffer<Attribute> getSchemaList(String DS,LocalDate version, BasicStatistic r) {
 		ArrayBuffer<Attribute> schemaAsScala = new ArrayBuffer<Attribute>();
 		String schemaString = r.getColumnCombination().toString().replace(".csv","").replace(DS+".","");
 		schemaString = schemaString.substring(1,schemaString.length()-1);
 		List<String> schema = Arrays.asList(schemaString.split(","));
-		schema.forEach(s -> schemaAsScala.addOne(new Attribute(s,-1, Option.empty(),Option.empty())));
+		TemporalSchema temporalSchema = TemporalSchema.load(DS);
+		scala.collection.immutable.Map<String, Attribute> colNameToStateMap = temporalSchema.nameToAttributeState(version);
+		schema.forEach(s -> {
+			String colname = s.split("\\.")[1];
+//			if(!colNameToStateMap.contains(s) || !colNameToStateMap.get(s).isDefined())
+//				System.out.println();
+			schemaAsScala.addOne(colNameToStateMap.get(colname).get());
+		});
 		return schemaAsScala;
 	}
 }

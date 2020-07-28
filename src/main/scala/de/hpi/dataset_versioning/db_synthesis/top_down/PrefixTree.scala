@@ -51,8 +51,9 @@ class PrefixTree() {
     root.foreach(fd => {
       if(!intersection.contains(fd._1)){
         val overlap = rightAsPrefixTree.findBestOverlap(fd)
-        if(overlap.isDefined)
+        if(overlap.isDefined) {
           intersection += overlap.get
+        }
       }
     })
     intersection

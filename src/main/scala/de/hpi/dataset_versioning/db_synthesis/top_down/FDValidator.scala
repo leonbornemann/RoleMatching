@@ -10,7 +10,7 @@ import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSche
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 import de.metanome.algorithms.normalize.Main
 
-import collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 
 class FDValidator(subdomain:String,id:String) extends StrictLogging{
@@ -29,6 +29,8 @@ class FDValidator(subdomain:String,id:String) extends StrictLogging{
     var i = left.nextSetBit(0)
     val colIDs = mutable.ArrayBuffer[Int]()
     while (i >= 0) {
+      if(!posToID.contains(i))
+        println()
       colIDs += posToID(i)
       // operate on index i here
       i = left.nextSetBit(i + 1)
@@ -38,7 +40,7 @@ class FDValidator(subdomain:String,id:String) extends StrictLogging{
 
   def translateFDs(fds: collection.Map[util.BitSet, util.BitSet], date: LocalDate):collection.Map[collection.IndexedSeq[Int],collection.IndexedSeq[Int]] = {
     val posToID = temporalSchema.attributes
-      .withFilter(al => al.valueAt(date)._2.attr.isDefined)
+      .withFilter(al => !al.valueAt(date)._2.isNE)
       .map(al => {
         val attr = al.valueAt(date)._2.attr.get
         (attr.position.get,attr.id)
@@ -62,7 +64,12 @@ class FDValidator(subdomain:String,id:String) extends StrictLogging{
   }
 
   def reverseTranslateFDs(fds: Iterator[(collection.IndexedSeq[Int], collection.IndexedSeq[Int])], date: LocalDate): util.Map[util.BitSet, util.BitSet] = {
-    val idToPos = temporalSchema.attributes.map(al => {
+    val idToPos = temporalSchema.attributes
+      .withFilter(al => !al.valueAt(date)._2.isNE)
+      .map(al => {
+      if(!al.valueAt(date)._2.attr.isDefined){
+        println()
+      }
       val attr = al.valueAt(date)._2.attr.get
       (attr.id,attr.position.get)
     }).toMap
@@ -79,6 +86,7 @@ class FDValidator(subdomain:String,id:String) extends StrictLogging{
   }
 
   def getFDIntersection: java.util.Map[java.util.BitSet, java.util.BitSet] = {
+    val attributeLineagesByID = temporalSchema.byID
     val files = DBSynthesis_IOService.getSortedFDFiles(subdomain,id)
     //initialize fds:
     val f = files(0)
@@ -92,10 +100,13 @@ class FDValidator(subdomain:String,id:String) extends StrictLogging{
       val newFDs = readFDs(id,curDate)
       val fdsWithCOLIDS = translateFDs(newFDs,curDate)
       val intersectedFDs = prefixTree.intersectFDs(fdsWithCOLIDS)
+          .filter(fd => fd._1.forall(colID => attributeLineagesByID(colID).valueAt(curDate)._2.exists)) //filters out fds that have an element in LHS that does not exist at curDate
       prefixTree = new PrefixTree
       prefixTree.initializeFDSet(intersectedFDs)
     }
     //translate back:
-    reverseTranslateFDs(prefixTree.root.iterator,curDate)
+    val result = reverseTranslateFDs(prefixTree.root.iterator,curDate)
+    logger.debug(s"found ${result.size()} fds in the intersection over all timestamps")
+    result
   }
 }

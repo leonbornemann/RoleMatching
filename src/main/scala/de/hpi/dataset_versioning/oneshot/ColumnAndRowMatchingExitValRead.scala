@@ -10,20 +10,13 @@ object ColumnAndRowMatchingExitValRead extends App {
   val a = Source.fromFile(file)
     .getLines()
     .toSeq
-    val grouped = a.tail
+    .tail
     .map(_.split("\t"))
-    .groupBy(l => l(6).toInt)
-    .filter(_._1!=0)
-  grouped.foreach(t => t._2.foreach(b => println(b.toIndexedSeq)))
+    .filter(l => l(6).toInt!=0)
+    .foreach(a => println(getID(a(8))))
 
   def getID(str: String) = {
-    str.split("\\s")(8)
+    str.split("\\s")(10)
   }
-//  val pr = new PrintWriter("socrataIdsUnfinished.txt")
-//  grouped.foreach{case (exit,lines) => {
-//    if(exit!=1)
-//      lines.foreach(l => pr.println(getID(l(8))))
-//    println(exit,lines.size,lines.map(l => getID(l(8))).sorted.mkString(","))
-//  }}
-//  pr.close()
+
 }

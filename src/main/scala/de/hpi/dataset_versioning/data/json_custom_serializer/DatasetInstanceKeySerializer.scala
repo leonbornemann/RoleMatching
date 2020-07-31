@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.data.metadata.custom
+package de.hpi.dataset_versioning.data.json_custom_serializer
 
 import java.time.LocalDate
 

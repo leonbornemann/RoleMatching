@@ -1,17 +1,14 @@
-package de.hpi.dataset_versioning.db_synthesis.top_down
+package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
-import java.io.File
 import java.time.LocalDate
 import java.util
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.change.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
-import de.metanome.algorithms.normalize.Main
 
-import scala.jdk.CollectionConverters._
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 class FDValidator(subdomain:String,id:String) extends StrictLogging{
 
@@ -43,11 +40,19 @@ class FDValidator(subdomain:String,id:String) extends StrictLogging{
       .withFilter(al => !al.valueAt(date)._2.isNE)
       .map(al => {
         val attr = al.valueAt(date)._2.attr.get
+        if(al.attrId==21){
+          println()
+        }
         (attr.position.get,attr.id)
       }).toMap
-    fds.map{case (left,right) => {
-      (translateFDPart(left,posToID),translateFDPart(right,posToID))
+    val translated = fds.map{case (left,right) => {
+      if(right.toString=="{1, 5, 8, 13, 14, 18, 21}"){
+        println()
+      }
+      val t = (collection.IndexedSeq() ++ translateFDPart(left,posToID),collection.IndexedSeq() ++ translateFDPart(right,posToID))
+      t
     }}
+    translated
   }
 
   def reverseTranslateFDPart(left: collection.IndexedSeq[Int], idToPos: Map[Int, Int]) = {
@@ -93,12 +98,17 @@ class FDValidator(subdomain:String,id:String) extends StrictLogging{
     var curDate = LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter)
     val firstFDs = readFDs(id,curDate)
     val fdsWithCOLIDS = translateFDs(firstFDs,curDate)
+    serializeFds(curDate, fdsWithCOLIDS)
     prefixTree.initializeFDSet(fdsWithCOLIDS)
     for(i <- 1 until files.size){
       val f = files(i)
       curDate = LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter)
+      if(curDate == LocalDate.parse("2019-12-12")){
+        println()
+      }
       val newFDs = readFDs(id,curDate)
       val fdsWithCOLIDS = translateFDs(newFDs,curDate)
+      serializeFds(curDate, fdsWithCOLIDS)
       val intersectedFDs = prefixTree.intersectFDs(fdsWithCOLIDS)
           .filter(fd => fd._1.forall(colID => attributeLineagesByID(colID).valueAt(curDate)._2.exists)) //filters out fds that have an element in LHS that does not exist at curDate
       prefixTree = new PrefixTree
@@ -108,5 +118,10 @@ class FDValidator(subdomain:String,id:String) extends StrictLogging{
     val result = reverseTranslateFDs(prefixTree.root.iterator,curDate)
     logger.debug(s"found ${result.size()} fds in the intersection over all timestamps")
     result
+  }
+
+  private def serializeFds(curDate: LocalDate, fdsWithCOLIDS: collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]) = {
+    val fdsSet = FunctionalDependencySet(subdomain,id,curDate, fdsWithCOLIDS.map(t => (t._1.toSet, t._2.toSet)).toIndexedSeq)
+    fdsSet.writeToStandardFile()
   }
 }

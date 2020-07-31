@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema;
 import de.hpi.dataset_versioning.data.simplified.Attribute;
-import de.hpi.dataset_versioning.db_synthesis.top_down.FDValidator;
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.FDValidator;
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.normalization.DecomposedTable;
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService;
 import de.hpi.dataset_versioning.io.IOService;
@@ -27,10 +27,8 @@ import de.metanome.algorithm_integration.results.Result;
 import de.metanome.algorithms.normalize.config.Config;
 import de.metanome.backend.input.file.DefaultFileInputGenerator;
 import de.metanome.backend.result_receiver.ResultCache;
-import de.uni_potsdam.hpi.utils.FileUtils;
 import de.metanome.algorithm_integration.results.basic_statistic_values.BasicStatisticValue;
 import org.json.JSONObject;
-import scala.Option;
 import scala.collection.Set;
 import scala.collection.mutable.ArrayBuffer;
 import scala.collection.mutable.HashSet;
@@ -155,9 +153,9 @@ public class Main {
 		}
 	}
 
-	private static void writeToFile(FileWriter writer,String DS, LocalDate version, int decomposedTableID, Result line) {
+	private static void writeToFile(FileWriter writer,String DS, LocalDate version, int decomposedTableID, Result fd) {
 //		try {
-			BasicStatistic r= (BasicStatistic) line;
+			BasicStatistic r= (BasicStatistic) fd;
 			//replace here if you need to change JSON format
 
 			//method-1  basic_statistics as JSON
@@ -167,9 +165,11 @@ public class Main {
 			//because we use only FDs within the same tables i removed the table id from all fields but the id
 			JSONObject jo = new JSONObject();
 			//parse apart id and version:
-			ArrayBuffer<Attribute> schema = getSchemaList(DS,version, r);
-			scala.collection.Set<String> pk = getPrimaryKey(DS,r);
-			scala.collection.Set<String> fks = getForeignKey(DS,r);
+			TemporalSchema temporalSchema = TemporalSchema.load(DS);
+			scala.collection.immutable.Map<String, Attribute> colNameToAttributeState = temporalSchema.nameToAttributeState(version);
+			ArrayBuffer<Attribute> schema = getSchemaList(DS,colNameToAttributeState, r);
+			scala.collection.Set<Attribute> pk = getPrimaryKey(DS,colNameToAttributeState,r);
+			scala.collection.Set<Attribute> fks = getForeignKey(DS,colNameToAttributeState,r);
 			DecomposedTable res = new DecomposedTable(DS,version,decomposedTableID, schema,pk,fks);
 			res.appendToWriter(writer,false,true,true);
 //			jo.put("Table_id", DS);
@@ -183,40 +183,38 @@ public class Main {
 //		}
 	}
 
-	private static Set<String> getForeignKey(String DS, BasicStatistic r) {
-		HashSet<String> fk = new HashSet<>();
+	private static Set<Attribute> getForeignKey(String DS, scala.collection.immutable.Map<String, Attribute> colNameToAttributeState, BasicStatistic r) {
+		HashSet<Attribute> fk = new HashSet<>();
 		for (Map.Entry<String, BasicStatisticValue> entry : r.getStatisticMap().entrySet()) {
 			if(entry.getKey()=="ForeignKey"){
 				String fkStr = entry.getValue().toString().replace(".csv","").replace(DS+".","");
-				Arrays.asList(fkStr.split(",")).stream().map(s -> s.trim()).forEach(s -> fk.add(s));
+				Arrays.asList(fkStr.split(",")).stream().map(s -> s.trim().split("\\.")[1]).forEach(s -> fk.add(colNameToAttributeState.get(s).get()));
 			}
 		}
 		return fk;
 	}
 
-	private static Set<String> getPrimaryKey(String DS, BasicStatistic r) {
-		HashSet<String> pk = new HashSet<>();
+	private static Set<Attribute> getPrimaryKey(String DS, scala.collection.immutable.Map<String, Attribute> colNameToAttributeState, BasicStatistic r) {
+		HashSet<Attribute> pk = new HashSet<>();
 		for (Map.Entry<String, BasicStatisticValue> entry : r.getStatisticMap().entrySet()) {
 			if(entry.getKey()=="PrimaryKey"){
 				String pkStr = entry.getValue().toString().replace(".csv","").replace(DS+".","");
-				Arrays.asList(pkStr.split(",")).stream().map(s -> s.trim()).forEach(s -> pk.add(s));
+				Arrays.asList(pkStr.split(",")).stream().map(s -> s.trim().split("\\.")[1]).forEach(s -> pk.add(colNameToAttributeState.get(s).get()));
 			}
 		}
 		return pk;
 	}
 
-	private static ArrayBuffer<Attribute> getSchemaList(String DS,LocalDate version, BasicStatistic r) {
+	private static ArrayBuffer<Attribute> getSchemaList(String DS, scala.collection.immutable.Map<String, Attribute> colNameToAttributeState, BasicStatistic r) {
 		ArrayBuffer<Attribute> schemaAsScala = new ArrayBuffer<Attribute>();
 		String schemaString = r.getColumnCombination().toString().replace(".csv","").replace(DS+".","");
 		schemaString = schemaString.substring(1,schemaString.length()-1);
 		List<String> schema = Arrays.asList(schemaString.split(","));
-		TemporalSchema temporalSchema = TemporalSchema.load(DS);
-		scala.collection.immutable.Map<String, Attribute> colNameToStateMap = temporalSchema.nameToAttributeState(version);
 		schema.forEach(s -> {
 			String colname = s.split("\\.")[1];
 //			if(!colNameToStateMap.contains(s) || !colNameToStateMap.get(s).isDefined())
 //				System.out.println();
-			schemaAsScala.addOne(colNameToStateMap.get(colname).get());
+			schemaAsScala.addOne(colNameToAttributeState.get(colname).get());
 		});
 		return schemaAsScala;
 	}

@@ -1,7 +1,6 @@
-package de.hpi.dataset_versioning.db_synthesis.top_down
+package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 class PrefixTreeNode[A:Ordering,B:Ordering]() extends Iterable[(collection.IndexedSeq[A],collection.IndexedSeq[B])]{
 

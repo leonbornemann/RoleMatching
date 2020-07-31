@@ -28,8 +28,8 @@ object InferredChangeCountReductionTest extends App {
   val counter = new InferredChangeCountReduction()
   val attrsDecomposed1 = ds1.attributes.takeRight(2)
   val attrsDecomposed2 = ds2.attributes.takeRight(2)
-  val decomposedTable1 = new DecomposedTable(id1,version1,0,attrsDecomposed1,Set("C"),Set())
-  val decomposedTable2 = new DecomposedTable(id2,version1,0,attrsDecomposed2,Set("C"),Set())
+  val decomposedTable1 = new DecomposedTable(id1,version1,0,attrsDecomposed1,attrsDecomposed1.filter(_.name=="C").toSet,Set())
+  val decomposedTable2 = new DecomposedTable(id2,version1,0,attrsDecomposed2,attrsDecomposed2.filter(_.name=="C").toSet,Set())
   val reducedNumChanges = counter.calculate(decomposedTable1,decomposedTable2,attrsDecomposed1.zip(attrsDecomposed2).toMap)
   assert(reducedNumChanges==3)
 }

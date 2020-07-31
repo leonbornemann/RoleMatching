@@ -16,9 +16,6 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import de.hpi.dataset_versioning.data.change.TemporalTable;
-import de.hpi.dataset_versioning.db_synthesis.top_down.FDValidator;
-import de.hpi.dataset_versioning.io.DBSynthesis_IOService;
 import de.hpi.dataset_versioning.io.IOService;
 import de.metanome.algorithm_integration.AlgorithmConfigurationException;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
@@ -72,6 +69,8 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 	private int maxLinesToPrint = 50;
 	
 	public boolean isHumanInTheLoop = false;
+
+	List<FunctionalDependency> splitFDsInOrder = new ArrayList<>();
 
 	public void setIsHumanInTheLoop(boolean isHumanInTheLoop) {
 		this.isHumanInTheLoop = isHumanInTheLoop;
@@ -401,7 +400,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 			}
 
 			FunctionalDependency splitFd = violatingFds.get(violatingFds.size() - fdChoice).clone();
-			
+			splitFDsInOrder.add(splitFd);
 			// Violating FD shortening: If an rhs attribute does not only depend on the chosen lhs, then the user might want to spare it for a different split later on
 			BitSet removableRhsAttributes = new BitSet(this.columnIdentifiers.size());
 			BitSet attributes1 = splitFd.getAttributes();

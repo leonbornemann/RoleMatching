@@ -15,6 +15,8 @@ import scala.io.Source
 class DatasetVersionHistory(val id:String,
                             val versionsWithChanges:mutable.ArrayBuffer[LocalDate] = mutable.ArrayBuffer[LocalDate](),
                             var deletions:mutable.ArrayBuffer[LocalDate] = mutable.ArrayBuffer[LocalDate]()) extends JsonWritable[DatasetVersionHistory]{
+  def latestChangeTimestamp: LocalDate = versionsWithChanges.sortBy(_.toEpochDay).last
+
   def allVersionsIncludingDeletes = (versionsWithChanges.toSet ++ deletions.toSet)
     .toIndexedSeq
     .sortBy(_.toEpochDay)

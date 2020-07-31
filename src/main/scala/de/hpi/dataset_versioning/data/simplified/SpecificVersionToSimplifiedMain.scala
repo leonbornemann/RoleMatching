@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.data.simplified
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.LocalDateSerializer
+import de.hpi.dataset_versioning.data.json_custom_serializer.LocalDateSerializer
 import de.hpi.dataset_versioning.io.IOService
 
 object SpecificVersionToSimplifiedMain extends App {

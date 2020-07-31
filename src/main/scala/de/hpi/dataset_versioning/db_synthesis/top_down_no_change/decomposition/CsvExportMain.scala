@@ -20,7 +20,8 @@ object CsvExportMain extends App with StrictLogging{
     vh.versionsWithChanges.foreach(v => {
       try {
         val ds = IOService.loadSimplifiedRelationalDataset(DatasetInstance(dsID, v))
-        ds.toCSV(IOService.getSimplifiedCSVExportFile(DatasetInstance(dsInfo.id, v), subdomain)) //TODO: column changes (?) - name ist still enough as we know the timestamp
+        assert(ds.attributes.map(_.position.get) == (0 until ds.attributes.size))
+        ds.toCSV(IOService.getSimplifiedCSVExportFile(DatasetInstance(dsInfo.id, v), subdomain))
       }  catch {
         case _:Throwable => logger.debug(s"exception wile trying to load ${dsInfo.id} (version $v)")
       }

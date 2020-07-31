@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.db_synthesis.top_down
+package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import de.hpi.dataset_versioning.data.change.{FieldLineageCompatibility, FieldLineageReference}
 

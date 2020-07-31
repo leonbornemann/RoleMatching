@@ -7,6 +7,8 @@ import de.hpi.dataset_versioning.data.change.{AttributeLineage, AttributeState, 
 import de.hpi.dataset_versioning.io.IOService
 
 case class TemporalSchema(val id:String,val attributes:collection.IndexedSeq[AttributeLineage]) extends JsonWritable[TemporalSchema] {
+  def valueAt(version: LocalDate) = attributes.map(al => al.valueAt(version))
+
   def byID = attributes.map(al => (al.attrId,al))
     .toMap
 
@@ -21,9 +23,11 @@ case class TemporalSchema(val id:String,val attributes:collection.IndexedSeq[Att
 
   def writeToStandardFile() = {
     val file = IOService.getTemporalSchemaFile(id)
-    TemporalSchemaHelper(id,attributes.map(al => AttributeLineageWithHashMap(al.attrId,al.lineage.toMap)))
+    TemporalSchemaHelper(id,attributes.map(al => AttributeLineageWithHashMap.from(al)))
       .toJsonFile(file)
   }
+
+  def lastTimestamp = attributes.maxBy(_.lineage.keySet.max).lineage.keySet.max
 
 }
 

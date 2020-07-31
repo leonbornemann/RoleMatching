@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.data
+package de.hpi.dataset_versioning.data.json_custom_serializer
 
 import java.time.LocalDate
 
@@ -15,4 +15,3 @@ case object LocalDateSerializer
         case d:LocalDate => JString(IOService.dateTimeFormatter.format(d))
       })
   )
-

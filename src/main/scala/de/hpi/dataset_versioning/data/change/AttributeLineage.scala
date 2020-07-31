@@ -7,6 +7,17 @@ import de.hpi.dataset_versioning.data.simplified.Attribute
 import scala.collection.mutable
 
 class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,AttributeState]) {
+  def lastDefinedValue = {
+    val lastElem = lineage.last
+    if(lastElem._2.exists){
+      lastElem._2.attr.get
+    } else{
+      val a = lineage.maxBefore(lastElem._1)
+      assert(a.isDefined && a.get._2.exists)
+      a.get._2.attr.get
+    }
+  }
+
 
   def activeTimeIntervals = {
     var curBegin = lineage.head._1

@@ -79,8 +79,10 @@ object TemporalTable extends StrictLogging{
         val latestTimestamp = t._2.keys.maxBy(_.toEpochDay)
         t._2(latestTimestamp).position.getOrElse(Int.MaxValue)
       })
-      .map{case (colID,attributeMap) => new AttributeLineage(colID,
-        mutable.TreeMap[LocalDate,AttributeState]().addAll(attributeMap.map(t => (t._1,AttributeState(Some(t._2))))))}
+      .map{case (colID,attributeMap) => {
+        new AttributeLineage(colID,
+          mutable.TreeMap[LocalDate,AttributeState]().addAll(attributeMap.map(t => (t._1,AttributeState(Some(t._2))))))
+      }}
       val colIdToPosition = attributes
         .zipWithIndex
         .map{case (al,pos) => (al.attrId,pos)}
@@ -121,6 +123,7 @@ object TemporalTable extends StrictLogging{
             val curAttr = al.lineage(curTs)
             newLineage.put(curTs,curAttr)
             prevAttr = curAttr
+            prevWasNE = false
           } else if(al.lineage.contains(curTs)){
             val curAttr = al.lineage(curTs)
             if(prevAttr != curAttr)

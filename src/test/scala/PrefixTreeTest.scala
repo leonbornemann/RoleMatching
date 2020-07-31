@@ -1,4 +1,5 @@
-import de.hpi.dataset_versioning.db_synthesis.top_down.PrefixTree
+
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.PrefixTree
 
 import scala.collection.mutable
 

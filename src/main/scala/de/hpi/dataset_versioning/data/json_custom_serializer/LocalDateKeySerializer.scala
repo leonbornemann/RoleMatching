@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.data
+package de.hpi.dataset_versioning.data.json_custom_serializer
 
 import java.time.LocalDate
 
@@ -9,4 +9,3 @@ case object LocalDateKeySerializer extends CustomKeySerializer[LocalDate](format
 { case s:String => LocalDate.parse(s,IOService.dateTimeFormatter)},
 { case date:LocalDate => date.format(IOService.dateTimeFormatter) }
 ))
-

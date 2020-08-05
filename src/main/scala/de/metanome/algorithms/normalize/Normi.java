@@ -118,7 +118,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 	@Override
 	public void execute() throws AlgorithmExecutionException {
 		Map<BitSet, BitSet> fds = discoverFds();
-		runNormalization(fds);
+		runNormalization(fds,true);
 	}
 
 	public Map<BitSet, BitSet> discoverFds() throws AlgorithmExecutionException {
@@ -142,7 +142,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		return fdDiscoverer.calculateFds(this.inputGenerator, this.nullEqualsNull, true);
 	}
 
-	void runNormalization(Map<BitSet, BitSet> fds) throws AlgorithmExecutionException {
+	void runNormalization(Map<BitSet, BitSet> fds,boolean useResultFile) throws AlgorithmExecutionException {
 		// Statistics
 		this.initialize();
 		int numFds = (int)fds.values().stream().mapToLong(BitSet::cardinality).sum();
@@ -164,7 +164,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		//TODO: change this
 		//fds = filterFds(fds);
 		//each FD --> Set[Column] -> Set[Column]
-		fds = fdExtender.calculateClosure(fds, true);
+		fds = fdExtender.calculateClosure(fds, useResultFile);
 		// Statistics
 		int numExtendedFds = fds.keySet().size();
 		float avgExtendedFdsLhsLength = fds.keySet().stream().mapToLong(BitSet::cardinality).sum() / (float)numExtendedFds;

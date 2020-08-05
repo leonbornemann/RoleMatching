@@ -6,8 +6,13 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.DatasetInstance
 
 object DBSynthesis_IOService {
+
+  def getStatisticsDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$STATISTICS_DIR/$subdomain/$originalID/"))
+
+  def getDecomposedTemporalTableDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/$subdomain/$originalID/"))
+
   def getDecomposedTemporalTableFile(subdomain: String, originalID: String,decomposedID:Int) = {
-    createParentDirs(new File(s"$DECOMPOSED_TABLE_DIR/$subdomain/$originalID/$decomposedID.json"))
+    createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/$subdomain/$originalID/$decomposedID.json"))
   }
 
   def getColIDFDFile(subdomain: String, id: String, date: LocalDate) = {
@@ -40,6 +45,7 @@ object DBSynthesis_IOService {
   def DB_SYNTHESIS_DIR = socrataDir + "/db_synthesis"
 
   def DECOMPOSTION_DIR = DB_SYNTHESIS_DIR + "/decomposition"
+  def STATISTICS_DIR = DB_SYNTHESIS_DIR + "/statistics/"
 
   def FDDIR = DECOMPOSTION_DIR + "/fds/"
   def COLID_FDDIR = DECOMPOSTION_DIR + "/fds_colID/"

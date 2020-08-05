@@ -1,9 +1,6 @@
 package de.metanome.algorithms.normalize;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,11 +36,15 @@ public class Main {
 	private static String subdomain;
 	private static Config conf;
 	private static String datasetID;
+	private static boolean runStatistics = true;
+	private static boolean runOnlyStatistics = false;
 
 	public static void main(String[] args) {
 		IOService.socrataDir_$eq(args[0]);
 		subdomain = args[1];
 		datasetID = args[2];
+		if(args.length==4 && Boolean.parseBoolean(args[3]))
+			runOnlyStatistics = true;
 		conf = new Config();
 		///home/leon/data/dataset_versioning/socrata/fromServer/db_synthesis/decomposition/csv/org.cityofchicago/
 		conf.inputFolderPath = DBSynthesis_IOService.getExportedCSVSubdomainDir(subdomain).getAbsolutePath() + File.separator;
@@ -78,26 +79,26 @@ public class Main {
 				.sorted(Comparator.comparing(f -> LocalDate.parse(f.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter()).toEpochDay()))
 				.collect(Collectors.toList());
 		FDValidator validator = new FDValidator(subdomain, datasetID);
-		Map<BitSet, BitSet> fds = validator.getFDIntersection();
-		//execute for the last one:
+		Map<BitSet, BitSet> intersectedFds = validator.getFDIntersection();
 		Path lastDataset = result.get(result.size() - 1);
 		LocalDate dateOfLast = LocalDate.parse(lastDataset.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter());
 		Path datasetVersionCSV = DBSynthesis_IOService.getExportedCSVFile(subdomain, datasetID, dateOfLast).toPath();
 		Path datasetVersionFD = DBSynthesis_IOService.getFDFile(subdomain, datasetID, dateOfLast).toPath();
+		//execute for the last one:
 		conf.inputDatasetName = datasetVersionCSV.getFileName().toString().replace(".csv", "");
 		conf.inputFolderPath = datasetVersionCSV.getParent() + File.separator;
 		Normi normi = new Normi();
 		ResultCache resultReceiver = configureNormi(conf, datasetVersionFD.getParent().getParent().toString(), normi);
 		normi.setResultReceiver(resultReceiver);
-		normi.runNormalization(fds);
-		if (conf.writeResults) {
+		normi.runNormalization(intersectedFds,true);
+		Stream<Result> results = resultReceiver.fetchNewResults().stream();
+		List<Result> collectedResults = results.collect(Collectors.toList());
+		if (conf.writeResults && !runOnlyStatistics) {
 			//final String outputPath = conf.measurementsFolderPath + conf.inputDatasetName + File.separator;
-			Stream<Result> results = resultReceiver.fetchNewResults().stream();
 			final File resultFile = DBSynthesis_IOService.getDecomposedTableFile(subdomain,datasetID,dateOfLast);
 			final FileWriter writer = new FileWriter(resultFile, false);
 			//results.map(result -> result.toString()).forEach(fd -> writeToFile(writer, fd));
 			int decomposedTableID = 0;
-			List<Result> collectedResults = results.collect(Collectors.toList());
 			for (Result fd : collectedResults) {
 				writeToFile(writer, datasetID, dateOfLast, decomposedTableID, fd);
 				decomposedTableID++;
@@ -106,6 +107,47 @@ public class Main {
 			writer.close();
 			results.close();
 		}
+		if(runStatistics) {
+			File statDir = DBSynthesis_IOService.getStatisticsDir(subdomain,datasetID);
+			Map<BitSet, BitSet> unfilteredFdsForLast = getFdsForFile(datasetID, datasetVersionCSV, datasetVersionFD);
+			PrintWriter statWriter = new PrintWriter(statDir.getAbsolutePath() + "_fd_statistics.csv");
+			Normi normi2 = new Normi();
+			ResultCache resultReceiver2 = configureNormi(conf, datasetVersionFD.getParent().getParent().toString(), normi2);
+			normi2.setResultReceiver(resultReceiver2);
+			normi2.runNormalization(unfilteredFdsForLast,false);
+			List<Result> resultsWithOriginalFD = resultReceiver2.fetchNewResults();
+			int intersectionSize = getResultIntersection(collectedResults,resultsWithOriginalFD, dateOfLast);
+			statWriter.println(intersectedFds.size() + "," + unfilteredFdsForLast.size());
+			statWriter.println("#FDsInLastSnapshot,#fdsInIntersection,#chosenKeyFDsWithUnfiltered,#chosenKeyFDsWithIntersection,#chosenKeyFDsInBoth");
+			statWriter.println(unfilteredFdsForLast.size() + "," + intersectedFds.size() + "," + collectedResults.size() + "," + resultsWithOriginalFD.size() + ","+ intersectionSize);
+			statWriter.close();
+		}
+	}
+
+	private static int getResultIntersection(List<Result> collectedResults, List<Result> resultsWithOriginalFD, LocalDate version) {
+		TemporalSchema temporalSchema = TemporalSchema.load(datasetID);
+		scala.collection.immutable.Map<String, Attribute> colNameToAttributeState = temporalSchema.nameToAttributeState(version);
+		HashSet<Set<String>> pkSet1 = new HashSet<Set<String>>();
+		HashSet<Set<String>> pkSet2 = new HashSet<Set<String>>();
+		for (Result fd : collectedResults) {
+			BasicStatistic r = (BasicStatistic) fd;
+			Set<Attribute> pk = getPrimaryKey(datasetID, colNameToAttributeState, r);
+			HashSet<String> pkS = new HashSet<String>();
+			pk.foreach(a -> pkS.add(a.name()));
+			pkSet1.add(pkS);
+		}
+		for (Result fd : resultsWithOriginalFD) {
+			BasicStatistic r = (BasicStatistic) fd;
+			Set<Attribute> pk = getPrimaryKey(datasetID, colNameToAttributeState, r);
+			HashSet<String> pkS = new HashSet<String>();
+			pk.foreach(a -> pkS.add(a.name()));
+			pkSet2.add(pkS);
+		}
+		return pkSet1.intersect(pkSet2).size();
+	}
+
+	private static int countLines(Path datasetVersionFD) {
+		return 0;
 	}
 
 	public static Map<BitSet, BitSet> getFdsForFile(String datasetID,Path datasetVersionCSV,Path datasetVersionFD){

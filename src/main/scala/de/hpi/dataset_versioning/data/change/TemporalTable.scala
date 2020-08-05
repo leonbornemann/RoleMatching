@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.simplified.Attribute
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.{FieldLineage, ValueLineage}
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 import de.metanome.algorithm_integration.ColumnIdentifier
@@ -13,6 +14,11 @@ import scala.collection.mutable
 import scala.io.Source
 
 class TemporalTable(val id:String,val attributes:collection.IndexedSeq[AttributeLineage],val rows:collection.IndexedSeq[TemporalRow]){
+
+  def project(dttToMerge: DecomposedTemporalTable) = {
+
+  }
+
 
   val timestampsWithChanges = {
     val timestampsSet = mutable.HashSet[LocalDate]()

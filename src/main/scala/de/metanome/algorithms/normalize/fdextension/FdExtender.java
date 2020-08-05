@@ -23,8 +23,8 @@ public abstract class FdExtender {
 			long time = System.currentTimeMillis();
 			this.executeAlgorithm(fds);
 			System.out.println("Extension in " + (System.currentTimeMillis() - time) + " ms");
-			
-			this.persister.write(fds, this.tempResultsPath, false);
+			if(useResultFile)
+				this.persister.write(fds, this.tempResultsPath, false);
 			return fds;
 		}
 		return extendedFds;

@@ -3,10 +3,13 @@ package de.hpi.dataset_versioning.data.change
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.simplified.Attribute
+import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 
 import scala.collection.mutable
 
 class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,AttributeState]) {
+  def nameSet = lineage.withFilter(_._2.exists).map(_._2.attr.get.name).toSet
+
   def lastDefinedValue = {
     val lastElem = lineage.last
     if(lastElem._2.exists){
@@ -38,6 +41,7 @@ class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,Attr
     if(curBegin!=null)
       activeTimeIntervals += TimeInterval(curBegin,None)
     activeTimeIntervals
+    new TimeIntervalSequence(activeTimeIntervals)
   }
 
   def valueAt(timestamp: LocalDate) = {

@@ -1,11 +1,28 @@
 
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.PrefixTree
+
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd.PrefixTree
 
 import scala.collection.mutable
 
 object PrefixTreeTest extends App {
   testIterator
   testIntersection
+  testPutExistingInfo
+
+  def testPutExistingInfo = {
+    var tree = new PrefixTree
+    var initialFds = IndexedSeq[(IndexedSeq[Int], IndexedSeq[Int])](
+      IndexedSeq(1) -> IndexedSeq(4),
+      IndexedSeq(1,2) -> IndexedSeq(5)
+    )
+    var toPut = IndexedSeq[(IndexedSeq[Int], IndexedSeq[Int])](
+      IndexedSeq(1,2,3) -> IndexedSeq(4,5)
+    )
+    tree.initializeFDSet(initialFds.toMap)
+    tree.root.putAll(toPut(0)._1,toPut(0)._2)
+    assert(tree.root.toIndexedSeq == initialFds)
+  }
+
 
   private def testIntersection = {
     var tree = new PrefixTree
@@ -47,6 +64,20 @@ object PrefixTreeTest extends App {
       IndexedSeq(21,22) -> IndexedSeq(23, 24),
       IndexedSeq(31,32) -> IndexedSeq(35,36)
     )
+    tree.initializeFDSet(initialFds.toMap)
+    intersection = tree.intersectFDs(fdsToIntersect.toMap)
+    assert(intersection == expectedResult)
+    //TODO: test A->B C-> B ==> AC->B
+    initialFds = IndexedSeq[(IndexedSeq[Int], IndexedSeq[Int])](
+      IndexedSeq(1) -> IndexedSeq(3)
+    )
+    fdsToIntersect = IndexedSeq[(IndexedSeq[Int], IndexedSeq[Int])](
+      IndexedSeq(2) -> IndexedSeq(3)
+    )
+    expectedResult = Map[IndexedSeq[Int], IndexedSeq[Int]](
+      IndexedSeq(1, 2) -> IndexedSeq(3)
+    )
+    tree = new PrefixTree()
     tree.initializeFDSet(initialFds.toMap)
     intersection = tree.intersectFDs(fdsToIntersect.toMap)
     assert(intersection == expectedResult)

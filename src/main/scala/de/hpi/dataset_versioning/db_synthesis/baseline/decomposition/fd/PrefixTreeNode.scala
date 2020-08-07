@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
+package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd
 
 import scala.collection.mutable
 
@@ -8,9 +8,16 @@ class PrefixTreeNode[A:Ordering,B:Ordering]() extends Iterable[(collection.Index
     val key = inputKey.sorted
     if(key.size==0)
       addToValueSet(values)
-    else
-      suffixes.getOrElseUpdate(key.head,new PrefixTreeNode[A,B]())
-        .putAll(key.tail,values)
+    else {
+      var valuesToAdd = values
+      if(value.isDefined) {
+        //filter out any values that are present at the current node already
+        valuesToAdd = values.filter(v => !value.get.contains(v))
+      }
+      if(!valuesToAdd.isEmpty)
+        suffixes.getOrElseUpdate(key.head,new PrefixTreeNode[A,B]())
+          .putAll(key.tail,valuesToAdd)
+    }
   }
 
 
@@ -44,9 +51,13 @@ class PrefixTreeNode[A:Ordering,B:Ordering]() extends Iterable[(collection.Index
     val key = inputKey.sorted
     if(key.size==0)
       addToValueSet(value)
-    else
+    else if(this.value.isDefined && value==this.value.get) {
+        //we do nothing as the info is already in the tree
+      }
+    else {
       suffixes.getOrElseUpdate(key.head,new PrefixTreeNode[A,B]())
         .put(key.tail,value)
+    }
   }
 
   var value:Option[mutable.HashSet[B]] = None

@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema;
 import de.hpi.dataset_versioning.data.simplified.Attribute;
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.FDValidator;
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd.FDValidator;
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.normalization.DecomposedTable;
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService;
 import de.hpi.dataset_versioning.io.IOService;

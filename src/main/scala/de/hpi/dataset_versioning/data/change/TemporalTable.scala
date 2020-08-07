@@ -16,7 +16,21 @@ import scala.io.Source
 class TemporalTable(val id:String,val attributes:collection.IndexedSeq[AttributeLineage],val rows:collection.IndexedSeq[TemporalRow]){
 
   def project(dttToMerge: DecomposedTemporalTable) = {
-
+    val newSchema = dttToMerge.containedAttrLineages
+    val rows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
+    val alIDToPosInNewTable = dttToMerge.containedAttrLineages.zipWithIndex.map{case (al,i) => (al.attrId,i)}.toMap
+    val oldAttributePositionToNewAttributePosition = this.attributes.zipWithIndex
+      .withFilter(al => alIDToPosInNewTable.contains(al._1.attrId))
+      .map{case (al,i) => (i,alIDToPosInNewTable(al.attrId))}.toIndexedSeq
+    this.rows.foreach(tr => {
+      val newRowContent = oldAttributePositionToNewAttributePosition.map{case (oldIndex,newIndex) => {
+        (newIndex,tr.fields(oldIndex))
+      }}.sortBy(_._1)
+      assert(newRowContent.map(_._1) == (0 until newSchema.size))
+      val newRow = new TemporalRow(tr.entityID,newRowContent.map(_._2))
+      rows.addOne(newRow)
+    })
+    new TemporalTable(dttToMerge.compositeID,newSchema,rows)
   }
 
 
@@ -74,6 +88,13 @@ class TemporalTable(val id:String,val attributes:collection.IndexedSeq[Attribute
 }
 
 object TemporalTable extends StrictLogging{
+
+  val cache = mutable.HashMap[String,TemporalTable]()
+
+  def loadAndCache(originalID: String) = {
+    cache.getOrElseUpdate(originalID,load(originalID))
+  }
+
   def load(id: String) = from(ChangeCube.load(id))
 
 

@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
+package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd
 
 import java.time.LocalDate
 import java.util

@@ -23,31 +23,23 @@ class SynthesizedTemporalDatabaseTable(val subdomain:String,
 object SynthesizedTemporalDatabaseTable{
 
   def initFrom(dttToMerge: DecomposedTemporalTable) = {
-    val rows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
     val synthesizedSchema = dttToMerge.containedAttrLineages
     var curEntityID:Long = 0
     val entityIDMatchingSynthesizedToOriginal = mutable.HashMap[Long,Long]()
-    val tt = TemporalTable.load(dttToMerge.originalID)
-      //.project(dttToMerge)
-    val alIDToPosInNewTable = dttToMerge.containedAttrLineages.zipWithIndex.map{case (al,i) => (al.attrId,i)}.toMap
-    val oldAttributePositionToNewAttributePosition = tt.attributes.zipWithIndex
-      .withFilter(al => alIDToPosInNewTable.contains(al._1.attrId))
-      .map{case (al,i) => (i,alIDToPosInNewTable(al.attrId))}.toIndexedSeq
+    val tt = TemporalTable.loadAndCache(dttToMerge.originalID) //TODO: we will need to shrink this cache at some point
+      .project(dttToMerge)
+    val newRows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
+    //create new temporal rows with new entity ids:
     tt.rows.foreach(tr => {
-      val newRowContent = oldAttributePositionToNewAttributePosition.map{case (oldIndex,newIndex) => {
-        (newIndex,tr.fields(oldIndex))
-      }}.sortBy(_._1)
-      assert(newRowContent.map(_._1) == (0 until synthesizedSchema.size))
-      val newRow = new TemporalRow(curEntityID,newRowContent.map(_._2))
+      newRows.addOne(new TemporalRow(curEntityID,tr.fields))
       entityIDMatchingSynthesizedToOriginal.put(curEntityID,tr.entityID)
       curEntityID +=1
-      rows.addOne(newRow)
     })
     val attributeMatchingSynthesizedToOriginal = synthesizedSchema.map(al => (al.attrId,al.attrId))
     val synthTable = new SynthesizedTemporalDatabaseTable(dttToMerge.subdomain,
       mutable.HashSet(dttToMerge.compositeID),
       synthesizedSchema,
-      rows,
+      newRows,
       curEntityID)
     synthTable.fieldAndRowMappings.put(dttToMerge,new FieldAndRowMapping(attributeMatchingSynthesizedToOriginal,entityIDMatchingSynthesizedToOriginal))
     synthTable

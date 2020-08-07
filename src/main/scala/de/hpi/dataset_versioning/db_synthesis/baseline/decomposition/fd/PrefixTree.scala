@@ -1,8 +1,13 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
+package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd
 
 import scala.collection.mutable
 
 class PrefixTree() {
+
+  def putAll(toNewlyAdd: mutable.HashMap[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]) = {
+    toNewlyAdd.foreach{case (lhs,rhs) => root.putAll(lhs,rhs)}
+  }
+
 
   private val emptySetResult = mutable.HashSet[Int]()
   val root = new PrefixTreeNode[Int,Int]()
@@ -25,6 +30,10 @@ class PrefixTree() {
       Some(leftSide,curRightSideCover.toIndexedSeq.sorted)
     } else
       None
+  }
+
+  def fdLHSUnion(lhs: collection.IndexedSeq[Int], otherLHS: collection.IndexedSeq[Int]): collection.IndexedSeq[Int] = {
+    (lhs ++ otherLHS).toSet.toIndexedSeq.sorted
   }
 
   def intersectFDs(toIntersectWith: collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]):collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]] = {
@@ -55,7 +64,29 @@ class PrefixTree() {
         }
       }
     })
-    intersection
+    /**
+     * Now deal with the case:
+     * V1: A -> C
+     * V2: B -> C
+     * Intersection: AB -> C
+     */
+    val byRHS = toIntersectWith
+      .toIndexedSeq
+      .flatMap{case (l,r) => r.map(rhsElem => (l,rhsElem))}
+      .groupMap(k => k._2)(k => k._1)
+    val toNewlyAdd = mutable.HashMap[collection.IndexedSeq[Int],collection.IndexedSeq[Int]]()
+    root.foreach{case (lhs,rhs) => {
+      rhs.foreach(rhsElem => {
+        val otherLHSCollection = byRHS.getOrElse(rhsElem,mutable.IndexedSeq())
+        otherLHSCollection.foreach(otherLHS => {
+          toNewlyAdd.put(fdLHSUnion(lhs,otherLHS),mutable.IndexedSeq(rhsElem))
+        })
+      })
+    }}
+    val curIntersectionAsPRefixTree = new PrefixTree()
+    curIntersectionAsPRefixTree.initializeFDSet(intersection)
+    curIntersectionAsPRefixTree.putAll(toNewlyAdd)
+    curIntersectionAsPRefixTree.root.toMap
     //TODO: test this method
     //TODO: is the resulting FD prefix tree still minimal?
   }

@@ -1,5 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
+import java.io.PrintWriter
 import java.time
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -12,6 +13,7 @@ import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, TemporalTableDecomposer}
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.normalization.DecomposedTable
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
@@ -31,15 +33,15 @@ class TopDown(subdomain:String) extends StrictLogging{
       prev = v
     }}
     toDelete.foreach(schemaSizeHistory.remove(_))
-    schemaSizeHistory
+    schemaSizeHistory //TODO: leading and trailing zeros are allowed to match anything
   }
 
   def getMergeInfo(dtt1: DecomposedTemporalTable, dtt2: DecomposedTemporalTable): TemporalTableMergeInfo = {
     ???
   }
 
-  def getColnameContainmentBasedSchemaMapping(dtt1: DecomposedTemporalTable, dtt2: DecomposedTemporalTable) = {
-    val greedyMatcher = new SuperSimpleGreedySchemaMatcher(dtt1,dtt2).getSchemaMatching()
+//  def getColnameContainmentBasedSchemaMapping(dtt1: DecomposedTemporalTable, dtt2: DecomposedTemporalTable) = {
+//    val greedyMatcher = new SuperSimpleGreedySchemaMatcher(dtt1,dtt2).getSchemaMatching()
     //dtt2 is modeled as the database table, to which we want to map the column lineages of dtt1
     //other old ideas:
 //    val globalTemporalMatching1To2 = mutable.HashMap[Int,Set[Int]]()
@@ -94,71 +96,59 @@ class TopDown(subdomain:String) extends StrictLogging{
 //      }}
 //      exactlyOneForEachAttr1 && exactlyOneForEachAttr2
 //    }))
-  }
-
-  def shouldConsiderMerge(dtt1: DecomposedTemporalTable, dtt2: DecomposedTemporalTable): Boolean = {
-    val schemaMapping = getColnameContainmentBasedSchemaMapping(dtt1,dtt2)
-    ???
-    //TODO: continue here, maybe we should not just consider merge, but actually execute it already (?)
-    //if(schemaMapping.size==dtt1.)
-  }
+//  }
 
   def synthesizeDatabase() = {
     val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
     val subdomainIds = subDomainInfo(subdomain)
       .map(_.id)
       .toIndexedSeq
-    val temporallyDecomposedTablesBySchemaSizeHistory = subdomainIds.flatMap(id => {
-      logger.debug(s"Loading temporally decomposed tables for $id")
-      val dtts = DecomposedTemporalTable.loadAll(subdomain,id)
-      dtts
+    val temporallyDecomposedTablesBySchemaSizeHistory = subdomainIds
+      .filter(id => DBSynthesis_IOService.getDecomposedTemporalTableDir(subdomain,id).exists())
+      .flatMap(id => {
+        logger.debug(s"Loading temporally decomposed tables for $id")
+        val dtts = DecomposedTemporalTable.loadAll(subdomain, id)
+        dtts
     }).groupBy(getPossibleEquivalenceClass(_))
-    temporallyDecomposedTablesBySchemaSizeHistory.foreach{case (schemaSizeHistory,g) => {
-      logger.debug(s"Looking for potential Matches in $schemaSizeHistory")
-      logger.debug(s"Group size: ${g.size}")
-      val finalSynthesizedTables = mutable.HashSet[SynthesizedTemporalDatabaseTable]()
-      var freeTables = mutable.HashSet[DecomposedTemporalTable]() ++ g
-      for(i <- 0 until g.size){
-        val dttToMerge = g(i)
-        if(!freeTables.contains(dttToMerge)){
-          val curSynthTable = SynthesizedTemporalDatabaseTable.initFrom(dttToMerge)
-          finalSynthesizedTables.add(curSynthTable)
-          val newlyMatched = mutable.HashSet[DecomposedTemporalTable]()
-          freeTables.foreach(curCandidate => {
-            val bestMerge = curSynthTable.getBestMerge(curCandidate)
-            if(bestMerge.isDefined){
-              curSynthTable.merge(curCandidate,bestMerge.get)
-              newlyMatched.add(curCandidate)
-            }
-          })
-          freeTables = freeTables.diff(newlyMatched)
-        } else{
-          //we skip this table because it was already merged into a synthesized table
+    logger.debug(s"Loaded ${temporallyDecomposedTablesBySchemaSizeHistory.size} decomposed temporal tables")
+    val statFile = new PrintWriter("matchingStatistics.csv")
+    statFile.println("dtt1,dtt2,schemaSize1,schemaSize2")
+    //gather statistics:
+    temporallyDecomposedTablesBySchemaSizeHistory.foreach { case (schemaSizeHistory, g) => {
+      for (i <- 0 until g.size) {
+        val dttToMerge1 = g(i)
+        for (j <- (i+1) until g.size) {
+          val dttToMerge2 = g(j)
+          statFile.println(s"${dttToMerge1.compositeID},${dttToMerge2.compositeID},${dttToMerge1.containedAttrLineages.size},${dttToMerge2.containedAttrLineages.size}")
+        }
+      }
     }}
+    statFile.close()
 
-    for(i <- 0 until mergeGraphAdjacencyList.size){
-      ??? //TODO: continue here (?)
-    }
-
-    //old:
-    //decompose the tables:
-//    val temporalTables = subdomainIds.map(id => {
-//      logger.debug(s"Loading changes for $id")
-//      val changeCube = ChangeCube.load(id)
-//      val temporalTable = changeCube.toTemporalTable()
-//      temporalTable
-//    })
-//    val fieldLineageReferences = temporalTables.map(_.getFieldLineageReferences)
-//    //now we need to build a compatibility index
-//    val equalityCompatibilityMethod = new FieldLineageEquality()
-//    val deltaTCompatibilityMethod = new DeltaTCompatibility(3)
-//TODO:
-    //    temporalTables.foreach(t => {
-//      t.validateDiscoverdFDs()
-//    })
-    //TODO: this might actually be the core of the paper (?)
-    //TODO: we need an index and we need to rank the connections
-    //TODO: do we aggregate by column?
+//    temporallyDecomposedTablesBySchemaSizeHistory.foreach { case (schemaSizeHistory, g) => {
+//      logger.debug(s"Looking for potential Matches in $schemaSizeHistory")
+//      logger.debug(s"Group size: ${g.size}")
+//      val finalSynthesizedTables = mutable.HashSet[SynthesizedTemporalDatabaseTable]()
+//      var freeTables = mutable.HashSet[DecomposedTemporalTable]() ++ g
+//      for (i <- 0 until g.size) {
+//        val dttToMerge = g(i)
+//        if (freeTables.contains(dttToMerge)) {
+//          val curSynthTable = SynthesizedTemporalDatabaseTable.initFrom(dttToMerge)
+//          finalSynthesizedTables.add(curSynthTable)
+//          val newlyMatched = mutable.HashSet[DecomposedTemporalTable]()
+//          freeTables.remove(dttToMerge)
+//          freeTables.foreach(curCandidate => {
+//            val bestMerge = curSynthTable.getBestMerge(curCandidate)
+//            //            if(bestMerge.isDefined){
+//            //              curSynthTable.merge(curCandidate,bestMerge.get)
+//            //              newlyMatched.add(curCandidate)
+//            //            }
+//          })
+//          freeTables = freeTables.diff(newlyMatched)
+//        } else {
+//          //we skip this table because it was already merged into a synthesized table
+//        }
+//      }
+//    }}
   }
-
 }

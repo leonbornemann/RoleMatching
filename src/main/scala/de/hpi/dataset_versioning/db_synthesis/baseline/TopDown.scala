@@ -103,13 +103,26 @@ class TopDown(subdomain:String) extends StrictLogging{
     val subdomainIds = subDomainInfo(subdomain)
       .map(_.id)
       .toIndexedSeq
-    val temporallyDecomposedTablesBySchemaSizeHistory = subdomainIds
+    val temporallyDecomposedTables = subdomainIds
       .filter(id => DBSynthesis_IOService.getDecomposedTemporalTableDir(subdomain,id).exists())
       .flatMap(id => {
         logger.debug(s"Loading temporally decomposed tables for $id")
         val dtts = DecomposedTemporalTable.loadAll(subdomain, id)
         dtts
-    }).groupBy(getPossibleEquivalenceClass(_))
+    })
+    val temporallyDecomposedTables2 = subdomainIds
+      .filter(id => DBSynthesis_IOService.getDecomposedTemporalTableDir(subdomain,id).exists())
+      .flatMap(id => {
+        logger.debug(s"Loading temporally decomposed tables for $id")
+        val dtts = DecomposedTemporalTable.loadAll(subdomain, id)
+        dtts.flatMap(dtt => dtt.furtherDecomposeToAssociations)
+      })
+    println(temporallyDecomposedTables.size)
+    println(temporallyDecomposedTables2.size)
+    print()
+    temporallyDecomposedTables.map(_.originalFDLHS.size).groupBy(identity)
+      .foreach(t => println(s"${t._1},${t._2}"))
+    val temporallyDecomposedTablesBySchemaSizeHistory =  temporallyDecomposedTables.groupBy(getPossibleEquivalenceClass(_))
     logger.debug(s"Loaded ${temporallyDecomposedTablesBySchemaSizeHistory.size} decomposed temporal tables")
     val statFile = new PrintWriter("matchingStatistics.csv")
     statFile.println("dtt1,dtt2,schemaSize1,schemaSize2")

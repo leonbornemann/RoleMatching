@@ -23,11 +23,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Main_FDs {
+    private static int maxFDLHSSize = -1;
 
     public static void main(String[] args) {
         Config conf = new Config();
         conf.inputFolderPath = args[0];
         conf.measurementsFolderPath = args[1];
+        maxFDLHSSize = Integer.parseInt(args[2]);
         System.out.println();
         try (Stream<Path> walk = Files.walk(Paths.get(conf.inputFolderPath))) {
 
@@ -106,7 +108,7 @@ public class Main_FDs {
         System.out.println();
 
         FdDiscoverer fdDiscoverer = new HyFDFdDiscoverer(converter, persister, tempResultsPath);
-        Map<BitSet, BitSet> fds = fdDiscoverer.calculateFds(inputGenerator, Boolean.valueOf(true), true);
+        Map<BitSet, BitSet> fds = fdDiscoverer.calculateFds(inputGenerator, Boolean.valueOf(true), true,maxFDLHSSize);
 
         // Statistics
         int numFds = (int) fds.values().stream().mapToLong(BitSet::cardinality).sum();

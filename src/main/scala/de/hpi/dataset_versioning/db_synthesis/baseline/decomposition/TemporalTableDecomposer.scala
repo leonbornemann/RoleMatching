@@ -180,13 +180,13 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
       val pkByTImestampMap = versionHistory.versionsWithChanges
         .withFilter(v => originalFDLHS.exists(_.valueAt(v)._2.exists))
         .map(v => {
-        val extraKeyAttributesThisVersion = extraKeyAttributes.filter(_.valueAt(v)._2.exists)
-          .map(_.valueAt(v)._2.attr.get)
-        val curPk = (originalFDLHS
-          .withFilter(_.valueAt(v)._2.exists)
-          .map(_.valueAt(v)._2.attr.get)
-          ++ extraKeyAttributesThisVersion)
-        (v,curPk)
+          val extraKeyAttributesThisVersion = extraKeyAttributes.filter(_.valueAt(v)._2.exists)
+            .map(_.valueAt(v)._2.attr.get)
+          val curPk = (originalFDLHS
+            .withFilter(_.valueAt(v)._2.exists)
+            .map(_.valueAt(v)._2.attr.get)
+            ++ extraKeyAttributesThisVersion)
+          (v,curPk)
       }).toMap
       val foreignKey = dt.foreignKeys.map(a => attrLineageByID(a.id))
       val decomposedTemporalTable = DecomposedTemporalTable(subdomain,dt.originalID,dt.id,containedAttrLineages,originalFDLHS,pkByTImestampMap)

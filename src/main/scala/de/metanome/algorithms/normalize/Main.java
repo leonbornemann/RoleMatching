@@ -22,9 +22,11 @@ import de.metanome.algorithm_integration.input.RelationalInputGenerator;
 import de.metanome.algorithm_integration.results.BasicStatistic;
 import de.metanome.algorithm_integration.results.Result;
 import de.metanome.algorithms.normalize.config.Config;
+import de.metanome.algorithms.normalize.structures.Schema;
 import de.metanome.backend.input.file.DefaultFileInputGenerator;
 import de.metanome.backend.result_receiver.ResultCache;
 import de.metanome.algorithm_integration.results.basic_statistic_values.BasicStatisticValue;
+import org.joda.convert.factory.BooleanObjectArrayStringConverterFactory;
 import org.json.JSONObject;
 import scala.collection.Set;
 import scala.collection.mutable.ArrayBuffer;
@@ -38,13 +40,15 @@ public class Main {
 	private static String datasetID;
 	private static boolean runStatistics = true;
 	private static boolean runOnlyStatistics = false;
+	private static int MAX_FD_SIZE_FOR_UNION = 4;
+	private static int maxFDLHSSize = -1;
 
 	public static void main(String[] args) {
 		IOService.socrataDir_$eq(args[0]);
 		subdomain = args[1];
 		datasetID = args[2];
-		if(args.length==4 && Boolean.parseBoolean(args[3]))
-			runOnlyStatistics = true;
+		runOnlyStatistics = Boolean.parseBoolean(args[3]);
+		maxFDLHSSize = Integer.parseInt(args[4]);
 		conf = new Config();
 		///home/leon/data/dataset_versioning/socrata/fromServer/db_synthesis/decomposition/csv/org.cityofchicago/
 		conf.inputFolderPath = DBSynthesis_IOService.getExportedCSVSubdomainDir(subdomain).getAbsolutePath() + File.separator;
@@ -78,7 +82,7 @@ public class Main {
 				.filter(Files::isRegularFile)
 				.sorted(Comparator.comparing(f -> LocalDate.parse(f.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter()).toEpochDay()))
 				.collect(Collectors.toList());
-		FDValidator validator = new FDValidator(subdomain, datasetID);
+		FDValidator validator = new FDValidator(subdomain, datasetID,MAX_FD_SIZE_FOR_UNION);
 		Map<BitSet, BitSet> intersectedFds = validator.getFDIntersection();
 		Path lastDataset = result.get(result.size() - 1);
 		LocalDate dateOfLast = LocalDate.parse(lastDataset.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter());
@@ -90,7 +94,7 @@ public class Main {
 		Normi normi = new Normi();
 		ResultCache resultReceiver = configureNormi(conf, datasetVersionFD.getParent().getParent().toString(), normi);
 		normi.setResultReceiver(resultReceiver);
-		normi.runNormalization(intersectedFds,true);
+		List<Schema> bcnf = normi.runNormalization(intersectedFds,true);
 		Stream<Result> results = resultReceiver.fetchNewResults().stream();
 		List<Result> collectedResults = results.collect(Collectors.toList());
 		if (conf.writeResults && !runOnlyStatistics) {
@@ -156,7 +160,7 @@ public class Main {
 		try {
 			Normi normi = new Normi();
 			configureNormi(conf, datasetVersionFD.getParent().getParent().toString(), normi);
-			return normi.discoverFds();
+			return normi.discoverFds(maxFDLHSSize);
 		}
 		catch (AlgorithmExecutionException e) {
 			e.printStackTrace();

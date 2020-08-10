@@ -10,7 +10,7 @@ import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-class FDValidator(subdomain:String,id:String) extends StrictLogging{
+class FDValidator(subdomain:String,id:String,maxFDSizeForUnion:Int) extends StrictLogging{
 
   val temporalSchema = TemporalSchema.load(id)
 
@@ -109,8 +109,9 @@ class FDValidator(subdomain:String,id:String) extends StrictLogging{
       val newFDs = readFDs(id,curDate)
       val fdsWithCOLIDS = translateFDs(newFDs,curDate)
       serializeFds(curDate, fdsWithCOLIDS)
-      val intersectedFDs = prefixTree.intersectFDs(fdsWithCOLIDS)
+      val intersectedFDs = prefixTree.intersectFDs(fdsWithCOLIDS,maxFDSizeForUnion)
           .filter(fd => fd._1.forall(colID => attributeLineagesByID(colID).valueAt(curDate)._2.exists)) //filters out fds that have an element in LHS that does not exist at curDate
+      logger.debug(s"Current FDs in intersection: ${intersectedFDs.size}")
       prefixTree = new PrefixTree
       prefixTree.initializeFDSet(intersectedFDs)
     }

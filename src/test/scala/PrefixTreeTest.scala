@@ -42,7 +42,7 @@ object PrefixTreeTest extends App {
       IndexedSeq(11, 12, 13) -> IndexedSeq(14, 15)
     )
     tree.initializeFDSet(initialFds.toMap)
-    var intersection = tree.intersectFDs(fdsToIntersect.toMap)
+    var intersection = tree.intersectFDs(fdsToIntersect.toMap,5)
     assert(intersection == expectedResult)
     //more difficult cases:
     tree = new PrefixTree
@@ -65,7 +65,7 @@ object PrefixTreeTest extends App {
       IndexedSeq(31,32) -> IndexedSeq(35,36)
     )
     tree.initializeFDSet(initialFds.toMap)
-    intersection = tree.intersectFDs(fdsToIntersect.toMap)
+    intersection = tree.intersectFDs(fdsToIntersect.toMap,5)
     assert(intersection == expectedResult)
     //TODO: test A->B C-> B ==> AC->B
     initialFds = IndexedSeq[(IndexedSeq[Int], IndexedSeq[Int])](
@@ -79,7 +79,7 @@ object PrefixTreeTest extends App {
     )
     tree = new PrefixTree()
     tree.initializeFDSet(initialFds.toMap)
-    intersection = tree.intersectFDs(fdsToIntersect.toMap)
+    intersection = tree.intersectFDs(fdsToIntersect.toMap,5)
     assert(intersection == expectedResult)
   }
 

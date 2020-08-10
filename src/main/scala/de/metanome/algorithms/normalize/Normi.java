@@ -67,7 +67,8 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 	private Boolean nullEqualsNull = Boolean.valueOf(true);
 	
 	private int maxLinesToPrint = 50;
-	
+	private int maxFDLHSSize = 4;
+
 	public boolean isHumanInTheLoop = false;
 
 	List<FunctionalDependency> splitFDsInOrder = new ArrayList<>();
@@ -117,11 +118,11 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 
 	@Override
 	public void execute() throws AlgorithmExecutionException {
-		Map<BitSet, BitSet> fds = discoverFds();
+		Map<BitSet, BitSet> fds = discoverFds(maxFDLHSSize);
 		runNormalization(fds,true);
 	}
 
-	public Map<BitSet, BitSet> discoverFds() throws AlgorithmExecutionException {
+	public Map<BitSet, BitSet> discoverFds(int maxFDLSHSize) throws AlgorithmExecutionException {
 		System.out.println();
 		System.out.println("///// Initialization /////");
 		System.out.println();
@@ -139,10 +140,10 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 
 
 		FdDiscoverer fdDiscoverer = new HyFDFdDiscoverer(this.converter, this.persister, this.tempResultsPath);
-		return fdDiscoverer.calculateFds(this.inputGenerator, this.nullEqualsNull, true);
+		return fdDiscoverer.calculateFds(this.inputGenerator, this.nullEqualsNull, true,maxFDLSHSize);
 	}
 
-	void runNormalization(Map<BitSet, BitSet> fds,boolean useResultFile) throws AlgorithmExecutionException {
+	List<Schema> runNormalization(Map<BitSet, BitSet> fds,boolean useResultFile) throws AlgorithmExecutionException {
 		// Statistics
 		this.initialize();
 		int numFds = (int)fds.values().stream().mapToLong(BitSet::cardinality).sum();
@@ -202,6 +203,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 
 			this.resultReceiver.receiveResult(result);
 		}
+		return bcnf;
 	}
 
 	private LocalDate getTimestamp(String tableName) {
@@ -710,7 +712,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		this.initialize();
 		
 		FdDiscoverer fdDiscoverer = new HyFDFdDiscoverer(this.converter, this.persister, this.tempResultsPath);
-		Map<BitSet, BitSet> allFds = fdDiscoverer.calculateFds(this.inputGenerator, this.nullEqualsNull, true);
+		Map<BitSet, BitSet> allFds = fdDiscoverer.calculateFds(this.inputGenerator, this.nullEqualsNull, true,maxFDLHSSize);
 		
 		int numAllFds = (int)allFds.values().stream().mapToLong(BitSet::cardinality).sum();
 		int stepSize = (int)Math.ceil((double) numAllFds / numEvaluationSteps);

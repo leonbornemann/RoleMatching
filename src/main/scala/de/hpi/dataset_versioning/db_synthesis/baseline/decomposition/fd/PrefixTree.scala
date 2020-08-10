@@ -3,8 +3,13 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd
 import scala.collection.mutable
 
 class PrefixTree() {
+  def put(fd: (collection.IndexedSeq[Int], collection.IndexedSeq[Int])) ={
+    val (lhs,rhs) = fd
+    root.putAll(lhs,rhs)
+  }
 
-  def putAll(toNewlyAdd: mutable.HashMap[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]) = {
+
+  def putAll(toNewlyAdd: collection.Iterable[(collection.IndexedSeq[Int], collection.IndexedSeq[Int])]) = {
     toNewlyAdd.foreach{case (lhs,rhs) => root.putAll(lhs,rhs)}
   }
 
@@ -36,7 +41,9 @@ class PrefixTree() {
     (lhs ++ otherLHS).toSet.toIndexedSeq.sorted
   }
 
-  def intersectFDs(toIntersectWith: collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]):collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]] = {
+  def intersectFDs(toIntersectWith: collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]],
+                  maxFDSizeForUnion:Int
+                  ):collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]] = {
     val intersection = mutable.HashMap[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]()
     //first pass: exact matches
     toIntersectWith.foreach(fd => {
@@ -70,30 +77,40 @@ class PrefixTree() {
      * V2: B -> C
      * Intersection: AB -> C
      */
-    val byRHS = toIntersectWith
+    val onlyOneOnRHS = toIntersectWith
       .toIndexedSeq
       .flatMap{case (l,r) => r.map(rhsElem => (l,rhsElem))}
-      .groupMap(k => k._2)(k => k._1)
-    val toNewlyAdd = mutable.HashMap[collection.IndexedSeq[Int],collection.IndexedSeq[Int]]()
+    val byRHS = onlyOneOnRHS.groupMap(k => k._2)(k => k._1)
+//    val tree1 = new PrefixTree().initializeFDSet(toIntersectWith)
+//    val tree2 = new PrefixTree().initializeFDSet(onlyOneOnRHS.map(t => (t._1,mutable.IndexedSeq(t._2))))
+//    assert(tree1.root.toIndexedSeq == tree2.root.toIndexedSeq)
+    //val toNewlyAdd = mutable.ArrayBuffer[(collection.IndexedSeq[Int],collection.IndexedSeq[Int])]()
+    val curIntersectionAsPRefixTree = new PrefixTree
+    curIntersectionAsPRefixTree.initializeFDSet(intersection)
     root.foreach{case (lhs,rhs) => {
       rhs.foreach(rhsElem => {
         val otherLHSCollection = byRHS.getOrElse(rhsElem,mutable.IndexedSeq())
         otherLHSCollection.foreach(otherLHS => {
-          toNewlyAdd.put(fdLHSUnion(lhs,otherLHS),mutable.IndexedSeq(rhsElem))
+          //TODO: we need a lookup here if union AB -> C is found and B -> C is already in intersection, we dont want to add AB -> C
+          //TODO: maybe use the logic in findBestOVerlap
+          val curFD = (fdLHSUnion(lhs,otherLHS),mutable.IndexedSeq(rhsElem))
+          if(!curIntersectionAsPRefixTree.findBestOverlap(curFD).isDefined && curFD._1.size<=maxFDSizeForUnion){ //IMPORTANT: THIS ONLY WORKS BECAUSE RHS of curFD is always of size 1
+            curIntersectionAsPRefixTree.put(curFD)
+          }
         })
       })
     }}
-    val curIntersectionAsPRefixTree = new PrefixTree()
-    curIntersectionAsPRefixTree.initializeFDSet(intersection)
-    curIntersectionAsPRefixTree.putAll(toNewlyAdd)
     curIntersectionAsPRefixTree.root.toMap
     //TODO: test this method
     //TODO: is the resulting FD prefix tree still minimal?
   }
 
 
-  def initializeFDSet(fds: collection.Map[collection.IndexedSeq[Int], collection.IndexedSeq[Int]]) = {
-    fds.foreach{case (left,right) => root.putAll(left,right)}
+  def initializeFDSet(fds: collection.Iterable[(collection.IndexedSeq[Int], collection.IndexedSeq[Int])]) = {
+    fds.foreach{case (left,right) => {
+      root.putAll(left,right)
+    }}
+    this
   }
 
 }

@@ -16,7 +16,7 @@ public class HyFDFdDiscoverer extends FdDiscoverer {
 	}
 
 	@Override
-	protected ResultCache executeAlgorithm(RelationalInputGenerator inputGenerator, Boolean nullEqualsNull) throws AlgorithmExecutionException {
+	protected ResultCache executeAlgorithm(RelationalInputGenerator inputGenerator, Boolean nullEqualsNull,int maxFDLHSSize) throws AlgorithmExecutionException {
 		ResultCache resultFds = null;
 		try {
 			HyFD hyFD = new HyFD();
@@ -27,7 +27,7 @@ public class HyFDFdDiscoverer extends FdDiscoverer {
 			hyFD.setBooleanConfigurationValue(HyFD.Identifier.NULL_EQUALS_NULL.name(), nullEqualsNull);
 			hyFD.setBooleanConfigurationValue(HyFD.Identifier.VALIDATE_PARALLEL.name(), Boolean.valueOf(true));
 			hyFD.setBooleanConfigurationValue(HyFD.Identifier.ENABLE_MEMORY_GUARDIAN.name(), Boolean.valueOf(true));
-			hyFD.setIntegerConfigurationValue(HyFD.Identifier.MAX_DETERMINANT_SIZE.name(), Integer.valueOf(-1));
+			hyFD.setIntegerConfigurationValue(HyFD.Identifier.MAX_DETERMINANT_SIZE.name(), maxFDLHSSize);
 			hyFD.setResultReceiver(resultFds);
 			
 			hyFD.execute();

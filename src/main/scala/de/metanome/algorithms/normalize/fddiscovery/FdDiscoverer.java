@@ -21,11 +21,11 @@ public abstract class FdDiscoverer {
 		this.tempResultsPath = tempResultsPath;
 	}
 	
-	public Map<BitSet, BitSet> calculateFds(RelationalInputGenerator inputGenerator, Boolean nullEqualsNull, boolean useResultFile) throws AlgorithmExecutionException {
+	public Map<BitSet, BitSet> calculateFds(RelationalInputGenerator inputGenerator, Boolean nullEqualsNull, boolean useResultFile,int maxFDSizeLHS) throws AlgorithmExecutionException {
 		Map<BitSet, BitSet> fds = useResultFile ? this.persister.read(this.tempResultsPath) : null;
 		
 		if (fds == null) {
-			ResultCache resultFds = this.executeAlgorithm(inputGenerator, nullEqualsNull);
+			ResultCache resultFds = this.executeAlgorithm(inputGenerator, nullEqualsNull,maxFDSizeLHS);
 			
 			System.out.println("Transforming FDs into bitsets ...");
 			fds = this.converter.toFunctionalDependencyMap(resultFds.fetchNewResults());
@@ -36,5 +36,5 @@ public abstract class FdDiscoverer {
 		return fds;
 	}
 	
-	protected abstract ResultCache executeAlgorithm(RelationalInputGenerator inputGenerator, Boolean nullEqualsNull) throws AlgorithmExecutionException;
+	protected abstract ResultCache executeAlgorithm(RelationalInputGenerator inputGenerator, Boolean nullEqualsNull,int maxFDSizeLHS) throws AlgorithmExecutionException;
 }

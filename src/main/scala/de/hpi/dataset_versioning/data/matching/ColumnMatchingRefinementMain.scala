@@ -1,6 +1,6 @@
 package de.hpi.dataset_versioning.data.matching
 
-import de.hpi.dataset_versioning.data.change.TemporalTable
+import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.io.IOService
 
 //this main unifies all attribute lineages, that have no temporal overlap but share a name at the "connection" points

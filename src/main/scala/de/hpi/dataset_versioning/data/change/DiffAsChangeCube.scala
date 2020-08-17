@@ -30,6 +30,7 @@ class DiffAsChangeCube(val v1:RelationalDataset, val v2:RelationalDataset,
     v2.attributes.map(_.id).toSet.diff(v1.attributes.map(_.id).toSet)
       .map(id => attrByID(id))
   }
+
   def columnDeletes = {
     val attrByID = v1.getAttributesByID
     v1.attributes.map(_.id).toSet.diff(v2.attributes.map(_.id).toSet)

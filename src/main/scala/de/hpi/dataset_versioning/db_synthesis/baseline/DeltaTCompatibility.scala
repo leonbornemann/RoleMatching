@@ -2,7 +2,8 @@ package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import java.time.Duration
 
-import de.hpi.dataset_versioning.data.change.{Change, FieldLineageCompatibility, FieldLineageReference, ReservedChangeValues}
+import de.hpi.dataset_versioning.data.change.temporal_tables.FieldLineageReference
+import de.hpi.dataset_versioning.data.change.{Change, FieldLineageCompatibility, ReservedChangeValues}
 
 class DeltaTCompatibility(delta_t_in_days: Int) extends FieldLineageCompatibility{
 

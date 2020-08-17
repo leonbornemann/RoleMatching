@@ -2,11 +2,10 @@ package de.hpi.dataset_versioning.data.matching
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.{AttributeLineage, TemporalTable}
+import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.data.matching.ColumnMatchingRefinementMain.id
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.io.IOService
-import de.hpi.dataset_versioning.oneshot.ScriptMain.{allTimestamps, numPossibleConfusions}
 
 import scala.collection.mutable
 

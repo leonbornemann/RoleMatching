@@ -1,17 +1,13 @@
-package de.hpi.dataset_versioning.data.change
+package de.hpi.dataset_versioning.data.change.temporal_tables
 
 import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.simplified.Attribute
+import de.hpi.dataset_versioning.data.change.{ChangeCube, ReservedChangeValues}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.bottom_up.{FieldLineage, ValueLineage}
-import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
-import de.metanome.algorithm_integration.ColumnIdentifier
+import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.io.Source
 
 class TemporalTable(val id:String,val attributes:collection.IndexedSeq[AttributeLineage],val rows:collection.IndexedSeq[TemporalRow]){
 
@@ -31,6 +27,13 @@ class TemporalTable(val id:String,val attributes:collection.IndexedSeq[Attribute
       rows.addOne(newRow)
     })
     new TemporalTable(dttToMerge.compositeID,newSchema,rows)
+  }
+
+  def getTemporalColumns() = {
+    attributes.zipWithIndex.map{case (al,i) => {
+      val lineages = rows.map(tr => EntityFieldLineage(tr.entityID,tr.fields(i)))
+      new TemporalColumn(id,al.attrId,lineages)
+    }}
   }
 
 

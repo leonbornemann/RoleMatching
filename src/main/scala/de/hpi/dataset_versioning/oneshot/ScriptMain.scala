@@ -3,7 +3,10 @@ package de.hpi.dataset_versioning.oneshot
 import java.io.{File, FileReader}
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.{AttributeLineage, ChangeCube, ChangeExporter, TemporalTable}
+import com.typesafe.scalalogging.StrictLogging
+import de.hpi.dataset_versioning.data.change.temporal_tables.{TemporalColumn, TemporalTable}
+import de.hpi.dataset_versioning.data.change.{ChangeCube, ChangeExporter}
+import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.matching.ColumnMatchingRefinement
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
@@ -16,65 +19,118 @@ import org.apache.commons.csv.{CSVFormat, CSVParser}
 import scala.collection.mutable
 import scala.io.Source
 
-object ScriptMain extends App {
+object ScriptMain extends App with StrictLogging{
 
-  //
-  //  TODO: get all events where the intersection of two namesets of column lineages is non-empty, and they have at least one point in time where they exist in common
-//    TODO: if not many then add column matching stage
+  //temporal column export test:
   IOService.socrataDir = args(0)
   val subdomain = args(1)
-    val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
-    val subdomainIds = subDomainInfo(subdomain)
-      .map(_.id)
-      .toIndexedSeq
-
-  val allTimestamps = (IOService.STANDARD_TIME_FRAME_START.toEpochDay to IOService.STANDARD_TIME_FRAME_END.toEpochDay)
+  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+  val subdomainIds = subDomainInfo(subdomain)
+    .map(_.id)
     .toIndexedSeq
-    .map(LocalDate.ofEpochDay(_))
+  val id = subdomainIds.head
+  val tt = TemporalTable.load(id)
+  val cols = tt.getTemporalColumns()
+  cols.foreach(col => col.writeToStandardFile())
+  val colsLoaded = tt.attributes.map(al => al.attrId)
+    .map(TemporalColumn.load(id,_))
+  println()
 
-  def sharesAtLeast1Timestamp(attrA: AttributeLineage, attrB: AttributeLineage) = {
-      allTimestamps.exists(ts => attrA.valueAt(ts)._2.exists && attrB.valueAt(ts)._2.exists)
-  }
+  //realistic sketch size:
+//  IOService.socrataDir = args(0)
+//  val subdomain = args(1)
+//  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+//  val subdomainIds = subDomainInfo(subdomain)
+//    .map(_.id)
+//    .toIndexedSeq
+//  var totalFieldLineages:Long = 0
+//  var nAttributes = 0
+//  subdomainIds.foreach(id => {
+//    val tt = TemporalTable.load(id)
+//    logger.debug(s"Found table $id with ${tt.attributes.size} #columns and ${tt.attributes.size * tt.rows.size} total field lineages")
+//    nAttributes += tt.attributes.size
+//    totalFieldLineages += tt.attributes.size * tt.rows.size
+//    logger.debug(s"current avg field lineage count per column: ${totalFieldLineages / nAttributes.toDouble}")
+//  })
+//  logger.debug(s"final num field Lineages: ${totalFieldLineages}")
+//  logger.debug(s"final num attrs: $nAttributes")
+//  logger.debug(s"average per attribute: ${totalFieldLineages / nAttributes.toDouble}")
 
-  var numPossibleNewAttrMatches = 0
-  var numPossibleConfusions = 0
-  var dsWithPotentialMatch = mutable.HashMap[String,mutable.HashSet[Set[AttributeLineage]]]()
-  subdomainIds.foreach(id => {
-    val schema = TemporalSchema.load(id)
-    val attrs = schema.attributes
-    for(i <- 0 until attrs.size){
-      val attrA = attrs(i)
-      for(j <- (i+1) until attrs.size){
-        val attrB = attrs(j)
-        if(attrB.nameSet.intersect(attrA.nameSet).size!=0){
-          dsWithPotentialMatch.getOrElseUpdate(id,mutable.HashSet())
-            .add(Set(attrA,attrB))
-          if(sharesAtLeast1Timestamp(attrA,attrB)){
-            numPossibleConfusions +=1
-          } else{
-            numPossibleNewAttrMatches +=1
-          }
-        }
-      }
-    }
-  })
-  println(numPossibleConfusions)
-  println(numPossibleNewAttrMatches)
+//  val allTimestamps = (IOService.STANDARD_TIME_FRAME_START.toEpochDay to IOService.STANDARD_TIME_FRAME_END.toEpochDay)
+//    .toIndexedSeq
+//    .map(LocalDate.ofEpochDay(_))
+//
+//  IOService.socrataDir = args(0)
+//  val subdomain = args(1)
+//  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+//  val subdomainIds = subDomainInfo(subdomain)
+//      .map(_.id)
+//      .toIndexedSeq
+//  val temporalSchemata = subdomainIds.map(id => TemporalSchema.load(id))
+//  val idsWithAtLeastOneSchemaChange = temporalSchemata.filter(temporalSchema => {
+//      val schemaSizes = allTimestamps.map(ts => temporalSchema.valueAt(ts).filter(_._2.exists).size)
+//      schemaSizes.filter(_!=0).toSet.size>1
+//    })
+//  println(idsWithAtLeastOneSchemaChange.size)
+//  val dsHistory = DatasetVersionHistory.load()
+//    .map(h => (h.id,h)).toMap
+//  println(subdomainIds.filter(id => dsHistory(id).versionsWithChanges.size>1).size)
+//  IOService.socrataDir = args(0)
+//  val subdomain = args(1)
+//    val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+//    val subdomainIds = subDomainInfo(subdomain)
+//      .map(_.id)
+//      .toIndexedSeq
+//
+//  val allTimestamps = (IOService.STANDARD_TIME_FRAME_START.toEpochDay to IOService.STANDARD_TIME_FRAME_END.toEpochDay)
+//    .toIndexedSeq
+//    .map(LocalDate.ofEpochDay(_))
+//
+//  def sharesAtLeast1Timestamp(attrA: AttributeLineage, attrB: AttributeLineage) = {
+//      allTimestamps.exists(ts => attrA.valueAt(ts)._2.exists && attrB.valueAt(ts)._2.exists)
+//  }
+//
+//  var numPossibleNewAttrMatches = 0
+//  var numPossibleConfusions = 0
+//  var dsWithPotentialMatch = mutable.HashMap[String,mutable.HashSet[Set[AttributeLineage]]]()
+//  subdomainIds.foreach(id => {
+//    val schema = TemporalSchema.load(id)
+//    val attrs = schema.attributes
+//    for(i <- 0 until attrs.size){
+//      val attrA = attrs(i)
+//      for(j <- (i+1) until attrs.size){
+//        val attrB = attrs(j)
+//        if(attrB.nameSet.intersect(attrA.nameSet).size!=0){
+//          dsWithPotentialMatch.getOrElseUpdate(id,mutable.HashSet())
+//            .add(Set(attrA,attrB))
+//          if(sharesAtLeast1Timestamp(attrA,attrB)){
+//            numPossibleConfusions +=1
+//          } else{
+//            numPossibleNewAttrMatches +=1
+//          }
+//        }
+//      }
+//    }
+//  })
+//  println(numPossibleConfusions)
+//  println(numPossibleNewAttrMatches)
+//
+//  var totalMergesFound = 0
+//  subdomainIds.foreach(id => {
+//    val schema = TemporalSchema.load(id)
+//    val attrs = schema.attributes
+//    val extender = new ColumnMatchingRefinement(id)
+//    val (mergesFound,result) = extender.getPossibleSaveMerges(attrs)
+//    if(dsWithPotentialMatch.contains(id) && mergesFound == 0 ){
+//      val tt = TemporalTable.load(id)
+//      println()
+//    }
+//    val (mergesFound2,result2) = extender.getPossibleSaveMerges(attrs)
+//    totalMergesFound += mergesFound
+//  })
+//  println(totalMergesFound)
 
-  var totalMergesFound = 0
-  subdomainIds.foreach(id => {
-    val schema = TemporalSchema.load(id)
-    val attrs = schema.attributes
-    val extender = new ColumnMatchingRefinement(id)
-    val (mergesFound,result) = extender.getPossibleSaveMerges(attrs)
-    if(dsWithPotentialMatch.contains(id) && mergesFound == 0 ){
-      val tt = TemporalTable.load(id)
-      println()
-    }
-    val (mergesFound2,result2) = extender.getPossibleSaveMerges(attrs)
-    totalMergesFound += mergesFound
-  })
-  println(totalMergesFound)
+
   //LHS-size (key size) chosen by decomposition
 //  IOService.socrataDir = args(0)
 //  val subdomain = args(1)

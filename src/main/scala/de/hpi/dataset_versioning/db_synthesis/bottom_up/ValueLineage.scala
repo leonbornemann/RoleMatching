@@ -8,6 +8,11 @@ import scala.collection.mutable
 
 case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) {
 
+  def toSerializationHelper = {
+    ValueLineageWithHashMap(lineage.toMap)
+  }
+
+
   def valueAt(ts: LocalDate) = {
     if(lineage.contains(ts))
       lineage(ts)

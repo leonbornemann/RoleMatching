@@ -3,7 +3,7 @@ package de.hpi.dataset_versioning.data
 import java.io.{BufferedReader, File, FileInputStream}
 
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
-import de.hpi.dataset_versioning.data.json_custom_serializer.{DatasetInstanceKeySerializer, HashSetKeySerializer, LocalDateKeySerializer, LocalDateSerializer}
+import de.hpi.dataset_versioning.data.json.custom_serializer.{DatasetInstanceKeySerializer, LocalDateKeySerializer, LocalDateSerializer}
 import de.hpi.dataset_versioning.data.metadata.Provenance
 import de.hpi.dataset_versioning.data.metadata.custom.ColumnDatatype
 import org.json4s.jackson.JsonMethods.parse

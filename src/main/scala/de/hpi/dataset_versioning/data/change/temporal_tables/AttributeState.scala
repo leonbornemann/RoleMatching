@@ -1,5 +1,6 @@
-package de.hpi.dataset_versioning.data.change
+package de.hpi.dataset_versioning.data.change.temporal_tables
 
+import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.simplified.Attribute
 
 case class AttributeState(attr:Option[Attribute]) {

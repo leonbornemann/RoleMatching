@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.Attribute
@@ -164,8 +164,10 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
 
 
   def createDecomposedTemporalTables() = {
-    decomposedTablesAtLastTimestamp.foreach(dt => {
-      val extraKeyAttributes = freeAttributeAssignment.getOrElse(dt,Set())
+    val dttToExtraKeyAttributes = mutable.HashMap[DecomposedTemporalTable,Set[AttributeLineage]]()
+    val tableReferences = mutable.HashMap[DecomposedTemporalTable,collection.Set[Set[AttributeLineage]]]() //maps to the identifying LHS
+    val byLHS = decomposedTablesAtLastTimestamp.map(dt => {
+      val extraKeyAttributes = freeAttributeAssignment.getOrElse(dt,Set()) //whenever we add something here, we need to update all dtts that refer to this table via fk-relationships
         .filter(_._2)
         .map(_._1)
       val extraNonKeyAttributes = freeAttributeAssignment.getOrElse(dt,Set())
@@ -177,7 +179,7 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
       val originalFDLHS = dt.primaryKey.map(a => attrLineageByID(a.id))
       val primaryKey = dt.primaryKey.map(a => attrLineageByID(a.id)) ++ extraKeyAttributes//TODO
       //build pk info:
-      val pkByTImestampMap = versionHistory.versionsWithChanges
+      val pkByTimestampMap = versionHistory.versionsWithChanges
         .withFilter(v => originalFDLHS.exists(_.valueAt(v)._2.exists))
         .map(v => {
           val extraKeyAttributesThisVersion = extraKeyAttributes.filter(_.valueAt(v)._2.exists)
@@ -188,11 +190,28 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
             ++ extraKeyAttributesThisVersion)
           (v,curPk)
       }).toMap
-      val foreignKey = dt.foreignKeys.map(a => attrLineageByID(a.id))
-      val decomposedTemporalTable = DecomposedTemporalTable(subdomain,dt.originalID,dt.id,containedAttrLineages,originalFDLHS,pkByTImestampMap)
-      decomposedTemporalTable.writeToStandardFile()
+      val decomposedTemporalTable = DecomposedTemporalTable(DecomposedTemporalTableIdentifier(subdomain,dt.originalID,dt.id,None),
+        mutable.ArrayBuffer() ++ containedAttrLineages,
+        originalFDLHS,
+        pkByTimestampMap,
+      mutable.HashSet())
+      dttToExtraKeyAttributes.put(decomposedTemporalTable,extraKeyAttributes)
+      val foreignKeyLineages = dt.foreignKeys.map(attrs => attrs.map(a => attrLineageByID(a.id)))
+      tableReferences.put(decomposedTemporalTable,foreignKeyLineages)
+      (originalFDLHS,decomposedTemporalTable)
+    }).toMap
+    //update table references and add needed extra attributes
+    byLHS.values.foreach(dtt => {
+      val referencedTablesLHS = tableReferences(dtt)
+      val references = referencedTablesLHS.map(lhs => byLHS(lhs))
+      dtt.referencedTables.addAll(references.map(_.id))
+      //for every reference, add the id to reference tables and the extra key attributes that are needed
+      val attributeLineagesToAdd = referencedTablesLHS.flatMap(lhs => dttToExtraKeyAttributes(byLHS(lhs)))
+      dtt.containedAttrLineages.addAll(attributeLineagesToAdd.diff(dtt.containedAttrLineages.toSet))
+      //write to file:
+      dtt.writeToStandardFile()
     })
-
+    //TODO:       decomposedTemporalTable.writeToStandardFile()
   }
 
 

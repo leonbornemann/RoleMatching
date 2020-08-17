@@ -3,10 +3,12 @@ package de.hpi.dataset_versioning.data.metadata.custom.schemaHistory
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
-import de.hpi.dataset_versioning.data.change.{AttributeLineage, AttributeState, TemporalTable}
+import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, AttributeState, TemporalTable}
+import de.hpi.dataset_versioning.data.json.helper.TemporalSchemaHelper
 import de.hpi.dataset_versioning.io.IOService
 
 case class TemporalSchema(val id:String,val attributes:collection.IndexedSeq[AttributeLineage]) extends JsonWritable[TemporalSchema] {
+
   def valueAt(version: LocalDate) = attributes.map(al => al.valueAt(version))
 
   def byID = attributes.map(al => (al.attrId,al))

@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.data.metadata.custom.schemaHistory
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.{AttributeLineage, AttributeState}
+import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, AttributeState}
 
 import scala.collection.mutable
 

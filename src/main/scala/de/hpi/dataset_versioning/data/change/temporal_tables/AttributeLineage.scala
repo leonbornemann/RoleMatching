@@ -1,8 +1,7 @@
-package de.hpi.dataset_versioning.data.change
+package de.hpi.dataset_versioning.data.change.temporal_tables
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 
 import scala.collection.mutable
@@ -41,7 +40,7 @@ class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,Attr
     if(curBegin!=null)
       activeTimeIntervals += TimeInterval(curBegin,None)
     activeTimeIntervals
-    new TimeIntervalSequence(activeTimeIntervals)
+    new TimeIntervalSequence(activeTimeIntervals.toIndexedSeq)
   }
 
   def valueAt(timestamp: LocalDate) = {

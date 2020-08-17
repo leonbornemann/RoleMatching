@@ -218,7 +218,7 @@ public class Normi implements BasicStatisticsAlgorithm, RelationalInputParameter
 		return false;
 	}
 
-	private String BitSetAttributesToString(BitSet bitSetAttributes) {
+	String BitSetAttributesToString(BitSet bitSetAttributes) {
 		return this.ColumnIdentifiersToString(this.getColumnIdentifiersFor(bitSetAttributes));
 	}
 	

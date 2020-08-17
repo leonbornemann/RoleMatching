@@ -25,6 +25,11 @@ import scala.reflect.io.Directory
 import scala.language.postfixOps
 
 object IOService extends StrictLogging{
+
+  def getTemporalColumnFile(id: String, attrId: Int): File = {
+    DBSynthesis_IOService.createParentDirs(new File(s"TEMPORAL_COLUMN_DIR/$id/${id}_$attrId.json"))
+  }
+
   def getTemporalSchemaFile(id: String) = new File(CUSTOM_METADATA_DIR + s"/temporalSchemata/$id.json")
 
   def getSimplifiedDatasetIDSInVersion(curVersion: LocalDate) = getSimplifiedDataDir(curVersion).listFiles()
@@ -118,6 +123,7 @@ object IOService extends StrictLogging{
   def EXPORT_DIR = socrataDir + "/export_join_candidate/"
   def SIMPLIFIED_UNCOMPRESSED_DATA_DIR = WORKING_DIR + "/simplifiedData/"
   def CHANGE_DIR = WORKING_DIR + "/changes/"
+  def TEMPORAL_COLUMN_DIR = WORKING_DIR + "/temporalColumns/"
 
   def getUncompressedDiffDir(date: LocalDate) = createAndReturn(new File(DIFF_DIR_UNCOMPRESSED + date.format(dateTimeFormatter) + "_diff"))
   def getUncompressedDataDir(date: LocalDate) = createAndReturn(new File(DATA_DIR_UNCOMPRESSED + date.format(dateTimeFormatter)))

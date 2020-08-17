@@ -6,7 +6,7 @@ import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
-case class DecomposedTable(originalID:String,version:LocalDate,id:Int, attributes:collection.IndexedSeq[Attribute],primaryKey:collection.Set[Attribute],foreignKeys:collection.Set[Attribute]) extends JsonWritable[DecomposedTable] {
+case class DecomposedTable(originalID:String,version:LocalDate,id:Int, attributes:collection.IndexedSeq[Attribute],primaryKey:collection.Set[Attribute],foreignKeys:collection.Set[Set[Attribute]]) extends JsonWritable[DecomposedTable] {
   def sortedPrimaryKeyColIDs = primaryKey.map(_.id).toIndexedSeq.sorted
 
   def compositeID = originalID + s".$id"

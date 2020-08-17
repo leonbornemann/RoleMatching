@@ -1,4 +1,5 @@
-import de.hpi.dataset_versioning.data.change.{ChangeExportMain, ChangeExporter, TemporalTable}
+import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
+import de.hpi.dataset_versioning.data.change.{ChangeExportMain, ChangeExporter}
 import de.hpi.dataset_versioning.data.history.{DatasetVersionHistory, VersionHistoryConstruction}
 import de.hpi.dataset_versioning.io.IOService
 

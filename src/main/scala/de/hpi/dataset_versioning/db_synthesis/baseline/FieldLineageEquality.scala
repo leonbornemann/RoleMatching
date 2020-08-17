@@ -1,6 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
-import de.hpi.dataset_versioning.data.change.{FieldLineageCompatibility, FieldLineageReference}
+import de.hpi.dataset_versioning.data.change.FieldLineageCompatibility
+import de.hpi.dataset_versioning.data.change.temporal_tables.FieldLineageReference
 
 class FieldLineageEquality() extends FieldLineageCompatibility{
 

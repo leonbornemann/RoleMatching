@@ -4,15 +4,19 @@ import java.io.File
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.DatasetInstance
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 
 object DBSynthesis_IOService {
 
   def getStatisticsDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$STATISTICS_DIR/$subdomain/$originalID/"))
 
-  def getDecomposedTemporalTableDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/$subdomain/$originalID/"))
+  def getDecomposedTemporalTableDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/$subdomain/$viewID/"))
+  def getDecomposedTemporalAssociationDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$DECOMPOSED_Temporal_ASSOCIATION_DIR/$subdomain/$viewID/"))
 
-  def getDecomposedTemporalTableFile(subdomain: String, originalID: String,decomposedID:Int) = {
-    createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/$subdomain/$originalID/$decomposedID.json"))
+
+  def getDecomposedTemporalTableFile(id:DecomposedTemporalTableIdentifier) = {
+    val topDir = if(id.associationID.isDefined) DECOMPOSED_Temporal_ASSOCIATION_DIR else DECOMPOSED_Temporal_TABLE_DIR
+    createParentDirs(new File(s"$topDir/${id.subdomain}/${id.viewID}/${id.compositeID}.json"))
   }
 
   def getColIDFDFile(subdomain: String, id: String, date: LocalDate) = {
@@ -53,6 +57,8 @@ object DBSynthesis_IOService {
   def DECOMPOSITION_RESULT_DIR = DECOMPOSTION_DIR + "/results/"
   def DECOMPOSED_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTables/"
   def DECOMPOSED_Temporal_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTemporalTables/"
+  def DECOMPOSED_Temporal_ASSOCIATION_DIR = DECOMPOSTION_DIR + "/decomposedTemporalAssociations/"
+
 
   def dateToStr(date: LocalDate) = IOService.dateTimeFormatter.format(date)
 

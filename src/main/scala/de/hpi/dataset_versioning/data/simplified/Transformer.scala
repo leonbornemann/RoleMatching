@@ -5,6 +5,7 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
+import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.simplified.TransformToImprovedMain.args
 import de.hpi.dataset_versioning.io.IOService
 
@@ -33,13 +34,13 @@ class Transformer() extends StrictLogging{
   def transformAll() = {
     val errorFile = new PrintWriter("errors.txt")
     errorFile.println("id","version")
-    val md = IOService.getOrLoadCustomMetadataForStandardTimeFrame()
     var count = 0
-    val sortedVersions = md.getSortedVersions
-    sortedVersions.foreach{case (id,versions) => {
-      transformAllVersions(id,versions.map(_.version),Some(errorFile))
+    val versionHistories = DatasetVersionHistory.load()
+      .map(h => (h.id,h))
+    versionHistories.foreach{case (id,h) => {
+      transformAllVersions(id,h.versionsWithChanges.toIndexedSeq,Some(errorFile))
       count+=1
-      logProgress(count,sortedVersions.size,100)
+      logProgress(count,versionHistories.size,100)
     }}
     errorFile.close()
   }

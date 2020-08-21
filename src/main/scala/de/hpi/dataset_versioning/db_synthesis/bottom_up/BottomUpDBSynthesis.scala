@@ -6,7 +6,6 @@ import java.time.LocalDate
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.data.change.{Change, ChangeCube}
-import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.SchemaHistory
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.main.ChangeExplorationMain.{logger, subdomain}
 
@@ -45,19 +44,21 @@ class BottomUpDBSynthesis(subdomain: String) extends StrictLogging{
     //TODO: finalGroups still contains many instances of groups where there is the same column of the same table multiple times
     logger.debug(s"Found ${finalGroups.map(g => getMinimalEdgeCount(g)).sum} database fields (best possible synthesized Database). Number of view fields: $viewFieldCount")
     //val a = finalGroups.filter(g => g.map(_.field.tableID).toSet.size>1 && g.head.lineage.size>1)
-    val schemaInfo = SchemaHistory.loadAll()
-    val pr = new PrintWriter("fieldLineageEquality.json")
-    finalGroups.foreach(l => {
-      val datasetColumns = l.map(fl => (fl.field.tableID,fl.field.attributeID)).toSet
-      val cols = datasetColumns.map{case (id,cID) => {
-        val schema = schemaInfo(id)
-        val column = schema.superSchema.filter(_.id==cID).head
-        DatasetColumn(id,column.name,column.humanReadableName.getOrElse(null))
-      }}
-      val info = FieldLineageOccurrenceInfo(l.head.lineage.lineage.toIndexedSeq,cols,l.head.field)
-      info.appendToWriter(pr,false,true,false)
-    })
-    pr.close()
+
+    //TODO: the below code uses SchemaHistory - which is no longer present, replace it with TemporalSchema!
+//    val schemaInfo = SchemaHistory.loadAll()
+//    val pr = new PrintWriter("fieldLineageEquality.json")
+//    finalGroups.foreach(l => {
+//      val datasetColumns = l.map(fl => (fl.field.tableID,fl.field.attributeID)).toSet
+//      val cols = datasetColumns.map{case (id,cID) => {
+//        val schema = schemaInfo(id)
+//        val column = schema.superSchema.filter(_.id==cID).head
+//        DatasetColumn(id,column.name,column.humanReadableName.getOrElse(null))
+//      }}
+//      val info = FieldLineageOccurrenceInfo(l.head.lineage.lineage.toIndexedSeq,cols,l.head.field)
+//      info.appendToWriter(pr,false,true,false)
+//    })
+//    pr.close()
   }
 
 }

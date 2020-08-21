@@ -96,6 +96,13 @@ class ChangeExporter extends StrictLogging{
         changeCube.addAll(curChanges)
         prevDs = curDs
       }
+      changeCube.allChanges.groupBy(c => (c.e,c.pID))
+        .foreach{case (k,v) => {
+          val vals = v.sortBy(_.t.toEpochDay).map(_.value)
+          for(i <- 1 until vals.size){
+            assert(vals(i)!=vals(i-1))
+          }
+        }}
       changeCube.toJsonFile(new File(changeFile))
     }
   }

@@ -1,8 +1,6 @@
 package de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`
 
 import java.time.LocalDate
-
-import de.hpi.dataset_versioning.data.metadata.custom.ColumnDatatype
 import de.hpi.dataset_versioning.data.{JsonWritable, OldLoadedRelationalDataset}
 
 import scala.collection.mutable.ArrayBuffer

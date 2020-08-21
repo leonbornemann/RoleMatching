@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.{ChangeCube, ReservedChangeValues}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
+import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable
 
@@ -32,10 +33,9 @@ class TemporalTable(val id:String,val attributes:collection.IndexedSeq[Attribute
   def getTemporalColumns() = {
     attributes.zipWithIndex.map{case (al,i) => {
       val lineages = rows.map(tr => EntityFieldLineage(tr.entityID,tr.fields(i)))
-      new TemporalColumn(id,al.attrId,lineages)
+      new TemporalColumn(id,al,lineages)
     }}
   }
-
 
   val timestampsWithChanges = {
     val timestampsSet = mutable.HashSet[LocalDate]()
@@ -47,7 +47,7 @@ class TemporalTable(val id:String,val attributes:collection.IndexedSeq[Attribute
   def allFields = rows.flatMap(_.fields)
 
   def allValuesNEAt(ts: LocalDate): Boolean = {
-      allFields.forall(vl => vl.valueAt(ts)==ReservedChangeValues.NOT_EXISTANT)
+      allFields.forall(vl => vl.valueAt(ts)==ReservedChangeValues.NOT_EXISTANT_ROW)
   }
 
   val activeTimeIntervals = {
@@ -134,10 +134,9 @@ object TemporalTable extends StrictLogging{
     val allTimestamps = mutable.TreeSet[LocalDate]()
     allChanges.foreach(c => {
       val colPosition = colIdToPosition(c.pID)
-      rows(entityIDToRowIndex(c.e)).fields(colPosition).lineage.put(c.t,c.newValue)
+      rows(entityIDToRowIndex(c.e)).fields(colPosition).lineage.put(c.t,c.value)
       allTimestamps.add(c.t)
     })
-    //TODO: adapt attribute lineage representation to this one
     val attributesCleaned = attributes.zipWithIndex.map{case (al,i) => {
       val newLineage = mutable.TreeMap[LocalDate,AttributeState]()
       newLineage += (al.lineage.head)

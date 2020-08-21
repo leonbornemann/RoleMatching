@@ -7,6 +7,10 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, 
 import scala.collection.mutable
 
 case class AttributeLineageWithHashMap(val attrId:Int,val lineage:Map[LocalDate,AttributeState]) {
+  def toAttributeLineage: AttributeLineage = {
+    new AttributeLineage(attrId,mutable.TreeMap[LocalDate,AttributeState]() ++ lineage)
+  }
+
   def toDecomposedTemporalTable: AttributeLineage = new AttributeLineage(attrId,mutable.TreeMap[LocalDate,AttributeState]() ++ lineage)
 
 }

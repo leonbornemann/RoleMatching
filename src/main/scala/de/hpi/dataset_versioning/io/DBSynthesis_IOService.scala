@@ -8,6 +8,16 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedT
 
 object DBSynthesis_IOService {
 
+  def getDecomposedTemporalTableSketchFile(tableID: DecomposedTemporalTableIdentifier, getVariantName: String) = {
+    createParentDirs(new File(s"$DTT_SKETCH_DIR/${tableID.viewID}_${tableID.bcnfID}_${tableID.associationID.getOrElse("")}_$getVariantName.binary"))
+  }
+
+  def getTemporalColumnSketchDir(id: String) = new File(s"$COLUMN_SKETCH_DIR/$id/")
+
+
+  def getTemporalColumnSketchFile(id: String, attrId: Int, fieldLineageSketchType:String) = createParentDirs(new File(s"$COLUMN_SKETCH_DIR/$id/${id}_${attrId}_$fieldLineageSketchType.binary"))
+
+
   def getStatisticsDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$STATISTICS_DIR/$subdomain/$originalID/"))
 
   def getDecomposedTemporalTableDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/$subdomain/$viewID/"))
@@ -58,7 +68,9 @@ object DBSynthesis_IOService {
   def DECOMPOSED_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTables/"
   def DECOMPOSED_Temporal_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTemporalTables/"
   def DECOMPOSED_Temporal_ASSOCIATION_DIR = DECOMPOSTION_DIR + "/decomposedTemporalAssociations/"
-
+  def SKETCH_DIR = DB_SYNTHESIS_DIR + "/sketches/"
+  def COLUMN_SKETCH_DIR = SKETCH_DIR + "/temporalColumns/"
+  def DTT_SKETCH_DIR = SKETCH_DIR + "/decomposedTemporalTables/"
 
   def dateToStr(date: LocalDate) = IOService.dateTimeFormatter.format(date)
 

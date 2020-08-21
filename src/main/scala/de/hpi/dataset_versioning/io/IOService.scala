@@ -13,7 +13,6 @@ import de.hpi.dataset_versioning.data.{DatasetInstance, OldLoadedRelationalDatas
 import de.hpi.dataset_versioning.data.diff.syntactic.DiffManager
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.DatasetMetadata
-import de.hpi.dataset_versioning.data.metadata.custom.{CustomMetadata, CustomMetadataCollection}
 import de.hpi.dataset_versioning.data.parser.JsonDataParser
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
 import org.joda.time.Days
@@ -68,11 +67,6 @@ object IOService extends StrictLogging{
 
   def readCleanedDatasetLineages() = DatasetVersionHistory.fromJsonObjectPerLineFile(IOService.getCleanedVersionHistoryFile().getAbsolutePath)
 
-  def getOrLoadCustomMetadataForStandardTimeFrame() = {
-    cacheCustomMetadata(STANDARD_TIME_FRAME_START,STANDARD_TIME_FRAME_END)
-    cachedCustomMetadata((STANDARD_TIME_FRAME_START,STANDARD_TIME_FRAME_END))
-  }
-
   def getJoinCandidateFile() = {
     new File(EXPORT_DIR).mkdirs()
     new File(EXPORT_DIR + "join_candidates.csv")
@@ -106,7 +100,6 @@ object IOService extends StrictLogging{
   val STANDARD_TIME_FRAME_START = LocalDate.parse("2019-11-01", IOService.dateTimeFormatter)
   val STANDARD_TIME_FRAME_END = LocalDate.parse("2020-04-30", IOService.dateTimeFormatter)
   val cachedMetadata = mutable.Map[LocalDate,mutable.Map[String,DatasetMetadata]]()
-  val cachedCustomMetadata = mutable.Map[(LocalDate,LocalDate),CustomMetadataCollection]()
   val datasetCache = mutable.Map[DatasetInstance,OldLoadedRelationalDataset]()
 
   def DATA_DIR = socrataDir + "/data/"
@@ -161,13 +154,6 @@ object IOService extends StrictLogging{
       } else{
         logger.debug(s"Can not safely delete $version")
       }
-    }
-  }
-
-  def cacheCustomMetadata(startVersion: LocalDate,endVersion:LocalDate) = {
-    if(!cachedCustomMetadata.contains((startVersion,endVersion))){
-      val mdColelction = CustomMetadataCollection.fromJsonFile(IOService.getCustomMetadataFile(startVersion,endVersion).getAbsolutePath)
-      cachedCustomMetadata((startVersion,endVersion)) = mdColelction
     }
   }
 

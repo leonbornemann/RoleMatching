@@ -12,6 +12,7 @@ import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSche
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd.FunctionalDependencySet
+import de.hpi.dataset_versioning.db_synthesis.sketches.{TemporalColumnSketch, Variant2Sketch}
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.DatasetInfo
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 import org.apache.commons.csv.{CSVFormat, CSVParser}
@@ -21,20 +22,50 @@ import scala.io.Source
 
 object ScriptMain extends App with StrictLogging{
 
-  //temporal column export test:
+  //read all sketches:
   IOService.socrataDir = args(0)
   val subdomain = args(1)
   val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
   val subdomainIds = subDomainInfo(subdomain)
-    .map(_.id)
-    .toIndexedSeq
-  val id = subdomainIds.head
-  val tt = TemporalTable.load(id)
-  val cols = tt.getTemporalColumns()
-  cols.foreach(col => col.writeToStandardFile())
-  val colsLoaded = tt.attributes.map(al => al.attrId)
-    .map(TemporalColumn.load(id,_))
+      .map(_.id)
+      .toIndexedSeq
+  val a = subdomainIds.flatMap(id => {
+    TemporalColumnSketch.loadAll(id,Variant2Sketch.getVariantName)
+  })
+  println(a.size)
+
   println()
+  //hash sketch size calculations:
+//  var timestampSize = 1
+//  var hashSize = 1
+//  val NUM_TIMESTAMPS = 182
+//
+//  def variant1(timestampSize: Int, hashSize: Int) = hashSize*NUM_TIMESTAMPS
+//  def variant2(timestampSize: Int, hashSize: Int,nChanges:Int) = timestampSize*hashSize*nChanges
+//  def totalSizeMB(sketchSizeByte:Int) = sketchSizeByte*(6224770/1000000)
+//
+//  val wcvariant1 = variant1(timestampSize,hashSize)
+//  val bcvariant1 = variant1(timestampSize,hashSize)
+//  val wcvariant2 = variant2(timestampSize,hashSize,NUM_TIMESTAMPS)
+//  println("variant,Hash Size [Byte],Worst Case FL sketch Size [Byte],Best Case FL sketch Size[Byte],Total Size [MB]")
+//  println(Seq(1,1,variant1(1,1),variant1(1,1),totalSizeMB(wcvariant2)).mkString(" "))
+//  println(Seq(1,4,variant1(1,4),variant1(1,4),totalSizeMB(variant1(1,4))).mkString(" "))
+
+
+  //temporal column export test:
+//  IOService.socrataDir = args(0)
+//  val subdomain = args(1)
+//  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+//  val subdomainIds = subDomainInfo(subdomain)
+//    .map(_.id)
+//    .toIndexedSeq
+//  val id = subdomainIds.head
+//  val tt = TemporalTable.load(id)
+//  val cols = tt.getTemporalColumns()
+//  cols.foreach(col => col.writeToStandardFile())
+//  val colsLoaded = tt.attributes.map(al => al.attrId)
+//    .map(TemporalColumn.load(id,_))
+//  println()
 
   //realistic sketch size:
 //  IOService.socrataDir = args(0)

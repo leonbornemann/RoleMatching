@@ -18,7 +18,7 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
       lineage(ts)
     else
       lineage.maxBefore(ts)
-        .getOrElse(ReservedChangeValues.NOT_EXISTANT)
+        .getOrElse(ReservedChangeValues.NOT_EXISTANT_ROW)
   }
 
 

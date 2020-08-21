@@ -15,6 +15,8 @@ case class RelationalDataset(id:String,
                              version:LocalDate,
                              var attributes:collection.IndexedSeq[Attribute],
                              var rows:mutable.ArrayBuffer[RelationalDatasetRow]) extends JsonWritable[RelationalDataset] {
+  def isEmpty: Boolean = rows.isEmpty
+
 
   def sortColumnsByAttributePosition() = {
     assert(attributes.map(_.position.get).sorted.toIndexedSeq == (0 until attributes.size))

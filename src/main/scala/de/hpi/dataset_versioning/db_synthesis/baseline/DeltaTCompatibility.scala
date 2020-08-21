@@ -16,8 +16,8 @@ class DeltaTCompatibility(delta_t_in_days: Int) extends FieldLineageCompatibilit
 
     val curElem1 = it1.next()
     val curElem2 = it2.next()
-    assert(curElem1._2 != ReservedChangeValues.NOT_EXISTANT)
-    assert(curElem2._1 != ReservedChangeValues.NOT_EXISTANT)
+    assert(curElem1._2 != ReservedChangeValues.NOT_EXISTANT_ROW)
+    assert(curElem2._1 != ReservedChangeValues.NOT_EXISTANT_ROW)
     //TODO:
     var done = false
     while(!done){

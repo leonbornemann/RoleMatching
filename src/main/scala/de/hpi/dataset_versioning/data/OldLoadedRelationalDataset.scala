@@ -6,7 +6,6 @@ import java.time.LocalDate
 import com.google.gson._
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`.Column
-import de.hpi.dataset_versioning.data.metadata.custom.{ColumnCustomMetadata, CustomMetadata}
 import de.hpi.dataset_versioning.data.parser.exceptions.SchemaMismatchException
 import de.hpi.dataset_versioning.io.IOService
 import de.hpi.dataset_versioning.util.TableFormatter
@@ -62,10 +61,6 @@ class OldLoadedRelationalDataset(val id:String, val version:LocalDate, val rows:
     }
   }
 
-  def getSchemaSpecificHashValue: Int = {
-    columnMetadata.toIndexedSeq.sortBy(_._1).hashCode()
-  }
-
   def toMultiset[A](list: collection.Seq[A]):Map[A,Int] = list.groupBy(identity).map{case (a,b) => (a,b.size)}
 
   def getTupleSpecificHash: Int = {
@@ -83,11 +78,6 @@ class OldLoadedRelationalDataset(val id:String, val version:LocalDate, val rows:
       }
     })*/
     tupleMultiset.hashCode()
-  }
-
-  def extractCustomMetadata(intID:Int) = {
-    calculateColumnMetadata()
-    CustomMetadata(id,None,intID,version,rows.size,getSchemaSpecificHashValue,getTupleSpecificHash,columnMetadata.toMap)
   }
 
   def constructRow(r1: collection.IndexedSeq[JsonElement], ds1: OldLoadedRelationalDataset, r2: collection.IndexedSeq[JsonElement], ds2: OldLoadedRelationalDataset, newColumnOrder: collection.IndexedSeq[(String, Int, OldLoadedRelationalDataset)]): collection.IndexedSeq[JsonElement] = {
@@ -144,15 +134,6 @@ class OldLoadedRelationalDataset(val id:String, val version:LocalDate, val rows:
       prev = cur
     }
     sorted
-  }
-
-  def calculateColumnMetadata() = {
-    assert(isSorted(colNames))
-    columnMetadata.clear()
-    columnMetadata ++= (0 until ncols).map(i => {
-      val curColObject = getColumnObject(i)
-      (colNames(i),ColumnCustomMetadata(colNames(i),i.toShort,curColObject.valueMultiSet.hashCode(),curColObject.uniqueness(),curColObject.dataType()))
-    })
   }
 
   /***
@@ -251,8 +232,6 @@ class OldLoadedRelationalDataset(val id:String, val version:LocalDate, val rows:
   private var containedNestedObjects = false
   var containsArrays = false
   var erroneous = false
-  var columnMetadata = mutable.HashMap[String,ColumnCustomMetadata]()
-
 
   def setSchema(firstObj:JsonObject) = {
     colNames = extractNestedKeyValuePairs(firstObj)

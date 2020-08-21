@@ -1,6 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.MetadataBasedHeuristicMatchCalculator
 
 import scala.collection.mutable
 

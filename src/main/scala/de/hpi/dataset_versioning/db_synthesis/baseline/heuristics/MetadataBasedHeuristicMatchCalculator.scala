@@ -1,6 +1,8 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline
+package de.hpi.dataset_versioning.db_synthesis.baseline.heuristics
 
-class MetadataBasedHeuristicMatchCalculator {
+import de.hpi.dataset_versioning.db_synthesis.baseline.{HeuristicMatch, SynthesizedTemporalDatabaseTable}
+
+class MetadataBasedHeuristicMatchCalculator extends HeursticMatchCalculator{
 
   def calculateMatch(tableA: SynthesizedTemporalDatabaseTable, tableB: SynthesizedTemporalDatabaseTable) = {
     val nonKeyAttrA = tableA.nonKeyAttributeLineages.head

@@ -54,6 +54,10 @@ class TopDown(subdomain:String) extends StrictLogging{
       })
     val topDownOptimizer = new TopDownOptimizer(temporallyDecomposedTables)
     topDownOptimizer.optimize()
+
+
+
+
     //TODO: how to keep track of queries (?) --> not sure yet how to do that
     println(temporallyDecomposedTables.size)
     val temporallyDecomposedTablesBySchemaSizeHistory =  temporallyDecomposedTables.groupBy(getPossibleEquivalenceClass(_))

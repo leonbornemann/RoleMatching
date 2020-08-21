@@ -12,50 +12,43 @@ import scala.collection.mutable
 
 case class ChangeCube(datasetID:String,
                       colIDTOAttributeMap:mutable.HashMap[Int,mutable.HashMap[LocalDate,Attribute]]=mutable.HashMap(),
-                      var inserts:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change](),
-                      var deletes:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change](),
-                      var updates:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change]()) extends JsonWritable[ChangeCube] with StrictLogging{
+                      var allChanges:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change]()) extends JsonWritable[ChangeCube] with StrictLogging{
+  def addChange(change: Change) = allChanges +=change
+
+
+  def changeCount(countInitialInserts: Boolean):Int = {
+    if(countInitialInserts) allChanges.size
+    else {
+      allChanges.groupBy(_.e)
+        .map(t => t._2.size -1)
+        .reduce((a,b) => a+b)
+    }
+  }
+
 
   def toTemporalTable() = {
     TemporalTable.from(this)
   }
 
-  def changeCount(countInitialInserts: Boolean) = {
-    val totalNumberChanges = inserts.size + deletes.size + updates.size
-    if(countInitialInserts) {
-      totalNumberChanges
-    }
-    else {
-      val initialInserts = inserts.groupBy(c => (c.e,c.pID))
-        .size
-      totalNumberChanges - initialInserts
-    }
-  }
 
 
-  def isEmpty: Boolean = inserts.isEmpty && deletes.isEmpty && updates.isEmpty
+  def isEmpty: Boolean = allChanges.isEmpty
 
   def firstTimestamp: Option[LocalDate] = {
     if(isEmpty) None
     else{
-      val minI = if(inserts.isEmpty) LocalDate.MAX else inserts.minBy(_.t.toEpochDay).t
-      val minD = if(deletes.isEmpty) LocalDate.MAX else deletes.minBy(_.t.toEpochDay).t
-      val minU = if(updates.isEmpty) LocalDate.MAX else updates.minBy(_.t.toEpochDay).t
-      Some(Seq(minI,minD,minU).minBy(_.toEpochDay))
+      val min = if(allChanges.isEmpty) LocalDate.MAX else allChanges.minBy(_.t.toEpochDay).t
+      Some(min)
     }
   }
 
   def filterChangesInPlace(filterFunction: Change => Boolean) = {
-    inserts = inserts.filter(filterFunction)
-    deletes = deletes.filter(filterFunction)
-    updates = updates.filter(filterFunction)
+    allChanges = allChanges.filter(filterFunction)
     this
   }
 
   def addAll(other: ChangeCube) = {
-    inserts ++= other.inserts
-    deletes ++= other.deletes
-    updates ++= other.updates
+    allChanges ++= other.allChanges
     other.colIDTOAttributeMap.foreach{case (cID,map) => {
       val myMap = colIDTOAttributeMap.getOrElseUpdate(cID,mutable.HashMap[LocalDate,Attribute]())
       myMap.addAll(map)
@@ -70,15 +63,8 @@ case class ChangeCube(datasetID:String,
   }
 
   def addChanges(changes: Seq[Change]) = {
-    changes.foreach(c => {
-      if(c.isInsert) inserts+=c
-      else if(c.isDelete) deletes+=c
-      else if(c.isUpdate) updates+=c
-      else throw new AssertionError("uncaught case for change type")
-    })
+    allChanges ++= changes
   }
-
-  def allChanges = inserts ++ deletes ++ updates
 
 }
 

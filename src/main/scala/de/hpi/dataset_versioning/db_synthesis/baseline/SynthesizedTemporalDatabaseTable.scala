@@ -16,7 +16,7 @@ class SynthesizedTemporalDatabaseTable(val unionedTables:mutable.HashSet[Decompo
     //TODO: 1.load all data
     // 2. get best schema mapping given the data
     // 3. return that mapping
-
+    ???
   }
 
 

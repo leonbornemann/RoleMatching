@@ -5,7 +5,6 @@ import java.io.{File, FileWriter, StringWriter}
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.json.custom_serializer.{DatasetInstanceKeySerializer, LocalDateKeySerializer, LocalDateSerializer}
 import de.hpi.dataset_versioning.data.metadata.Provenance
-import de.hpi.dataset_versioning.data.metadata.custom.ColumnDatatype
 import org.json4s.DefaultFormats
 import org.json4s.ext.EnumNameSerializer
 
@@ -13,7 +12,6 @@ trait JsonWritable[T<:AnyRef] {
 
   implicit val formats = (DefaultFormats.preservingEmptyValues
     + new EnumNameSerializer(Provenance)
-    + new EnumNameSerializer(ColumnDatatype)
     + LocalDateSerializer
     + DatasetInstanceKeySerializer
     + LocalDateKeySerializer)

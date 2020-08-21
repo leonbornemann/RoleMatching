@@ -110,74 +110,74 @@ class DatasetHTMLExporter() {
 
   def addUpdatedTuplesToHTMLTable(diff:DiffAsChangeCube, resultingColOrder: Map[Int, Int], diffOverleap:DiffSimilarity, pr: PrintWriter) = {
     //at the end:
-
-    val byRowAndCol = (diff.updates ++ diff.inserts ++ diff.deletes)
-      .groupBy(c => (c.e,c.pID))
-        .map{case(k,v) => {
-          if(v.size>1) throw new AssertionError("inconsistent change cube")
-          (k,v.head)
-        }}
-    object RowOrdering extends Ordering[RelationalDatasetRow] {
-      def compare(a: RelationalDatasetRow, b: RelationalDatasetRow) = {
-        val rowSummaryA = RowSummary.getRowSummary(resultingColOrder,a,byRowAndCol,diffOverleap)
-        val rowSummaryB = RowSummary.getRowSummary(resultingColOrder,b,byRowAndCol,diffOverleap)
-        val result = rowSummaryA.compareTo(rowSummaryB)
-        result
-      }
-    }
-    val deletedColIDs = diff.columnDeletes.map(_.id)
-    val sortedRows = diff.v2.rows.sorted(RowOrdering)
-    sortedRows.foreach(r => {
-    //updates.foreach { case(from,to) => {
-      pr.println("<tr>")
-      val htmlCells = mutable.ArrayBuffer[String]() ++= Seq.fill[String](resultingColOrder.size)("-")
-      if(diff.v1.id == "test-0002" && r.id==3)
-        print()
-      resultingColOrder.foreach { case (colID, colIndex) => {
-        var curCell = "-"
-        val intersectionDiffP = "<p style=\"color:green;font-weight: bold;\">"
-        val sb = new mutable.StringBuilder()
-        sb.append("<td>")
-        val associatedChange = byRowAndCol.get((r.id,colID))
-        if(colIndex==3)
-          print()
-        if(associatedChange.isDefined && associatedChange.get.isUpdate){
-          //we have an update:
-          val prevValue = associatedChange.get.prevValue
-          val newValue = associatedChange.get.newValue
-          if(prevValue!=newValue) sb.append(diffStyleUpdate) else sb.append(diffStyleNormal)
-          appendFormattedOldCellValue(diffOverleap, intersectionDiffP, sb, prevValue.toString)
-          sb.append(escapeHTML(" --> "))
-          appendFormattedNewValue(diffOverleap, intersectionDiffP, sb, newValue.toString)
-        } else if(associatedChange.isDefined && associatedChange.get.isDelete){
-          val prevValue = associatedChange.get.prevValue
-          sb.append(diffStyleDelete)
-          appendFormattedOldCellValue(diffOverleap, intersectionDiffP, sb, prevValue)
-        } else if(associatedChange.isDefined && associatedChange.get.isInsert) {
-          val curValue = associatedChange.get.newValue
-          sb.append(diffStyleInsert)
-          appendFormattedNewValue(diffOverleap, intersectionDiffP, sb, curValue)
-        } else if(!deletedColIDs.contains(colID)){
-          //we need to recognize if the column was deleted
-          sb.append(diffStyleNormal)
-          appendFormattedNewValue(diffOverleap, intersectionDiffP, sb, r.fields(colIndex))
-        } else{
-          sb.append(diffStyleNormal)
-        }
-        sb.append("</div></td>")
-        curCell = sb.toString()
-        htmlCells(colIndex) = curCell
-      }}
-      htmlCells.foreach(c => {
-        pr.println(c)
-      })
-      pr.println("</tr>")
-    })
-
-    val deletedRowIds = diff.entireRowDeletes
-    val deletedRows = diff.v1.rows
-        .filter(r => deletedRowIds.contains(r.id))
-    addToHTMLTable(deletedRows,diff.v1.attributes,diffStyleDelete, resultingColOrder,diffOverleap,pr)
+    ??? //If this method is needed again fix the code below to use single change list instead of individual lists:
+//    val byRowAndCol = (diff.changeCube.allChanges)
+//      .groupBy(c => (c.e,c.pID))
+//        .map{case(k,v) => {
+//          if(v.size>1) throw new AssertionError("inconsistent change cube")
+//          (k,v.head)
+//        }}
+//    object RowOrdering extends Ordering[RelationalDatasetRow] {
+//      def compare(a: RelationalDatasetRow, b: RelationalDatasetRow) = {
+//        val rowSummaryA = RowSummary.getRowSummary(resultingColOrder,a,byRowAndCol,diffOverleap)
+//        val rowSummaryB = RowSummary.getRowSummary(resultingColOrder,b,byRowAndCol,diffOverleap)
+//        val result = rowSummaryA.compareTo(rowSummaryB)
+//        result
+//      }
+//    }
+//    val deletedColIDs = diff.columnDeletes.map(_.id)
+//    val sortedRows = diff.v2.rows.sorted(RowOrdering)
+//    sortedRows.foreach(r => {
+//    //updates.foreach { case(from,to) => {
+//      pr.println("<tr>")
+//      val htmlCells = mutable.ArrayBuffer[String]() ++= Seq.fill[String](resultingColOrder.size)("-")
+//      if(diff.v1.id == "test-0002" && r.id==3)
+//        print()
+//      resultingColOrder.foreach { case (colID, colIndex) => {
+//        var curCell = "-"
+//        val intersectionDiffP = "<p style=\"color:green;font-weight: bold;\">"
+//        val sb = new mutable.StringBuilder()
+//        sb.append("<td>")
+//        val associatedChange = byRowAndCol.get((r.id,colID))
+//        if(colIndex==3)
+//          print()
+//        if(associatedChange.isDefined && associatedChange.get.isUpdate){
+//          //we have an update:
+//          val prevValue = associatedChange.get.prevValue
+//          val newValue = associatedChange.get.newValue
+//          if(prevValue!=newValue) sb.append(diffStyleUpdate) else sb.append(diffStyleNormal)
+//          appendFormattedOldCellValue(diffOverleap, intersectionDiffP, sb, prevValue.toString)
+//          sb.append(escapeHTML(" --> "))
+//          appendFormattedNewValue(diffOverleap, intersectionDiffP, sb, newValue.toString)
+//        } else if(associatedChange.isDefined && associatedChange.get.isDelete){
+//          val prevValue = associatedChange.get.prevValue
+//          sb.append(diffStyleDelete)
+//          appendFormattedOldCellValue(diffOverleap, intersectionDiffP, sb, prevValue)
+//        } else if(associatedChange.isDefined && associatedChange.get.isInsert) {
+//          val curValue = associatedChange.get.newValue
+//          sb.append(diffStyleInsert)
+//          appendFormattedNewValue(diffOverleap, intersectionDiffP, sb, curValue)
+//        } else if(!deletedColIDs.contains(colID)){
+//          //we need to recognize if the column was deleted
+//          sb.append(diffStyleNormal)
+//          appendFormattedNewValue(diffOverleap, intersectionDiffP, sb, r.fields(colIndex))
+//        } else{
+//          sb.append(diffStyleNormal)
+//        }
+//        sb.append("</div></td>")
+//        curCell = sb.toString()
+//        htmlCells(colIndex) = curCell
+//      }}
+//      htmlCells.foreach(c => {
+//        pr.println(c)
+//      })
+//      pr.println("</tr>")
+//    })
+//
+//    val deletedRowIds = diff.entireRowDeletes
+//    val deletedRows = diff.v1.rows
+//        .filter(r => deletedRowIds.contains(r.id))
+//    addToHTMLTable(deletedRows,diff.v1.attributes,diffStyleDelete, resultingColOrder,diffOverleap,pr)
 
   }
 
@@ -390,27 +390,28 @@ class DatasetHTMLExporter() {
 
   }
   object RowSummary {
-    def getRowSummary(resultingColOrder:Map[Int,Int],row:RelationalDatasetRow,changeByRowAndCol:Map[(Long,Int),Change],diffOverleap:DiffSimilarity) = {
-      resultingColOrder.map { case (colID, _) => {
-        val associatedChange = changeByRowAndCol.get((row.id, colID))
-        if (!associatedChange.isDefined)
-          RowSummary(0, 0, 0, 0, 0, 0)
-        else if (associatedChange.get.isUpdate && diffOverleap.updateOverlap.contains(associatedChange.get.getValueTuple))
-          RowSummary(1, 0, 0, 0, 0, 0)
-        else if (associatedChange.get.isInsert && diffOverleap.newValueOverlap.contains(associatedChange.get.newValue))
-          RowSummary(0, 1, 0, 0, 0, 0)
-        else if (associatedChange.get.isDelete && diffOverleap.oldValueOverlap.contains(associatedChange.get.prevValue))
-          RowSummary(0, 0, 1, 0, 0, 0)
-        else if (associatedChange.get.isUpdate)
-          RowSummary(0, 0, 0, 1, 0, 0)
-        else if (associatedChange.get.isInsert)
-          RowSummary(0, 0, 0, 0, 1, 0)
-        else if (associatedChange.get.isDelete)
-          RowSummary(0, 0, 0, 0, 0, 1)
-        else
-          throw new AssertionError("we should not get here :)")
-      }
-      }.reduce((a, b) => a + b)
+    def getRowSummary(resultingColOrder:Map[Int,Int],row:RelationalDatasetRow,changeByRowAndCol:Map[(Long,Int),Change],diffOverleap:DiffSimilarity):RowSummary = {
+      ??? //If this method is needed again fix the code below to use single change list instead of individual lists:
+//      resultingColOrder.map { case (colID, _) => {
+//        val associatedChange = changeByRowAndCol.get((row.id, colID))
+//        if (!associatedChange.isDefined)
+//          RowSummary(0, 0, 0, 0, 0, 0)
+//        else if (associatedChange.get.isUpdate && diffOverleap.updateOverlap.contains(associatedChange.get.getValueTuple))
+//          RowSummary(1, 0, 0, 0, 0, 0)
+//        else if (associatedChange.get.isInsert && diffOverleap.newValueOverlap.contains(associatedChange.get.newValue))
+//          RowSummary(0, 1, 0, 0, 0, 0)
+//        else if (associatedChange.get.isDelete && diffOverleap.oldValueOverlap.contains(associatedChange.get.prevValue))
+//          RowSummary(0, 0, 1, 0, 0, 0)
+//        else if (associatedChange.get.isUpdate)
+//          RowSummary(0, 0, 0, 1, 0, 0)
+//        else if (associatedChange.get.isInsert)
+//          RowSummary(0, 0, 0, 0, 1, 0)
+//        else if (associatedChange.get.isDelete)
+//          RowSummary(0, 0, 0, 0, 0, 1)
+//        else
+//          throw new AssertionError("we should not get here :)")
+//      }
+//      }.reduce((a, b) => a + b)
     }
   }
 

@@ -16,7 +16,7 @@ object ColumnAndRowMatchingExitValRead extends App {
     .foreach(a => println(getID(a(8))))
 
   def getID(str: String) = {
-    str.split("\\s")(10)
+    str.split("\\s")(8)
   }
 
 }

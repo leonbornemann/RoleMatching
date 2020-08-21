@@ -6,7 +6,11 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 
 import scala.collection.mutable
 
-class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,AttributeState]) {
+class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,AttributeState]) extends Serializable{
+  private def serialVersionUID = 6529685098267757630L
+
+
+
   def nameSet = lineage.withFilter(_._2.exists).map(_._2.attr.get.name).toSet
 
   def lastDefinedValue = {

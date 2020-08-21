@@ -15,11 +15,11 @@ object ChangeExplorationMain extends App with StrictLogging{
   val filteredChangeFile = new File(IOService.TMP_WORKING_DIR + "filteredChanges.json")
   //val changeCubes = writeFilteredChanges
   val changeCubes = ChangeCube.fromJsonObjectPerLineFile(filteredChangeFile.getAbsolutePath)
-  logger.debug(s"Registered ${changeCubes.map(_.deletes.size.toLong).sum} deletes")
-  logger.debug(s"Registered ${changeCubes.map(_.inserts.size.toLong).sum} inserts")
-  logger.debug(s"Registered ${changeCubes.map(_.updates.size.toLong).sum} updates")
+//  logger.debug(s"Registered ${changeCubes.map(_.deletes.size.toLong).sum} deletes")
+//  logger.debug(s"Registered ${changeCubes.map(_.inserts.size.toLong).sum} inserts")
+//  logger.debug(s"Registered ${changeCubes.map(_.updates.size.toLong).sum} updates")
   val attrGroups = changeCubes.flatMap(cc => cc.allChanges.collect({
-    case c if (c.newValue!=None) => {
+    case c if (c.value!=None) => {
     val byVersion = cc.colIDTOAttributeMap(c.pID)
       byVersion(c.t).name}
   }).toSet.toSeq)

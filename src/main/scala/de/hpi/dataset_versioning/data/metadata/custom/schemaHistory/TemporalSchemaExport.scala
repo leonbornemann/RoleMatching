@@ -13,7 +13,7 @@ object TemporalSchemaExport extends App with StrictLogging{
     .toIndexedSeq
   subdomainIds.foreach(id => {
     logger.debug(s"Loading changes for $id")
-    val schemaBeforeWrite = TemporalSchema.readFromTemporalTable(id)
-    schemaBeforeWrite.writeToStandardFile()
+    val schema = TemporalSchema.readFromTemporalTable(id)
+    schema.writeToStandardFile()
   })
 }

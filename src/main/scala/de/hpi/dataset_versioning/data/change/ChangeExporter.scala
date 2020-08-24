@@ -21,22 +21,27 @@ class ChangeExporter extends StrictLogging{
     cube.allChanges.foreach(c => lastValues((c.e,c.pID)) = c.value)
   }
 
-  def exportAllChangesFromVersions(id: String, allVersions: IndexedSeq[LocalDate], ignoreInitialInsert: Boolean) = {
+  def updateColumnSetsAtTime(columnSetsAtTimestamp: mutable.TreeMap[LocalDate, Set[Int]], cube: ChangeCube,version:LocalDate) = {
+    columnSetsAtTimestamp(version) = cube.allChanges.filter(_.value!=ReservedChangeValues.NOT_EXISTANT_DATASET).map(_.pID).toSet
+  }
+
+  def exportAllChangesFromVersions(id: String, allVersions: IndexedSeq[LocalDate]) = {
     //we probably need to track all change records and their last values
     var curDs:RelationalDataset = null
     val firstVersion = allVersions(0)
-    val changeCube = ChangeCube(id)
+    val finalChangeCube = ChangeCube(id)
     val lastValues = scala.collection.mutable.HashMap[(Long,Int),Any]()
+    val enteredInitialValues = scala.collection.mutable.HashMap[(Long,Int),Boolean]()
+    val columnSetsAtTimestamp = scala.collection.mutable.TreeMap[LocalDate,Set[Int]]()
     if(!versionExists(id,firstVersion))
       logger.debug(s"Skipping $id because no first version was found")
     else {
       var prevDs = IOService.loadSimplifiedRelationalDataset(DatasetInstance(id, firstVersion))
       val changeFile = IOService.getChangeFile(id)
-      if (!ignoreInitialInsert) {
-        val cube = getChanges(RelationalDataset.createEmpty(id, LocalDate.MIN), prevDs)
-        updateLastValues(lastValues,cube)
-        changeCube.addAll(cube)
-      }
+      val cube = getChanges(RelationalDataset.createEmpty(id, LocalDate.MIN), prevDs)
+      updateLastValues(lastValues,cube)
+      updateColumnSetsAtTime(columnSetsAtTimestamp,cube,prevDs.version)
+      addNewChanges(finalChangeCube,cube,enteredInitialValues,columnSetsAtTimestamp)
       for (i <- 1 until allVersions.size) {
         val curVersion = allVersions(i)
         if (versionExists(id, curVersion)) {
@@ -46,6 +51,7 @@ class ChangeExporter extends StrictLogging{
         }
         val curChanges = getChanges(prevDs, curDs)
         updateLastValues(lastValues,curChanges)
+        updateColumnSetsAtTime(columnSetsAtTimestamp,curChanges,curDs.version)
         if(curDs.isEmpty && prevDs.isEmpty){
           //nothing to do
         } else if(curDs.isEmpty && !prevDs.isEmpty){
@@ -53,11 +59,8 @@ class ChangeExporter extends StrictLogging{
           val allTracked = lastValues.keySet.toIndexedSeq
           allTracked.foreach{case (e,p) => {
             val v = lastValues((e,p))
-            if(v==ReservedChangeValues.NOT_EXISTANT_DATASET){
-              println()
-            }
             assert(v != ReservedChangeValues.NOT_EXISTANT_DATASET)
-            changeCube.addChange(Change(curDs.version,e,p,ReservedChangeValues.NOT_EXISTANT_DATASET))
+            finalChangeCube.addChange(Change(curDs.version,e,p,ReservedChangeValues.NOT_EXISTANT_DATASET))
             lastValues((e,p)) = ReservedChangeValues.NOT_EXISTANT_DATASET
           }}
         } else if(prevDs.isEmpty){
@@ -93,24 +96,69 @@ class ChangeExporter extends StrictLogging{
             lastValues((e,p))=newVal
           }}
         }
-        changeCube.addAll(curChanges)
+        addNewChanges(finalChangeCube,curChanges,enteredInitialValues,columnSetsAtTimestamp)
         prevDs = curDs
       }
-      changeCube.allChanges.groupBy(c => (c.e,c.pID))
+      finalChangeCube.allChanges.groupBy(c => (c.e,c.pID))
         .foreach{case (k,v) => {
-          val vals = v.sortBy(_.t.toEpochDay).map(_.value)
+          val sortedByTime = v.sortBy(_.t.toEpochDay)
+          assert(sortedByTime.head.t==IOService.STANDARD_TIME_FRAME_START)
+          val vals = sortedByTime.map(_.value)
           for(i <- 1 until vals.size){
             assert(vals(i)!=vals(i-1))
           }
         }}
-      changeCube.toJsonFile(new File(changeFile))
+      finalChangeCube.toJsonFile(new File(changeFile))
     }
   }
 
-  def exportAllChanges(id: String, ignoreInitialInsert:Boolean=false) = {
+  private def addNewChanges(finalChangeCube: ChangeCube, newCube: ChangeCube, enteredInitialValues:scala.collection.mutable.HashMap[(Long,Int),Boolean], columnSetsAtTimestamp:scala.collection.mutable.TreeMap[LocalDate,Set[Int]]) = {
+    newCube.allChanges.foreach { case Change(t, e, p, v) => {
+      if (enteredInitialValues.getOrElse((e, p), false) == false && t != IOService.STANDARD_TIME_FRAME_START) {
+        //we need to add intitial values for all timestamps before this one
+        var lastVal = ReservedChangeValues.NOT_EXISTANT_DATASET
+        if (columnSetsAtTimestamp.firstKey != IOService.STANDARD_TIME_FRAME_START) {
+          //add non-existant dataset until the first timestamp
+          finalChangeCube.addChange(Change(IOService.STANDARD_TIME_FRAME_START, e, p, ReservedChangeValues.NOT_EXISTANT_DATASET))
+        } else {
+          lastVal = null
+        }
+        columnSetsAtTimestamp
+          .withFilter { case (ts, _) => ts.isBefore(t) }
+          .foreach { case (ts, colSet) => {
+            if (colSet.isEmpty) {
+              //dataset delete!
+              assert(lastVal != ReservedChangeValues.NOT_EXISTANT_DATASET)
+              finalChangeCube.addChange(Change(ts, e, p, ReservedChangeValues.NOT_EXISTANT_DATASET))
+              lastVal = ReservedChangeValues.NOT_EXISTANT_DATASET
+            } else if (!colSet.contains(p)) {
+              if (lastVal == ReservedChangeValues.NOT_EXISTANT_COL) {
+                //no change to add
+              } else {
+                finalChangeCube.addChange(Change(ts, e, p, ReservedChangeValues.NOT_EXISTANT_COL))
+                lastVal = ReservedChangeValues.NOT_EXISTANT_COL
+              }
+            } else {
+              if (lastVal == ReservedChangeValues.NOT_EXISTANT_ROW) {
+                //no change to add
+              } else {
+                finalChangeCube.addChange(Change(ts, e, p, ReservedChangeValues.NOT_EXISTANT_ROW))
+                lastVal = ReservedChangeValues.NOT_EXISTANT_ROW
+              }
+            }
+          }
+          }
+      }
+      enteredInitialValues((e,p)) = true
+      finalChangeCube.addChange(Change(t, e, p, v))
+    }
+    }
+  }
+
+  def exportAllChanges(id: String) = {
     val allVersions = histories(id).allVersionsIncludingDeletes
     //handle first insert separately:
-    exportAllChangesFromVersions(id,allVersions,ignoreInitialInsert)
+    exportAllChangesFromVersions(id,allVersions)
   }
 
   private def getChanges(prevDs: RelationalDataset, nextDs: RelationalDataset) = {

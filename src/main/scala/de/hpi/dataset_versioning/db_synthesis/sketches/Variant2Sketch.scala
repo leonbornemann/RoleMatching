@@ -28,15 +28,15 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch {
       false
   }
 
-  def toIntervalRepresentation = {
+  def toIntervalRepresentation:mutable.TreeMap[TimeInterval,Int] = {
     val asLineage = toHashValueLineage.toIndexedSeq
-    (0 until asLineage.size).map( i=> {
+    mutable.TreeMap[TimeInterval,Int]() ++ (0 until asLineage.size).map( i=> {
       val (ts,value) = asLineage(i)
       if(i==asLineage.size-1)
         (TimeInterval(ts,None),value)
       else
         (TimeInterval(ts,Some(asLineage(i+1)._1)),value)
-    }).toMap
+    })
   }
 
 
@@ -130,97 +130,92 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch {
     value1 == WILDCARD || value2 == WILDCARD || value1==value2
   }
 
+  def getCompatibleHashValue(a: Int, b: Int): Int = {
+    if(a==b) a else if(a==WILDCARD) b else a
+  }
+
+  def getOverlapInterval(a: (TimeInterval, Int), b: (TimeInterval, Int)): (TimeInterval, Int) = {
+    assert(a._1.begin==b._1.begin)
+    if(!hashValuesAreCompatible(a._2,b._2)){
+      println()
+    }
+    assert(hashValuesAreCompatible(a._2,b._2))
+    val earliestEnd = Seq(a._1.endOrMax,b._1.endOrMax).minBy(_.toEpochDay)
+    val endTime = if(earliestEnd==LocalDate.MAX) None else Some(earliestEnd)
+    (TimeInterval(a._1.begin,endTime),getCompatibleHashValue(a._2,b._2))
+  }
+
   override def mergeWithConsistent(other: FieldLineageSketch): FieldLineageSketch = {
-    throw new AssertionError("TODO: this method needs to be completely redone!")
-    val myIterator = this.toIntervalRepresentation.iterator
-    val otherIterator = other.toIntervalRepresentation.iterator
-    val newLineage = mutable.TreeMap[TimeInterval,Int]()
-    var myHead = myIterator.nextOption()
-    var otherHead = otherIterator.nextOption()
-    while(myHead.isDefined || otherHead.isDefined){
-      if(!myHead.isDefined){
-        newLineage += otherHead.get
-        otherHead = otherIterator.nextOption()
-      } else if(!otherHead.isDefined){
-        newLineage += myHead.get
-        myHead = myIterator.nextOption()
-      } else {
-        val myBegin = myHead.get._1.begin
-        val myEnd = myHead.get._1.endOrMax
-        val otherBegin = otherHead.get._1.begin
-        val otherEnd = otherHead.get._1.endOrMax
-        if(myBegin.isAfter(otherEnd)){
-          newLineage += otherHead.get
-          otherHead = otherIterator.nextOption()
-        } else if(otherBegin.isAfter(myEnd)){
-          newLineage += myHead.get
-          myHead = myIterator.nextOption()
-        } else{
-          // we have an overlap like this:
-          //Interval1 ----------
-          //Interval2       ----------------
-          //or this:
-          //       -------------
-          //---------------------------
-          assert(hashValuesAreCompatible(myHead.get._2,otherHead.get._2)) //if this does not hold we were not compatible
-          val earlierInterval = if(myBegin.isBefore(otherBegin)) myHead.get else otherHead.get
-          val laterInterval = if(earlierInterval == myHead.get) otherHead.get else myHead.get
-          //TODO: only if we have wildcard in one of these intervals we should do this
-          if(earlierInterval._2 == laterInterval._2 ||
-            (laterInterval._2==WILDCARD && !laterInterval._1.endOrMax.isAfter(earlierInterval._1.endOrMax)) ){
-            //Easy: Time Interval till latest end
-            val latestEnd = Seq(earlierInterval._1.endOrMax,laterInterval._1.endOrMax).maxBy(_.toEpochDay)
-            val endTs = if(latestEnd==LocalDate.MAX) None else Some(latestEnd)
-            val toAppend = (TimeInterval(earlierInterval._1.begin,endTs),earlierInterval._2)
-            newLineage += toAppend
-          } else if(laterInterval._2==WILDCARD){
-            assert(laterInterval._1.endOrMax.isAfter(earlierInterval._1.endOrMax))
-            var toAppend = (TimeInterval(earlierInterval._1.begin,earlierInterval._1.`end`),earlierInterval._2)
-            newLineage += toAppend
-            //we need to preserve the wildcard after
-            toAppend = (TimeInterval(earlierInterval._1.`end`.get.plusDays(1),laterInterval._1.`end`),laterInterval._2)
-            newLineage += toAppend
-          } else if(earlierInterval._2==WILDCARD && earlierInterval._1.begin == laterInterval._1.begin){
-            //easy: we can append the later interval:
-            newLineage += laterInterval
-          } else{
-            assert(earlierInterval._2==WILDCARD && laterInterval._1.begin.isAfter(earlierInterval._1.begin))
-            //WILDCARD at the beginning:
-            var toAppend = (TimeInterval(earlierInterval._1.begin,Some(laterInterval._1.begin.minusDays(1))),WILDCARD)
-            newLineage += toAppend
-            //The part afterwards:
-            //TODO: what about wildcard and after?
-            toAppend = (TimeInterval(laterInterval._1.begin,Some(laterInterval._1.begin.minusDays(1))),WILDCARD)
-          }
-          if(earlierInterval._1.begin!=laterInterval._1.begin){
-            val toAppend = (TimeInterval(earlierInterval._1.begin,Some(laterInterval._1.begin.minusDays(1))),earlierInterval._2)
-            newLineage += toAppend
-          }
-          //now the overlapping part
-          val earliestEnd = Seq(earlierInterval._1.endOrMax,laterInterval._1.endOrMax).minBy(_.toEpochDay)
-          val valueInOverlap = (if(earlierInterval._2==laterInterval._2) earlierInterval._2
-            else if(earlierInterval._2==WILDCARD) laterInterval._2
-            else earlierInterval._2) //take the non-wildcard value
-          val overlapTimestampEnd = if(earliestEnd==LocalDate.MAX) None else Some(earliestEnd)
-          var toAppend = (TimeInterval(laterInterval._1.begin,overlapTimestampEnd),valueInOverlap)
-          newLineage += toAppend
-          //now the part of the later one
-          val intervalContinuingAfterOverlap = if(earlierInterval._1.endOrMax.isBefore(earliestEnd)) earlierInterval else laterInterval
-          if(intervalContinuingAfterOverlap._1.endOrMax.isBefore(earliestEnd)){
-            assert(earliestEnd!=LocalDate.MAX)
-            toAppend = (TimeInterval(earliestEnd.plusDays(1),intervalContinuingAfterOverlap._1.`end`),intervalContinuingAfterOverlap._2)
-            newLineage += toAppend
-          }
-          myHead = myIterator.nextOption()
-          otherHead = otherIterator.nextOption()
-        }
+    val myLineage = this.toIntervalRepresentation.toBuffer
+    val otherLineage = other.toIntervalRepresentation.toBuffer
+    if(myLineage.isEmpty){
+      assert(otherLineage.isEmpty)
+      Variant2Sketch.fromValueLineage(ValueLineage())
+    } else if(otherLineage.isEmpty){
+      assert(myLineage.isEmpty)
+      Variant2Sketch.fromValueLineage(ValueLineage())
+    }
+    val newLineage = mutable.ArrayBuffer[(TimeInterval,Int)]()
+    var myIndex = 0
+    var otherIndex = 0
+    while(myIndex < myLineage.size || otherIndex < otherLineage.size) {
+      assert(myIndex < myLineage.size && otherIndex < otherLineage.size)
+      val (myInterval,myValue) = myLineage(myIndex)
+      val (otherInterval,otherValue) = otherLineage(otherIndex)
+      assert(myInterval.begin == otherInterval.begin)
+      var toAppend:(TimeInterval,Int) = null
+      if(myInterval==otherInterval){
+        if(!hashValuesAreCompatible(myValue,otherValue))
+          println()
+        assert(hashValuesAreCompatible(myValue,otherValue))
+        toAppend = (myInterval,getCompatibleHashValue(myValue,otherValue))
+        myIndex+=1
+        otherIndex+=1
+      } else if(myInterval<otherInterval){
+        toAppend = getOverlapInterval(myLineage(myIndex),otherLineage(otherIndex))
+        //replace old interval with newer interval with begin set to myInterval.end+1
+        otherLineage(otherIndex) = (TimeInterval(myInterval.end.get,otherInterval.`end`),otherValue)
+        myIndex+=1
+      } else{
+        assert(otherInterval<myInterval)
+        toAppend = getOverlapInterval(myLineage(myIndex),otherLineage(otherIndex))
+        myLineage(myIndex) = (TimeInterval(otherInterval.end.get,myInterval.`end`),myValue)
+        otherIndex+=1
+      }
+      if(!newLineage.isEmpty && newLineage.last._2==toAppend._2){
+        //we replace the old interval by a longer one
+        newLineage(newLineage.size-1) = (TimeInterval(newLineage.last._1.begin,toAppend._1.`end`),toAppend._2)
+      } else{
+        //we simply append the new interval:
+        newLineage += toAppend
       }
     }
-    Variant2Sketch.fromValueLineage(ValueLineage(newLineage.map(t => (t._1.begin,t._2))))
+    val asTree = mutable.TreeMap[LocalDate,Int]() ++ newLineage.map(t => (t._1.begin,t._2))
+    Variant2Sketch.fromTimestampToHash(asTree)
   }
+
+  /** *
+   * creates a new field lineage sket by appending all values in y to the back of this one
+   *
+   * @param y
+   * @return
+   */
+  override def append(y: FieldLineageSketch): FieldLineageSketch = {
+    assert(lastTimestamp.isBefore(y.firstTimestamp))
+    new Variant2Sketch(getBytes ++ y.getBytes)
+  }
+
+  override def firstTimestamp: LocalDate = byteToTimestamp(data(0))
+
+  override def changeCount: Int = numEntries
 }
 
 object Variant2Sketch {
+  def fromTimestampToHash(asTree: mutable.TreeMap[LocalDate, Int]) = {
+    val bytes = asTree.flatMap{case (k,v) => Seq(timestampToByteRepresentation(k)) ++ intToByteArray(v)}.toArray
+    new Variant2Sketch(bytes)
+  }
+
 
   def HASH_DJB2(v:String) = {
     //source: http://www.cse.yorku.ca/~oz/hash.html
@@ -258,14 +253,18 @@ object Variant2Sketch {
   }
 
   def HASH_FUNCTION_STANDARD(v:Any):Array[Byte] = {
-    var hash = if(v == null) "null".hashCode else v.hashCode()
-    if(hash==WILDCARD)
-      hash = HASH_DJB2(if(v==null) "null" else v.toString)
-    if(hash == 0) {
-      //bad luck XD
-      hash = 1
+    if(v==ReservedChangeValues.NOT_EXISTANT_COL || v == ReservedChangeValues.NOT_EXISTANT_DATASET)
+      intToByteArray(WILDCARD)
+    else {
+      var hash = if (v == null) "null".hashCode else v.hashCode()
+      if (hash == WILDCARD)
+        hash = HASH_DJB2(if (v == null) "null" else v.toString)
+      if (hash == 0) {
+        //bad luck XD
+        hash = 1
+      }
+      intToByteArray(hash)
     }
-    intToByteArray(hash)
   }
 
   def getVariantName: String = "timestampValuePairs"

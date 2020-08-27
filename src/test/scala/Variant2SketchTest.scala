@@ -1,5 +1,6 @@
 import java.time.LocalDate
 
+import Variant2SketchTest.toDate
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
@@ -25,30 +26,62 @@ object Variant2SketchTest extends App {
     //non wildcard merges:
     //b included in a
     //b after a
-    var valuesA = mutable.TreeMap[LocalDate,Any](toDate(3) -> "firstElem",
-      toDate(4) -> "secondElem",
-      toDate(7) -> ReservedChangeValues.NOT_EXISTANT_ROW,
-      toDate(10) -> "thirdElem",
+    var valuesA = mutable.TreeMap[LocalDate,Any](toDate(0) -> ReservedChangeValues.NOT_EXISTANT_COL,
+      toDate(7) -> "C",
+      toDate(10) -> "D"
     )
-    var valuesB = mutable.TreeMap[LocalDate,Any](toDate(12) -> "thirdElem")
+    var valuesB = mutable.TreeMap[LocalDate,Any](toDate(0) -> "A",
+      toDate(3) -> "B",
+      toDate(5) -> "C",
+      toDate(10) -> "D"
+    )
     var a = Variant2Sketch.fromValueLineage(ValueLineage(valuesA))
     var b = Variant2Sketch.fromValueLineage(ValueLineage(valuesB))
     var res = a.mergeWithConsistent(b)
     var resSwapped = b.mergeWithConsistent(a)
-    assert(res == resSwapped && res==a)
-    //overlap of exactly one day
-    valuesA = mutable.TreeMap[LocalDate,Any](toDate(3) -> "firstElem",
-      toDate(4) -> ReservedChangeValues.NOT_EXISTANT_COL
+    assert(res == resSwapped && res==b)
+    //second test case:
+    valuesA = mutable.TreeMap[LocalDate,Any](toDate(0) -> ReservedChangeValues.NOT_EXISTANT_COL,
+      toDate(10) -> "C",
+      toDate(15) -> "D"
     )
-    valuesB = mutable.TreeMap[LocalDate,Any](toDate(4) -> "firstElem",
-      toDate(5) -> ReservedChangeValues.NOT_EXISTANT_COL)
-    var expectedResultValues = mutable.TreeMap[LocalDate,Any](toDate(3) -> "firstElem",
-      toDate(5) -> ReservedChangeValues.NOT_EXISTANT_COL)
+    valuesB = mutable.TreeMap[LocalDate,Any](toDate(0) -> ReservedChangeValues.NOT_EXISTANT_COL,
+      toDate(3) -> "B",
+      toDate(5) -> ReservedChangeValues.NOT_EXISTANT_COL,
+      toDate(7) -> "C",
+      toDate(15) -> "D",
+      toDate(17) -> ReservedChangeValues.NOT_EXISTANT_COL
+    )
+    var expectedRes = mutable.TreeMap[LocalDate,Any](toDate(0) -> ReservedChangeValues.NOT_EXISTANT_COL,
+      toDate(3) -> "B",
+      toDate(5) -> ReservedChangeValues.NOT_EXISTANT_COL,
+      toDate(7) -> "C",
+      toDate(15) -> "D"
+    )
     a = Variant2Sketch.fromValueLineage(ValueLineage(valuesA))
     b = Variant2Sketch.fromValueLineage(ValueLineage(valuesB))
     res = a.mergeWithConsistent(b)
     resSwapped = b.mergeWithConsistent(a)
-
+    assert(res == resSwapped && res==Variant2Sketch.fromValueLineage(ValueLineage(expectedRes)))
+    //third test case:
+    valuesA = mutable.TreeMap[LocalDate,Any](toDate(0) -> ReservedChangeValues.NOT_EXISTANT_DATASET,
+      toDate(10) -> "C",
+      toDate(11) -> ReservedChangeValues.NOT_EXISTANT_DATASET,
+      toDate(12) -> "D",
+    )
+    valuesB = mutable.TreeMap[LocalDate,Any](toDate(0) -> ReservedChangeValues.NOT_EXISTANT_COL,
+      toDate(11) -> "D",
+      toDate(17) -> ReservedChangeValues.NOT_EXISTANT_COL
+    )
+    expectedRes = mutable.TreeMap[LocalDate,Any](toDate(0) -> ReservedChangeValues.NOT_EXISTANT_COL,
+      toDate(10) -> "C",
+      toDate(11) -> "D"
+    )
+    a = Variant2Sketch.fromValueLineage(ValueLineage(valuesA))
+    b = Variant2Sketch.fromValueLineage(ValueLineage(valuesB))
+    res = a.mergeWithConsistent(b)
+    resSwapped = b.mergeWithConsistent(a)
+    assert(res == resSwapped && res==Variant2Sketch.fromValueLineage(ValueLineage(expectedRes)))
   }
 
   private def hashValuesAtIntervalTest = {

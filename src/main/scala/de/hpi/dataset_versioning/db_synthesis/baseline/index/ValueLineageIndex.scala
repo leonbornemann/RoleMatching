@@ -2,14 +2,14 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
-import de.hpi.dataset_versioning.db_synthesis.sketches.DecomposedTemporalTableSketch
+import de.hpi.dataset_versioning.db_synthesis.sketches.{TemporalTableSketch}
 
 class ValueLineageIndex(val index: Map[IndexedSeq[Map[TimeInterval, Int]], IndexedSeq[Int]],val attributeOrderInIndex: IndexedSeq[Int]) {
 
 }
 object ValueLineageIndex {
 
-  def buildIndex(sketchA: DecomposedTemporalTableSketch, indexTimespansByAttributeID: collection.Map[Int, TimeIntervalSequence], attributeOrderInIndex: IndexedSeq[Int]) = {
+  def buildIndex(sketchA: TemporalTableSketch, indexTimespansByAttributeID: collection.Map[Int, TimeIntervalSequence], attributeOrderInIndex: IndexedSeq[Int]) = {
     val columnsByID = sketchA.temporalColumnSketches.map(c => (c.attrID, c)).toMap
     val columnsInIndexOrder = attributeOrderInIndex.map(colID => columnsByID(colID))
     val index = (0 until sketchA.temporalColumnSketches.head.fieldLineageSketches.size).groupBy(rowID => {

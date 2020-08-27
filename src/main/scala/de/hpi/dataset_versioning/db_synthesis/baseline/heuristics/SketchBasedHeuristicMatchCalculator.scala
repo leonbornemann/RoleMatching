@@ -1,26 +1,15 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.heuristics
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.ValueLineageIndex
-import de.hpi.dataset_versioning.db_synthesis.baseline.{HeuristicMatch, SynthesizedTemporalDatabaseTable, TimeIntervalSequence}
-import de.hpi.dataset_versioning.db_synthesis.sketches.{DecomposedTemporalTableSketch, TemporalColumnSketch, Variant2Sketch}
+import de.hpi.dataset_versioning.db_synthesis.baseline.{SynthesizedTemporalDatabaseTable, TableUnionMatch, TimeIntervalSequence}
+import de.hpi.dataset_versioning.db_synthesis.sketches.{DecomposedTemporalTableSketch, SynthesizedTemporalDatabaseTableSketch, TemporalColumnSketch, Variant2Sketch}
 
 import scala.collection.mutable
 
 class SketchBasedHeuristicMatchCalculator extends HeursticMatchCalculator{
 
-  val curSketches = mutable.HashMap[SynthesizedTemporalDatabaseTable,DecomposedTemporalTableSketch]()
   val schemaMapper = new TemporalSchemaMapper()
-
-  def getOrLoadSketch(tableA: SynthesizedTemporalDatabaseTable) = {
-    if(curSketches.contains(tableA))
-      curSketches(tableA)
-    else {
-      assert(tableA.unionedTables.size==1)
-      val dtt = tableA.unionedTables.head
-      val sketch = DecomposedTemporalTableSketch.load(dtt,Variant2Sketch.getVariantName)
-      sketch
-    }
-  }
 
   def getNonWildCardOverlapForMatchedAttributes(left: Set[AttributeLineage], right: Set[AttributeLineage]) = {
     val nonWildCardLeft = unionAllActiveTimes(left)
@@ -49,22 +38,17 @@ class SketchBasedHeuristicMatchCalculator extends HeursticMatchCalculator{
     (mappingToOverlap,attrIdToNonWildCardOverlapLeft,attrIdToNonWildCardOverlapRight)
   }
 
-
-
-  def createTupleMapping(indexA: ValueLineageIndex, indexB: ValueLineageIndex) = {
-
-  }
-
-  override def calculateMatch(tableA: SynthesizedTemporalDatabaseTable, tableB: SynthesizedTemporalDatabaseTable): HeuristicMatch = {
-    val sketchA = getOrLoadSketch(tableA)
-    val sketchB = getOrLoadSketch(tableB)
+  override def calculateMatch(tableA: SynthesizedTemporalDatabaseTableSketch, tableB: SynthesizedTemporalDatabaseTableSketch): TableUnionMatch = {
+    val sketchA = tableA
+    val sketchB = tableB
     //enumerate all schema mappings:
     val schemaMappings = schemaMapper.enumerateAllValidSchemaMappings(tableA,tableB)
+    var curBestScore = 0
+    var curBestMapping:collection.Map[Set[AttributeLineage], Set[AttributeLineage]] = null
     for(mapping <- schemaMappings){
       val (mappingToOverlap,attrIdToNonWildCardOverlapA,attrIdToNonWildCardOverlapB) = getNonWildCardOverlap(mapping)
       if(mappingToOverlap.exists(!_._2.isEmpty)){
         //we have a chance to save some changes here:
-        //TODO: index by the overlaps in each attr for both tables
         val mappingOrdered = mapping.toIndexedSeq
         val (overlapColumnAttrIDOrderA,overlapColumnAttrIDOrderB) = mappingOrdered.map{case (left,right) =>
           (left.toIndexedSeq.sortBy(_.attrId).map(_.attrId),right.toIndexedSeq.sortBy(_.attrId).map(_.attrId))}
@@ -73,11 +57,18 @@ class SketchBasedHeuristicMatchCalculator extends HeursticMatchCalculator{
         val indexB = ValueLineageIndex.buildIndex(sketchB,attrIdToNonWildCardOverlapB,overlapColumnAttrIDOrderB)
         val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,indexA,indexB,mapping)
         val tupleMapping = tupleMapper.mapGreedy()
+        val totalScore = tupleMapping.totalScore
+        if(totalScore > curBestScore){
+          curBestScore = totalScore
+          curBestMapping = mapping
+        }
       } else{
         throw new AssertionError("This match could have been caught earlier and avoided entirely")
       }
-      tableA.schema.map(_.activeTimeIntervals)
     }
-    ???
+    if(curBestMapping==null)
+      new TableUnionMatch(tableA,tableB,None,0,true)
+    else
+      new TableUnionMatch(tableA,tableB,Some(curBestMapping),curBestScore,true)
   }
 }

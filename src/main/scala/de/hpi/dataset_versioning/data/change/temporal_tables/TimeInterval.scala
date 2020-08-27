@@ -5,9 +5,11 @@ import java.time.LocalDate
 import scala.collection.mutable.ArrayBuffer
 
 //begin inclusive, end exclusive
-case class TimeInterval(begin:LocalDate,end:Option[LocalDate]) extends Ordered[TimeInterval]{
+case class TimeInterval(begin:LocalDate,private val constructedEnd:Option[LocalDate]) extends Ordered[TimeInterval]{
 
-  assert(!end.isDefined || end.get!=LocalDate.MAX) // end being max will always be wrong!
+  val end = if(constructedEnd.isDefined && constructedEnd.get == LocalDate.MAX) None else constructedEnd // convenience constructor, so that we can specify LocalDate.Max instead of None
+
+  assert(!end.isDefined || end.get!=LocalDate.MAX)
 
   def intersect(toMerge: TimeInterval) = {
     val newBegin = Seq(toMerge.begin,this.begin).max

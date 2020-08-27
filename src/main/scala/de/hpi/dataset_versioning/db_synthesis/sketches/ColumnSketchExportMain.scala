@@ -21,15 +21,16 @@ object ColumnSketchExportMain extends App with StrictLogging {
       val f = DBSynthesis_IOService.getTemporalColumnSketchFile(tc.id,tc.attrId,sketch.fieldLineageSketches.head.getVariantName)
       sketch.writeToBinaryFile(f)
     })
-//    val dtts = DecomposedTemporalTable.loadAllAssociations(subdomain,id)
-//    dtts.foreach(dtt => {
-//      val projection = tt.project(dtt)
-//      val tcs = projection.getTemporalColumns()
-//      val firstEntityIds = tcs.head.lineages.map(_.entityID)
-//      assert(tcs.forall(tc => tc.lineages.map(_.entityID)==firstEntityIds))
-//      val dttSketch = new DecomposedTemporalTableSketch(dtt.id,tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
-//      dttSketch.writeToStandardFile()
-//    })
+    //whole tables:
+    val dtts = DecomposedTemporalTable.loadAllAssociations(subdomain,id)
+    dtts.foreach(dtt => {
+      val projection = tt.project(dtt)
+      val tcs = projection.projection.getTemporalColumns()
+      val firstEntityIds = tcs.head.lineages.map(_.entityID)
+      assert(tcs.forall(tc => tc.lineages.map(_.entityID)==firstEntityIds))
+      val dttSketch = new DecomposedTemporalTableSketch(dtt.id,tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
+      dttSketch.writeToStandardFile()
+    })
   }
 
   if(id.isDefined)

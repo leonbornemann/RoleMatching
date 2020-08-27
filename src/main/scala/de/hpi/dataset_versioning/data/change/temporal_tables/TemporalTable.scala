@@ -4,13 +4,29 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.{ChangeCube, ReservedChangeValues}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.sketches.{DecomposedTemporalTableSketch, TemporalColumnSketch}
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable
 
-class TemporalTable(val id:String,val attributes:collection.IndexedSeq[AttributeLineage],val rows:collection.IndexedSeq[TemporalRow]){
+class TemporalTable(val id:String,
+                    val attributes:collection.IndexedSeq[AttributeLineage],
+                    val rows:collection.IndexedSeq[TemporalRow],
+                    val dttID:Option[DecomposedTemporalTable] = None){
+
+  def isProjection = dttID.isDefined
+
+  def writeTableSketch() = {
+    assert(isProjection)
+    val tcs = getTemporalColumns()
+    val firstEntityIds = tcs.head.lineages.map(_.entityID)
+    assert(tcs.forall(tc => tc.lineages.map(_.entityID)==firstEntityIds))
+    val dttSketch = new DecomposedTemporalTableSketch(dttID.get.id,tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
+    dttSketch.writeToStandardFile()
+  }
+
 
   def project(dttToMerge: DecomposedTemporalTable) = {
     val newSchema = dttToMerge.containedAttrLineages
@@ -27,7 +43,17 @@ class TemporalTable(val id:String,val attributes:collection.IndexedSeq[Attribute
       val newRow = new TemporalRow(tr.entityID,newRowContent.map(_._2))
       rows.addOne(newRow)
     })
-    new TemporalTable(dttToMerge.compositeID,newSchema,rows)
+    //filter out duplicate rows:
+    val bySameTupleLineages = rows.groupBy(tr => {
+      val a = tr.fields.map(_.lineage)
+      a
+    })
+    val rowsProjected:collection.mutable.ArrayBuffer[ProjectedTemporalRow] = collection.mutable.ArrayBuffer()
+    bySameTupleLineages.foreach{case (k,v) => {
+      val id = v.sortBy(_.entityID).head.entityID
+      rowsProjected += new ProjectedTemporalRow(id,v.head.fields,v.map(_.entityID).toSet)
+    }}
+    new ProjectedTemporalTable(new TemporalTable(dttToMerge.compositeID,newSchema,rowsProjected,Some(dttToMerge)),this)
   }
 
   def getTemporalColumns() = {

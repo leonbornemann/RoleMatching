@@ -42,6 +42,7 @@ class ChangeExporter extends StrictLogging{
       updateLastValues(lastValues,cube)
       updateColumnSetsAtTime(columnSetsAtTimestamp,cube,prevDs.version)
       addNewChanges(finalChangeCube,cube,enteredInitialValues,columnSetsAtTimestamp)
+      finalChangeCube.addToAttributeNameMapping(prevDs.version,prevDs.attributes)
       for (i <- 1 until allVersions.size) {
         val curVersion = allVersions(i)
         if (versionExists(id, curVersion)) {
@@ -96,6 +97,7 @@ class ChangeExporter extends StrictLogging{
             lastValues((e,p))=newVal
           }}
         }
+        finalChangeCube.addToAttributeNameMapping(curDs.version,curDs.attributes)
         addNewChanges(finalChangeCube,curChanges,enteredInitialValues,columnSetsAtTimestamp)
         prevDs = curDs
       }

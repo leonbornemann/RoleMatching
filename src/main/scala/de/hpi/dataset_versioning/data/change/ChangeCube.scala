@@ -13,7 +13,10 @@ import scala.collection.mutable
 case class ChangeCube(datasetID:String,
                       colIDTOAttributeMap:mutable.HashMap[Int,mutable.HashMap[LocalDate,Attribute]]=mutable.HashMap(),
                       var allChanges:mutable.ArrayBuffer[Change] = mutable.ArrayBuffer[Change]()) extends JsonWritable[ChangeCube] with StrictLogging{
-  def addChange(change: Change) = allChanges +=change
+  def addChange(change: Change) = {
+    allChanges +=change
+
+  }
 
 
   def changeCount(countInitialInserts: Boolean):Int = {

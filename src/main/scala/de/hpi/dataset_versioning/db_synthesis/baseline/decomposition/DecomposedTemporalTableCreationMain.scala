@@ -35,11 +35,9 @@ object DecomposedTemporalTableCreationMain extends App with StrictLogging{
   }
 
   private def processID(versionHistoryMap: Map[String, DatasetVersionHistory], id: String) = {
-
     logger.debug(s"decomposing table $id")
     val versionHistory = versionHistoryMap(id)
     val decomposer = new TemporalTableDecomposer(subdomain, id, versionHistory)
     decomposer.createDecomposedTemporalTables()
-
   }
 }

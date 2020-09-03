@@ -9,38 +9,10 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 
 import scala.collection.mutable
 
-trait FieldLineageSketch extends Serializable{
-  def changeCount: Int
-
-  def firstTimestamp: LocalDate
-
-
-  /***
-   * creates a new field lineage sket by appending all values in y to the back of this one
-   *
-   * @param y
-   * @return
-   */
-  def append(y: FieldLineageSketch): FieldLineageSketch
-
-
-  def toHashValueLineage:mutable.TreeMap[LocalDate,Int]
-  def toIntervalRepresentation:mutable.TreeMap[TimeInterval,Int]
-
-  def mergeWithConsistent(other: FieldLineageSketch): FieldLineageSketch
-
-  def lastTimestamp: LocalDate
-
-
-  private def serialVersionUID = 6529685098267757689L
+trait FieldLineageSketch extends AbstractTemporalField[Int] with Serializable{
 
   def getVariantName:String
 
-
-  def hashValueAt(timestamp:LocalDate)
   def getBytes:Array[Byte]
-
-  //gets the hash values at the specified time-intervals, substituting missing values with the hash-value of ReservedChangeValues.NOT_EXISTANT_ROW
-  def hashValuesAt(timeToExtract: TimeIntervalSequence):Map[TimeInterval,Int]
 
 }

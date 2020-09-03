@@ -2,9 +2,16 @@ package de.hpi.dataset_versioning.db_synthesis.sketches
 
 import java.io.{File, FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
 
-class TemporalTableSketch(val temporalColumnSketches:Array[TemporalColumnSketch]) extends Serializable{
+import de.hpi.dataset_versioning.db_synthesis.baseline.AbstractTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 
-  private def serialVersionUID = 6529685098267757623L
+import scala.collection.mutable
+
+@SerialVersionUID(3L)
+abstract class TemporalTableSketch(unionedTables:mutable.HashSet[DecomposedTemporalTableIdentifier],
+                          val temporalColumnSketches:Array[TemporalColumnSketch]) extends AbstractTemporalDatabaseTable[Int](unionedTables) with Serializable{
+
+  def isTrueUnion: Boolean = unionedTables.size>1
 
   def tableActiveTimes = temporalColumnSketches.map(_.attributeLineage.activeTimeIntervals).reduce((a,b) => a.union(b))
 

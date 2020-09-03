@@ -28,7 +28,7 @@ object ColumnSketchExportMain extends App with StrictLogging {
       val tcs = projection.projection.getTemporalColumns()
       val firstEntityIds = tcs.head.lineages.map(_.entityID)
       assert(tcs.forall(tc => tc.lineages.map(_.entityID)==firstEntityIds))
-      val dttSketch = new DecomposedTemporalTableSketch(dtt.id,tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
+      val dttSketch = new DecomposedTemporalTableSketch(dtt.id,dtt.primaryKey.map(_.attrId),collection.mutable.HashSet(),tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
       dttSketch.writeToStandardFile()
     })
   }

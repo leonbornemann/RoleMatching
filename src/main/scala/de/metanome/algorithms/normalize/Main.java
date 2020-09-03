@@ -74,7 +74,6 @@ public class Main {
 		} catch (IOException | AlgorithmExecutionException e) {
 			e.printStackTrace();
 		}
-
     }
 
 	private static void executeNormalizationForID(Stream<Path> walk) throws AlgorithmExecutionException, IOException {
@@ -244,12 +243,14 @@ public class Main {
 	private static ArrayBuffer<Attribute> getSchemaList(String DS, scala.collection.immutable.Map<String, Attribute> colNameToAttributeState, String schemaStringWithFileEnding) {
 		ArrayBuffer<Attribute> schemaAsScala = new ArrayBuffer<Attribute>();
 		String schemaString = schemaStringWithFileEnding.replace(".csv","").replace(DS+".","");
-		schemaString = schemaString.substring(1,schemaString.length()-1);
+		//schemaString = schemaString.substring(1,schemaString.length()-1);
 		List<String> schema = Arrays.asList(schemaString.split(","));
 		schema.forEach(s -> {
 			String colname = s.split("\\.")[1];
-//			if(!colNameToStateMap.contains(s) || !colNameToStateMap.get(s).isDefined())
-//				System.out.println();
+			System.out.println(colname);
+			System.out.println("--------------");
+			System.out.println(colNameToAttributeState);
+			System.out.println("--------------");
 			schemaAsScala.addOne(colNameToAttributeState.get(colname).get());
 		});
 		return schemaAsScala;

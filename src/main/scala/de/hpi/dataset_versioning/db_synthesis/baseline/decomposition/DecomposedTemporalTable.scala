@@ -16,6 +16,8 @@ case class DecomposedTemporalTable(id: DecomposedTemporalTableIdentifier,
                                    originalFDLHS: collection.Set[AttributeLineage],
                                    primaryKeyByVersion: Map[LocalDate,collection.Set[Attribute]],
                                    referencedTables:mutable.HashSet[DecomposedTemporalTableIdentifier]) {
+  def informativeTableName: String = id.compositeID + "(" + containedAttrLineages.map(_.lastName).mkString(",") + ")"
+
   private var activeTime:Option[TimeIntervalSequence] = None
 
   def getActiveTime = {

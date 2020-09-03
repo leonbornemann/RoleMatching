@@ -15,15 +15,19 @@ class TemporalTable(val id:String,
                     val attributes:collection.IndexedSeq[AttributeLineage],
                     val rows:collection.IndexedSeq[TemporalRow],
                     val dttID:Option[DecomposedTemporalTable] = None){
+  def numChanges: Int = {
+    rows.flatMap(tr => tr.fields.map(_.lineage.size)).sum
+  }
+
 
   def isProjection = dttID.isDefined
 
-  def writeTableSketch() = {
+  def writeTableSketch(primaryKey:Set[Int]) = {
     assert(isProjection)
     val tcs = getTemporalColumns()
     val firstEntityIds = tcs.head.lineages.map(_.entityID)
     assert(tcs.forall(tc => tc.lineages.map(_.entityID)==firstEntityIds))
-    val dttSketch = new DecomposedTemporalTableSketch(dttID.get.id,tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
+    val dttSketch = new DecomposedTemporalTableSketch(dttID.get.id,primaryKey,mutable.HashSet(),tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
     dttSketch.writeToStandardFile()
   }
 

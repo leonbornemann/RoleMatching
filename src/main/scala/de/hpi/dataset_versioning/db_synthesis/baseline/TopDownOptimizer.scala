@@ -2,62 +2,77 @@ package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{MetadataBasedHeuristicMatchCalculator, SketchBasedHeuristicMatchCalculator}
+import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{MetadataBasedHeuristicMatchCalculator, DataBasedMatchCalculator}
 import de.hpi.dataset_versioning.db_synthesis.sketches.SynthesizedTemporalDatabaseTableSketch
 
 import scala.collection.mutable
 
-class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable]) extends StrictLogging{
-
-  logger.debug("For now, we are taking the best heuristic match and unioning into this as long as we can - this should (maybe) be changed in the future")
-
+class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChangesInAssociations:Long) extends StrictLogging{
+  println(s"initilized with:")
+  associations.map(_.informativeTableName).sorted.foreach(println(_))
   assert(associations.forall(_.isAssociation))
+  private val allAssociationSketches = mutable.HashSet() ++ associations.map(dtt => SynthesizedTemporalDatabaseTableSketch.initFrom(dtt))
+  println()
+  associations.foreach(as => {
+    val table = SynthesizedTemporalDatabaseTable.initFrom(as)
+    logger.debug(table.informativeTableName)
+    table.printTable
+    println("Heuristic:")
+    val sketch = allAssociationSketches.filter(_.unionedTables.contains(as.id)).head
+    logger.debug(sketch.informativeTableName)
+    sketch.printTable
+  })
+  println()
+  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,allAssociationSketches,nChangesInAssociations)
+  private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
 
-  private val dttByID = associations.map(a => (a.id,a)).toMap
-  private val unmatchedAssociations = mutable.HashSet() ++ associations.map(dtt => SynthesizedTemporalDatabaseTableSketch.initFrom(dtt))
-  private var curMatchedTable:SynthesizedTemporalDatabaseTable = null
-  private val matchCandidateGraph = new MatchCandidateGraph(unmatchedAssociations,new SketchBasedHeuristicMatchCalculator())
-
-  val MIN_TOP_MATCH_Score = 10 //TODO: this is arbitrary, we need to tune this!
-  val MAX_NUM_TRIES_PER_ITERATION = 100
-
-  def executeInitialMatch(bestMatch: TableUnionMatch) :(Option[SynthesizedTemporalDatabaseTable],SynthesizedTemporalDatabaseTableSketch) = {
+  def executeMatch(bestMatch: TableUnionMatch[Int]) :(Option[SynthesizedTemporalDatabaseTable],SynthesizedTemporalDatabaseTableSketch) = {
     //load the actual table
-    val sketchA = bestMatch.firstMatchPartner
-    val sketchB = bestMatch.secondMatchPartner
-    assert(sketchA.unionedTables.size == 1 && sketchB.unionedTables.size==1)
-    val synthTableA = SynthesizedTemporalDatabaseTable.initFrom(dttByID(sketchA.unionedTables.head))
-    val synthTableB = SynthesizedTemporalDatabaseTable.initFrom(dttByID(sketchB.unionedTables.head))
-    synthTableA.tryUnion(synthTableB)
-    ???
-  }
-
-  def findInitialMatch() = {
-    while(curMatchedTable == null && !matchCandidateGraph.isEmpty) {
-      val bestMatch = matchCandidateGraph.getNextBestHeuristicMatch()
-      assert(bestMatch.isHeuristic)
-      val (synthTable,synthTableSketch) = executeInitialMatch(bestMatch)
-      if(synthTable.isDefined){
-        curMatchedTable = synthTable.get
-        matchCandidateGraph.updateGraphAfterMatchExecution(bestMatch,synthTable.get,synthTableSketch)
-      } else{
-        matchCandidateGraph.removeMatch(bestMatch)
-      }
+    val sketchA = bestMatch.firstMatchPartner.asInstanceOf[SynthesizedTemporalDatabaseTableSketch]
+    val sketchB = bestMatch.secondMatchPartner.asInstanceOf[SynthesizedTemporalDatabaseTableSketch]
+    val synthTableA:SynthesizedTemporalDatabaseTable = synthesizedDatabase.loadSynthesizedTable(sketchA)
+    val synthTableB:SynthesizedTemporalDatabaseTable = synthesizedDatabase.loadSynthesizedTable(sketchB)
+    val matchCalculator = new DataBasedMatchCalculator()
+    val matchForSynth = matchCalculator.calculateMatch(synthTableA,synthTableB,true)
+    if(matchForSynth.score>0){
+      val bestMatchWithTupleMapping = matchCalculator.calculateMatch(sketchA,sketchB,true)
+      val sketchOfUnion = sketchA.executeUnion(sketchB,bestMatchWithTupleMapping).asInstanceOf[SynthesizedTemporalDatabaseTableSketch]
+      val synthTableUnion = synthTableA.executeUnion(synthTableB,matchForSynth).asInstanceOf[SynthesizedTemporalDatabaseTable]
+      (Some(synthTableUnion),sketchOfUnion)
+    } else{
+      (None,null)
     }
   }
 
   def optimize() = {
-    assert(curMatchedTable==null)
-    findInitialMatch()
-
-    while(!unmatchedAssociations.isEmpty){
-      //explore a few of the heuristically promising candidates
-      var numTries = 0
-      while((matchCandidateGraph.noComputedMatchAvailable ||  matchCandidateGraph.getTopMatch().score < MIN_TOP_MATCH_Score)
-        && numTries<MAX_NUM_TRIES_PER_ITERATION){
-        matchCandidateGraph.getNextBestHeuristicMatch()
+    var done = false
+    while(!matchCandidateGraph.isEmpty && !done){
+      logger.debug("Entering new Main loop iteration")
+      if(matchCandidateGraph.getNextBestHeuristicMatch().score==0) {
+        logger.debug("Terminating main loop as no more promising matches are available")
+        done = true
+      } else {
+        val bestMatch = matchCandidateGraph.getNextBestHeuristicMatch()
+        if(bestMatch.firstMatchPartner.informativeTableName.contains("A.1_1") || bestMatch.secondMatchPartner.informativeTableName.contains("A.1_1")){
+          println()
+        }
+        assert(bestMatch.isHeuristic)
+        val (synthTable,synthTableSketch) = executeMatch(bestMatch)
+        if(synthTable.isDefined){
+          logger.debug(s"Unioning ${bestMatch.firstMatchPartner.informativeTableName} and ${bestMatch.secondMatchPartner.informativeTableName}")
+          matchCandidateGraph.updateGraphAfterMatchExecution(bestMatch,synthTable.get,synthTableSketch)
+          synthesizedDatabase.updateSynthesizedDatabase(synthTable.get,synthTableSketch,bestMatch)
+          synthesizedDatabase.printState()
+        } else{
+          logger.debug("Heuristic match was erroneous - we remove this from the matches and continue")
+          matchCandidateGraph.removeMatch(bestMatch)
+        }
       }
     }
+    //the final synthesized database is assembled:
+    logger.debug("the final synthesized database is assembled: TODO: also write the unmatched associations down")
+    synthesizedDatabase.printState()
+    synthesizedDatabase.writeToStandardFiles()
   }
 
 

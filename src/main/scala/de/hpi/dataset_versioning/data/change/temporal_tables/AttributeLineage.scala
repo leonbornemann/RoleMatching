@@ -2,14 +2,36 @@ package de.hpi.dataset_versioning.data.change.temporal_tables
 
 import java.time.LocalDate
 
+import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 
 import scala.collection.mutable
 
+@SerialVersionUID(3L)
 class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,AttributeState]) extends Serializable{
-  private def serialVersionUID = 6529685098267757630L
+
+  def lastName = lineage.filter(_._2.exists).last._2.attr.get.name
 
 
+  def createCopyToNewId(newID: Int) = {
+    val lineageMapped = lineage.map { case (t, as) => {
+      if (as.attr.isDefined) {
+        val attr = Attribute(as.attr.get.name, newID, as.attr.get.position, as.attr.get.humanReadableName)
+        (t, AttributeState(Some(attr)))
+      } else {
+        (t, as)
+      }
+    }}
+    new AttributeLineage(newID,lineageMapped)
+  }
+
+  def unionDisjoint(b: AttributeLineage, newID:Int) = {
+    val myIdMapped = this.createCopyToNewId(newID)
+    val otherIdMapped = b.createCopyToNewId(newID)
+    //assert disjointedness:
+    assert(myIdMapped.activeTimeIntervals.intersect(otherIdMapped.activeTimeIntervals).isEmpty)
+    new AttributeLineage(attrId,myIdMapped.lineage ++ otherIdMapped.lineage)
+  }
 
   def nameSet = lineage.withFilter(_._2.exists).map(_._2.attr.get.name).toSet
 

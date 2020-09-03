@@ -2,16 +2,22 @@ package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{TemporalDatabaseTableTrait, TupleSetMatching}
 import de.hpi.dataset_versioning.db_synthesis.sketches.SynthesizedTemporalDatabaseTableSketch
 
-class TableUnionMatch(val firstMatchPartner:SynthesizedTemporalDatabaseTableSketch,
-                      val secondMatchPartner:SynthesizedTemporalDatabaseTableSketch,
+class TableUnionMatch[A](val firstMatchPartner:TemporalDatabaseTableTrait[A],
+                      val secondMatchPartner:TemporalDatabaseTableTrait[A],
                       val schemaMapping:Option[collection.Map[Set[AttributeLineage], Set[AttributeLineage]]],
                       val score:Int,
-                      val isHeuristic:Boolean) {
+                      val isHeuristic:Boolean,
+                      val tupleMapping:Option[TupleSetMatching[A]]) {
 
-  def getNonOverlappingElement(other: TableUnionMatch) = {
+  def getNonOverlappingElement[A](other: TableUnionMatch[A]) = {
     assert(hasParterOverlap(other))
+    assert(!(firstMatchPartner == other.firstMatchPartner &&
+      secondMatchPartner == other.secondMatchPartner ||
+      secondMatchPartner == other.firstMatchPartner &&
+      firstMatchPartner == other.secondMatchPartner))
     if(firstMatchPartner == other.firstMatchPartner || firstMatchPartner == other.secondMatchPartner)
       secondMatchPartner
     else
@@ -19,7 +25,7 @@ class TableUnionMatch(val firstMatchPartner:SynthesizedTemporalDatabaseTableSket
   }
 
 
-  def hasParterOverlap(other: TableUnionMatch): Boolean = {
+  def hasParterOverlap[A](other: TableUnionMatch[A]): Boolean = {
     firstMatchPartner == other.firstMatchPartner ||
       firstMatchPartner == other.secondMatchPartner ||
       secondMatchPartner == other.firstMatchPartner ||

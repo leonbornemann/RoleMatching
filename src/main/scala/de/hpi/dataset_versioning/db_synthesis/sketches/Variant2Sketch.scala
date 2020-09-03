@@ -4,6 +4,7 @@ import java.math.BigInteger
 import java.nio.{ByteBuffer, ByteOrder}
 import java.time.LocalDate
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
@@ -14,8 +15,8 @@ import de.hpi.dataset_versioning.io.IOService
 import scala.collection.mutable
 import scala.collection.mutable.HashMap
 
-
-class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch {
+@SerialVersionUID(3L)
+class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLogging{
 
   assert(byteToTimestamp(0)==IOService.STANDARD_TIME_FRAME_START) //we need this for all lineages because otherwise we don't know if it is wildcard or not!
 
@@ -28,25 +29,9 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch {
       false
   }
 
-  def toIntervalRepresentation:mutable.TreeMap[TimeInterval,Int] = {
-    val asLineage = toHashValueLineage.toIndexedSeq
-    mutable.TreeMap[TimeInterval,Int]() ++ (0 until asLineage.size).map( i=> {
-      val (ts,value) = asLineage(i)
-      if(i==asLineage.size-1)
-        (TimeInterval(ts,None),value)
-      else
-        (TimeInterval(ts,Some(asLineage(i+1)._1)),value)
-    })
-  }
-
-
   assert(data.size % (Variant2Sketch.HASH_VALUE_SIZE_IN_BYTES + 1) ==0)
 
-  private def serialVersionUID = 6529685098267757688L
-
   override def getBytes = data
-
-  override def hashValueAt(timestamp: LocalDate): Unit = ???
 
   override def getVariantName: String = Variant2Sketch.getVariantName
 
@@ -79,10 +64,12 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch {
 
   def numEntries = data.size / (Variant2Sketch.HASH_VALUE_SIZE_IN_BYTES + 1)
 
-  def getHashesInInterval(ti: TimeInterval) :collection.Map[TimeInterval,Int] = {
+  def valuesInInterval(ti: TimeInterval) :collection.Map[TimeInterval,Int] = {
     var i = findIndexOfTimestampOrLargestTimestampBefore(ti.begin)
     val timeIntervalsToValueMap = HashMap[TimeInterval,Int]()
     if(i== -1){
+      //actually, this should never happen again
+      logger.warn("Weird behavior: we should never get here again with the new change format")
       //inset row deleted from ti.begin to timestamp(0)
       val rowDeleteHashAsInt = Variant2Sketch.byteArrayToInt(Variant2Sketch.ROWDELETEHASHVALUE)
       timeIntervalsToValueMap.put(new TimeInterval(ti.begin,Some(byteToTimestamp(data(0)).minusDays(1))),rowDeleteHashAsInt)
@@ -110,14 +97,7 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch {
     timeIntervalsToValueMap
   }
 
-  override def hashValuesAt(timeToExtract: TimeIntervalSequence) = {
-    val a = timeToExtract.sortedTimeIntervals.flatMap(ti => {
-      getHashesInInterval(ti)
-    }).toMap
-    a
-  }
-
-  def toHashValueLineage = {
+  def getValueLineage = {
     mutable.TreeMap[LocalDate,Int]() ++ (0 until numEntries).map(i => {
       val timestampIndex = i * 5
       (byteToTimestamp(data(timestampIndex)),byteArraySliceToInt(data,timestampIndex+1,timestampIndex+5))
@@ -126,88 +106,26 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch {
 
   override def lastTimestamp: LocalDate = byteToTimestamp(data(getIthTimestampIndexInByteArray(numEntries-1)))
 
-  def hashValuesAreCompatible(value1: Int, value2: Int): Boolean = {
+  def valuesAreCompatible(value1: Int, value2: Int): Boolean = {
     value1 == WILDCARD || value2 == WILDCARD || value1==value2
   }
 
-  def getCompatibleHashValue(a: Int, b: Int): Int = {
+  def getCompatibleValue(a: Int, b: Int): Int = {
     if(a==b) a else if(a==WILDCARD) b else a
-  }
-
-  def getOverlapInterval(a: (TimeInterval, Int), b: (TimeInterval, Int)): (TimeInterval, Int) = {
-    assert(a._1.begin==b._1.begin)
-    if(!hashValuesAreCompatible(a._2,b._2)){
-      println()
-    }
-    assert(hashValuesAreCompatible(a._2,b._2))
-    val earliestEnd = Seq(a._1.endOrMax,b._1.endOrMax).minBy(_.toEpochDay)
-    val endTime = if(earliestEnd==LocalDate.MAX) None else Some(earliestEnd)
-    (TimeInterval(a._1.begin,endTime),getCompatibleHashValue(a._2,b._2))
-  }
-
-  override def mergeWithConsistent(other: FieldLineageSketch): FieldLineageSketch = {
-    val myLineage = this.toIntervalRepresentation.toBuffer
-    val otherLineage = other.toIntervalRepresentation.toBuffer
-    if(myLineage.isEmpty){
-      assert(otherLineage.isEmpty)
-      Variant2Sketch.fromValueLineage(ValueLineage())
-    } else if(otherLineage.isEmpty){
-      assert(myLineage.isEmpty)
-      Variant2Sketch.fromValueLineage(ValueLineage())
-    }
-    val newLineage = mutable.ArrayBuffer[(TimeInterval,Int)]()
-    var myIndex = 0
-    var otherIndex = 0
-    while(myIndex < myLineage.size || otherIndex < otherLineage.size) {
-      assert(myIndex < myLineage.size && otherIndex < otherLineage.size)
-      val (myInterval,myValue) = myLineage(myIndex)
-      val (otherInterval,otherValue) = otherLineage(otherIndex)
-      assert(myInterval.begin == otherInterval.begin)
-      var toAppend:(TimeInterval,Int) = null
-      if(myInterval==otherInterval){
-        if(!hashValuesAreCompatible(myValue,otherValue))
-          println()
-        assert(hashValuesAreCompatible(myValue,otherValue))
-        toAppend = (myInterval,getCompatibleHashValue(myValue,otherValue))
-        myIndex+=1
-        otherIndex+=1
-      } else if(myInterval<otherInterval){
-        toAppend = getOverlapInterval(myLineage(myIndex),otherLineage(otherIndex))
-        //replace old interval with newer interval with begin set to myInterval.end+1
-        otherLineage(otherIndex) = (TimeInterval(myInterval.end.get,otherInterval.`end`),otherValue)
-        myIndex+=1
-      } else{
-        assert(otherInterval<myInterval)
-        toAppend = getOverlapInterval(myLineage(myIndex),otherLineage(otherIndex))
-        myLineage(myIndex) = (TimeInterval(otherInterval.end.get,myInterval.`end`),myValue)
-        otherIndex+=1
-      }
-      if(!newLineage.isEmpty && newLineage.last._2==toAppend._2){
-        //we replace the old interval by a longer one
-        newLineage(newLineage.size-1) = (TimeInterval(newLineage.last._1.begin,toAppend._1.`end`),toAppend._2)
-      } else{
-        //we simply append the new interval:
-        newLineage += toAppend
-      }
-    }
-    val asTree = mutable.TreeMap[LocalDate,Int]() ++ newLineage.map(t => (t._1.begin,t._2))
-    Variant2Sketch.fromTimestampToHash(asTree)
-  }
-
-  /** *
-   * creates a new field lineage sket by appending all values in y to the back of this one
-   *
-   * @param y
-   * @return
-   */
-  override def append(y: FieldLineageSketch): FieldLineageSketch = {
-    assert(lastTimestamp.isBefore(y.firstTimestamp))
-    new Variant2Sketch(getBytes ++ y.getBytes)
   }
 
   override def firstTimestamp: LocalDate = byteToTimestamp(data(0))
 
   override def changeCount: Int = numEntries
+
+  //override def valuesAt(timeToExtract: TimeIntervalSequence): Map[TimeInterval, Int] = hashValuesAt(timeToExtract)
+
+  //override def hashValuesAt(timeToExtract: TimeIntervalSequence): Map[TimeInterval, Int] = ???
+
+  override def fromValueLineage[V <: TemporalFieldTrait[Int]](lineage: ValueLineage): V = Variant2Sketch.fromValueLineage(lineage).asInstanceOf[V]
+
+  //override def fromTimestampToValue[V <: TemporalFieldTrait[Int]](asTree: mutable.TreeMap[LocalDate, Any]): V = ???
+  override def fromTimestampToValue[V <: TemporalFieldTrait[Int]](asTree: mutable.TreeMap[LocalDate, Int]): V = Variant2Sketch.fromTimestampToHash(asTree).asInstanceOf[V]
 }
 
 object Variant2Sketch {

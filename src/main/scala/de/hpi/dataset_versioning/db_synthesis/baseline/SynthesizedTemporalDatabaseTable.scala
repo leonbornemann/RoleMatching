@@ -1,63 +1,47 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, ProjectedTemporalRow, TemporalRow, TemporalTable}
+import com.typesafe.scalalogging.StrictLogging
+import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, EntityFieldLineage, ProjectedTemporalRow, TemporalColumn, TemporalRow, TemporalTable}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
-import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{PairwiseTupleMapper, TemporalDatabaseTableTrait, TemporalSchemaMapper}
+import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{DataBasedMatchCalculator, PairwiseTupleMapper, TemporalDatabaseTableTrait, TemporalSchemaMapper}
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.ValueLineageIndex
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.sketches.SynthesizedTemporalDatabaseTableSketch
+import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable, SynthesizedTemporalDatabaseTableSketch, TemporalColumnTrait, TemporalFieldTrait}
+import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
-class SynthesizedTemporalDatabaseTable(val unionedTables:mutable.HashSet[DecomposedTemporalTableIdentifier],
+@SerialVersionUID(3L)
+class SynthesizedTemporalDatabaseTable(val id:String,
+                                       unionedTables:mutable.HashSet[DecomposedTemporalTableIdentifier],
                                        val schema: collection.IndexedSeq[AttributeLineage],
                                        val keyAttributeLineages: collection.Set[AttributeLineage],
                                        private val rows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer(),
-                                       private var curEntityIDCounter:Long) extends TemporalDatabaseTableTrait{
+                                       private var curEntityIDCounter:Long,
+                                       val uniqueSynthTableID:Int = SynthesizedDatabaseTableRegistry.getNextID())
+  extends AbstractTemporalDatabaseTable[Any](unionedTables) with StrictLogging with BinarySerializable{
 
-  def tryUnion(tableB: SynthesizedTemporalDatabaseTable): Option[SynthesizedTemporalDatabaseTable] = {
-    ???
-//    val tableA = this
-//    //enumerate all schema mappings:
-//    val schemaMapper = new TemporalSchemaMapper()
-//    val schemaMappings = schemaMapper.enumerateAllValidSchemaMappings(tableA,tableB)
-//    var curBestScore = 0
-//    var curBestMapping:collection.Map[Set[AttributeLineage], Set[AttributeLineage]] = null
-//    for(mapping <- schemaMappings){
-//      val (mappingToOverlap,attrIdToNonWildCardOverlapA,attrIdToNonWildCardOverlapB) = getNonWildCardOverlap(mapping)
-//      if(mappingToOverlap.exists(!_._2.isEmpty)){
-//        //we have a chance to save some changes here:
-//        val mappingOrdered = mapping.toIndexedSeq
-//        val (overlapColumnAttrIDOrderA,overlapColumnAttrIDOrderB) = mappingOrdered.map{case (left,right) =>
-//          (left.toIndexedSeq.sortBy(_.attrId).map(_.attrId),right.toIndexedSeq.sortBy(_.attrId).map(_.attrId))}
-//          .reduce((a,b) => (a._1++b._1,a._2 ++ b._2))
-//        val indexA = ValueLineageIndex.buildIndex(sketchA,attrIdToNonWildCardOverlapA,overlapColumnAttrIDOrderA)
-//        val indexB = ValueLineageIndex.buildIndex(sketchB,attrIdToNonWildCardOverlapB,overlapColumnAttrIDOrderB)
-//        val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,indexA,indexB,mapping)
-//        val tupleMapping = tupleMapper.mapGreedy()
-//        val totalScore = tupleMapping.totalScore
-//        if(totalScore > curBestScore){
-//          curBestScore = totalScore
-//          curBestMapping = mapping
-//        }
-//      } else{
-//        throw new AssertionError("This match could have been caught earlier and avoided entirely")
-//      }
-//    }
-//    if(curBestMapping==null)
-//      new TableUnionMatch(tableA,tableB,None,0,true)
-//    else
-//      new TableUnionMatch(tableA,tableB,Some(curBestMapping),curBestScore,true)
+  def numChanges = rows.map(tr => tr.fields.map(_.changeCount).sum).sum
+
+
+  def writeToStandardTemporaryFile() = {
+    val f = DBSynthesis_IOService.getSynthesizedTableTempFile(uniqueSynthTableID)
+    writeToBinaryFile(f)
   }
 
-  def computeUnionMatch(other:SynthesizedTemporalDatabaseTable): Option[TableUnionMatch] = {
-    //TODO: 1.load all data
-    // 2. get best schema mapping given the data
-    // 3. return that mapping
-    ???
-    //TODO: try out/test heuristic matching before doing this
+  def writeToStandardFinalDatabaseFile() = {
+    val f = DBSynthesis_IOService.getSynthesizedTableInFinalDatabaseFile(uniqueSynthTableID)
+    writeToBinaryFile(f)
   }
 
+  override def columns: IndexedSeq[TemporalColumnTrait[Any]] = {
+    val a = (0 until schema.size).map(attrIndex => {
+      val col = rows.map(tr => new EntityFieldLineage(tr.entityID,tr.fields(attrIndex)))
+      new TemporalColumn(id,schema(attrIndex),col)
+    })
+    a
+  }
 
   def getActiveTime = {
     schema.map(_.activeTimeIntervals).reduce((a,b) => a.union(b))
@@ -76,10 +60,50 @@ class SynthesizedTemporalDatabaseTable(val unionedTables:mutable.HashSet[Decompo
   }
 
   override def primaryKey = keyAttributeLineages
+
+  override def getID: String = id
+
+  override def nrows: Int = columns.head.fieldLineages.size
+
+  override def buildTemporalColumn(unionedColID: String,
+                                   unionedAttrLineage: AttributeLineage,
+                                   unionedFieldLineages: ArrayBuffer[TemporalFieldTrait[Any]],
+                                   unionedTableID:String): TemporalColumnTrait[Any] = {
+    new TemporalColumn(unionedColID,
+      unionedAttrLineage,
+      unionedFieldLineages.toIndexedSeq.zipWithIndex.map(t => EntityFieldLineage(t._2,ValueLineage(t._1.getValueLineage))))
+  }
+
+  override def buildNewTable(unionedTableID: String,
+                             unionedTables: mutable.HashSet[DecomposedTemporalTableIdentifier],
+                             pkIDSet: collection.Set[Int],
+                             newTcSketches: Array[TemporalColumnTrait[Any]]): TemporalDatabaseTableTrait[Any] ={
+    val newAttrsByID = newTcSketches.map(tcs => (tcs.attributeLineage.attrId,tcs.attributeLineage)).toMap
+    val temporalRows = (0 until newTcSketches.head.fieldLineages.size).map(rID => {
+      val fields = newTcSketches.map(tc => tc.fieldLineages(rID).asInstanceOf[ValueLineage])
+      val newRow = new TemporalRow(rID,fields)
+      newRow
+    })
+    new SynthesizedTemporalDatabaseTable(unionedTableID,
+      unionedTables,
+      newTcSketches.map(_.attributeLineage),
+      pkIDSet.map(id => newAttrsByID(id)),
+      mutable.ArrayBuffer() ++ temporalRows,
+      0
+    )
+  }
+
+  override def informativeTableName: String = getID + "(" + schema.map(_.lastName).mkString(",") + ")"
 }
-object SynthesizedTemporalDatabaseTable{
+object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTemporalDatabaseTable] with StrictLogging {
+  logger.debug("Potential Optimization: The columns method (in synth table), the columns have to be generated from the row representation - if this is too slow, it would be good to revisit this")
+
+  def loadFromStandardFile(id:Int) = loadFromFile(DBSynthesis_IOService.getSynthesizedTableTempFile(id))
 
   def initFrom(dttToMerge: DecomposedTemporalTable) = {
+    if(dttToMerge.id.viewID=="fullBaselineTest-A" && dttToMerge.id.bcnfID==1 && dttToMerge.id.associationID.isDefined && dttToMerge.id.associationID.get==1){
+      println()
+    }
     val synthesizedSchema = dttToMerge.containedAttrLineages
     var curEntityID:Long = 0
     val entityIDMatchingSynthesizedToOriginal = mutable.HashMap[Long,Long]()
@@ -93,7 +117,8 @@ object SynthesizedTemporalDatabaseTable{
       curEntityID +=1
     })
     val attributeMatchingSynthesizedToOriginal = synthesizedSchema.map(al => (al.attrId,al.attrId))
-    val synthTable = new SynthesizedTemporalDatabaseTable(mutable.HashSet(dttToMerge.id),
+    val synthTable = new SynthesizedTemporalDatabaseTable(dttToMerge.compositeID,
+      mutable.HashSet(dttToMerge.id),
       synthesizedSchema,
       dttToMerge.primaryKey,
       newRows,

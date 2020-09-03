@@ -1,4 +1,5 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.heuristics
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.ValueLineageIndex
@@ -7,9 +8,10 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.{DecomposedTemporalTableS
 
 import scala.collection.mutable
 
-class SketchBasedHeuristicMatchCalculator extends HeursticMatchCalculator{
+class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
 
   val schemaMapper = new TemporalSchemaMapper()
+  logger.debug("FIx needed: CUrrently we are not checking whether the pk remains a pk after unioning")
 
   def getNonWildCardOverlapForMatchedAttributes(left: Set[AttributeLineage], right: Set[AttributeLineage]) = {
     val nonWildCardLeft = unionAllActiveTimes(left)
@@ -38,13 +40,18 @@ class SketchBasedHeuristicMatchCalculator extends HeursticMatchCalculator{
     (mappingToOverlap,attrIdToNonWildCardOverlapLeft,attrIdToNonWildCardOverlapRight)
   }
 
-  override def calculateMatch(tableA: SynthesizedTemporalDatabaseTableSketch, tableB: SynthesizedTemporalDatabaseTableSketch): TableUnionMatch = {
+  override def calculateMatch[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]): TableUnionMatch[A] = {
+    calculateMatch(tableA,tableB,false)
+  }
+
+  def calculateMatch[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A],includeTupleMapping:Boolean=false): TableUnionMatch[A] = {
     val sketchA = tableA
     val sketchB = tableB
     //enumerate all schema mappings:
     val schemaMappings = schemaMapper.enumerateAllValidSchemaMappings(tableA,tableB)
     var curBestScore = 0
     var curBestMapping:collection.Map[Set[AttributeLineage], Set[AttributeLineage]] = null
+    var curTupleMatching:TupleSetMatching[A] = null
     for(mapping <- schemaMappings){
       val (mappingToOverlap,attrIdToNonWildCardOverlapA,attrIdToNonWildCardOverlapB) = getNonWildCardOverlap(mapping)
       if(mappingToOverlap.exists(!_._2.isEmpty)){
@@ -53,22 +60,24 @@ class SketchBasedHeuristicMatchCalculator extends HeursticMatchCalculator{
         val (overlapColumnAttrIDOrderA,overlapColumnAttrIDOrderB) = mappingOrdered.map{case (left,right) =>
           (left.toIndexedSeq.sortBy(_.attrId).map(_.attrId),right.toIndexedSeq.sortBy(_.attrId).map(_.attrId))}
           .reduce((a,b) => (a._1++b._1,a._2 ++ b._2))
-        val indexA = ValueLineageIndex.buildIndex(sketchA,attrIdToNonWildCardOverlapA,overlapColumnAttrIDOrderA)
-        val indexB = ValueLineageIndex.buildIndex(sketchB,attrIdToNonWildCardOverlapB,overlapColumnAttrIDOrderB)
+        val indexA = ValueLineageIndex.buildIndex[A](sketchA,attrIdToNonWildCardOverlapA,overlapColumnAttrIDOrderA)
+        val indexB = ValueLineageIndex.buildIndex[A](sketchB,attrIdToNonWildCardOverlapB,overlapColumnAttrIDOrderB)
         val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,indexA,indexB,mapping)
         val tupleMapping = tupleMapper.mapGreedy()
         val totalScore = tupleMapping.totalScore
         if(totalScore > curBestScore){
           curBestScore = totalScore
           curBestMapping = mapping
+          curTupleMatching = tupleMapping
         }
       } else{
         throw new AssertionError("This match could have been caught earlier and avoided entirely")
       }
     }
+    val tupleMapping = if(includeTupleMapping && curTupleMatching!=null) Some(curTupleMatching) else None
     if(curBestMapping==null)
-      new TableUnionMatch(tableA,tableB,None,0,true)
+      new TableUnionMatch(tableA,tableB,None,0,true,tupleMapping)
     else
-      new TableUnionMatch(tableA,tableB,Some(curBestMapping),curBestScore,true)
+      new TableUnionMatch(tableA,tableB,Some(curBestMapping),curBestScore,true,tupleMapping)
   }
 }

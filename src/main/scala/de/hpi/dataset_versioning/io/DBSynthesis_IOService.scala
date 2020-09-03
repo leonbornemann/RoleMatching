@@ -3,10 +3,22 @@ package de.hpi.dataset_versioning.io
 import java.io.File
 import java.time.LocalDate
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 
-object DBSynthesis_IOService {
+object DBSynthesis_IOService extends StrictLogging{
+
+  //clear working directory for synthesized tables:
+  logger.debug("Beginning to delete old synthesized tables from working directory")
+  if(new File(SYNTHESIZED_TABLES_WORKING_DIR).exists()){
+    new File(SYNTHESIZED_TABLES_WORKING_DIR).listFiles().foreach(f => f.delete())
+  }
+  logger.debug("done")
+
+  def getSynthesizedTableInFinalDatabaseFile(uniqueSynthTableID: Int) = createParentDirs(new File(s"$SYNTHESIZED_DATABASE_FINAL_DIR/$uniqueSynthTableID.binary"))
+  def getSynthesizedTableTempFile(uniqueSynthTableID: Int) = createParentDirs(new File(SYNTHESIZED_TABLES_WORKING_DIR + s"/$uniqueSynthTableID.binary"))
+
 
   def getDecomposedTemporalTableSketchFile(tableID: DecomposedTemporalTableIdentifier, getVariantName: String) = {
     createParentDirs(new File(s"$DTT_SKETCH_DIR/${tableID.viewID}_${tableID.bcnfID}_${tableID.associationID.getOrElse("")}_$getVariantName.binary"))
@@ -68,6 +80,8 @@ object DBSynthesis_IOService {
   def DECOMPOSED_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTables/"
   def DECOMPOSED_Temporal_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTemporalTables/"
   def DECOMPOSED_Temporal_ASSOCIATION_DIR = DECOMPOSTION_DIR + "/decomposedTemporalAssociations/"
+  def SYNTHESIZED_TABLES_WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/synthesizedTables/"
+  def SYNTHESIZED_DATABASE_FINAL_DIR = DB_SYNTHESIS_DIR + "/finalSynthesizedDatabase/synthesizedTables/"
   def SKETCH_DIR = DB_SYNTHESIS_DIR + "/sketches/"
   def COLUMN_SKETCH_DIR = SKETCH_DIR + "/temporalColumns/"
   def DTT_SKETCH_DIR = SKETCH_DIR + "/decomposedTemporalTables/"

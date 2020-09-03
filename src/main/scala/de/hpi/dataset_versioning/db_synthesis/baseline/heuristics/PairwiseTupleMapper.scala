@@ -2,21 +2,21 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.heuristics
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.ValueLineageIndex
-import de.hpi.dataset_versioning.db_synthesis.sketches.{TemporalTableSketch, FieldLineageSketch}
+import de.hpi.dataset_versioning.db_synthesis.sketches.{FieldLineageSketch, TemporalFieldTrait, TemporalTableSketch}
 
 import scala.collection.mutable
 
-class PairwiseTupleMapper(sketchA: TemporalTableSketch,
-                          sketchB: TemporalTableSketch,
-                          indexA: ValueLineageIndex,
-                          indexB: ValueLineageIndex,
-                          mapping:collection.Map[Set[AttributeLineage],Set[AttributeLineage]]) {
+class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A],
+                             tableB: TemporalDatabaseTableTrait[A],
+                             indexA: ValueLineageIndex[A],
+                             indexB: ValueLineageIndex[A],
+                             mapping:collection.Map[Set[AttributeLineage],Set[AttributeLineage]]) {
 
-  val aColsByID = sketchA.temporalColumnSketches.map(c => (c.attrID,c)).toMap
-  val bColsByID = sketchB.temporalColumnSketches.map(c => (c.attrID,c)).toMap
+  val aColsByID = tableA.columns.map(c => (c.attrID,c)).toMap
+  val bColsByID = tableB.columns.map(c => (c.attrID,c)).toMap
 
   def mapGreedy() = {
-    val finalMatching = new TupleSetMatching(sketchA,sketchB)
+    val finalMatching = new TupleSetMatching(tableA,tableB)
     indexA.index.foreach{case (keyA,tuplesA) => {
       if(indexB.index.contains(keyA)){
         val tuplesB = indexB.index(keyA)
@@ -28,17 +28,17 @@ class PairwiseTupleMapper(sketchA: TemporalTableSketch,
     finalMatching
   }
 
-  def mergeTupleSketches(mappedFieldLineages:collection.Map[FieldLineageSketch, FieldLineageSketch]) = {
+  def mergeTupleSketches(mappedFieldLineages:collection.Map[TemporalFieldTrait[A], TemporalFieldTrait[A]]) = {
     mappedFieldLineages.map{case (a,b) => a.mergeWithConsistent(b)}.toSeq
   }
 
   def buildTuples(tupA: Int, tupB: Int) = {
     mapping.map{case (a,b) => {
       val lineagesA = a.toIndexedSeq
-        .map(al => aColsByID(al.attrId).fieldLineageSketches(tupA))
+        .map(al => aColsByID(al.attrId).fieldLineages(tupA))
         .sortBy(_.lastTimestamp.toEpochDay)
       val lineagesB = b.toIndexedSeq
-        .map(al => bColsByID(al.attrId).fieldLineageSketches(tupB))
+        .map(al => bColsByID(al.attrId).fieldLineages(tupB))
         .sortBy(_.lastTimestamp.toEpochDay)
       val aConcatenated = if(lineagesA.size==1) lineagesA.head else lineagesA.reduce((x,y) => x.mergeWithConsistent(y))
       val bConcatenated = if(lineagesB.size==1) lineagesB.head else lineagesB.reduce((x,y) => x.mergeWithConsistent(y))
@@ -73,7 +73,7 @@ class PairwiseTupleMapper(sketchA: TemporalTableSketch,
         unmatchedTuplesA.add(tupA)
       }
     }
-    new TupleSetMatching(sketchA,sketchB,unmatchedTuplesA,tuplesBRemaining,tupleMatching)
+    new TupleSetMatching(tableA,tableB,unmatchedTuplesA,tuplesBRemaining,tupleMatching)
   }
 
 }

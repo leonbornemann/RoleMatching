@@ -10,8 +10,7 @@ import scala.collection.mutable
 
 class TemporalSchemaMapper() extends StrictLogging{
 
-  def enumerateAllValidSchemaMappings(tableA: TemporalDatabaseTableTrait, tableB: TemporalDatabaseTableTrait):collection.Seq[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]] = {
-    logger.debug("Performing very simple schema-mapping restricted to dtts with schema size 2 - this will have to be improved")
+  def enumerateAllValidSchemaMappings[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]):collection.Seq[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]] = {
     assert(tableA.nonKeyAttributeLineages.size==1)
     assert(tableA.nonKeyAttributeLineages.size==1)
     val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
@@ -25,5 +24,8 @@ class TemporalSchemaMapper() extends StrictLogging{
     val a = Seq(mapping)
     a
   }
+}
+object TemporalSchemaMapper extends StrictLogging{
+  logger.debug("TemporalSchemaMapper currently only supports very simple schema-mapping restricted to dtts with schema size 2 - this will have to be improved")
 
 }

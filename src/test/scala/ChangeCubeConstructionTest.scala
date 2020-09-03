@@ -10,6 +10,7 @@ object ChangeCubeConstructionTest extends App {
     val versions = IndexedSeq(LocalDate.parse("2019-11-01"),LocalDate.parse("2019-11-02"),LocalDate.parse("2019-11-03"),LocalDate.parse("2019-11-04"),LocalDate.parse("2019-11-05"),LocalDate.parse("2019-11-06"))
     exported.exportAllChangesFromVersions(id,versions)
     val changesLoaded = ChangeCube.load(id)
+    assert(changesLoaded.allChanges.groupBy(_.e).forall(_._2.exists(_.t==versions(0))))
     assert(changesLoaded.allChanges.filter(_.t==LocalDate.parse("2019-11-03"))
       .forall(_.value==ReservedChangeValues.NOT_EXISTANT_DATASET))
     //do assertions here:
@@ -76,6 +77,7 @@ object ChangeCubeConstructionTest extends App {
       LocalDate.parse("2019-11-08"))
     exported.exportAllChangesFromVersions(id,versions)
     val changesLoaded = ChangeCube.load(id)
+    assert(changesLoaded.allChanges.groupBy(_.e).forall(_._2.exists(_.t==versions(0))))
     assert(changesLoaded.allChanges.filter(_.t==versions(1))
       .forall(_.value==ReservedChangeValues.NOT_EXISTANT_DATASET))
     var changesToCheck = changesLoaded.allChanges.filter(c => c.t == versions(2) && c.e == 120)

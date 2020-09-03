@@ -5,11 +5,11 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.TemporalTableSketch
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class TupleSetMatching(val sketchA: TemporalTableSketch,
-                       val sketchB: TemporalTableSketch,
-                       val unmatchedTupleIndicesA: mutable.HashSet[Int] = mutable.HashSet(),
-                       val unmatchedTupleIndicesB: mutable.HashSet[Int] = mutable.HashSet(),
-                       val matchedTuples: ArrayBuffer[TupleMatching] = ArrayBuffer()) {
+class TupleSetMatching[A](val tableA: TemporalDatabaseTableTrait[A],
+                          val tableB: TemporalDatabaseTableTrait[A],
+                          val unmatchedTupleIndicesA: mutable.HashSet[Int] = mutable.HashSet(),
+                          val unmatchedTupleIndicesB: mutable.HashSet[Int] = mutable.HashSet(),
+                          val matchedTuples: ArrayBuffer[TupleMatching] = ArrayBuffer()) {
 
   def totalScore = matchedTuples.map(_.matchScore).sum
 
@@ -33,7 +33,7 @@ class TupleSetMatching(val sketchA: TemporalTableSketch,
     tupleToMentionCountA.forall(_._2==1) && tupleToMentionCountB.forall(_._2==1)
   }
 
-  def ++=(curMatching: TupleSetMatching) = {
+  def ++=(curMatching: TupleSetMatching[A]) = {
     unmatchedTupleIndicesA ++=curMatching.unmatchedTupleIndicesA
     unmatchedTupleIndicesB ++=curMatching.unmatchedTupleIndicesB
     matchedTuples ++=curMatching.matchedTuples

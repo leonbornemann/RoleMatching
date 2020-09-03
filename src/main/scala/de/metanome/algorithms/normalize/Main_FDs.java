@@ -95,7 +95,7 @@ public class Main_FDs {
         }
 
         String[] parts = conf.inputFolderPath.split(File.separator);
-        String tempResultsPath = "temp" +File.separator + parts[parts.length-1]+File.separator+ tableName + "-hyfd.txt";
+        String tempResultsPath = conf.measurementsFolderPath +File.separator + parts[parts.length-1]+File.separator+ tableName + "-hyfd.txt";
 
         NormiConversion converter = new NormiConversion(columnIdentifiers, name2number, number2name);
         NormiPersistence persister = new NormiPersistence(columnIdentifiers);

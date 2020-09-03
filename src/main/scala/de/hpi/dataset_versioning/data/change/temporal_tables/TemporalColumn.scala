@@ -6,11 +6,14 @@ import de.hpi.dataset_versioning.data.change.temporal_tables
 import de.hpi.dataset_versioning.data.json.helper.TemporalColumnHelper
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.AttributeLineageWithHashMap
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.sketches.{TemporalColumnTrait, TemporalFieldTrait}
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable
 
-class TemporalColumn(val id: String, val attributeLineage:AttributeLineage, val lineages: collection.IndexedSeq[EntityFieldLineage]) {
+class TemporalColumn(val id: String,
+                     val attributeLineage:AttributeLineage,
+                     val lineages: collection.IndexedSeq[EntityFieldLineage]) extends TemporalColumnTrait[Any]{
 
   def attrId = attributeLineage.attrId
 
@@ -20,6 +23,9 @@ class TemporalColumn(val id: String, val attributeLineage:AttributeLineage, val 
     helper.toJsonFile(IOService.getTemporalColumnFile(id,attrId))
   }
 
+  override def fieldLineages = lineages.map(_.lineage)
+
+  override def attrID: Int = attributeLineage.attrId
 }
 
 object TemporalColumn {

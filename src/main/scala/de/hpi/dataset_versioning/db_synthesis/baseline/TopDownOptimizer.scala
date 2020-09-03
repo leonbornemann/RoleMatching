@@ -12,7 +12,7 @@ class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChange
   associations.map(_.informativeTableName).sorted.foreach(println(_))
   assert(associations.forall(_.isAssociation))
   private val allAssociationSketches = mutable.HashSet() ++ associations.map(dtt => SynthesizedTemporalDatabaseTableSketch.initFrom(dtt))
-  println()
+//  Useful Debug statement but too expensive in full run (needs to load all tables)
   associations.foreach(as => {
     val table = SynthesizedTemporalDatabaseTable.initFrom(as)
     logger.debug(table.informativeTableName)
@@ -22,7 +22,6 @@ class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChange
     logger.debug(sketch.informativeTableName)
     sketch.printTable
   })
-  println()
   val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,allAssociationSketches,nChangesInAssociations)
   private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
 
@@ -53,9 +52,6 @@ class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChange
         done = true
       } else {
         val bestMatch = matchCandidateGraph.getNextBestHeuristicMatch()
-        if(bestMatch.firstMatchPartner.informativeTableName.contains("A.1_1") || bestMatch.secondMatchPartner.informativeTableName.contains("A.1_1")){
-          println()
-        }
         assert(bestMatch.isHeuristic)
         val (synthTable,synthTableSketch) = executeMatch(bestMatch)
         if(synthTable.isDefined){

@@ -22,7 +22,6 @@ abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSe
     } ))
     val rows:Seq[Seq[Any]] = header ++ dataRows
     println(TableFormatter.format(rows))
-    val a = List("a")
   }
 
   override def getUnionedTables = unionedTables
@@ -37,7 +36,6 @@ abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSe
                                   right: TemporalDatabaseTableTrait[A],
                                   bestMatch: TableUnionMatch[A],
                                   unionedTableID:String): Array[TemporalColumnTrait[A]] = {
-    val columns = mutable.ArrayBuffer[mutable.ArrayBuffer[FieldLineageSketch]]()
     val mapping = bestMatch.schemaMapping.get
     val leftColsByID = left.columns.map(c => (c.attrID,c)).toMap
     val rightColsByID = right.columns.map(c => (c.attrID,c)).toMap

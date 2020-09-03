@@ -6,9 +6,7 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.TemporalDataba
 import de.hpi.dataset_versioning.db_synthesis.sketches.TemporalTableSketch
 
 class ValueLineageIndex[A](val index: Map[IndexedSeq[Map[TimeInterval, A]], IndexedSeq[Int]],val attributeOrderInIndex: IndexedSeq[Int]) {
-  if(index.contains(IndexedSeq[Map[TimeInterval, A]](Map[TimeInterval, A](),Map[TimeInterval, A]()))){
-    println()
-  }
+
 
 
 }

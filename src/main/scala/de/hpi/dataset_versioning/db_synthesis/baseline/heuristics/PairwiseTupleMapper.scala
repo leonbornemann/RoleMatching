@@ -22,8 +22,16 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A],
         val tuplesB = indexB.index(keyA)
         val curMatching = getBestTupleMatching(tuplesA,tuplesB)
         finalMatching ++= curMatching
+      } else {
+        finalMatching.unmatchedTupleIndicesA.addAll(tuplesA)
       }
     }}
+    //add all non-matching tuples of B:
+    indexB.index.foreach({case (keyB,tuplesB) => {
+      if(!indexA.index.contains(keyB)){
+        finalMatching.unmatchedTupleIndicesB.addAll(tuplesB)
+      }
+    }})
     assert(finalMatching.is1to1Matching)
     finalMatching
   }

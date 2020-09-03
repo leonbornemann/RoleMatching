@@ -101,9 +101,6 @@ object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTempor
   def loadFromStandardFile(id:Int) = loadFromFile(DBSynthesis_IOService.getSynthesizedTableTempFile(id))
 
   def initFrom(dttToMerge: DecomposedTemporalTable) = {
-    if(dttToMerge.id.viewID=="fullBaselineTest-A" && dttToMerge.id.bcnfID==1 && dttToMerge.id.associationID.isDefined && dttToMerge.id.associationID.get==1){
-      println()
-    }
     val synthesizedSchema = dttToMerge.containedAttrLineages
     var curEntityID:Long = 0
     val entityIDMatchingSynthesizedToOriginal = mutable.HashMap[Long,Long]()

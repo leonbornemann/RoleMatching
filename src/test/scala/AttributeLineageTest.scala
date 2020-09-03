@@ -11,6 +11,5 @@ object AttributeLineageTest extends App {
   versionHistoryConstruction.constructVersionHistoryForSimplifiedFiles()
   new ChangeExporter().exportAllChanges(id1)
   val temporalTable = TemporalTable.load(id1)
-  println()
   assert(temporalTable.attributes.exists(al => al.lineage.size==3 && al.lineage.toIndexedSeq(1)._2.isNE))
 }

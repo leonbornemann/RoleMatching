@@ -30,9 +30,6 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
 
   def getOverlapInterval(a: (TimeInterval, A), b: (TimeInterval, A)): (TimeInterval, A) = {
     assert(a._1.begin==b._1.begin)
-    if(!valuesAreCompatible(a._2,b._2)){
-      println()
-    }
     assert(valuesAreCompatible(a._2,b._2))
     val earliestEnd = Seq(a._1.endOrMax,b._1.endOrMax).minBy(_.toEpochDay)
     val endTime = if(earliestEnd==LocalDate.MAX) None else Some(earliestEnd)
@@ -63,8 +60,6 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
       assert(myInterval.begin == otherInterval.begin)
       var toAppend:(TimeInterval,A) = null
       if(myInterval==otherInterval){
-        if(!valuesAreCompatible(myValue,otherValue))
-          println()
         assert(valuesAreCompatible(myValue,otherValue))
         toAppend = (myInterval,getCompatibleValue(myValue,otherValue))
         myIndex+=1

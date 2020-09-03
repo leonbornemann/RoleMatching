@@ -26,8 +26,6 @@ class FDValidator(subdomain:String,id:String,maxFDSizeForUnion:Int) extends Stri
     var i = left.nextSetBit(0)
     val colIDs = mutable.ArrayBuffer[Int]()
     while (i >= 0) {
-      if(!posToID.contains(i))
-        println()
       colIDs += posToID(i)
       // operate on index i here
       i = left.nextSetBit(i + 1)
@@ -40,15 +38,9 @@ class FDValidator(subdomain:String,id:String,maxFDSizeForUnion:Int) extends Stri
       .withFilter(al => !al.valueAt(date)._2.isNE)
       .map(al => {
         val attr = al.valueAt(date)._2.attr.get
-        if(al.attrId==21){
-          println()
-        }
         (attr.position.get,attr.id)
       }).toMap
     val translated = fds.map{case (left,right) => {
-      if(right.toString=="{1, 5, 8, 13, 14, 18, 21}"){
-        println()
-      }
       val t = (collection.IndexedSeq() ++ translateFDPart(left,posToID),collection.IndexedSeq() ++ translateFDPart(right,posToID))
       t
     }}
@@ -72,9 +64,6 @@ class FDValidator(subdomain:String,id:String,maxFDSizeForUnion:Int) extends Stri
     val idToPos = temporalSchema.attributes
       .withFilter(al => !al.valueAt(date)._2.isNE)
       .map(al => {
-      if(!al.valueAt(date)._2.attr.isDefined){
-        println()
-      }
       val attr = al.valueAt(date)._2.attr.get
       (attr.id,attr.position.get)
     }).toMap
@@ -103,9 +92,6 @@ class FDValidator(subdomain:String,id:String,maxFDSizeForUnion:Int) extends Stri
     for(i <- 1 until files.size){
       val f = files(i)
       curDate = LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter)
-      if(curDate == LocalDate.parse("2019-12-12")){
-        println()
-      }
       val newFDs = readFDs(id,curDate)
       val fdsWithCOLIDS = translateFDs(newFDs,curDate)
       serializeFds(curDate, fdsWithCOLIDS)

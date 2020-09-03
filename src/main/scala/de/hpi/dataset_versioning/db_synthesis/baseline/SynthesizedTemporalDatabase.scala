@@ -38,6 +38,7 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
     logger.debug(s"Synthesized tables: ${finalSynthesizedTableIDs.toIndexedSeq.sorted.mkString(",")}")
     logger.debug(s"unmatched associations: ${allUnmatchedAssociations.map(_._2.compositeID).mkString("  ,  ")}")
     logger.debug(s"current number of changes: $curChangeCount")
+    //writeToStandardFiles()
     //TODO: run and check if final result is correct
     //TODO: serialize final result!
   }
@@ -65,6 +66,8 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
     removeOldSynthIDIFUnion(sketchA)
     removeOldSynthIDIFUnion(sketchB)
     //table serialization
+    logger.debug(s"Executed Match between ${executedMatch.firstMatchPartner.informativeTableName} and ${executedMatch.secondMatchPartner.informativeTableName}")
+    logger.debug(s"Reducing changes by ${executedMatch.score}")
     newSynthTable.writeToStandardTemporaryFile()
     curChangeCount -= executedMatch.score
   }

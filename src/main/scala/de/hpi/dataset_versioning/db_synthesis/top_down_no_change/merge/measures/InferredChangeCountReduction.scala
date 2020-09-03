@@ -44,8 +44,6 @@ class InferredChangeCountReduction(countInitialInserts:Boolean = true) extends T
           val tupleChangesByProperty = if(tm.dsID==t1.originalID) t1ChangesByEntity(originalRow) else t2ChangesByEntity(originalRow)
           val decomposedTableAttributeIDs = if(tm.dsID==t1.originalID) t1AttrSet else t2AttrSet
           if(countInitialInserts) {
-            if(!decomposedTableAttributeIDs.forall(tupleChangesByProperty.contains(_)))
-              println()
             changesInMergedDs += tupleChangesByProperty.map(_._2.size).sum//decomposedTableAttributeIDs.map(id => tupleChangesByProperty.getOrElse(id,Seq()).size).sum
           }
           else

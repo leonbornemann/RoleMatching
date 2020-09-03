@@ -30,9 +30,6 @@ class ColumnMatchingRefinement(val id:String) {
     val sortedByTimestamp = allTimestamps.flatMap(ts => Seq((ts,attrA.valueAt(ts)._2)) ++ attrs.map(al => (ts,al.valueAt(ts)._2)))
       .filter(_._2.exists)
       .sortBy(_._1.toEpochDay)
-    if(sortedByTimestamp.map(_._1).toSet.size != sortedByTimestamp.size){
-      println()
-    }
     assert(sortedByTimestamp.map(_._1).toSet.size == sortedByTimestamp.size)
     var prevAttr = sortedByTimestamp(0)._2.attr.get
     var namesAtBordersMatch = true

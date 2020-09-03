@@ -56,9 +56,6 @@ case class DecomposedTemporalTable(id: DecomposedTemporalTableIdentifier,
       pkAttrIds.filter(alID => byID(alID).valueAt(v)._2.exists)
         .forall(alID => primaryKeyByVersion(v).exists(a => a.id==alID))
     })
-    if(!pkAttrIsAlwaysPKIFItExists){
-      println()
-    }
     assert(pkAttrIsAlwaysPKIFItExists)
     val pkAttributeLineages = containedAttrLineages.filter(al => pkAttrIds.contains(al.attrId))
     val nonPkAttrs = containedAttrLineages.filter(!pkAttributeLineages.contains(_))

@@ -64,13 +64,22 @@ class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
         val indexB = ValueLineageIndex.buildIndex[A](sketchB,attrIdToNonWildCardOverlapB,overlapColumnAttrIDOrderB)
         val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,indexA,indexB,mapping)
         val tupleMapping = tupleMapper.mapGreedy()
-        val totalScore = tupleMapping.totalScore
-        if(totalScore > curBestScore){
-          curBestScore = totalScore
-          curBestMapping = mapping
-          curTupleMatching = tupleMapping
+        var bestPossibleScore = tupleMapping.totalScore
+        if(bestPossibleScore > curBestScore){
+          if(GLOBAL_CONFIG.COUNT_SURROGATE_INSERTS){
+            val unionResult = sketchA.executeUnion(sketchB,new TableUnionMatch(sketchA,sketchB,Some(mapping),bestPossibleScore,true,Some(tupleMapping)))
+            if(!unionResult.primaryKeyIsValid && GLOBAL_CONFIG.COUNT_SURROGATE_INSERTS){
+              //we need to decrease the score because a primary key is required
+              bestPossibleScore -= unionResult.nrows
+            }
+          }
+          if(bestPossibleScore>curBestScore){
+            curBestScore = bestPossibleScore
+            curBestMapping = mapping
+            curTupleMatching = tupleMapping
+          }
         }
-      } else{
+      } else {
         throw new AssertionError("This match could have been caught earlier and avoided entirely")
       }
     }

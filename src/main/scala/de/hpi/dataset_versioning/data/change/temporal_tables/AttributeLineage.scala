@@ -54,7 +54,7 @@ class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,Attr
     for((ts,value) <- lineage){
       if(curEnd == null && value.isNE){
         assert(curBegin!=null)
-        activeTimeIntervals.append(TimeInterval(curBegin,Some(ts)))
+        activeTimeIntervals.append(TimeInterval(curBegin,Some(ts.minusDays(1))))
         curBegin=null
         curEnd=null
       } else if(curBegin==null){

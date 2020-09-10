@@ -39,11 +39,21 @@ class DecomposedTemporalTableSketch(val tableID:DecomposedTemporalTableIdentifie
     throw new AssertionError("This should never be called on this class")
   }
 
-  override def buildNewTable(unionedTableID: String, unionedTables: mutable.HashSet[DecomposedTemporalTableIdentifier], pkIDSet: collection.Set[Int], newTcSketches: Array[TemporalColumnTrait[Int]]): TemporalDatabaseTableTrait[Int] = {
+  def buildUnionedTable(unionedTableID: String,
+                        unionedTables: mutable.HashSet[DecomposedTemporalTableIdentifier],
+                        pkIDSet: collection.Set[Int],
+                        columns: Array[TemporalColumnTrait[Int]],
+                        other: TemporalDatabaseTableTrait[Int],
+                        leftTupleIndicesToNewTupleIndices:collection.Map[Int,Int],
+                        rightTupleIndicesToNewTupleIndices:collection.Map[Int,Int],
+                        newColumnIDToOldColumnsLeft:collection.Map[Int,Set[AttributeLineage]],
+                        newColumnIDToOldColumnsRight:collection.Map[Int,Set[AttributeLineage]]): TemporalDatabaseTableTrait[Int] = {
     throw new AssertionError("This should never be called on this class")
   }
 
   override def informativeTableName: String = getID + "(" + temporalColumnSketches.map(_.attributeLineage.lastName).mkString(",") + ")"
+
+  override def tracksEntityMapping: Boolean = false
 }
 
 object DecomposedTemporalTableSketch{

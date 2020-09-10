@@ -8,7 +8,11 @@ import scala.collection.mutable
 
 class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTable],
                                   allAssociationSketches:mutable.HashSet[SynthesizedTemporalDatabaseTableSketch],
-                                  var curChangeCount:Long) extends StrictLogging{
+                                  var curChangeCount:Long,
+                                  tracker:Option[ViewQueryTracker] = None) extends StrictLogging{
+
+  //we should initialize something for the tracker?
+
 
   def writeToStandardFiles() = {
     var nChanges = 0
@@ -38,11 +42,7 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
     logger.debug(s"Synthesized tables: ${finalSynthesizedTableIDs.toIndexedSeq.sorted.mkString(",")}")
     logger.debug(s"unmatched associations: ${allUnmatchedAssociations.map(_._2.compositeID).mkString("  ,  ")}")
     logger.debug(s"current number of changes: $curChangeCount")
-    //writeToStandardFiles()
-    //TODO: run and check if final result is correct
-    //TODO: serialize final result!
   }
-
 
   private val allUnmatchedAssociations = mutable.HashMap() ++ associations.map(a => (a.id,a)).toMap
 
@@ -70,6 +70,9 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
     logger.debug(s"Reducing changes by ${executedMatch.score}")
     newSynthTable.writeToStandardTemporaryFile()
     curChangeCount -= executedMatch.score
+    if(tracker.isDefined){
+      tracker.get.updateForSynthTable(newSynthTable,executedMatch)
+    }
   }
 
 

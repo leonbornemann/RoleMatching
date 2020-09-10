@@ -6,6 +6,11 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedT
 import de.hpi.dataset_versioning.db_synthesis.sketches.{SynthesizedTemporalDatabaseTableSketch, TemporalColumnTrait}
 
 trait TemporalDatabaseTableTrait[A] {
+  def isTrueUnion =getUnionedTables.size>1
+
+
+  def primaryKeyIsValid :Boolean
+
   def informativeTableName :String
 
   def nrows: Int

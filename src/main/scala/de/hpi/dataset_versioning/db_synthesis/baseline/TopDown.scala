@@ -43,6 +43,7 @@ class TopDown(subdomain:String) extends StrictLogging{
       val nChangesInViewSet = ids.map(id => TemporalTable.load(id).numChanges.toLong).reduce(_ + _)
       logger.debug(s"number of changes in original view set: $nChangesInViewSet")
     }
+    val queryTracker = new ViewQueryTracker(ids)
     val dtts = loadBCNFDecomposedTables(ids)
     dtts.foreach(t => assert(!t.isAssociation))
     if (countChangesForAllSteps) {
@@ -53,7 +54,7 @@ class TopDown(subdomain:String) extends StrictLogging{
     assert(temporallyDecomposedAssociations.size>=dtts.size)
     val nChangesInAssociations = temporallyDecomposedAssociations.map(dtt => SynthesizedTemporalDatabaseTable.initFrom(dtt).numChanges.toLong).reduce(_ + _)
     logger.debug(s"number of changes in decomposed associations: $nChangesInAssociations")
-    val topDownOptimizer = new TopDownOptimizer(temporallyDecomposedAssociations,nChangesInAssociations)
+    val topDownOptimizer = new TopDownOptimizer(temporallyDecomposedAssociations,nChangesInAssociations,Some(queryTracker))
     topDownOptimizer.optimize()
   }
 

@@ -17,10 +17,12 @@ class SynthesizedTemporalDatabaseTable(val id:String,
                                        unionedTables:mutable.HashSet[DecomposedTemporalTableIdentifier],
                                        val schema: collection.IndexedSeq[AttributeLineage],
                                        val keyAttributeLineages: collection.Set[AttributeLineage],
-                                       private val rows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer(),
-                                       private var curEntityIDCounter:Long,
+                                       val rows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer(),
+                                       val schemaTracking:mutable.HashMap[AttributeLineage,mutable.HashMap[DecomposedTemporalTableIdentifier,mutable.HashSet[Int]]],
                                        val uniqueSynthTableID:Int = SynthesizedDatabaseTableRegistry.getNextID())
   extends AbstractTemporalDatabaseTable[Any](unionedTables) with StrictLogging with BinarySerializable{
+
+  def tracksEntityMapping: Boolean = true
 
   def numChanges = rows.map(tr => tr.fields.map(_.changeCount).sum).sum
 
@@ -49,10 +51,7 @@ class SynthesizedTemporalDatabaseTable(val id:String,
 
   def nonKeyAttributeLineages = schema.filter(al => !keyAttributeLineages.contains(al))
 
-
   var keyIsArtificial = false
-
-  private var fieldAndRowMappings = mutable.HashMap[DecomposedTemporalTable,FieldAndRowMapping]()
 
   def getBestMergeMapping(curCandidate: DecomposedTemporalTable) = {
     val greedyMatcher = new SuperSimpleGreedySchemaMatcher(this,curCandidate)
@@ -74,23 +73,67 @@ class SynthesizedTemporalDatabaseTable(val id:String,
       unionedFieldLineages.toIndexedSeq.zipWithIndex.map(t => EntityFieldLineage(t._2,ValueLineage(t._1.getValueLineage))))
   }
 
-  override def buildNewTable(unionedTableID: String,
+  override def buildUnionedTable(unionedTableID: String,
                              unionedTables: mutable.HashSet[DecomposedTemporalTableIdentifier],
                              pkIDSet: collection.Set[Int],
-                             newTcSketches: Array[TemporalColumnTrait[Any]]): TemporalDatabaseTableTrait[Any] ={
+                             newTcSketches: Array[TemporalColumnTrait[Any]],
+                             other: TemporalDatabaseTableTrait[Any],
+                             myTupleIndicesToNewTupleIndices:collection.Map[Int,Int],
+                             otherTupleIndicesToNewTupleIndices:collection.Map[Int,Int],
+                             newColumnIDToMyColumns:collection.Map[Int,Set[AttributeLineage]],
+                             newColumnIDToOtherColumns:collection.Map[Int,Set[AttributeLineage]]): TemporalDatabaseTableTrait[Any] ={
     val newAttrsByID = newTcSketches.map(tcs => (tcs.attributeLineage.attrId,tcs.attributeLineage)).toMap
-    val temporalRows = (0 until newTcSketches.head.fieldLineages.size).map(rID => {
+    val rowsInUnionedTable:IndexedSeq[TemporalRow] = (0 until newTcSketches.head.fieldLineages.size).map(rID => {
       val fields = newTcSketches.map(tc => tc.fieldLineages(rID).asInstanceOf[ValueLineage])
-      val newRow = new TemporalRow(rID,fields)
+      val newRow = new SynthesizedTemporalRow(rID,fields,mutable.HashMap(),mutable.HashMap())
       newRow
+    })
+    addToTupleMapping(rows,myTupleIndicesToNewTupleIndices, rowsInUnionedTable)
+    addToTupleMapping(other.asInstanceOf[SynthesizedTemporalDatabaseTable].rows,otherTupleIndicesToNewTupleIndices, rowsInUnionedTable)
+    val newSchemaMapping = mutable.HashMap[AttributeLineage,mutable.HashMap[DecomposedTemporalTableIdentifier,mutable.HashSet[Int]]]()
+    val newSchema = newTcSketches.map(_.attributeLineage)
+    newSchema.foreach(al => {
+      val oldColsLeft = newColumnIDToMyColumns(al.attrId)
+      addAttributeTrackings(newSchemaMapping,schemaTracking,al, oldColsLeft)
+      val oldColsRight = newColumnIDToOtherColumns(al.attrId)
+      addAttributeTrackings(newSchemaMapping,other.asInstanceOf[SynthesizedTemporalDatabaseTable].schemaTracking,al, oldColsRight)
     })
     new SynthesizedTemporalDatabaseTable(unionedTableID,
       unionedTables,
-      newTcSketches.map(_.attributeLineage),
+      newSchema,
       pkIDSet.map(id => newAttrsByID(id)),
-      mutable.ArrayBuffer() ++ temporalRows,
-      0
+      mutable.ArrayBuffer() ++ rowsInUnionedTable,
+      newSchemaMapping
     )
+  }
+
+  private def addAttributeTrackings(newAttributeTracking:mutable.HashMap[AttributeLineage,mutable.HashMap[DecomposedTemporalTableIdentifier, mutable.HashSet[Int]]],
+                                    oldAttributeTracking:mutable.HashMap[AttributeLineage,mutable.HashMap[DecomposedTemporalTableIdentifier, mutable.HashSet[Int]]],
+                                    newAttributeLineage: AttributeLineage,
+                                    oldAttributeLineages: Set[AttributeLineage]) = {
+    oldAttributeLineages.foreach(alOld => {
+      val mapToAdjust = newAttributeTracking.getOrElseUpdate(newAttributeLineage, mutable.HashMap[DecomposedTemporalTableIdentifier, mutable.HashSet[Int]]())
+      oldAttributeTracking(alOld).foreach { case (dttID, colSet) => {
+        mapToAdjust.getOrElseUpdate(dttID, mutable.HashSet[Int]()).addAll(colSet)
+      }
+      }
+    })
+  }
+
+  private def addToTupleMapping(rows:ArrayBuffer[TemporalRow], leftTupleIndicesToNewTupleIndices: collection.Map[Int, Int], rowsInUnionedTable: IndexedSeq[TemporalRow]) = {
+    for (i <- 0 until rows.size) {
+      val myRow = rows(i).asInstanceOf[SynthesizedTemporalRow]
+      val mappedRow = rowsInUnionedTable(leftTupleIndicesToNewTupleIndices(i)).asInstanceOf[SynthesizedTemporalRow]
+      myRow.tupleIDToDTTTupleID.foreach { case (id, tupleID) => {
+        assert(!mappedRow.tupleIDToDTTTupleID.contains(id)) //if this does not hold our fundamental assumption about how the unioning works is wrong and the implementation needs to be adapted (think why this happens before changing it to a set!)
+        mappedRow.tupleIDToDTTTupleID(id) = tupleID
+      }
+      }
+      myRow.tupleIDTOViewTupleIDs.foreach { case (viewID, tupleIDs) => {
+        mappedRow.tupleIDTOViewTupleIDs.getOrElseUpdate(viewID, mutable.HashSet[Long]()).addAll(tupleIDs)
+      }
+      }
+    }
   }
 
   override def informativeTableName: String = getID + "(" + schema.map(_.lastName).mkString(",") + ")"
@@ -108,19 +151,25 @@ object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTempor
       .project(dttToMerge)
     val newRows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
     tt.projection.rows.foreach(tr => {
+      val projectedTemporalRow = tr.asInstanceOf[ProjectedTemporalRow]
       val originalIds = mutable.HashMap[DecomposedTemporalTableIdentifier,Long](tt.projection.dttID.get.id -> tr.entityID)
-      newRows.addOne(new SynthesizedTemporalRow(curEntityID,tr.fields,originalIds)) //TODO: use this
+      val toViewIds = mutable.HashMap[String,mutable.HashSet[Long]](tt.original.id -> (mutable.HashSet() ++ projectedTemporalRow.mappedEntityIds))
+      newRows.addOne(new SynthesizedTemporalRow(curEntityID,tr.fields,originalIds,toViewIds))
       entityIDMatchingSynthesizedToOriginal.put(curEntityID,tr.entityID)
       curEntityID +=1
     })
-    val attributeMatchingSynthesizedToOriginal = synthesizedSchema.map(al => (al.attrId,al.attrId))
+    val attributeTrackingSynthesizedToDTT = mutable.HashMap() ++ synthesizedSchema.map(al => {
+      val map = mutable.HashMap[DecomposedTemporalTableIdentifier,mutable.HashSet[Int]]()
+      map.put(tt.projection.dttID.get.id,mutable.HashSet(al.attrId))
+      (al,map)
+    }).toMap
     val synthTable = new SynthesizedTemporalDatabaseTable(dttToMerge.compositeID,
       mutable.HashSet(dttToMerge.id),
       synthesizedSchema,
       dttToMerge.primaryKey,
       newRows,
-      curEntityID)
-    synthTable.fieldAndRowMappings.put(dttToMerge,new FieldAndRowMapping(attributeMatchingSynthesizedToOriginal,entityIDMatchingSynthesizedToOriginal))
+      attributeTrackingSynthesizedToDTT
+    )
     synthTable
   }
 

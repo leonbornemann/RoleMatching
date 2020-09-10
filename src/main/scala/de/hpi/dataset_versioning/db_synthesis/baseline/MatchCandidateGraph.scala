@@ -57,11 +57,19 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SynthesizedTemp
   logger.debug("Finished Heuristic Match calculation")
 
 
+
+  private def loldebug[A](a:  TemporalDatabaseTableTrait[A]) = {
+    a.getUnionedTables.size == 1 && a.getUnionedTables.head.viewID == "fullBaselineTest-D" && a.getUnionedTables.head.bcnfID == 0  && a.getUnionedTables.head.associationID == Some(0)
+  }
+
   def initHeuristicMatches() = {
+    //val indexBuilder = new MOstDistinctTimestampIndexBuilder()
     val unmatchedList = unmatchedAssociations.toIndexedSeq
     for(i <- 0 until unmatchedList.size){
+      val firstMatchPartner = unmatchedList(i)
       for(j <- (i+1) until unmatchedList.size){
-        val curMatch = heuristicMatchCalulator.calculateMatch(unmatchedList(i),unmatchedList(j))
+        val secondMatchPartner = unmatchedList(j)
+        val curMatch = heuristicMatchCalulator.calculateMatch(firstMatchPartner,secondMatchPartner)
         if(curMatch.score!=0)
           curMatches.getOrElseUpdate(curMatch.score,mutable.HashSet()).addOne(curMatch)
       }

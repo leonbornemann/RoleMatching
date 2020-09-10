@@ -24,6 +24,8 @@ import scala.reflect.io.Directory
 import scala.language.postfixOps
 
 object IOService extends StrictLogging{
+  def STANDARD_TIME_RANGE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay).map(LocalDate.ofEpochDay(_))
+
 
   def getTemporalColumnFile(id: String, attrId: Int): File = {
     DBSynthesis_IOService.createParentDirs(new File(s"TEMPORAL_COLUMN_DIR/$id/${id}_$attrId.json"))

@@ -33,13 +33,23 @@ class SynthesizedTemporalDatabaseTableSketch(id:String,
       unionedFieldLineages.map(tf => Variant2Sketch.fromTimestampToHash(tf.getValueLineage)).toArray)
   }
 
-  override def buildNewTable(unionedTableID: String, unionedTables: mutable.HashSet[DecomposedTemporalTableIdentifier], pkIDSet: collection.Set[Int], newTcSketches: Array[TemporalColumnTrait[Int]]): TemporalDatabaseTableTrait[Int] = {
-    new SynthesizedTemporalDatabaseTableSketch(unionedTableID,unionedTables,pkIDSet,newTcSketches.map(tct =>
+  override def buildUnionedTable(unionedTableID: String,
+                                 unionedTables: mutable.HashSet[DecomposedTemporalTableIdentifier],
+                                 pkIDSet: collection.Set[Int],
+                                 columns: Array[TemporalColumnTrait[Int]],
+                                 other: TemporalDatabaseTableTrait[Int],
+                                 leftTupleIndicesToNewTupleIndices:collection.Map[Int,Int],
+                                 rightTupleIndicesToNewTupleIndices:collection.Map[Int,Int],
+                                 newColumnIDToOldColumnsLeft:collection.Map[Int,Set[AttributeLineage]],
+                                 newColumnIDToOldColumnsRight:collection.Map[Int,Set[AttributeLineage]]) = {
+    new SynthesizedTemporalDatabaseTableSketch(unionedTableID,unionedTables,pkIDSet,columns.map(tct =>
       tct.asInstanceOf[TemporalColumnSketch]))
       ///new TemporalColumnSketch(unionedTableID,tct.attributeLineage,tct.fieldLineages.map(tft => tft.asInstanceOf[FieldLineageSketch]).toArray)))
   }
 
   override def informativeTableName: String = getID + "(" + schema.map(_.lastName).mkString(",") + ")"
+
+  override def tracksEntityMapping: Boolean = false
 }
 object SynthesizedTemporalDatabaseTableSketch{
 

@@ -2,12 +2,12 @@ package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{MetadataBasedHeuristicMatchCalculator, DataBasedMatchCalculator}
+import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{DataBasedMatchCalculator, MetadataBasedHeuristicMatchCalculator, TemporalDatabaseTableTrait}
 import de.hpi.dataset_versioning.db_synthesis.sketches.SynthesizedTemporalDatabaseTableSketch
 
 import scala.collection.mutable
 
-class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChangesInAssociations:Long) extends StrictLogging{
+class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChangesInAssociations:Long,tracker:Option[ViewQueryTracker] = None) extends StrictLogging{
   println(s"initilized with:")
   associations.map(_.informativeTableName).sorted.foreach(println(_))
   assert(associations.forall(_.isAssociation))
@@ -22,7 +22,7 @@ class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChange
     logger.debug(sketch.informativeTableName)
     sketch.printTable
   })
-  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,allAssociationSketches,nChangesInAssociations)
+  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,allAssociationSketches,nChangesInAssociations,tracker)
   private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
 
   def executeMatch(bestMatch: TableUnionMatch[Int]) :(Option[SynthesizedTemporalDatabaseTable],SynthesizedTemporalDatabaseTableSketch) = {
@@ -66,9 +66,10 @@ class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChange
       }
     }
     //the final synthesized database is assembled:
-    logger.debug("the final synthesized database is assembled: TODO: also write the unmatched associations down")
+    logger.debug("the final synthesized database is assembled")
     synthesizedDatabase.printState()
     synthesizedDatabase.writeToStandardFiles()
+    synthesizedDatabase
   }
 
 

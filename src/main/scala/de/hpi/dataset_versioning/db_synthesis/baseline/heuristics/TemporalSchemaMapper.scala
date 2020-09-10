@@ -13,16 +13,25 @@ class TemporalSchemaMapper() extends StrictLogging{
   def enumerateAllValidSchemaMappings[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]):collection.Seq[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]] = {
     assert(tableA.nonKeyAttributeLineages.size==1)
     assert(tableA.nonKeyAttributeLineages.size==1)
-    val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-    mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
+    val allMappings = mutable.ArrayBuffer[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]]()
     if(tableA.nonKeyAttributeLineages.size >1 || tableB.nonKeyAttributeLineages.size>1){
       throw new AssertionError("not yet implemented")
-    } else{
+    } else if(tableA.nonKeyAttributeLineages.size == 1 && tableB.nonKeyAttributeLineages.size==1) {
+      val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
+      mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
       mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
       mapping.put(Set(tableA.primaryKey.head),Set(tableB.primaryKey.head))
+      allMappings.addOne(mapping)
+    } else{
+      val colCombinationEnumerator = new LatticeBasedInterTableColumnMergeEnumerator()
+      ???
+      //TODO: Test this!
+      val allValidAttributeCombinationsA = colCombinationEnumerator.enumerateAll(tableA.primaryKey.toIndexedSeq)
+      val allValidAttributeCombinationsB = colCombinationEnumerator.enumerateAll(tableB.primaryKey.toIndexedSeq)
+      //TODO: implement schema matching!
+      ???
     }
-    val a = Seq(mapping)
-    a
+    allMappings
   }
 }
 object TemporalSchemaMapper extends StrictLogging{

@@ -22,17 +22,82 @@ import scala.io.Source
 
 object ScriptMain extends App with StrictLogging{
 
-  //read all sketches:
+  //stats about wildcard overlap:
   IOService.socrataDir = args(0)
   val subdomain = args(1)
   val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
   val subdomainIds = subDomainInfo(subdomain)
-      .map(_.id)
-      .toIndexedSeq
-  val a = subdomainIds.flatMap(id => {
-    TemporalColumnSketch.loadAll(id,Variant2Sketch.getVariantName)
-  })
-  println(a.size)
+        .map(_.id)
+        .toIndexedSeq
+  val schemata = subdomainIds.map(id => TemporalSchema.load(id))
+  val allAttributes = schemata.flatMap(s => s.attributes.map(al => (s.id,al)))
+  var nonCoveredAttributeIDs = mutable.HashSet() ++ allAttributes.map(t => (t._1,t._2.attrId)).toSet
+  val chosenTimestamps = mutable.ArrayBuffer[LocalDate]()
+  val timerange = IOService.STANDARD_TIME_RANGE
+  while(chosenTimestamps.size<=100 && !nonCoveredAttributeIDs.isEmpty){
+    val chosen = getNextMostDiscriminatingTimestamp
+    chosenTimestamps += chosen
+  }
+  println(chosenTimestamps)
+  println(chosenTimestamps.sortBy(_.toEpochDay))
+
+  private def getNextMostDiscriminatingTimestamp = {
+    val byTimestamp = timerange
+      .withFilter(!chosenTimestamps.contains(_))
+      .map(t => {
+        val (isNonWildCard, isWildCard) = allAttributes
+          .filter(al => nonCoveredAttributeIDs.contains((al._1,al._2.attrId)))
+          .partition(al => al._2.valueAt(t)._2.exists)
+        (t, isNonWildCard, isWildCard)
+      })
+    val bestNextTs = byTimestamp.sortBy(-_._2.size)
+      .head
+    val nowCovered = bestNextTs._2.map(al => (al._1, al._2.attrId)).toSet
+    nonCoveredAttributeIDs = nonCoveredAttributeIDs.diff(nowCovered)
+    println(s"${bestNextTs._1} covers ${bestNextTs._2.size} new attributes leaving ${bestNextTs._3.size} still open")
+    bestNextTs._1
+  }
+
+
+  //stats about schema overlap
+//  IOService.socrataDir = args(0)
+//  val subdomain = args(1)
+//  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+//  val subdomainIds = subDomainInfo(subdomain)
+//        .map(_.id)
+//        .toIndexedSeq
+//  val schemata = subdomainIds.map(id => TemporalSchema.load(id))
+//  val nOverlaps = (0 until schemata.size).map( i=> {
+//    val nOverlappingDatasets = (0 until schemata.size).map(j => {
+//      val schema1 = schemata(i)
+//      val schema2 = schemata(j)
+//      val setA = schema1.attributes.flatMap(_.nameSet).toSet
+//      val setB = schema2.attributes.flatMap(_.nameSet).toSet
+//      val overlapCount = setA.intersect(setB).size
+//      if(overlapCount >= Seq(schema1.attributes.size,schema2.attributes.size).min) 1 else 0
+////      val anyNameOverlaps = !setA.intersect(setB).isEmpty
+////      if (anyNameOverlaps) 1 else 0
+//    }).sum - 1
+//    nOverlappingDatasets
+//  })
+//  nOverlaps.foreach(println(_))
+//  nOverlaps.groupBy(identity)
+//    .map(t=> (t._1,t._2.size))
+//    .toIndexedSeq
+//    .sortBy(_._1)
+//    .foreach(t => println(t))//println(s"${t._1},${t._2}")
+
+  //read all sketches:
+//  IOService.socrataDir = args(0)
+//  val subdomain = args(1)
+//  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+//  val subdomainIds = subDomainInfo(subdomain)
+//      .map(_.id)
+//      .toIndexedSeq
+//  val a = subdomainIds.flatMap(id => {
+//    TemporalColumnSketch.loadAll(id,Variant2Sketch.getVariantName)
+//  })
+//  println(a.size)
 
   println()
   //hash sketch size calculations:

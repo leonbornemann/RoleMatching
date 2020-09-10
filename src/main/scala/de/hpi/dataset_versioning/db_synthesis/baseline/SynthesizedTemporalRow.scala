@@ -8,6 +8,7 @@ import scala.collection.mutable
 
 class SynthesizedTemporalRow(entityID: Long,
                              fields: collection.IndexedSeq[ValueLineage],
-                             tupleIDToDTTTupleID:mutable.HashMap[DecomposedTemporalTableIdentifier,Long]) extends TemporalRow(entityID,fields){
+                             val tupleIDToDTTTupleID:mutable.HashMap[DecomposedTemporalTableIdentifier,Long],
+                             val tupleIDTOViewTupleIDs:mutable.HashMap[String,mutable.HashSet[Long]]) extends TemporalRow(entityID,fields){
 
 }

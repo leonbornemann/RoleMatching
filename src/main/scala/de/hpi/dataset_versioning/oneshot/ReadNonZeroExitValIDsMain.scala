@@ -4,9 +4,10 @@ import java.io.PrintWriter
 
 import scala.io.Source
 
-object ColumnAndRowMatchingExitValRead extends App {
+object ReadNonZeroExitValIDsMain extends App {
 
   val file = args(0)
+  val idPositionInCommand = args(1).toInt
   val a = Source.fromFile(file)
     .getLines()
     .toSeq
@@ -16,7 +17,7 @@ object ColumnAndRowMatchingExitValRead extends App {
     .foreach(a => println(getID(a(8))))
 
   def getID(str: String) = {
-    str.split("\\s")(8)
+    str.split("\\s")(idPositionInCommand)
   }
 
 }

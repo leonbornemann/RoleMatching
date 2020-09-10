@@ -11,8 +11,6 @@ import scala.collection.mutable
 abstract class TemporalTableSketch(unionedTables:mutable.HashSet[DecomposedTemporalTableIdentifier],
                           val temporalColumnSketches:Array[TemporalColumnSketch]) extends AbstractTemporalDatabaseTable[Int](unionedTables) with Serializable{
 
-  def isTrueUnion: Boolean = unionedTables.size>1
-
   def tableActiveTimes = temporalColumnSketches.map(_.attributeLineage.activeTimeIntervals).reduce((a,b) => a.union(b))
 
   def writeToBinaryFile(f:File) = {

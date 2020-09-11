@@ -1,6 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.sketches
 
 import java.io.{File, FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, TemporalColumn}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
@@ -54,6 +55,13 @@ class DecomposedTemporalTableSketch(val tableID:DecomposedTemporalTableIdentifie
   override def informativeTableName: String = getID + "(" + temporalColumnSketches.map(_.attributeLineage.lastName).mkString(",") + ")"
 
   override def tracksEntityMapping: Boolean = false
+
+  override def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean = {
+    val lineage = temporalColumnSketches(colIndex).fieldLineageSketches(colIndex)
+    ValueLineage.isWildcard(lineage.valueAt(ts))
+  }
+
+  override def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts: LocalDate): Int = temporalColumnSketches(colIndex).fieldLineageSketches(colIndex).valueAt(ts)
 }
 
 object DecomposedTemporalTableSketch{

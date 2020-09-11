@@ -1,5 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
+import java.time.LocalDate
+
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, EntityFieldLineage, ProjectedTemporalRow, TemporalColumn, TemporalRow, TemporalTable}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
@@ -137,6 +139,12 @@ class SynthesizedTemporalDatabaseTable(val id:String,
   }
 
   override def informativeTableName: String = getID + "(" + schema.map(_.lastName).mkString(",") + ")"
+
+  override def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts:LocalDate): Any = rows(rowIndex).fields(colIndex).valueAt(ts)
+
+  override def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean = {
+    ValueLineage.isWildcard(fieldValueAtTimestamp(rowIndex, colIndex, ts))
+  }
 }
 object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTemporalDatabaseTable] with StrictLogging {
   logger.debug("Potential Optimization: The columns method (in synth table), the columns have to be generated from the row representation - if this is too slow, it would be good to revisit this")

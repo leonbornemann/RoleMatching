@@ -28,15 +28,19 @@ case class LatticeBasedInterTableColumnMergeEnumerator() extends StrictLogging {
     var done = false
     var prevLevel = collection.mutable.ArrayBuffer[Set[AttributeLineage]]() ++ finalResultList
     var nextLevel = collection.mutable.ArrayBuffer[Set[AttributeLineage]]()
+
     var curPrevLevelIndex = 0
     var curTestIndex = 1
     while(!done){
-      if(curPrevLevelIndex==prevLevel.size && nextLevel.isEmpty){
+      if(curPrevLevelIndex==prevLevel.size && nextLevel.isEmpty || curTestIndex>inputSetAsList.size){
         done = true
-      } else if(curPrevLevelIndex==prevLevel && !nextLevel.isEmpty){
+      } else if(curPrevLevelIndex==prevLevel.size && !nextLevel.isEmpty){
         prevLevel = nextLevel
+        nextLevel = collection.mutable.ArrayBuffer[Set[AttributeLineage]]()
         curPrevLevelIndex = 0
-      } else{
+      } else if(curTestIndex>inputSetAsList.size){
+        done=true
+      } else {
         if(curTestIndex==inputSetAsList.size){
           curPrevLevelIndex+=1
           curTestIndex = curPrevLevelIndex+1

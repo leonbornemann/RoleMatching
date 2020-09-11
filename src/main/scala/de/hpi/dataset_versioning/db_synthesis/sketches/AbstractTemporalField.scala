@@ -57,6 +57,9 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
       assert(myIndex < myLineage.size && otherIndex < otherLineage.size)
       val (myInterval,myValue) = myLineage(myIndex)
       val (otherInterval,otherValue) = otherLineage(otherIndex)
+      if(myInterval.begin != otherInterval.begin){
+        println()
+      }
       assert(myInterval.begin == otherInterval.begin)
       var toAppend:(TimeInterval,A) = null
       if(myInterval==otherInterval){

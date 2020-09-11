@@ -16,16 +16,18 @@ object FullBaselinePipelineTest extends App {
   val idB = "fullBaselineTest-B"
   val idC = "fullBaselineTest-C"
   val idD = "fullBaselineTest-D"
+  val idSplitPK = "fullBaselineTest-SplitPK"
+  val idNormalPK = "fullBaselineTest-NormalPK"
   val exporter = new ChangeExporter
-  exporter.exportAllChangesFromVersions(idA, versions)
-  exporter.exportAllChangesFromVersions(idB, versions)
-  exporter.exportAllChangesFromVersions(idC, versions)
-  exporter.exportAllChangesFromVersions(idD, versions)
+  val allViewIds = Seq(idA,idB,idC,idD,idSplitPK,idNormalPK)
+  allViewIds.foreach(exporter.exportAllChangesFromVersions(_,versions))
   //how to proceed?
   val ttA = TemporalTable.load(idA)
   val ttB = TemporalTable.load(idB)
   val ttC = TemporalTable.load(idC)
   val ttD = TemporalTable.load(idD)
+  val ttSplitPK = TemporalTable.load(idSplitPK)
+  val ttNormalPk = TemporalTable.load(idNormalPK)
   //A
   val pkA1 = ttA.attributes.filter(al => Seq(0).contains(al.attrId)).toSet
   val pkA2 = ttA.attributes.filter(al => Seq(2).contains(al.attrId)).toSet
@@ -100,6 +102,23 @@ object FullBaselinePipelineTest extends App {
     versions.map(t => (t, Set(pkD1.head.valueAt(t)._2.attr.get))).toMap,
     mutable.HashSet[DecomposedTemporalTableIdentifier]()
   )
+  //splitPK
+  val pkSplitPK = ttSplitPK.attributes.filter(al => Seq(0,2).contains(al.attrId)).toSet
+  val dttSplitPK = new DecomposedTemporalTable(DecomposedTemporalTableIdentifier("test-subdomain", ttSplitPK.id, 0, Some(0)),
+    mutable.ArrayBuffer() ++ ttSplitPK.attributes,
+    pkSplitPK,
+    Map(versions(0)-> Set(pkSplitPK.filter(_.attrId==0).head.valueAt(versions(0))._2.attr.get),
+    versions(1) -> Set(pkSplitPK.filter(_.attrId==2).head.valueAt(versions(1))._2.attr.get)),
+    mutable.HashSet[DecomposedTemporalTableIdentifier]()
+  )
+  //normalPK
+  val pkNormalPK = ttNormalPk.attributes.filter(al => Seq(0).contains(al.attrId)).toSet
+  val dttNormalPK = new DecomposedTemporalTable(DecomposedTemporalTableIdentifier("test-subdomain", ttNormalPk.id, 0, Some(0)),
+    mutable.ArrayBuffer() ++ ttNormalPk.attributes,
+    pkNormalPK,
+    versions.map(t => (t, Set(pkNormalPK.head.valueAt(t)._2.attr.get))).toMap,
+    mutable.HashSet[DecomposedTemporalTableIdentifier]()
+  )
   //non-assocaitions
   val dttA1NonAssocation = getNonAssociation(dttA1)
   val dttB1NonAssocation = getNonAssociation(dttB1)
@@ -119,23 +138,17 @@ object FullBaselinePipelineTest extends App {
     versions.map(t => (t, Set(pkD1.head.valueAt(t)._2.attr.get))).toMap,
     mutable.HashSet[DecomposedTemporalTableIdentifier]()
   )
-  val temporallyDecomposedTables = IndexedSeq(dttA1, dttA2, dttA3, dttB1, dttB2, dttC1, dttC2,dttD1,dttD2,dttD3)
+  val dttNormalPKNonAssocation = getNonAssociation(dttNormalPK)
+  val dttSplitPKNonAssocation = getNonAssociation(dttSplitPK)
+  val temporallyDecomposedTables = IndexedSeq(dttA1, dttA2, dttA3, dttB1, dttB2, dttC1, dttC2,dttD1,dttD2,dttD3,dttSplitPK,dttNormalPK)
   //write decomposed temporal tables:
-  Seq(dttA1NonAssocation, dttA2NonAssocation, dttB1NonAssocation, dttB2NonAssocation, dttC1NonAssocation, dttC2NonAssocation,dttD1And2NonAssocation,dttD3NonAssociation).foreach(_.writeToStandardFile())
+  Seq(dttA1NonAssocation, dttA2NonAssocation, dttB1NonAssocation, dttB2NonAssocation, dttC1NonAssocation, dttC2NonAssocation,dttD1And2NonAssocation,dttD3NonAssociation,dttNormalPK,dttSplitPK).foreach(_.writeToStandardFile())
   //write decomposed associations:
   temporallyDecomposedTables.foreach(_.writeToStandardFile())
   //write table sketches of associations:
-  ttA.project(dttA1).projection.writeTableSketch(dttA1.primaryKey.map(_.attrId))
-  ttA.project(dttA2).projection.writeTableSketch(dttA2.primaryKey.map(_.attrId))
-  ttA.project(dttA3).projection.writeTableSketch(dttA3.primaryKey.map(_.attrId))
-  ttB.project(dttB1).projection.writeTableSketch(dttB1.primaryKey.map(_.attrId))
-  ttB.project(dttB2).projection.writeTableSketch(dttB2.primaryKey.map(_.attrId))
-  ttC.project(dttC1).projection.writeTableSketch(dttC1.primaryKey.map(_.attrId))
-  ttC.project(dttC2).projection.writeTableSketch(dttC2.primaryKey.map(_.attrId))
-  ttD.project(dttD1).projection.writeTableSketch(dttD1.primaryKey.map(_.attrId))
-  ttD.project(dttD2).projection.writeTableSketch(dttD2.primaryKey.map(_.attrId))
-  ttD.project(dttD3).projection.writeTableSketch(dttD3.primaryKey.map(_.attrId))
-  temporallyDecomposedTables
+  Seq((ttA,dttA1),(ttA,dttA2),(ttA,dttA3),(ttB,dttB1),(ttB,dttB1),(ttC,dttC1),(ttC,dttC1),(ttD,dttD1),(ttD,dttD2),(ttD,dttD3),(ttSplitPK,dttSplitPK),(ttNormalPk,dttNormalPK))
+    .foreach{case (tt,dtt) =>   tt.project(dtt).projection.writeTableSketch(dtt.primaryKey.map(_.attrId))
+    }
 
   def getNonAssociation(dttAssocaition: DecomposedTemporalTable) = {
     new DecomposedTemporalTable(DecomposedTemporalTableIdentifier(dttAssocaition.id.subdomain, dttAssocaition.id.viewID, dttAssocaition.id.bcnfID, None),

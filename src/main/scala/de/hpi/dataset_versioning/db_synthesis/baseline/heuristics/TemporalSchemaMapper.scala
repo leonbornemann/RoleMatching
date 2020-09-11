@@ -16,20 +16,25 @@ class TemporalSchemaMapper() extends StrictLogging{
     val allMappings = mutable.ArrayBuffer[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]]()
     if(tableA.nonKeyAttributeLineages.size >1 || tableB.nonKeyAttributeLineages.size>1){
       throw new AssertionError("not yet implemented")
-    } else if(tableA.nonKeyAttributeLineages.size == 1 && tableB.nonKeyAttributeLineages.size==1) {
+    } else if(tableA.primaryKey.size == 1 && tableB.primaryKey.size==1) {
       val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-      mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
       mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
       mapping.put(Set(tableA.primaryKey.head),Set(tableB.primaryKey.head))
       allMappings.addOne(mapping)
     } else{
       val colCombinationEnumerator = new LatticeBasedInterTableColumnMergeEnumerator()
-      ???
       //TODO: Test this!
       val allValidAttributeCombinationsA = colCombinationEnumerator.enumerateAll(tableA.primaryKey.toIndexedSeq)
       val allValidAttributeCombinationsB = colCombinationEnumerator.enumerateAll(tableB.primaryKey.toIndexedSeq)
-      //TODO: implement schema matching!
-      ???
+      if(allValidAttributeCombinationsA.size==1 && allValidAttributeCombinationsB.contains(tableB.primaryKey) ||
+        allValidAttributeCombinationsB.size==1 && allValidAttributeCombinationsA.contains(tableA.primaryKey)){
+        val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
+        mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
+        mapping.put(Set() ++ tableA.primaryKey,Set() ++ tableB.primaryKey)
+        allMappings.addOne(mapping)
+      } else {
+        ??? //TODO: implement this in a reasonable way
+      }
     }
     allMappings
   }

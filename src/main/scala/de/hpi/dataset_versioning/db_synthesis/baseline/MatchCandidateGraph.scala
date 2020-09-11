@@ -1,14 +1,16 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.dataset_versioning.db_synthesis.baseline.InitialMatchinStrategy.{INDEX_BASED, InitialMatchinStrategy, NAIVE_PAIRWISE}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{MetadataBasedHeuristicMatchCalculator, DataBasedMatchCalculator, TemporalDatabaseTableTrait}
+import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{DataBasedMatchCalculator, MetadataBasedHeuristicMatchCalculator, TemporalDatabaseTableTrait}
 import de.hpi.dataset_versioning.db_synthesis.sketches.SynthesizedTemporalDatabaseTableSketch
 
 import scala.collection.mutable
 
 class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SynthesizedTemporalDatabaseTableSketch],
-                         heuristicMatchCalulator:DataBasedMatchCalculator) extends StrictLogging{
+                         heuristicMatchCalulator:DataBasedMatchCalculator,
+                         initialMatchingStrategy:InitialMatchinStrategy = InitialMatchinStrategy.INDEX_BASED) extends StrictLogging{
 
   def updateGraphAfterMatchExecution(executedMatch: TableUnionMatch[Int],
                                      synthTable: SynthesizedTemporalDatabaseTable,
@@ -56,24 +58,65 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SynthesizedTemp
   initHeuristicMatches()
   logger.debug("Finished Heuristic Match calculation")
 
-
-
-  private def loldebug[A](a:  TemporalDatabaseTableTrait[A]) = {
-    a.getUnionedTables.size == 1 && a.getUnionedTables.head.viewID == "fullBaselineTest-D" && a.getUnionedTables.head.bcnfID == 0  && a.getUnionedTables.head.associationID == Some(0)
+  def initHeuristicMatches() = {
+    if(initialMatchingStrategy==INDEX_BASED){
+      initMatchesIndexBased
+    } else {
+      assert(initialMatchingStrategy==NAIVE_PAIRWISE)
+      initMatchesNaivePairwise
+    }
   }
 
-  def initHeuristicMatches() = {
-    //val indexBuilder = new MOstDistinctTimestampIndexBuilder()
+  private def initMatchesNaivePairwise = {
     val unmatchedList = unmatchedAssociations.toIndexedSeq
-    for(i <- 0 until unmatchedList.size){
+    var nMatchesComputed = 0
+    for (i <- 0 until unmatchedList.size) {
       val firstMatchPartner = unmatchedList(i)
-      for(j <- (i+1) until unmatchedList.size){
+      for (j <- (i + 1) until unmatchedList.size) {
         val secondMatchPartner = unmatchedList(j)
-        val curMatch = heuristicMatchCalulator.calculateMatch(firstMatchPartner,secondMatchPartner)
-        if(curMatch.score!=0)
-          curMatches.getOrElseUpdate(curMatch.score,mutable.HashSet()).addOne(curMatch)
+        val curMatch = heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner)
+        nMatchesComputed+=1
+        if (curMatch.score != 0)
+          curMatches.getOrElseUpdate(curMatch.score, mutable.HashSet()).addOne(curMatch)
       }
     }
+    logger.debug(s"Finished Naive Pairwise initial matching, resulting in ${nMatchesComputed} checked matches, of which ${curMatches.map(_._2.size).sum} have a score > 0")
+  }
+
+  def getCorrectlyOrderedPair(tuple1: (TemporalDatabaseTableTrait[Int], Iterable[Int]), tuple2: (TemporalDatabaseTableTrait[Int], Iterable[Int])) = {
+    assert(tuple1._1.getUnionedTables.head.compositeID != tuple2._1.getUnionedTables.head.compositeID)
+    if(tuple1._1.getUnionedTables.head.compositeID < tuple2._1.getUnionedTables.head.compositeID){
+      (tuple1,tuple2)
+    } else{
+      (tuple2,tuple1)
+    }
+  }
+
+  private def initMatchesIndexBased = {
+    logger.debug("Starting Index-Based initial match computation")
+    val indexBuilder = new MostDistinctTimestampIndexBuilder[Int](unmatchedAssociations.map(_.asInstanceOf[TemporalDatabaseTableTrait[Int]]))
+    val index = indexBuilder.buildTableIndex()
+    val it = index.tupleGroupIterator
+    val computedMatches = mutable.HashSet[(TemporalDatabaseTableTrait[Int],TemporalDatabaseTableTrait[Int])]()
+    var nMatchesComputed = 0
+    it.foreach(g => {
+      val groupsWithTupleIndcies = g.groupMap(t => t._1)(t => t._2).toIndexedSeq
+      for (i <- 0 until groupsWithTupleIndcies.size) {
+        for (j <- (i + 1) until groupsWithTupleIndcies.size) {
+          val ((firstMatchPartner,_),(secondMatchPartner,_)) = getCorrectlyOrderedPair(groupsWithTupleIndcies(i),groupsWithTupleIndcies(j))
+          if(!computedMatches.contains((firstMatchPartner,secondMatchPartner))){
+            val curMatch = heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner)
+            nMatchesComputed+=1
+            computedMatches.addOne((firstMatchPartner,secondMatchPartner))
+            if(curMatch.score!=0) {
+              curMatches.getOrElseUpdate(curMatch.score, mutable.HashSet()).addOne(curMatch)
+            }
+          }
+        }
+      }
+    })
+    logger.debug(s"Finished Index-Based initial matching, resulting in ${nMatchesComputed} checked matches, of which ${curMatches.map(_._2.size).sum} have a score > 0")
+
   }
 
   def getNextBestHeuristicMatch() = {
@@ -84,7 +127,6 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SynthesizedTemp
 
 }
 object MatchCandidateGraph extends StrictLogging{
-  logger.debug("Potential Optimization: MatchCandidateGraph initializes by doing a simple quadratic strategy for ranking the table matches - this will likely be too slow in the future")
   logger.debug("Potential Optimization: MatchCandidateGraph is using a scan through the graph to update it (method: updateGraphAfterMatchExecution), this takes linear time in the number of matches every time the method is called - this might be too slow in practice")
 
 }

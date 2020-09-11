@@ -126,6 +126,20 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
 
   //override def fromTimestampToValue[V <: TemporalFieldTrait[Int]](asTree: mutable.TreeMap[LocalDate, Any]): V = ???
   override def fromTimestampToValue[V <: TemporalFieldTrait[Int]](asTree: mutable.TreeMap[LocalDate, Int]): V = Variant2Sketch.fromTimestampToHash(asTree).asInstanceOf[V]
+
+  def getIthValueAsInt(i: Int): Int = {
+    byteArraySliceToInt(data,i*5+1,i*5+5)
+  }
+
+  override def valueAt(ts: LocalDate): Int = {
+    if(ts.isBefore(firstTimestamp))
+      Variant2Sketch.byteArrayToInt(Variant2Sketch.ROWDELETEHASHVALUE)
+    else{
+      val timestampIndex = findIndexOfTimestampOrLargestTimestampBefore(ts)
+      assert(timestampIndex!= -1)
+      getIthValueAsInt(timestampIndex)
+    }
+  }
 }
 
 object Variant2Sketch {
@@ -133,7 +147,6 @@ object Variant2Sketch {
     val bytes = asTree.flatMap{case (k,v) => Seq(timestampToByteRepresentation(k)) ++ intToByteArray(v)}.toArray
     new Variant2Sketch(bytes)
   }
-
 
   def HASH_DJB2(v:String) = {
     //source: http://www.cse.yorku.ca/~oz/hash.html

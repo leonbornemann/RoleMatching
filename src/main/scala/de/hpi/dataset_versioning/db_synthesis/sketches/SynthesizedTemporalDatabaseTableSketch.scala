@@ -1,5 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.sketches
 
+import java.time.LocalDate
+
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.TableUnionMatch
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
@@ -50,6 +52,10 @@ class SynthesizedTemporalDatabaseTableSketch(id:String,
   override def informativeTableName: String = getID + "(" + schema.map(_.lastName).mkString(",") + ")"
 
   override def tracksEntityMapping: Boolean = false
+
+  override def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts: LocalDate): Int = temporalColumnSketches(colIndex).fieldLineageSketches(rowIndex).valueAt(ts)
+
+  override def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean = fieldValueAtTimestamp(rowIndex, colIndex, ts) == Variant2Sketch.WILDCARD
 }
 object SynthesizedTemporalDatabaseTableSketch{
 

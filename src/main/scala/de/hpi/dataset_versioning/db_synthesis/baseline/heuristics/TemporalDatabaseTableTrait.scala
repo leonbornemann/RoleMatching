@@ -1,11 +1,21 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.heuristics
 
+import java.time.LocalDate
+
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.TableUnionMatch
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.sketches.{SynthesizedTemporalDatabaseTableSketch, TemporalColumnTrait}
 
+import scala.collection.mutable.ArrayBuffer
+
 trait TemporalDatabaseTableTrait[A] {
+  def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate) :Boolean
+
+  def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts:LocalDate): A
+
+  def isAssociation: Boolean = nonKeyAttributeLineages.size==1
+
   def isTrueUnion =getUnionedTables.size>1
 
 

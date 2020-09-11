@@ -24,6 +24,12 @@ class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChange
   })
   val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,allAssociationSketches,nChangesInAssociations,tracker)
   private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
+  //for debugging:
+  println()
+  val a = synthesizedDatabase.loadSynthesizedTable(allAssociationSketches.filter(_.getID.contains("Normal")).head)
+  val b = synthesizedDatabase.loadSynthesizedTable(allAssociationSketches.filter(_.getID.contains("Split")).head)
+  val res = new DataBasedMatchCalculator().calculateMatch[Any](a,b)
+
 
   def executeMatch(bestMatch: TableUnionMatch[Int]) :(Option[SynthesizedTemporalDatabaseTable],SynthesizedTemporalDatabaseTableSketch) = {
     //load the actual table

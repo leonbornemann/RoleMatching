@@ -31,17 +31,6 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SynthesizedTemp
     scoresToDelete.foreach(s => curMatches.remove(s))
     matchesToRecompute.foreach(toRecompute => {
       val curMatch = heuristicMatchCalulator.calculateMatch(toRecompute,unionedTableSketch)
-      if(curMatch.score==0 && toRecompute.getID.contains("D.0_0")){
-        val synthTableA = synthTable
-        val synthTableB = SynthesizedTemporalDatabaseTable.initFrom(DecomposedTemporalTable.load(toRecompute.getUnionedTables.head))
-        println()
-        val matchReal = heuristicMatchCalulator.calculateMatch(synthTableA,synthTableB)
-        println()
-        val curMatch2 = heuristicMatchCalulator.calculateMatch(toRecompute,unionedTableSketch)
-        println()
-
-      }
-
       if(curMatch.score!=0)
         curMatches.getOrElseUpdate(curMatch.score,mutable.HashSet()).addOne(curMatch)
     })

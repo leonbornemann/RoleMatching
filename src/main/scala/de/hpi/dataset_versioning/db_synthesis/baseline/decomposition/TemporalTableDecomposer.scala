@@ -164,7 +164,7 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
 
 
   def createDecomposedTemporalTables() = {
-    val dttToExtraKeyAttributes = mutable.HashMap[DecomposedTemporalTable,Set[AttributeLineage]]()
+    val dttToExtraKeyAttributes = mutable.HashMap[DecomposedTemporalTableIdentifier,Set[AttributeLineage]]()
     val tableReferences = mutable.HashMap[DecomposedTemporalTable,collection.Set[Set[AttributeLineage]]]() //maps to the identifying LHS
     val byLHS = decomposedTablesAtLastTimestamp.map(dt => {
       val extraKeyAttributes = freeAttributeAssignment.getOrElse(dt,Set()) //whenever we add something here, we need to update all dtts that refer to this table via fk-relationships
@@ -195,18 +195,22 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
         originalFDLHS,
         pkByTimestampMap,
       mutable.HashSet())
-      dttToExtraKeyAttributes.put(decomposedTemporalTable,extraKeyAttributes)
+      dttToExtraKeyAttributes.put(decomposedTemporalTable.id,extraKeyAttributes)
       val foreignKeyLineages = dt.foreignKeys.map(attrs => attrs.map(a => attrLineageByID(a.id)))
       tableReferences.put(decomposedTemporalTable,foreignKeyLineages)
       (originalFDLHS,decomposedTemporalTable)
     }).toMap
+    println()
     //update table references and add needed extra attributes
     byLHS.values.foreach(dtt => {
       val referencedTablesLHS = tableReferences(dtt)
       val references = referencedTablesLHS.map(lhs => byLHS(lhs))
       dtt.referencedTables.addAll(references.map(_.id))
       //for every reference, add the id to reference tables and the extra key attributes that are needed
-      val attributeLineagesToAdd = referencedTablesLHS.flatMap(lhs => dttToExtraKeyAttributes(byLHS(lhs)))
+      val attributeLineagesToAdd = referencedTablesLHS.flatMap(lhs => {
+        val table = byLHS(lhs)
+        dttToExtraKeyAttributes(table.id)
+      })
       dtt.containedAttrLineages.addAll(attributeLineagesToAdd.diff(dtt.containedAttrLineages.toSet))
       //write to file:
       dtt.writeToStandardFile()

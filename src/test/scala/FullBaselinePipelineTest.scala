@@ -146,7 +146,7 @@ object FullBaselinePipelineTest extends App {
   //write decomposed associations:
   temporallyDecomposedTables.foreach(_.writeToStandardFile())
   //write table sketches of associations:
-  Seq((ttA,dttA1),(ttA,dttA2),(ttA,dttA3),(ttB,dttB1),(ttB,dttB1),(ttC,dttC1),(ttC,dttC1),(ttD,dttD1),(ttD,dttD2),(ttD,dttD3),(ttSplitPK,dttSplitPK),(ttNormalPk,dttNormalPK))
+  Seq((ttA,dttA1),(ttA,dttA2),(ttA,dttA3),(ttB,dttB1),(ttB,dttB2),(ttC,dttC1),(ttC,dttC2),(ttD,dttD1),(ttD,dttD2),(ttD,dttD3),(ttSplitPK,dttSplitPK),(ttNormalPk,dttNormalPK))
     .foreach{case (tt,dtt) =>   tt.project(dtt).projection.writeTableSketch(dtt.primaryKey.map(_.attrId))
     }
 

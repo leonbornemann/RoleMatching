@@ -32,16 +32,35 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
       logger.debug(s"writing table ${asSynthTable.informativeTableName} to file with id ${asSynthTable.uniqueSynthTableID} (#changes:$changesInThisTable)")
     })
     logger.debug(s"Final Database has $nChanges number of changes")
-    logger.debug(s"During synthesis we recorder the number of changes to be $curChangeCount")
+    logger.debug(s"During synthesis we recorded the number of changes to be $curChangeCount")
+    if(curChangeCount!=nChanges)
+      println()
     assert(curChangeCount==nChanges)
   }
 
+  def printChangeCounts() = {
+    var nChanges = 0
+    finalSynthesizedTableIDs.foreach(id => {
+      val synthTable = SynthesizedTemporalDatabaseTable.loadFromStandardFile(id)
+      val changesInThisTable = synthTable.numChanges
+      nChanges += changesInThisTable
+    })
+    allUnmatchedAssociations.values.foreach(a => {
+      val asSynthTable = SynthesizedTemporalDatabaseTable.initFrom(a)
+      val changesInThisTable = asSynthTable.numChanges
+      nChanges += changesInThisTable
+    })
+    if(curChangeCount!=nChanges)
+      println()
+    println(s"tracked $curChangeCount real: $nChanges")
+  }
 
   def printState() = {
     logger.debug("Current DAtabase state")
     logger.debug(s"Synthesized tables: ${finalSynthesizedTableIDs.toIndexedSeq.sorted.mkString(",")}")
     logger.debug(s"unmatched associations: ${allUnmatchedAssociations.map(_._2.compositeID).mkString("  ,  ")}")
     logger.debug(s"current number of changes: $curChangeCount")
+    writeToStandardFiles()
   }
 
   private val allUnmatchedAssociations = mutable.HashMap() ++ associations.map(a => (a.id,a)).toMap
@@ -54,9 +73,14 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
   def updateSynthesizedDatabase(newSynthTable: SynthesizedTemporalDatabaseTable,
                                 newSynthTableSketch: SynthesizedTemporalDatabaseTableSketch,
                                 executedMatch:TableUnionMatch[Int]) = {
+    newSynthTable.writeToStandardTemporaryFile()
+    if(newSynthTable.unionedTables.exists(_.viewID.contains("Split")))
+      println()
     sketchToSynthTableID.put(newSynthTableSketch,newSynthTable.uniqueSynthTableID)
     finalSynthesizedTableIDs += newSynthTable.uniqueSynthTableID
     //remove old ids:
+    println()
+    val ts = newSynthTable.unionedTables.map(allUnmatchedAssociations.get(_))
     val removed = newSynthTable.unionedTables.map(allUnmatchedAssociations.remove(_))
       .filter(_.isDefined)
       .size
@@ -68,7 +92,6 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
     //table serialization
     logger.debug(s"Executed Match between ${executedMatch.firstMatchPartner.informativeTableName} and ${executedMatch.secondMatchPartner.informativeTableName}")
     logger.debug(s"Reducing changes by ${executedMatch.score}")
-    newSynthTable.writeToStandardTemporaryFile()
     curChangeCount -= executedMatch.score
     if(tracker.isDefined){
       tracker.get.updateForSynthTable(newSynthTable,executedMatch)

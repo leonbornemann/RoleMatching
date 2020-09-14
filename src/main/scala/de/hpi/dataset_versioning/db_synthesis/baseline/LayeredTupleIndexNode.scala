@@ -15,14 +15,24 @@ class LayeredTupleIndexNode[A](_isLeafNode:Boolean) extends Iterable[Iterable[(T
       val ts = chosenTimestamps.head
       if(!table.fieldIsWildcardAt(rowIndex, colIndex, ts)){
         val valueAtTimestamp = table.fieldValueAtTimestamp(rowIndex, colIndex, ts)
-        val childNode = children.getOrElseUpdate(valueAtTimestamp,new LayeredTupleIndexNode[A](chosenTimestamps.size==1))
+        val childNode = children.getOrElseUpdate(valueAtTimestamp, createNewChildNode(chosenTimestamps))
         childNode.insert(table,rowIndex,colIndex,chosenTimestamps.tail)
       } else{
+        containedWildcardTuples.get.addOne((table,rowIndex,colIndex,chosenTimestamps.tail))
         children.values.foreach(c => c.insert(table,rowIndex,colIndex,chosenTimestamps.tail))
       }
     }
   }
 
+
+  private def createNewChildNode(chosenTimestamps: ArrayBuffer[LocalDate]) = {
+    val newNode = new LayeredTupleIndexNode[A](chosenTimestamps.size == 1)
+    //add stored wildcards:
+    if(containedWildcardTuples.get.size>0)
+      println()
+    containedWildcardTuples.get.foreach(t => newNode.insert(t._1,t._2,t._3,t._4))
+    newNode
+  }
 
   def isLeafNode = containedTuples.isDefined
 
@@ -32,6 +42,7 @@ class LayeredTupleIndexNode[A](_isLeafNode:Boolean) extends Iterable[Iterable[(T
 
   val containedTuples = if(_isLeafNode) Some(collection.mutable.ArrayBuffer[(TemporalDatabaseTableTrait[A],Int)]()) else None
   val children = collection.mutable.HashMap[A,LayeredTupleIndexNode[A]]()
+  val containedWildcardTuples = if(!_isLeafNode) Some(collection.mutable.ArrayBuffer[(TemporalDatabaseTableTrait[A],Int,Int,ArrayBuffer[LocalDate])]()) else None
 
   override def iterator: Iterator[Iterable[(TemporalDatabaseTableTrait[A], Int)]] = new LeafNodeIterator()
 

@@ -7,7 +7,8 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.TemporalDataba
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class LayeredTupleIndex[A](chosenTimestamps: ArrayBuffer[LocalDate], associationsWithColumnIndex: mutable.HashSet[(TemporalDatabaseTableTrait[A],Int)]) {
+class LayeredTupleIndex[A](chosenTimestamps: ArrayBuffer[LocalDate],
+                           associationsWithColumnIndex: collection.Set[(TemporalDatabaseTableTrait[A],Int)]) {
 
   val allTsWildcardBucket = collection.mutable.ArrayBuffer[(TemporalDatabaseTableTrait[A],Int)]()
 

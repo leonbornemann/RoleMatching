@@ -1,5 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.heuristics
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.sketches.TemporalTableSketch
 
 import scala.collection.mutable
@@ -7,9 +8,38 @@ import scala.collection.mutable.ArrayBuffer
 
 class TupleSetMatching[A](val tableA: TemporalDatabaseTableTrait[A],
                           val tableB: TemporalDatabaseTableTrait[A],
-                          val unmatchedTupleIndicesA: mutable.HashSet[Int] = mutable.HashSet(),
-                          val unmatchedTupleIndicesB: mutable.HashSet[Int] = mutable.HashSet(),
-                          val matchedTuples: ArrayBuffer[TupleMatching] = ArrayBuffer()) {
+                          unmatchedTupleIndicesA: mutable.HashSet[Int] = mutable.HashSet(),
+                          unmatchedTupleIndicesB: mutable.HashSet[Int] = mutable.HashSet(),
+                          matchedTuples: ArrayBuffer[TupleMatching] = ArrayBuffer()) {
+
+  if(!is1to1Matching){
+    println()
+  }
+  assert(is1to1Matching)
+  if(tableA.getID.contains("D.") && tableB.getID.contains("D."))
+    println()
+
+
+  def unmatchedTupleIndicesA:collection.Set[Int] = unmatchedTupleIndicesA
+  def unmatchedTupleIndicesB:collection.Set[Int] = unmatchedTupleIndicesB
+  def matchedTuples:collection.IndexedSeq[TupleMatching] = matchedTuples
+
+
+  def addUnmatchedTuplesToTableBUnlessAlreadyMatched(tuplesB: collection.Iterable[Int]) = {
+    val matchedIndicesB = matchedTuples.map(_.tupleIndexB).toSet
+    assert(matchedIndicesB.size==matchedTuples.size)
+    addUnmatchedTuplesUnlessAlreadyMatched(tuplesB,unmatchedTupleIndicesB,matchedIndicesB)
+  }
+
+  def addUnmatchedTuplesUnlessAlreadyMatched(toAdd: collection.Iterable[Int], collectionToAddTo: mutable.HashSet[Int], matchedIndices: Set[Int]) = {
+    collectionToAddTo.addAll(toAdd.toSet.diff(matchedIndices))
+  }
+
+  def addUnmatchedTuplesToTableAUnlessAlreadyMatched(tuplesA: collection.Iterable[Int]) = {
+    val matchedIndicesA = matchedTuples.map(_.tupleIndexA).toSet
+    assert(matchedIndicesA.size==matchedTuples.size)
+    addUnmatchedTuplesUnlessAlreadyMatched(tuplesA,unmatchedTupleIndicesA,matchedIndicesA)
+  }
 
   def totalScore = matchedTuples.map(_.matchScore).sum
 
@@ -34,8 +64,36 @@ class TupleSetMatching[A](val tableA: TemporalDatabaseTableTrait[A],
   }
 
   def ++=(curMatching: TupleSetMatching[A]) = {
-    unmatchedTupleIndicesA ++=curMatching.unmatchedTupleIndicesA
-    unmatchedTupleIndicesB ++=curMatching.unmatchedTupleIndicesB
-    matchedTuples ++=curMatching.matchedTuples
+    val byIndex = mutable.HashMap() ++ matchedTuples.map(m => (m.tupleIndexA,m))
+    assert(byIndex.size==matchedTuples.size)
+    curMatching.matchedTuples.foreach(m => {
+      if(byIndex.contains(m.tupleIndexA)){
+        val competitor = byIndex(m.tupleIndexA)
+        if(competitor.matchScore!=m.matchScore) {
+          assert(competitor.tupleIndexB!=m.tupleIndexB)
+        }
+        if(competitor.matchScore<m.matchScore){
+          //swap the two tuples:
+          unmatchedTupleIndicesB.addOne(competitor.tupleIndexB)
+          byIndex.put(m.tupleIndexA,m)
+        } else{
+          unmatchedTupleIndicesB.addOne(m.tupleIndexB)
+        }
+      } else{
+        byIndex.put(m.tupleIndexA,m)
+        unmatchedTupleIndicesA.remove(m.tupleIndexA)
+        unmatchedTupleIndicesB.remove(m.tupleIndexB)
+      }
+    })
+    addUnmatchedTuplesToTableAUnlessAlreadyMatched(curMatching.unmatchedTupleIndicesA)
+    addUnmatchedTuplesToTableBUnlessAlreadyMatched(curMatching.unmatchedTupleIndicesB)
+    matchedTuples.clear()
+    matchedTuples ++= byIndex.values
+    if(!is1to1Matching){
+      println()
+    }
   }
+}
+object TupleSetMatching extends StrictLogging{
+  logger.debug("We are currently assuming that a tupleMatching has to be 1-to-1 - if this changes we need to adapt this, as well as some other code (potentially) - rerun tests after changing this")
 }

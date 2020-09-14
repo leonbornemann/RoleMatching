@@ -40,54 +40,71 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
 
   def fromTimestampToValue[V<:TemporalFieldTrait[A]](asTree: mutable.TreeMap[LocalDate, A]):V
 
-  override def mergeWithConsistent[V<:TemporalFieldTrait[A]](other: V):V = {
+  override def tryMergeWithConsistent[V <: TemporalFieldTrait[A]](other: V): Option[V] = {
     val myLineage = this.toIntervalRepresentation.toBuffer
     val otherLineage = other.toIntervalRepresentation.toBuffer
     if(myLineage.isEmpty){
-      assert(otherLineage.isEmpty)
-      fromValueLineage[V](ValueLineage())
+      return if(otherLineage.isEmpty) Some(fromValueLineage[V](ValueLineage())) else None
     } else if(otherLineage.isEmpty){
-      assert(myLineage.isEmpty)
-      fromValueLineage[V](ValueLineage())
+      return if(myLineage.isEmpty) Some(fromValueLineage[V](ValueLineage())) else None
     }
     val newLineage = mutable.ArrayBuffer[(TimeInterval,A)]()
     var myIndex = 0
     var otherIndex = 0
-    while(myIndex < myLineage.size || otherIndex < otherLineage.size) {
+    var incompatible = false
+    while((myIndex < myLineage.size || otherIndex < otherLineage.size ) && !incompatible) {
       assert(myIndex < myLineage.size && otherIndex < otherLineage.size)
       val (myInterval,myValue) = myLineage(myIndex)
       val (otherInterval,otherValue) = otherLineage(otherIndex)
-      if(myInterval.begin != otherInterval.begin){
-        println()
-      }
       assert(myInterval.begin == otherInterval.begin)
       var toAppend:(TimeInterval,A) = null
       if(myInterval==otherInterval){
-        assert(valuesAreCompatible(myValue,otherValue))
-        toAppend = (myInterval,getCompatibleValue(myValue,otherValue))
-        myIndex+=1
-        otherIndex+=1
+        if(!valuesAreCompatible(myValue,otherValue)){
+          incompatible=true
+        } else {
+          toAppend = (myInterval, getCompatibleValue(myValue, otherValue))
+          myIndex += 1
+          otherIndex += 1
+        }
       } else if(myInterval<otherInterval){
-        toAppend = getOverlapInterval(myLineage(myIndex),otherLineage(otherIndex))
-        //replace old interval with newer interval with begin set to myInterval.end+1
-        otherLineage(otherIndex) = (TimeInterval(myInterval.end.get,otherInterval.`end`),otherValue)
-        myIndex+=1
+        if(!valuesAreCompatible(myLineage(myIndex)._2,otherLineage(otherIndex)._2)){
+          incompatible = true
+        } else {
+          toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex))
+          //replace old interval with newer interval with begin set to myInterval.end+1
+          otherLineage(otherIndex) = (TimeInterval(myInterval.end.get, otherInterval.`end`), otherValue)
+          myIndex += 1
+        }
       } else{
         assert(otherInterval<myInterval)
-        toAppend = getOverlapInterval(myLineage(myIndex),otherLineage(otherIndex))
-        myLineage(myIndex) = (TimeInterval(otherInterval.end.get,myInterval.`end`),myValue)
-        otherIndex+=1
+        if(!valuesAreCompatible(myLineage(myIndex)._2,otherLineage(otherIndex)._2)){
+          incompatible = true
+        } else {
+          toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex))
+          myLineage(myIndex) = (TimeInterval(otherInterval.end.get, myInterval.`end`), myValue)
+          otherIndex += 1
+        }
       }
-      if(!newLineage.isEmpty && newLineage.last._2==toAppend._2){
-        //we replace the old interval by a longer one
-        newLineage(newLineage.size-1) = (TimeInterval(newLineage.last._1.begin,toAppend._1.`end`),toAppend._2)
-      } else{
-        //we simply append the new interval:
-        newLineage += toAppend
+      if(!incompatible) {
+        if (!newLineage.isEmpty && newLineage.last._2 == toAppend._2) {
+          //we replace the old interval by a longer one
+          newLineage(newLineage.size - 1) = (TimeInterval(newLineage.last._1.begin, toAppend._1.`end`), toAppend._2)
+        } else {
+          //we simply append the new interval:
+          newLineage += toAppend
+        }
       }
     }
-    val asTree = mutable.TreeMap[LocalDate,A]() ++ newLineage.map(t => (t._1.begin,t._2))
-    fromTimestampToValue[V](asTree)
+    if(incompatible)
+      None
+    else {
+      val asTree = mutable.TreeMap[LocalDate, A]() ++ newLineage.map(t => (t._1.begin, t._2))
+      Some(fromTimestampToValue[V](asTree))
+    }
+  }
+
+  override def mergeWithConsistent[V<:TemporalFieldTrait[A]](other: V):V = {
+    tryMergeWithConsistent(other).get
   }
 
   override def append[V<:TemporalFieldTrait[A]](y: V): V = {

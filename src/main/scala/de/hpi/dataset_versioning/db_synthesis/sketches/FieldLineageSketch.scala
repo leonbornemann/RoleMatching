@@ -9,6 +9,7 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 
 import scala.collection.mutable
 
+@SerialVersionUID(3L)
 trait FieldLineageSketch extends AbstractTemporalField[Int] with Serializable{
   def valueAt(ts: LocalDate): Int
 

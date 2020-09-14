@@ -5,11 +5,12 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.TableUnionMatch
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.sketches.{SynthesizedTemporalDatabaseTableSketch, TemporalColumnTrait}
-
-import scala.collection.mutable.ArrayBuffer
+import de.hpi.dataset_versioning.db_synthesis.sketches.{SynthesizedTemporalDatabaseTableSketch, TemporalColumnTrait, TemporalFieldTrait}
 
 trait TemporalDatabaseTableTrait[A] {
+
+  def getTuple(rowIndex: Int) : collection.IndexedSeq[TemporalFieldTrait[A]]
+
   def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate) :Boolean
 
   def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts:LocalDate): A

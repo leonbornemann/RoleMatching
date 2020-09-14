@@ -11,13 +11,13 @@ import de.hpi.dataset_versioning.io.IOService
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: mutable.HashSet[TemporalDatabaseTableTrait[A]]) extends StrictLogging{
+class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set[TemporalDatabaseTableTrait[A]]) extends StrictLogging{
 
   assert(unmatchedAssociations.forall(_.isAssociation))
 
   val N_TIMESTAMPS_IN_INDEX = Math.min(3,IOService.STANDARD_TIME_RANGE.size)
 
-  def buildTableIndex() = {
+  def buildTableIndexOnNonKeyColumns() = {
     val attributesOnWhichToIndex = unmatchedAssociations.flatMap(ua => ua.nonKeyAttributeLineages.map(al => (ua,al)))
     val nonCoveredAttributeIDs = mutable.HashSet() ++ attributesOnWhichToIndex.map(t => (t._1,t._2.attrId)).toSet
     val chosenTimestamps = mutable.ArrayBuffer[LocalDate]()
@@ -34,7 +34,7 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: mutable.HashSe
   }
 
   private def getNextMostDiscriminatingTimestamp(chosenTimestamps: ArrayBuffer[LocalDate],
-                                                 attributesOnWhichToIndex: mutable.HashSet[(TemporalDatabaseTableTrait[A], AttributeLineage)],
+                                                 attributesOnWhichToIndex: collection.Set[(TemporalDatabaseTableTrait[A], AttributeLineage)],
                                                  nonCoveredAttributeIDs: mutable.HashSet[(TemporalDatabaseTableTrait[A], Int)]) = {
     val timerange = IOService.STANDARD_TIME_RANGE
     val byTimestamp = timerange

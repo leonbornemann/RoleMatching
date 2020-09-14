@@ -145,6 +145,8 @@ class SynthesizedTemporalDatabaseTable(val id:String,
   override def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean = {
     ValueLineage.isWildcard(fieldValueAtTimestamp(rowIndex, colIndex, ts))
   }
+
+  override def getTuple(rowIndex: Int): IndexedSeq[TemporalFieldTrait[Any]] = rows(rowIndex).fields.map(_.asInstanceOf[TemporalFieldTrait[Any]]).toIndexedSeq
 }
 object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTemporalDatabaseTable] with StrictLogging {
   logger.debug("Potential Optimization: The columns method (in synth table), the columns have to be generated from the row representation - if this is too slow, it would be good to revisit this")

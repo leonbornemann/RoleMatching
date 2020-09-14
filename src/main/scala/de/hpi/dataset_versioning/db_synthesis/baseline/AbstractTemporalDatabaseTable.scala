@@ -114,6 +114,8 @@ abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSe
 
   private def addToIndexTracking(tupleIndicesToNewTupleIndices: mutable.HashMap[Int, Int], newRowIndex: Int, oldRowIndex: Int) = {
     if (tupleIndicesToNewTupleIndices.contains(oldRowIndex)) {
+      if(tupleIndicesToNewTupleIndices(oldRowIndex)!=newRowIndex)
+        println()
       assert(tupleIndicesToNewTupleIndices(oldRowIndex) == newRowIndex)
     } else {
       tupleIndicesToNewTupleIndices(oldRowIndex) = newRowIndex

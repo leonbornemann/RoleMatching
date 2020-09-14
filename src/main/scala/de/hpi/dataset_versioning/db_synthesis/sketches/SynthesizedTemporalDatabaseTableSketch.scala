@@ -56,6 +56,8 @@ class SynthesizedTemporalDatabaseTableSketch(id:String,
   override def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts: LocalDate): Int = temporalColumnSketches(colIndex).fieldLineageSketches(rowIndex).valueAt(ts)
 
   override def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean = fieldValueAtTimestamp(rowIndex, colIndex, ts) == Variant2Sketch.WILDCARD
+
+  override def getTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[Int]] = columns.map(c => c.fieldLineages(rowIndex))
 }
 object SynthesizedTemporalDatabaseTableSketch{
 

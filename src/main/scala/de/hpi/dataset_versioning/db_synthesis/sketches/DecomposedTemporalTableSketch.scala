@@ -12,6 +12,7 @@ import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+@SerialVersionUID(3L)
 class DecomposedTemporalTableSketch(val tableID:DecomposedTemporalTableIdentifier,
                                    primaryKeyIDs:Set[Int],
                                     unionedTables:mutable.HashSet[DecomposedTemporalTableIdentifier],
@@ -62,6 +63,8 @@ class DecomposedTemporalTableSketch(val tableID:DecomposedTemporalTableIdentifie
   }
 
   override def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts: LocalDate): Int = temporalColumnSketches(colIndex).fieldLineageSketches(colIndex).valueAt(ts)
+
+  override def getTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[Int]] = columns.map(c => c.fieldLineages(rowIndex))
 }
 
 object DecomposedTemporalTableSketch{

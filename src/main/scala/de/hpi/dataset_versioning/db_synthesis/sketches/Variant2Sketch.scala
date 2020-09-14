@@ -8,6 +8,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
+import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.Variant2Sketch.{WILDCARD, byteArraySliceToInt, byteToTimestamp, timestampToByteRepresentation}
 import de.hpi.dataset_versioning.io.IOService
@@ -116,7 +117,18 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
 
   override def firstTimestamp: LocalDate = byteToTimestamp(data(0))
 
-  override def changeCount: Int = numEntries
+  override def changeCount: Int = {
+    if(GLOBAL_CONFIG.COUNT_DATASET_AND_COLUMN_DELETES_AS_CHANGES) {
+      numEntries
+    } else{
+      var nonWildCardCount = 0
+      for(i <- 0 until numEntries){
+        val value = getIthValueAsInt(i)
+        if(value != WILDCARD) nonWildCardCount+=1
+      }
+      nonWildCardCount
+    }
+  }
 
   //override def valuesAt(timeToExtract: TimeIntervalSequence): Map[TimeInterval, Int] = hashValuesAt(timeToExtract)
 

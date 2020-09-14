@@ -5,6 +5,7 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
+import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.sketches.{AbstractTemporalField, TemporalFieldTrait}
 
 import scala.collection.mutable
@@ -29,7 +30,13 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
 
   override def toString: String = "[" + lineage.values.mkString("|") + "]"
 
-  override def changeCount: Int = lineage.size
+  override def changeCount: Int = {
+    if(GLOBAL_CONFIG.COUNT_DATASET_AND_COLUMN_DELETES_AS_CHANGES)
+      lineage.size
+    else {
+      lineage.filter(v => !isWildcard(v._2)).size
+    }
+  }
 
   override def firstTimestamp: LocalDate = lineage.firstKey
 

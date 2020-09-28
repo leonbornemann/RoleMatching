@@ -1,9 +1,11 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedTemporalDatabase, SynthesizedTemporalDatabaseTable}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.{DataBasedMatchCalculator, MetadataBasedHeuristicMatchCalculator, TemporalDatabaseTableTrait}
-import de.hpi.dataset_versioning.db_synthesis.sketches.SynthesizedTemporalDatabaseTableSketch
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{DataBasedMatchCalculator, MatchCandidateGraph, TableUnionMatch}
+import de.hpi.dataset_versioning.db_synthesis.database.query_tracking.ViewQueryTracker
+import de.hpi.dataset_versioning.db_synthesis.sketches.table.SynthesizedTemporalDatabaseTableSketch
 
 import scala.collection.mutable
 

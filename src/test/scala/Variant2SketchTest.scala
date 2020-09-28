@@ -5,7 +5,7 @@ import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.sketches.Variant2Sketch
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable

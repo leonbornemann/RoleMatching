@@ -12,7 +12,7 @@ import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSche
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd.FunctionalDependencySet
-import de.hpi.dataset_versioning.db_synthesis.sketches.{TemporalColumnSketch, Variant2Sketch}
+import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnSketch
 import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.DatasetInfo
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 import org.apache.commons.csv.{CSVFormat, CSVParser}

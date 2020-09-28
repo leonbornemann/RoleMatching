@@ -5,8 +5,8 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
-import de.hpi.dataset_versioning.db_synthesis.baseline.heuristics.GLOBAL_CONFIG
-import de.hpi.dataset_versioning.db_synthesis.sketches.{AbstractTemporalField, TemporalFieldTrait}
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.{AbstractTemporalField, TemporalFieldTrait}
 
 import scala.collection.mutable
 

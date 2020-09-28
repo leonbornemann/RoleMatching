@@ -2,7 +2,8 @@ import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.ChangeExporter
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.{SynthesizedTemporalDatabaseTable, SynthesizedTemporalRow, TopDownOptimizer}
+import de.hpi.dataset_versioning.db_synthesis.baseline.TopDownOptimizer
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedTemporalDatabaseTable, SynthesizedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.io.IOService

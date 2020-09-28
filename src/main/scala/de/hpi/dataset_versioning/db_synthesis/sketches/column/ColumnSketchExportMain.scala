@@ -2,9 +2,9 @@ package de.hpi.dataset_versioning.db_synthesis.sketches.column
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
+import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.DecomposedTemporalTableSketch
-import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.DatasetInfo
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 object ColumnSketchExportMain extends App with StrictLogging {

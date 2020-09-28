@@ -6,8 +6,7 @@ import java.time.LocalDate
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.data.change.{Change, ChangeCube}
-import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.DatasetInfo
-import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.main.ChangeExplorationMain.{logger, subdomain}
+import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 
 import scala.collection.mutable
 import scala.io.Source

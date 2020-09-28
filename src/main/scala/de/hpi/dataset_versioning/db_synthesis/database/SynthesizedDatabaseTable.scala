@@ -3,7 +3,7 @@ package de.hpi.dataset_versioning.db_synthesis.database
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.simplified.{Attribute, RelationalDataset}
-import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.normalization.DecomposedTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTable
 
 import scala.collection.mutable
 

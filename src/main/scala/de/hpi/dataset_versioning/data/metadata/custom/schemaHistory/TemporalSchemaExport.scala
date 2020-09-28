@@ -1,7 +1,7 @@
 package de.hpi.dataset_versioning.data.metadata.custom.schemaHistory
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.DatasetInfo
+import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.io.IOService
 
 object TemporalSchemaExport extends App with StrictLogging{

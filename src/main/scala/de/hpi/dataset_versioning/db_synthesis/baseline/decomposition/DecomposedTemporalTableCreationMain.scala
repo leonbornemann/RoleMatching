@@ -2,8 +2,8 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
+import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.baseline.TopDownMain.args
-import de.hpi.dataset_versioning.db_synthesis.top_down_no_change.decomposition.DatasetInfo
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 object DecomposedTemporalTableCreationMain extends App with StrictLogging{

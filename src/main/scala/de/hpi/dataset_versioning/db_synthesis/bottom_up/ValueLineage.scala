@@ -66,6 +66,8 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
   override def fromValueLineage[V <: TemporalFieldTrait[Any]](lineage: ValueLineage): V = lineage.asInstanceOf[V]
 
   override def fromTimestampToValue[V <: TemporalFieldTrait[Any]](asTree: mutable.TreeMap[LocalDate, Any]): V = ValueLineage(asTree).asInstanceOf[V]
+
+  override def nonWildCardValues: Iterable[Any] = getValueLineage.values.filter(!isWildcard(_))
 }
 object ValueLineage{
 

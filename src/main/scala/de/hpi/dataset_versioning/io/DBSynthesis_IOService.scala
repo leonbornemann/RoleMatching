@@ -8,6 +8,17 @@ import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 
 object DBSynthesis_IOService extends StrictLogging{
+  def decomposedTemporalAssociationsExist(subdomain: String, id: String) = {
+    val dir = getDecomposedTemporalAssociationDir(subdomain, id)
+    dir.exists() && !dir.listFiles().isEmpty
+  }
+
+
+  def decomposedTemporalTablesExist(subdomain:String,id: String) = {
+    val dir = getDecomposedTemporalTableDir(subdomain, id)
+    dir.exists() && !dir.listFiles().isEmpty
+  }
+
 
   //clear working directory for synthesized tables:
   logger.debug("Beginning to delete old synthesized tables from working directory")

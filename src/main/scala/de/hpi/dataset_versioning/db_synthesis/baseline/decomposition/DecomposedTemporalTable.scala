@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.data.json.helper.DecomposedTemporalTableHelper
-import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.AttributeLineageWithHashMap
+import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.{AttributeLineageWithHashMap, TemporalSchema}
 import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
@@ -90,9 +90,26 @@ case class DecomposedTemporalTable(id: DecomposedTemporalTableIdentifier,
 
   def allActiveVersions = containedAttrLineages.flatMap(_.lineage.keySet).toSet
 
+  def getSchemaString = id.viewID + "_" +id.bcnfID + "(" +
+    primaryKey.toIndexedSeq.map(pk => pk.lastName).sorted.mkString(",") + "  ->  " +
+    nonKeyAttributeLineages.toIndexedSeq.map(_.lastName).sorted.mkString(",") + ")"
+
 }
 
 object DecomposedTemporalTable {
+  def filterNotFullyDecomposedTables(subdomain:String,viewIds: Set[String]) = {
+    val subdomainIdsWithDTT = viewIds
+      .filter(id => DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
+    val schemata = subdomainIdsWithDTT.map(id => TemporalSchema.load(id)).map(ts => (ts.id,ts)).toMap
+    val filteredSecondStep = subdomainIdsWithDTT.filter(id => {
+      val dtts = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
+      val attrIds = dtts.flatMap(_.containedAttrLineages.map(_.attrId)).toSet
+      val originalSchema = schemata(id)
+      attrIds!= originalSchema.attributes.map(_.attrId).toSet
+    })
+    subdomainIdsWithDTT.diff(filteredSecondStep)
+  }
+
 
   def loadAllDecomposedTemporalTables(subdomain: String, originalID: String) = {
     val dir = DBSynthesis_IOService.getDecomposedTemporalTableDir(subdomain,originalID)

@@ -38,20 +38,19 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
 
   //returns the index of the timestamp - not the index of the timestamp in the data array
   private def findIndexOfTimestampOrLargestTimestampBefore(ts: LocalDate):Int = {
-    val tsAsByte = timestampToByteRepresentation(ts)
     //starting with the first, every 5th byte is a timestamp
     //do binary search:
     var start = 0
     var end = data.size / (Variant2Sketch.HASH_VALUE_SIZE_IN_BYTES + 1)
     //TODO: binary search only if this is a bottleneck: val elem = binaryTimestampSearch(start,end,tsAsByte)
-    if(data(start)>tsAsByte){
+    if(byteToTimestamp(data(start)).isAfter(ts)){
       -1
     } else {
       var cur = start
       while(cur<end){
-        if(data(getIthTimestampIndexInByteArray(cur))==tsAsByte)
+        if(byteToTimestamp(data(getIthTimestampIndexInByteArray(cur)))==ts)
           return cur
-        else if(data(getIthTimestampIndexInByteArray(cur)) > tsAsByte){
+        else if(byteToTimestamp(data(getIthTimestampIndexInByteArray(cur))).isAfter(ts)){
           return cur-1
         }else {
           cur+=1
@@ -146,10 +145,18 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
       Variant2Sketch.byteArrayToInt(Variant2Sketch.ROWDELETEHASHVALUE)
     else{
       val timestampIndex = findIndexOfTimestampOrLargestTimestampBefore(ts)
+      if(timestampIndex== -1){
+        println("OUCH")
+        println(ts)
+        println("------------")
+        getValueLineage.toIndexedSeq.sortBy(_._1.toEpochDay).foreach(println(_))
+      }
       assert(timestampIndex!= -1)
       getIthValueAsInt(timestampIndex)
     }
   }
+
+  override def nonWildCardValues: Iterable[Int] = getValueLineage.values.filter(_ != WILDCARD)
 }
 
 object Variant2Sketch {

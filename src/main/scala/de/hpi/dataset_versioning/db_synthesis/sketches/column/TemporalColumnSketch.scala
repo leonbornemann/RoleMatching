@@ -10,6 +10,8 @@ class TemporalColumnSketch(val tableID:String, val attributeLineage:AttributeLin
   def attrID = attributeLineage.attrId
 
   override def fieldLineages: IndexedSeq[TemporalFieldTrait[Int]] = fieldLineageSketches
+
+
 }
 
 object TemporalColumnSketch extends BinaryReadable[TemporalColumnSketch]{

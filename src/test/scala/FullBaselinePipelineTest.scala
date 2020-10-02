@@ -157,7 +157,7 @@ object FullBaselinePipelineTest extends App {
   }
 
   val nChangesInDecomposedTemporalTables = temporallyDecomposedTables.map(dtt => SynthesizedTemporalDatabaseTable.initFrom(dtt).numChanges.toLong).reduce(_ + _)
-  val topDownOptimizer = new TopDownOptimizer(temporallyDecomposedTables,nChangesInDecomposedTemporalTables)
+  val topDownOptimizer = new TopDownOptimizer(temporallyDecomposedTables,nChangesInDecomposedTemporalTables,Set(),Map())
   val db = topDownOptimizer.optimize()
 
   def runRowIntegrityCheck(synthRow: SynthesizedTemporalRow) = {

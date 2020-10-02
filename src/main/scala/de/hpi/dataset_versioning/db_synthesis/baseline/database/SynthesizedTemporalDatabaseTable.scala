@@ -143,17 +143,17 @@ class SynthesizedTemporalDatabaseTable(val id:String,
 
   override def getTuple(rowIndex: Int): IndexedSeq[TemporalFieldTrait[Any]] = rows(rowIndex).fields.map(_.asInstanceOf[TemporalFieldTrait[Any]]).toIndexedSeq
 }
+
 object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTemporalDatabaseTable] with StrictLogging {
   logger.debug("Potential Optimization: The columns method (in synth table), the columns have to be generated from the row representation - if this is too slow, it would be good to revisit this")
 
   def loadFromStandardFile(id:Int) = loadFromFile(DBSynthesis_IOService.getSynthesizedTableTempFile(id))
 
-  def initFrom(dttToMerge: DecomposedTemporalTable) = {
+  def initFrom(dttToMerge: DecomposedTemporalTable,originalTemporalTable:TemporalTable):SynthesizedTemporalDatabaseTable = {
+    val tt = originalTemporalTable.project(dttToMerge)
     val synthesizedSchema = dttToMerge.containedAttrLineages
     var curEntityID:Long = 0
     val entityIDMatchingSynthesizedToOriginal = mutable.HashMap[Long,Long]()
-    val tt = TemporalTable.loadAndCache(dttToMerge.id.viewID) //TODO: we will need to shrink this cache at some point
-      .project(dttToMerge)
     val newRows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
     tt.projection.rows.foreach(tr => {
       val projectedTemporalRow = tr.asInstanceOf[ProjectedTemporalRow]
@@ -176,6 +176,12 @@ object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTempor
       attributeTrackingSynthesizedToDTT
     )
     synthTable
+  }
+
+  def initFrom(dttToMerge: DecomposedTemporalTable):SynthesizedTemporalDatabaseTable = {
+    logger.warn("We should be careful when calling this method - it might become inefficient - better to store dtts individually on disk (with content)")
+    val ttUnprojected = TemporalTable.load(dttToMerge.id.viewID)
+    initFrom(dttToMerge,ttUnprojected)
   }
 
 }

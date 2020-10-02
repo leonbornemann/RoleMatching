@@ -22,41 +22,73 @@ import scala.io.Source
 
 object ScriptMain extends App with StrictLogging{
 
-  //stats about wildcard overlap:
+  //get bcnf tables:
   IOService.socrataDir = args(0)
-  val subdomain = args(1)
-  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
-  val subdomainIds = subDomainInfo(subdomain)
-        .map(_.id)
-        .toIndexedSeq
-  val schemata = subdomainIds.map(id => TemporalSchema.load(id))
-  val allAttributes = schemata.flatMap(s => s.attributes.map(al => (s.id,al)))
-  var nonCoveredAttributeIDs = mutable.HashSet() ++ allAttributes.map(t => (t._1,t._2.attrId)).toSet
-  val chosenTimestamps = mutable.ArrayBuffer[LocalDate]()
-  val timerange = IOService.STANDARD_TIME_RANGE
-  while(chosenTimestamps.size<=100 && !nonCoveredAttributeIDs.isEmpty){
-    val chosen = getNextMostDiscriminatingTimestamp
-    chosenTimestamps += chosen
-  }
-  println(chosenTimestamps)
-  println(chosenTimestamps.sortBy(_.toEpochDay))
+    val subdomain = args(1)
+    val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+    val subdomainIds = subDomainInfo(subdomain)
+      .map(_.id)
+      .toIndexedSeq
+  //next filter:
 
-  private def getNextMostDiscriminatingTimestamp = {
-    val byTimestamp = timerange
-      .withFilter(!chosenTimestamps.contains(_))
-      .map(t => {
-        val (isNonWildCard, isWildCard) = allAttributes
-          .filter(al => nonCoveredAttributeIDs.contains((al._1,al._2.attrId)))
-          .partition(al => al._2.valueAt(t)._2.exists)
-        (t, isNonWildCard, isWildCard)
-      })
-    val bestNextTs = byTimestamp.sortBy(-_._2.size)
-      .head
-    val nowCovered = bestNextTs._2.map(al => (al._1, al._2.attrId)).toSet
-    nonCoveredAttributeIDs = nonCoveredAttributeIDs.diff(nowCovered)
-    println(s"${bestNextTs._1} covers ${bestNextTs._2.size} new attributes leaving ${bestNextTs._3.size} still open")
-    bestNextTs._1
-  }
+  val fullyDecomposed = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain,subdomainIds.toSet)
+
+  println(subdomainIds.size)
+  println(fullyDecomposed.size)
+  //print bcnf tables:
+//  IOService.socrataDir = args(0)
+//  val subdomain = args(1)
+//  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+//  val subdomainIds = subDomainInfo(subdomain)
+//    .map(_.id)
+//    .toIndexedSeq
+//  private val dtts = subdomainIds
+//    .filter(id => DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
+//    .flatMap(id => DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id))
+//  val byPKANdAttrSize = dtts
+//    .sortBy(dtt => (dtt.primaryKey.size,dtt.nonKeyAttributeLineages.size))
+//  val byViewID = dtts
+//    .sortBy(dtt => (dtt.id.viewID,dtt.id.bcnfID))
+//
+//  byViewID.map(dtt => dtt.getSchemaString)
+//    .foreach(println(_))
+
+
+  //stats about wildcard overlap:
+//  IOService.socrataDir = args(0)
+//  val subdomain = args(1)
+//  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+//  val subdomainIds = subDomainInfo(subdomain)
+//        .map(_.id)
+//        .toIndexedSeq
+//  val schemata = subdomainIds.map(id => TemporalSchema.load(id))
+//  val allAttributes = schemata.flatMap(s => s.attributes.map(al => (s.id,al)))
+//  var nonCoveredAttributeIDs = mutable.HashSet() ++ allAttributes.map(t => (t._1,t._2.attrId)).toSet
+//  val chosenTimestamps = mutable.ArrayBuffer[LocalDate]()
+//  val timerange = IOService.STANDARD_TIME_RANGE
+//  while(chosenTimestamps.size<=100 && !nonCoveredAttributeIDs.isEmpty){
+//    val chosen = getNextMostDiscriminatingTimestamp
+//    chosenTimestamps += chosen
+//  }
+//  println(chosenTimestamps)
+//  println(chosenTimestamps.sortBy(_.toEpochDay))
+//
+//  private def getNextMostDiscriminatingTimestamp = {
+//    val byTimestamp = timerange
+//      .withFilter(!chosenTimestamps.contains(_))
+//      .map(t => {
+//        val (isNonWildCard, isWildCard) = allAttributes
+//          .filter(al => nonCoveredAttributeIDs.contains((al._1,al._2.attrId)))
+//          .partition(al => al._2.valueAt(t)._2.exists)
+//        (t, isNonWildCard, isWildCard)
+//      })
+//    val bestNextTs = byTimestamp.sortBy(-_._2.size)
+//      .head
+//    val nowCovered = bestNextTs._2.map(al => (al._1, al._2.attrId)).toSet
+//    nonCoveredAttributeIDs = nonCoveredAttributeIDs.diff(nowCovered)
+//    println(s"${bestNextTs._1} covers ${bestNextTs._2.size} new attributes leaving ${bestNextTs._3.size} still open")
+//    bestNextTs._1
+//  }
 
 
   //stats about schema overlap

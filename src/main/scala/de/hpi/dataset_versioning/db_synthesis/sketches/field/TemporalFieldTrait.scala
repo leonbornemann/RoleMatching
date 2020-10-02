@@ -8,6 +8,10 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
+
+  def nonWildCardValues:Iterable[T]
+
+
   def tryMergeWithConsistent[V <: TemporalFieldTrait[T]](y: V): Option[V]
 
 

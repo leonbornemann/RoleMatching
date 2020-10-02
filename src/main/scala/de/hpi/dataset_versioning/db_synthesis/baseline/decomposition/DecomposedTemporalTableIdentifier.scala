@@ -10,7 +10,10 @@ case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnf
 object DecomposedTemporalTableIdentifier {
   def fromFilename(fileName: String) = {
     val tokens1 = fileName.split("\\.")
-    val viewIDIndex = tokens1.zipWithIndex.filter(t => t._1.size==9 && t._1.charAt(4)=='-').head._2
+    val viewIDs = tokens1.zipWithIndex.filter(t => t._1.size == 9 && t._1.charAt(4) == '-')
+    if(viewIDs.size==0)
+      println()
+    val viewIDIndex = viewIDs.head._2
     val subdomain = tokens1.slice(0,viewIDIndex).reduce(_ + "." + _)//tokens1(0) //can contain dots
     val viewID = tokens1(viewIDIndex)
     if(tokens1(viewIDIndex+1).contains("_")){

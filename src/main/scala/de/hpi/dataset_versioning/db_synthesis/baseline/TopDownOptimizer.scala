@@ -9,29 +9,29 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.table.SynthesizedTemporal
 
 import scala.collection.mutable
 
-class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],nChangesInAssociations:Long,tracker:Option[ViewQueryTracker] = None) extends StrictLogging{
-  println(s"initilized with:")
-  associations.map(_.informativeTableName).sorted.foreach(println(_))
+class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],
+                       nChangesInAssociations:Long,
+                       val extraBCNFTablesWithNoAssociations:Set[DecomposedTemporalTable],
+                       extraNonDecomposedViewTableChanges:Map[String,Long],
+                       tracker:Option[ViewQueryTracker] = None) extends StrictLogging{
+//  println(s"initilized with:")
+//  associations.map(_.informativeTableName).sorted.foreach(println(_))
   assert(associations.forall(_.isAssociation))
   private val allAssociationSketches = mutable.HashSet() ++ associations.map(dtt => SynthesizedTemporalDatabaseTableSketch.initFrom(dtt))
-//  Useful Debug statement but too expensive in full run (needs to load all tables)
-  associations.foreach(as => {
-    val table = SynthesizedTemporalDatabaseTable.initFrom(as)
-    logger.debug(table.informativeTableName)
-    table.printTable
-    println("Heuristic:")
-    val sketch = allAssociationSketches.filter(_.unionedTables.contains(as.id)).head
-    logger.debug(sketch.informativeTableName)
-    sketch.printTable
-  })
-  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,allAssociationSketches,nChangesInAssociations,tracker)
-  private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
-  //for debugging:
-  println()
-  val a = synthesizedDatabase.loadSynthesizedTable(allAssociationSketches.filter(_.getID.contains("Normal")).head)
-  val b = synthesizedDatabase.loadSynthesizedTable(allAssociationSketches.filter(_.getID.contains("Split")).head)
-  val res = new DataBasedMatchCalculator().calculateMatch[Any](a,b)
 
+  //  Useful Debug statement but too expensive in full run (needs to load all tables)
+//  associations.foreach(as => {
+//    val table = SynthesizedTemporalDatabaseTable.initFrom(as)
+//    logger.debug(table.informativeTableName)
+//    table.printTable
+//    println("Heuristic:")
+//    val sketch = allAssociationSketches.filter(_.unionedTables.contains(as.id)).head
+//    logger.debug(sketch.informativeTableName)
+//    sketch.printTable
+//  })
+
+  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,nChangesInAssociations,extraNonDecomposedViewTableChanges,extraBCNFTablesWithNoAssociations,tracker)
+  private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
 
   def executeMatch(bestMatch: TableUnionMatch[Int]) :(Option[SynthesizedTemporalDatabaseTable],SynthesizedTemporalDatabaseTableSketch) = {
     //load the actual table

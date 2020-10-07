@@ -10,6 +10,8 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
 trait TemporalDatabaseTableTrait[A] {
 
+  def insertTime:LocalDate
+
   def getTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[A]]
 
   def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean
@@ -19,7 +21,6 @@ trait TemporalDatabaseTableTrait[A] {
   def isAssociation: Boolean = nonKeyAttributeLineages.size == 1
 
   def isTrueUnion = getUnionedTables.size > 1
-
 
   def primaryKeyIsValid: Boolean
 

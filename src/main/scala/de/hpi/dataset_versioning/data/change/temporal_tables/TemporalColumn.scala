@@ -14,6 +14,10 @@ import scala.collection.mutable
 class TemporalColumn(val id: String,
                      val attributeLineage:AttributeLineage,
                      val lineages: collection.IndexedSeq[EntityFieldLineage]) extends TemporalColumnTrait[Any]{
+  def cardinality = {
+    lineages.map(_.lineage.getValueLineage).toSet.size
+  }
+
 
   def attrId = attributeLineage.attrId
 

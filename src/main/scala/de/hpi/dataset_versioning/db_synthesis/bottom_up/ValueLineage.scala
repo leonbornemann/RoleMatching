@@ -30,14 +30,6 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
 
   override def toString: String = "[" + lineage.values.mkString("|") + "]"
 
-  override def changeCount: Int = {
-    if(GLOBAL_CONFIG.COUNT_DATASET_AND_COLUMN_DELETES_AS_CHANGES)
-      lineage.size
-    else {
-      lineage.filter(v => !isWildcard(v._2)).size
-    }
-  }
-
   override def firstTimestamp: LocalDate = lineage.firstKey
 
   override def lastTimestamp: LocalDate = lineage.lastKey
@@ -68,6 +60,7 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
   override def fromTimestampToValue[V <: TemporalFieldTrait[Any]](asTree: mutable.TreeMap[LocalDate, Any]): V = ValueLineage(asTree).asInstanceOf[V]
 
   override def nonWildCardValues: Iterable[Any] = getValueLineage.values.filter(!isWildcard(_))
+
 }
 object ValueLineage{
 

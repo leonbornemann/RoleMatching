@@ -27,6 +27,12 @@ case class DatasetInfo(subdomain:String,id:String,numChanges:Int,numDeletes:Int,
 
 object DatasetInfo {
 
+  def getViewIdsInSubdomain(subdomain:String) = {
+    readDatasetInfoBySubDomain(subdomain)
+      .map(_.id)
+      .toIndexedSeq
+  }
+
   def date(str: String): Option[LocalDate] = {
     try {
       Some(LocalDate.parse(str, IOService.dateTimeFormatter))

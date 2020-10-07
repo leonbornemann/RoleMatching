@@ -15,6 +15,7 @@ import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.DatasetMetadata
 import de.hpi.dataset_versioning.data.parser.JsonDataParser
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import org.joda.time.Days
 
 import scala.sys.process._
@@ -24,6 +25,19 @@ import scala.reflect.io.Directory
 import scala.language.postfixOps
 
 object IOService extends StrictLogging{
+  def getTemporalTableBinaryFile(id: String, dttID: Option[DecomposedTemporalTableIdentifier]) = {
+    if(!dttID.isDefined)
+      createParentDirs(new File(s"$TEMPORAL_VIEW_TABLE_BINARY_DIR/$id.binary"))
+    else
+      createParentDirs(new File(s"$TEMPORAL_DECOMPOSED_TABLE_BINARY_DIR/${dttID.get.compositeID}"))
+  }
+
+  def createParentDirs(f:File) = {
+    val parent = f.getParentFile
+    parent.mkdirs()
+    f
+  }
+
   def STANDARD_TIME_RANGE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay).map(LocalDate.ofEpochDay(_))
 
 
@@ -118,6 +132,8 @@ object IOService extends StrictLogging{
   def EXPORT_DIR = socrataDir + "/export_join_candidate/"
   def SIMPLIFIED_UNCOMPRESSED_DATA_DIR = WORKING_DIR + "/simplifiedData/"
   def CHANGE_DIR = WORKING_DIR + "/changes/"
+  def TEMPORAL_VIEW_TABLE_BINARY_DIR = WORKING_DIR + "/temporalViewTables/"
+  def TEMPORAL_DECOMPOSED_TABLE_BINARY_DIR = WORKING_DIR + "temporalDecomposedTables/"
   def TEMPORAL_COLUMN_DIR = WORKING_DIR + "/temporalColumns/"
 
   def getUncompressedDiffDir(date: LocalDate) = createAndReturn(new File(DIFF_DIR_UNCOMPRESSED + date.format(dateTimeFormatter) + "_diff"))

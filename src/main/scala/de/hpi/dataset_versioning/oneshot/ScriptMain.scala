@@ -1,6 +1,6 @@
 package de.hpi.dataset_versioning.oneshot
 
-import java.io.{File, FileReader}
+import java.io.{File, FileReader, PrintWriter}
 import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
@@ -11,6 +11,8 @@ import de.hpi.dataset_versioning.data.matching.ColumnMatchingRefinement
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
+import de.hpi.dataset_versioning.db_synthesis.baseline.DetailedBCNFChangeCounting.subdomain
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{GLOBAL_CONFIG, InitialInsertIgnoreFieldChangeCounter, NormalFieldChangeCounter, PKIgnoreChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd.FunctionalDependencySet
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnSketch
@@ -23,36 +25,106 @@ import scala.io.Source
 object ScriptMain extends App with StrictLogging{
 
   //get bcnf tables:
-  IOService.socrataDir = args(0)
-    val subdomain = args(1)
-    val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
-    val subdomainIds = subDomainInfo(subdomain)
-      .map(_.id)
-      .toIndexedSeq
-  //next filter:
-
-  val fullyDecomposed = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain,subdomainIds.toSet)
-
-  println(subdomainIds.size)
-  println(fullyDecomposed.size)
-  //print bcnf tables:
 //  IOService.socrataDir = args(0)
-//  val subdomain = args(1)
-//  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
-//  val subdomainIds = subDomainInfo(subdomain)
-//    .map(_.id)
-//    .toIndexedSeq
-//  private val dtts = subdomainIds
-//    .filter(id => DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
-//    .flatMap(id => DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id))
-//  val byPKANdAttrSize = dtts
-//    .sortBy(dtt => (dtt.primaryKey.size,dtt.nonKeyAttributeLineages.size))
-//  val byViewID = dtts
-//    .sortBy(dtt => (dtt.id.viewID,dtt.id.bcnfID))
+//    val subdomain = args(1)
+//    val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+//    val subdomainIds = subDomainInfo(subdomain)
+//      .map(_.id)
+//      .toIndexedSeq
+//  //next filter:
 //
-//  byViewID.map(dtt => dtt.getSchemaString)
-//    .foreach(println(_))
+//  val fullyDecomposed = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain,subdomainIds)
+//
+//  println(subdomainIds.size)
+//  println(fullyDecomposed.size)
+  //print bcnf tables:
 
+  IOService.socrataDir = args(0)
+  val subdomain = args(1)
+  val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
+  val subdomainIds = subDomainInfo(subdomain)
+    .map(_.id)
+    .toIndexedSeq
+  val counterNormal = new NormalFieldChangeCounter()
+  val counterWithOutInitialInsert = new InitialInsertIgnoreFieldChangeCounter()
+  val pkIgnoreCounter = new PKIgnoreChangeCounter(counterWithOutInitialInsert)
+  val counters = Seq(counterNormal,counterWithOutInitialInsert,pkIgnoreCounter)
+  val idsWithDecomposedTables = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain, subdomainIds)
+  val resFileWriter = new PrintWriter("bcnfBetter.txt")
+  private val idsToProcess = idsWithDecomposedTables
+    .sorted
+  for(id <- idsToProcess){
+    val tt = TemporalTable.load(id)
+    val dtts = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id)
+      .sortBy(_.id.bcnfID)
+    val allBCNFTables = dtts
+      .map(dtt => tt.project(dtt).projection)
+    val ttKeyCols = dtts.flatMap(_.primaryKey.map(_.attrId)).toSet
+    val colsInOriginal = tt.getTemporalColumns()
+    val insertTime = tt.insertTime
+    val nrowView = tt.rows.size
+    val nrowBCNF = allBCNFTables.map(_.rows.size).sum
+    val nFieldView = tt.attributes.size*tt.rows.size
+    val nFieldBCNF = allBCNFTables.map(dtt => dtt.attributes.size*dtt.rows.size).sum
+    resFileWriter.println(tt.id)
+    println(tt.id)
+    resFileWriter.print(s"Original View: ")
+    print(s"Original View: ")
+    val kvPairs:Seq[(String,Long)] = Seq(("nrow",tt.rows.size.toLong)) ++ counters.map(c => (c.name,c.countChanges(tt,ttKeyCols)))
+    printKvPairs(kvPairs)
+    printKvPairsToSTDOUT(kvPairs)
+    val bcnfResults = allBCNFTables.map(bcnf => {
+      val schemaString = bcnf.dtt.get.getSchemaString
+      val bcnfKVPairs = Seq(("nrow",bcnf.rows.size.toLong)) ++ counters.map(c => (c.name,c.countChanges(bcnf,ttKeyCols)))
+      (schemaString,bcnfKVPairs)
+    })
+    val bcnfAggregatedKvPairs = bcnfResults.map(_._2).reduce((a,b) => {
+      val res = a.zip(b).map{t => {
+        val (s:String,l1) = t._1
+        val (s2:String,l2) = t._2
+        val newString:String = s
+        val newSum:Long = (l1+l2).toLong
+        val smallRes = (newString,newSum)
+        smallRes
+      }}
+      res
+    })
+    resFileWriter.print("BCNF Aggregated: ")
+    print("BCNF Aggregated: ")
+    printKvPairs(bcnfAggregatedKvPairs)
+    printKvPairsToSTDOUT(bcnfAggregatedKvPairs)
+    bcnfResults.foreach{case (schemaString,bcnfKVPairs) => {
+      resFileWriter.print(schemaString)
+      printKvPairs(bcnfKVPairs)
+      print(schemaString)
+      printKvPairsToSTDOUT(bcnfKVPairs)
+    }}
+    resFileWriter.println()
+    println()
+//    if(bcnfAggregatedKvPairs.toMap.get("#c_noKey&NoInsert").get > kvPairs.toMap.get("#c_noKey&NoInsert").get) {
+//      val colsToCheck = tt.attributes.filter(a => !ttKeyCols.contains(a.attrId)).map(_.attrId)
+//      val ttInsertTime = tt.insertTime
+//      val allCOls = tt.getTemporalColumns().map(tc => pkIgnoreCounter.countColumnChanges(tc,ttInsertTime,ttKeyCols.contains(tc.attrID))).sum
+//      val tableCount = pkIgnoreCounter.countChanges(tt,ttKeyCols)
+//      println()
+//      colsToCheck.foreach(c => {
+//        val tc = tt.getTemporalColumns().filter(_.attrID==c).head
+//        val countTT = pkIgnoreCounter.countColumnChanges(tc,ttInsertTime,false)
+//        //BCNF tables:
+//        val bcnfTables = allBCNFTables.filter(_.attributes.map(_.attrId).contains(c))
+//        if(bcnfTables.size!=1){
+//          println()
+//        }
+//        assert(bcnfTables.size==1)
+//      })
+//      println(tt.id)
+//      assert(false)
+//    }
+//      val string = s"$id,${tt.attributes.size},$changesTTNoInsert,$changesBCNF,$nrowView,$nrowBCNF,$nFieldView,$nFieldBCNF"
+//      println(string)
+//      res.println(string)
+  }
+  resFileWriter.close()
 
   //stats about wildcard overlap:
 //  IOService.socrataDir = args(0)
@@ -130,6 +202,18 @@ object ScriptMain extends App with StrictLogging{
 //    TemporalColumnSketch.loadAll(id,Variant2Sketch.getVariantName)
 //  })
 //  println(a.size)
+
+  private def printKvPairs(kvPairs: Seq[(String, Any)]) = {
+    resFileWriter.println(toPrintString(kvPairs))
+  }
+
+  private def toPrintString(kvPairs: Seq[(String, Any)]) = {
+    "   {" + kvPairs.map(t => t._1 + ":" + t._2).mkString(", ") + "}"
+  }
+
+  private def printKvPairsToSTDOUT(kvPairs: Seq[(String, Any)]) = {
+    println(toPrintString(kvPairs))
+  }
 
   println()
   //hash sketch size calculations:

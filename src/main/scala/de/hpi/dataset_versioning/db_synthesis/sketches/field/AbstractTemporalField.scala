@@ -4,12 +4,17 @@ import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.FieldChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 
 import scala.collection.mutable
 
 @SerialVersionUID(3L)
 abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
+
+  override def countChanges(viewInsertTime:LocalDate,changeCounter: FieldChangeCounter): Int = {
+    changeCounter.countFieldChanges(viewInsertTime,this)
+  }
 
   override def toIntervalRepresentation:mutable.TreeMap[TimeInterval,A] = {
     val asLineage = getValueLineage.toIndexedSeq

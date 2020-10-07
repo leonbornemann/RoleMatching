@@ -4,31 +4,42 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.{ChangeCube, ReservedChangeValues}
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{InitialInsertIgnoreFieldChangeCounter, TableChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable}
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnSketch
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.DecomposedTemporalTableSketch
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable
 
+@SerialVersionUID(3L)
 class TemporalTable(val id:String,
                     val attributes:collection.IndexedSeq[AttributeLineage],
                     val rows:collection.IndexedSeq[TemporalRow],
-                    val dttID:Option[DecomposedTemporalTable] = None){
-  def numChanges: Int = {
-    rows.flatMap(tr => tr.fields.map(_.lineage.size)).sum
+                    val dtt:Option[DecomposedTemporalTable] = None) extends Serializable with BinarySerializable{
+  def tableSchemaString = id + "(" + attributes.map(_.lastName).mkString(",")+")"
+
+  def insertTime = rows.flatMap(r => r.fields.flatMap(vl => vl.lineage).filter(t => !ValueLineage.isWildcard(t._2)).map(_._1)).minBy(_.toEpochDay)
+
+  def countChanges(changeCounter: TableChangeCounter, pkSet:Set[Int]): Long = {
+    changeCounter.countChanges(this,pkSet)
   }
 
+  def serializeToStandardBinaryFile() = {
+    val file = IOService.getTemporalTableBinaryFile(id,if(dtt.isDefined) Some(dtt.get.id) else None)
+    writeToBinaryFile(file)
+  }
 
-  def isProjection = dttID.isDefined
+  def isProjection = dtt.isDefined
 
   def writeTableSketch(primaryKey:Set[Int]) = {
     assert(isProjection)
     val tcs = getTemporalColumns()
     val firstEntityIds = tcs.head.lineages.map(_.entityID)
     assert(tcs.forall(tc => tc.lineages.map(_.entityID)==firstEntityIds))
-    val dttSketch = new DecomposedTemporalTableSketch(dttID.get.id,primaryKey,mutable.HashSet(),tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
+    val dttSketch = new DecomposedTemporalTableSketch(dtt.get.id,primaryKey,mutable.HashSet(),tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
     dttSketch.writeToStandardFile()
   }
 
@@ -121,7 +132,7 @@ class TemporalTable(val id:String,
 
 }
 
-object TemporalTable extends StrictLogging{
+object TemporalTable extends StrictLogging with BinaryReadable[TemporalTable]{
 
   val cache = mutable.HashMap[String,TemporalTable]()
 
@@ -129,8 +140,22 @@ object TemporalTable extends StrictLogging{
     cache.getOrElseUpdate(originalID,load(originalID))
   }
 
-  def load(id: String) = from(ChangeCube.load(id))
+  def load(id: String) = {
+    //this turned out to be not worth it - json is actually faster
+//    if(!IOService.getTemporalTableBinaryFile(id,None).exists()) {
+//      val result = from(ChangeCube.load(id))
+//      result.serializeToStandardBinaryFile()
+//      result
+//    }
+//    else {
+//      loadFromFile(IOService.getTemporalTableBinaryFile(id,None))
+//    }
+    loadFromChangeCube(id)
+  }
 
+  def loadFromChangeCube(id:String) = {
+    from(ChangeCube.load(id))
+  }
 
   def from(cube: ChangeCube) = {
     //TODO: column order in temporal table - we can do better if we have to (?)

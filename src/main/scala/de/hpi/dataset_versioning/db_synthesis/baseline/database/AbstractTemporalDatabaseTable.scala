@@ -1,8 +1,10 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{FieldChangeCounter, InitialInsertIgnoreFieldChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{TableUnionMatch, TupleMatching}
+import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.util.TableFormatter
@@ -12,6 +14,17 @@ import scala.collection.mutable.ArrayBuffer
 
 @SerialVersionUID(3L)
 abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSet[DecomposedTemporalTableIdentifier]) extends TemporalDatabaseTableTrait[A] with Serializable{
+
+  def insertTime = columns
+    .flatMap(c => c.fieldLineages
+      .flatMap(vl => vl.getValueLineage)
+      .filter(t => !ValueLineage.isWildcard(t._2))
+      .map(_._1))
+    .minBy(_.toEpochDay)
+
+  def countChanges(changeCounter: FieldChangeCounter): Long = {
+    changeCounter.countChanges(this)
+  }
 
   override def primaryKeyIsValid: Boolean = {
     val pkCOlumns = columns.filter(c => primaryKey.contains(c.attributeLineage)).toIndexedSeq.sortBy(_.attributeLineage.attrId)

@@ -1,5 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.sketches.field
 
+import java.lang.AssertionError
 import java.nio.{ByteBuffer, ByteOrder}
 import java.time.LocalDate
 
@@ -114,19 +115,6 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
 
   override def firstTimestamp: LocalDate = byteToTimestamp(data(0))
 
-  override def changeCount: Int = {
-    if(GLOBAL_CONFIG.COUNT_DATASET_AND_COLUMN_DELETES_AS_CHANGES) {
-      numEntries
-    } else{
-      var nonWildCardCount = 0
-      for(i <- 0 until numEntries){
-        val value = getIthValueAsInt(i)
-        if(value != WILDCARD) nonWildCardCount+=1
-      }
-      nonWildCardCount
-    }
-  }
-
   //override def valuesAt(timeToExtract: TimeIntervalSequence): Map[TimeInterval, Int] = hashValuesAt(timeToExtract)
 
   //override def hashValuesAt(timeToExtract: TimeIntervalSequence): Map[TimeInterval, Int] = ???
@@ -161,6 +149,8 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
 
 object Variant2Sketch {
   def fromTimestampToHash(asTree: mutable.TreeMap[LocalDate, Int]) = {
+    if(asTree.isEmpty)
+      throw new AssertionError("not allowed to create empty lineages")
     val bytes = asTree.flatMap{case (k,v) => Seq(timestampToByteRepresentation(k)) ++ intToByteArray(v)}.toArray
     new Variant2Sketch(bytes)
   }
@@ -232,6 +222,9 @@ object Variant2Sketch {
   val byteToTimestamp = timestampToByteRepresentation.map(t => (t._2,t._1))
 
   def fromValueLineage(vl:ValueLineage) = {
+    if(vl.lineage.isEmpty){
+      throw new AssertionError("not allowed to create empty lineages")
+    }
     val byteArray = vl.lineage
       .flatMap{case (ts,v) => Seq(timestampToByteRepresentation(ts)) ++ HASH_FUNCTION_STANDARD(v)}
       .toArray

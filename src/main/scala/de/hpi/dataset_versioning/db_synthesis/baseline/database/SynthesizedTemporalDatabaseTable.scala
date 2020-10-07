@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables._
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.InitialInsertIgnoreFieldChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
@@ -25,9 +26,6 @@ class SynthesizedTemporalDatabaseTable(val id:String,
   extends AbstractTemporalDatabaseTable[Any](unionedTables) with StrictLogging with BinarySerializable{
 
   def tracksEntityMapping: Boolean = true
-
-  def numChanges = rows.map(tr => tr.fields.map(_.changeCount).sum).sum
-
 
   def writeToStandardTemporaryFile() = {
     val f = DBSynthesis_IOService.getSynthesizedTableTempFile(uniqueSynthTableID)
@@ -157,7 +155,7 @@ object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTempor
     val newRows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
     tt.projection.rows.foreach(tr => {
       val projectedTemporalRow = tr.asInstanceOf[ProjectedTemporalRow]
-      val originalIds = mutable.HashMap[DecomposedTemporalTableIdentifier,Long](tt.projection.dttID.get.id -> tr.entityID)
+      val originalIds = mutable.HashMap[DecomposedTemporalTableIdentifier,Long](tt.projection.dtt.get.id -> tr.entityID)
       val toViewIds = mutable.HashMap[String,mutable.HashSet[Long]](tt.original.id -> (mutable.HashSet() ++ projectedTemporalRow.mappedEntityIds))
       newRows.addOne(new SynthesizedTemporalRow(curEntityID,tr.fields,originalIds,toViewIds))
       entityIDMatchingSynthesizedToOriginal.put(curEntityID,tr.entityID)
@@ -165,7 +163,7 @@ object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTempor
     })
     val attributeTrackingSynthesizedToDTT = mutable.HashMap() ++ synthesizedSchema.map(al => {
       val map = mutable.HashMap[DecomposedTemporalTableIdentifier,mutable.HashSet[Int]]()
-      map.put(tt.projection.dttID.get.id,mutable.HashSet(al.attrId))
+      map.put(tt.projection.dtt.get.id,mutable.HashSet(al.attrId))
       (al,map)
     }).toMap
     val synthTable = new SynthesizedTemporalDatabaseTable(dttToMerge.compositeID,

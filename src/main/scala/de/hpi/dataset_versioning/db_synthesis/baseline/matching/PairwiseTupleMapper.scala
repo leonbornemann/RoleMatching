@@ -2,6 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.LayeredTupleIndex
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
@@ -12,6 +13,9 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
 
   val aColsByID = tableA.columns.map(c => (c.attrID,c)).toMap
   val bColsByID = tableB.columns.map(c => (c.attrID,c)).toMap
+  val insertTimeA = tableA.insertTime
+  val insertTimeB = tableB.insertTime
+  val mergedInsertTime = Seq(tableA.insertTime,tableB.insertTime).min
 
   if(tableA.informativeTableName.contains("B.1_0") && tableB.informativeTableName.contains("D.0_1")){
     println()
@@ -82,9 +86,9 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
           //illegalMatch - we do nothing
         } else{
           val mergedTuple = mergedTupleOptions.map(_.get)
-          val sizeAfterMerge = mergedTuple.map(_.changeCount).reduce(_+_)
-          val sizeBeforeMergeA = originalTupleA.map(_.changeCount).reduce(_+_)
-          val sizeBeforeMergeB = originalTupleB.map(_.changeCount).reduce(_+_)
+          val sizeAfterMerge = mergedTuple.map(_.countChanges(mergedInsertTime,GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).sum
+          val sizeBeforeMergeA = originalTupleA.map(_.countChanges(insertTimeA,GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).sum
+          val sizeBeforeMergeB = originalTupleB.map(_.countChanges(insertTimeB,GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).sum
           val curScore = sizeBeforeMergeA+sizeBeforeMergeB-sizeAfterMerge
           if(curScore>bestMatchScore){
             bestMatchScore = curScore

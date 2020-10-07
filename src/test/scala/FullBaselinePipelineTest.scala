@@ -3,6 +3,7 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.ChangeExporter
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.TopDownOptimizer
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedTemporalDatabaseTable, SynthesizedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
@@ -156,7 +157,10 @@ object FullBaselinePipelineTest extends App {
       dttAssocaition.containedAttrLineages, dttAssocaition.primaryKey, dttAssocaition.primaryKeyByVersion, mutable.HashSet[DecomposedTemporalTableIdentifier]())
   }
 
-  val nChangesInDecomposedTemporalTables = temporallyDecomposedTables.map(dtt => SynthesizedTemporalDatabaseTable.initFrom(dtt).numChanges.toLong).reduce(_ + _)
+  val nChangesInDecomposedTemporalTables = temporallyDecomposedTables
+    .map(dtt => SynthesizedTemporalDatabaseTable
+      .initFrom(dtt)
+      .countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).reduce(_ + _)
   val topDownOptimizer = new TopDownOptimizer(temporallyDecomposedTables,nChangesInDecomposedTemporalTables,Set(),Map())
   val db = topDownOptimizer.optimize()
 

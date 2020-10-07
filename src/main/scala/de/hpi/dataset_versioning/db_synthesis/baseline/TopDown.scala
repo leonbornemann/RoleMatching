@@ -12,6 +12,7 @@ import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.Attribute
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{GLOBAL_CONFIG, InitialInsertIgnoreFieldChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.SynthesizedTemporalDatabaseTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTable, DecomposedTemporalTable, TemporalTableDecomposer}
 import de.hpi.dataset_versioning.db_synthesis.database.query_tracking.ViewQueryTracker
@@ -21,7 +22,9 @@ import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
-class TopDown(subdomain:String) extends StrictLogging{
+class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogging{
+
+  val changeCounters = Seq(new InitialInsertIgnoreFieldChangeCounter())
 
   def synthesizeDatabase(countChangesForAllSteps:Boolean = true):Unit = {
     val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
@@ -51,20 +54,33 @@ class TopDown(subdomain:String) extends StrictLogging{
 
   def synthesizeDatabase(ids: IndexedSeq[String], countChangesForAllSteps: Boolean):Unit = {
     val uidToViewChanges:mutable.HashMap[String,ChangeStats] = mutable.HashMap()
-    val (idsWithDecomposedTables,idsWithFailedDecomposition) = ids.partition(id => DBSynthesis_IOService.getDecomposedTemporalTableDir(subdomain, id).exists())
+    val idsWithDecomposedTables = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain,ids)
+      .filter(!idsToIgnore.contains(_))
+    if(countChangesForAllSteps){
+      val nonDecomposed = ids.diff(idsWithDecomposedTables)
+      var nChanges:Long = 0
+      nonDecomposed.foreach(id => {
+        nChanges += TemporalTable.load(id).countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD,Set())
+      })
+      logger.debug(s"nCHanges of non-decomposed tables: $nChanges")
+    }
     val allAssociations:mutable.ArrayBuffer[DecomposedTemporalTable] = mutable.ArrayBuffer()
     val extraNonDecomposedViewTableChanges = mutable.HashMap[String,Long]()
     val extraBCNFDtts = mutable.HashSet[DecomposedTemporalTable]()
-    ids.foreach(id => {
+    idsWithDecomposedTables.foreach(id => {
       var associations:Array[DecomposedTemporalTable] = null
       var tt:TemporalTable = null
       if(DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain,id)) {
         associations = DecomposedTemporalTable.loadAllAssociations(subdomain, id)
         allAssociations ++= associations
-        if(tt==null)
-          tt = TemporalTable.load(id)
-        writeSketchesIfNotPresent(associations,tt)
-        //TODO: check if there are dtts that have no associations
+        //write sketches if not present:
+        associations.foreach(a => {
+          if(!DBSynthesis_IOService.getDecomposedTemporalTableSketchFile(a.id,Variant2Sketch.getVariantName).exists()) {
+            if(tt==null)
+              tt = TemporalTable.load(id)
+            tt.project(a).projection.writeTableSketch(a.primaryKey.map(_.attrId))
+          }
+        })
         val allDtts = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
         val associationByBCNFID = associations.groupBy(_.id.bcnfID)
         allDtts.foreach(dtt => {
@@ -72,10 +88,10 @@ class TopDown(subdomain:String) extends StrictLogging{
             extraBCNFDtts.add(dtt)
           }
         })
-      } else if(!DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain,id)){
+      } else if(!DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain,id) && countChangesForAllSteps){
         if(tt==null)
           tt = TemporalTable.load(id)
-        extraNonDecomposedViewTableChanges.put(id,tt.numChanges)
+        extraNonDecomposedViewTableChanges.put(id,tt.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD,Set()))
       }
       if(countChangesForAllSteps) {
         if(tt==null)
@@ -86,29 +102,34 @@ class TopDown(subdomain:String) extends StrictLogging{
           logger.debug(s"no decomposed Temporal tables found for $id, skipping this")
         } else {
           val dtts = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id)
-          bcnfChangeCount = Some(dtts.map(dtt => SynthesizedTemporalDatabaseTable.initFrom(dtt, tt).numChanges.toLong).reduce(_ + _))
+          bcnfChangeCount = Some(dtts.map(dtt => SynthesizedTemporalDatabaseTable.initFrom(dtt, tt).countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).reduce(_ + _))
         }
         if(!DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain, id)) {
           logger.debug(s"no decomposed Temporal associations found for $id, skipping this")
         } else{
-          associationChangeCount = Some(associations.map(a => SynthesizedTemporalDatabaseTable.initFrom(a, tt).numChanges.toLong).reduce(_ + _))
+          associationChangeCount = Some(associations.map(a => SynthesizedTemporalDatabaseTable.initFrom(a, tt).countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).reduce(_ + _))
         }
-        uidToViewChanges.put(id, ChangeStats(tt.numChanges, bcnfChangeCount, associationChangeCount))
+        uidToViewChanges.put(id, ChangeStats(tt.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD,Set()), bcnfChangeCount, associationChangeCount))
       }
     })
     if (countChangesForAllSteps) {
+      logger.debug(s"extra Non-decomposed temporal table changes (should be zero): ${extraNonDecomposedViewTableChanges.values.sum}")
       val nChangesInViewSet = uidToViewChanges.values.map(_.nChangesInView).reduce(_ + _)
-      logger.debug(s"number of changes in original view set: $nChangesInViewSet")
+      logger.debug(s"number of changes in view set, where normalization result exists: $nChangesInViewSet")
       val nChangesInBCNFTables = uidToViewChanges.values.filter(_.nChangesInBCNFTables.isDefined).map(_.nChangesInBCNFTables.get).reduce(_ + _)
       logger.debug(s"number of changes in BCNF tables: $nChangesInBCNFTables")
       logger.debug(s"total number of changes in this step: ${nChangesInBCNFTables+extraNonDecomposedViewTableChanges.values.sum}")
       val nChangesInAssociations = uidToViewChanges.values.filter(_.nChangesInAssociationTables.isDefined).map(_.nChangesInAssociationTables.get).reduce(_ + _)
       logger.debug(s"number of changes in associations: $nChangesInAssociations")
+      logger.debug(s"extra changes for BCNF tables with no associations: ${uidToViewChanges.filter(cs => cs._2.nChangesInAssociationTables.isEmpty && cs._2.nChangesInBCNFTables.isDefined)
+      .map(_._2.nChangesInBCNFTables.get).sum}")
       //logger.debug(s"total number of changes in this step: ${nChangesInAssociations+numberOfChangesInTablesWithNoDTTORAssociation}")
     }
     val queryTracker = new ViewQueryTracker(idsWithDecomposedTables)
     assert(countChangesForAllSteps)
-    val nChangesInAssociations = uidToViewChanges.values.filter(_.nChangesInAssociationTables.isDefined).map(_.nChangesInAssociationTables.get).reduce(_ + _)
+    val nChangesInAssociations = if(countChangesForAllSteps) uidToViewChanges.values.filter(_.nChangesInAssociationTables.isDefined).map(_.nChangesInAssociationTables.get).reduce(_ + _) else -1
+    if(!countChangesForAllSteps)
+      logger.warn("Not counting all changes, thus initializing topdown optimizer with a dummy initial change value")
     val topDownOptimizer = new TopDownOptimizer(allAssociations.toIndexedSeq,
       nChangesInAssociations,
       extraBCNFDtts.toSet,
@@ -128,4 +149,7 @@ class TopDown(subdomain:String) extends StrictLogging{
 
   case class ChangeStats(nChangesInView:Long,nChangesInBCNFTables:Option[Long],nChangesInAssociationTables:Option[Long])
 
+}
+object TopDown extends StrictLogging{
+  logger.debug("Currently passing empty set as primary key to temporal tables!")
 }

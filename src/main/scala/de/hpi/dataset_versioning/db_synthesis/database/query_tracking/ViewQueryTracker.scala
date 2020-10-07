@@ -4,7 +4,7 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.SynthesizedTemporalDatabaseTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
 
-class ViewQueryTracker(ids:IndexedSeq[String]) {
+class ViewQueryTracker(ids:collection.IndexedSeq[String]) {
   def updateForSynthTable(newSynthTable: SynthesizedTemporalDatabaseTable, executedMatch: TableUnionMatch[Int]) = {
     newSynthTable.unionedTables.foreach(dttID => {
       val viewID = dttID.viewID

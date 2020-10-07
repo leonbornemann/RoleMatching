@@ -11,11 +11,12 @@ import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable
 
+@SerialVersionUID(3L)
 case class DecomposedTemporalTable(id: DecomposedTemporalTableIdentifier,
                                    containedAttrLineages: mutable.ArrayBuffer[AttributeLineage],
                                    originalFDLHS: collection.Set[AttributeLineage],
                                    primaryKeyByVersion: Map[LocalDate,collection.Set[Attribute]],
-                                   referencedTables:mutable.HashSet[DecomposedTemporalTableIdentifier]) {
+                                   referencedTables:mutable.HashSet[DecomposedTemporalTableIdentifier]) extends Serializable{
   def informativeTableName: String = id.compositeID + "(" + containedAttrLineages.map(_.lastName).mkString(",") + ")"
 
   private var activeTime:Option[TimeIntervalSequence] = None
@@ -97,7 +98,7 @@ case class DecomposedTemporalTable(id: DecomposedTemporalTableIdentifier,
 }
 
 object DecomposedTemporalTable {
-  def filterNotFullyDecomposedTables(subdomain:String,viewIds: Set[String]) = {
+  def filterNotFullyDecomposedTables(subdomain:String,viewIds: collection.IndexedSeq[String]) = {
     val subdomainIdsWithDTT = viewIds
       .filter(id => DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
     val schemata = subdomainIdsWithDTT.map(id => TemporalSchema.load(id)).map(ts => (ts.id,ts)).toMap

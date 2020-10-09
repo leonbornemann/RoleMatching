@@ -76,8 +76,6 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
       val changesInThisTable = asSynthTable.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
       nChanges += changesInThisTable
     })
-    if(curChangeCount!=nChanges)
-      println()
     println(s"tracked $curChangeCount real: $nChanges")
   }
 
@@ -99,12 +97,9 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
                                 newSynthTableSketch: SynthesizedTemporalDatabaseTableSketch,
                                 executedMatch:TableUnionMatch[Int]) = {
     newSynthTable.writeToStandardTemporaryFile()
-    if(newSynthTable.unionedTables.exists(_.viewID.contains("Split")))
-      println()
     sketchToSynthTableID.put(newSynthTableSketch,newSynthTable.uniqueSynthTableID)
     finalSynthesizedTableIDs += newSynthTable.uniqueSynthTableID
     //remove old ids:
-    println()
     val ts = newSynthTable.unionedTables.map(allUnmatchedAssociations.get(_))
     val removed = newSynthTable.unionedTables.map(allUnmatchedAssociations.remove(_))
       .filter(_.isDefined)

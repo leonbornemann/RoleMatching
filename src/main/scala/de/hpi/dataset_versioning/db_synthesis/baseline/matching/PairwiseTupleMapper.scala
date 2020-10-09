@@ -17,10 +17,6 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
   val insertTimeB = tableB.insertTime
   val mergedInsertTime = Seq(tableA.insertTime,tableB.insertTime).min
 
-  if(tableA.informativeTableName.contains("B.1_0") && tableB.informativeTableName.contains("D.0_1")){
-    println()
-  }
-
   def sizesAreTooBig(tupleCount1:Int, tupleCount2:Int): Boolean = {
     tupleCount1*tupleCount2>100000
   }

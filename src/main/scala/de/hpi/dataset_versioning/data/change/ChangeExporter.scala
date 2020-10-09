@@ -9,7 +9,7 @@ import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
 import de.hpi.dataset_versioning.io.IOService
 
-import scala.collection.mutable
+import scala.collection.{SortedMapOps, mutable}
 
 class ChangeExporter extends StrictLogging{
 
@@ -21,8 +21,8 @@ class ChangeExporter extends StrictLogging{
     cube.allChanges.foreach(c => lastValues((c.e,c.pID)) = c.value)
   }
 
-  def updateColumnSetsAtTime(columnSetsAtTimestamp: mutable.TreeMap[LocalDate, Set[Int]], cube: ChangeCube,version:LocalDate) = {
-    columnSetsAtTimestamp(version) = cube.allChanges.filter(_.value!=ReservedChangeValues.NOT_EXISTANT_DATASET).map(_.pID).toSet
+  def updateColumnSetsAtTime(columnSetsAtTimestamp: mutable.TreeMap[LocalDate, Set[Int]], ds:RelationalDataset) = {
+    columnSetsAtTimestamp(ds.version) = ds.attributes.map(_.id).toSet
   }
 
   def exportAllChangesFromVersions(id: String, allVersions: IndexedSeq[LocalDate]) = {
@@ -40,7 +40,7 @@ class ChangeExporter extends StrictLogging{
       val changeFile = IOService.getChangeFile(id)
       val cube = getChanges(RelationalDataset.createEmpty(id, LocalDate.MIN), prevDs)
       updateLastValues(lastValues,cube)
-      updateColumnSetsAtTime(columnSetsAtTimestamp,cube,prevDs.version)
+      updateColumnSetsAtTime(columnSetsAtTimestamp,prevDs)
       addNewChanges(finalChangeCube,cube,enteredInitialValues,columnSetsAtTimestamp)
       finalChangeCube.addToAttributeNameMapping(prevDs.version,prevDs.attributes)
       for (i <- 1 until allVersions.size) {
@@ -54,7 +54,7 @@ class ChangeExporter extends StrictLogging{
         //before we update last values we have to determine the new inserts:
         val newlyInsertedEntities = curChanges.allChanges.map(_.e).toSet.diff(lastValues.keySet.map(_._1))
         updateLastValues(lastValues,curChanges)
-        updateColumnSetsAtTime(columnSetsAtTimestamp,curChanges,curDs.version)
+        updateColumnSetsAtTime(columnSetsAtTimestamp,curDs)
         if(curDs.isEmpty && prevDs.isEmpty){
           //nothing to do
         } else if(curDs.isEmpty && !prevDs.isEmpty){
@@ -100,42 +100,61 @@ class ChangeExporter extends StrictLogging{
           }}
           //for all existing entities we need to check if they have no entry for any of the currently present columns,if so we need to set them to NOT_EXISTANT_ROW for that column
           //TODO: this is currently very slow, but as it is mostly a one-shot process, we don't really care
-          val existingEntities = lastValues.keySet.map(_._1)
-          existingEntities.foreach(e => {
-            for(p<- newDsAttrSet){
-              if(!lastValues.contains((e,p))){
-                val newVal = ReservedChangeValues.NOT_EXISTANT_ROW
-                curChanges.addChange(Change(curDs.version,e,p,newVal))
-                //update last values:
-                lastValues((e,p))=newVal
-              }
-            }
-          })
+//          val existingEntities = lastValues.keySet.map(_._1)
+//          existingEntities.foreach(e => {
+//            for(p<- newDsAttrSet){
+//              if(!lastValues.contains((e,p))){
+//                val newVal = ReservedChangeValues.NOT_EXISTANT_ROW
+//                curChanges.addChange(Change(curDs.version,e,p,newVal))
+//                //update last values:
+//                lastValues((e,p))=newVal
+//              }
+//            }
+//          })
           //for all newly inserted entities - we need to update old columnvalues
-          val oldCols = lastValues.keySet.map(_._2).diff(newDsAttrSet)
-          oldCols.foreach(p => {
-            for(e <- newlyInsertedEntities){
-              if(lastValues.contains((e,p))){
-                assert(lastValues((2,p))==ReservedChangeValues.NOT_EXISTANT_COL)
-              } else {
-                val newVal = ReservedChangeValues.NOT_EXISTANT_COL
-                curChanges.addChange(Change(curDs.version, e, p, newVal))
-                //update last values:
-                lastValues((e, p)) = newVal
-              }
-            }
-          })
+//          val oldCols = lastValues.keySet.map(_._2).diff(newDsAttrSet)
+//          oldCols.foreach(p => {
+//            for(e <- newlyInsertedEntities){
+//              if(lastValues.contains((e,p))){
+//                assert(lastValues((2,p))==ReservedChangeValues.NOT_EXISTANT_COL)
+//              } else {
+//                val newVal = ReservedChangeValues.NOT_EXISTANT_COL
+//                curChanges.addChange(Change(curDs.version, e, p, newVal))
+//                //update last values:
+//                lastValues((e, p)) = newVal
+//              }
+//            }
+//          })
         }
         finalChangeCube.addToAttributeNameMapping(curDs.version,curDs.attributes)
         addNewChanges(finalChangeCube,curChanges,enteredInitialValues,columnSetsAtTimestamp)
         prevDs = curDs
       }
-      finalChangeCube.allChanges.groupBy(c => (c.e,c.pID))
-        .foreach{case (k,v) => {
+      var byEntityProperty = finalChangeCube.allChanges.groupBy(c => (c.e,c.pID))
+      val allEntities = finalChangeCube.allChanges.map(_.e).toSet
+      val allProperties = finalChangeCube.allChanges.map(_.pID).toSet
+      if(curDs!= null && curDs.version!=IOService.STANDARD_TIME_FRAME_START){
+        for(e <- allEntities){
+          for (p <- allProperties){
+            val key = (e,p)
+            if(!byEntityProperty.contains(key)){
+              //we have to add this:
+              assert(!enteredInitialValues.contains(key))
+              assert(!lastValues.contains(key))
+              val colSetsToConsider = columnSetsAtTimestamp
+              addInitialHistoryToChangeCube(e,p,columnSetsAtTimestamp,colSetsToConsider,finalChangeCube)
+            }
+          }
+        }
+      }
+      byEntityProperty = finalChangeCube.allChanges.groupBy(c => (c.e,c.pID))
+      byEntityProperty.foreach{case (k,v) => {
           val sortedByTime = v.sortBy(_.t.toEpochDay)
           assert(sortedByTime.head.t==IOService.STANDARD_TIME_FRAME_START)
           val vals = sortedByTime.map(_.value)
           for(i <- 1 until vals.size){
+            if(vals(i)==vals(i-1))
+              println()
             assert(vals(i)!=vals(i-1))
           }
         }}
@@ -143,45 +162,52 @@ class ChangeExporter extends StrictLogging{
     }
   }
 
-  private def addNewChanges(finalChangeCube: ChangeCube, newCube: ChangeCube, enteredInitialValues:scala.collection.mutable.HashMap[(Long,Int),Boolean], columnSetsAtTimestamp:scala.collection.mutable.TreeMap[LocalDate,Set[Int]]) = {
+  private def addNewChanges(finalChangeCube: ChangeCube,
+                            newCube: ChangeCube,
+                            enteredInitialValues:scala.collection.mutable.HashMap[(Long,Int),Boolean],
+                            columnSetsAtTimestamp:scala.collection.mutable.TreeMap[LocalDate,Set[Int]]) = {
     newCube.allChanges.foreach { case Change(t, e, p, v) => {
       if (enteredInitialValues.getOrElse((e, p), false) == false && t != IOService.STANDARD_TIME_FRAME_START) {
         //we need to add intitial values for all timestamps before this one
-        var lastVal = ReservedChangeValues.NOT_EXISTANT_DATASET
-        if (columnSetsAtTimestamp.firstKey != IOService.STANDARD_TIME_FRAME_START) {
-          //add non-existant dataset until the first timestamp
-          finalChangeCube.addChange(Change(IOService.STANDARD_TIME_FRAME_START, e, p, ReservedChangeValues.NOT_EXISTANT_DATASET))
-        } else {
-          lastVal = null
-        }
-        columnSetsAtTimestamp
-          .withFilter { case (ts, _) => ts.isBefore(t) }
-          .foreach { case (ts, colSet) => {
-            if (colSet.isEmpty) {
-              //dataset delete!
-              assert(lastVal != ReservedChangeValues.NOT_EXISTANT_DATASET)
-              finalChangeCube.addChange(Change(ts, e, p, ReservedChangeValues.NOT_EXISTANT_DATASET))
-              lastVal = ReservedChangeValues.NOT_EXISTANT_DATASET
-            } else if (!colSet.contains(p)) {
-              if (lastVal == ReservedChangeValues.NOT_EXISTANT_COL) {
-                //no change to add
-              } else {
-                finalChangeCube.addChange(Change(ts, e, p, ReservedChangeValues.NOT_EXISTANT_COL))
-                lastVal = ReservedChangeValues.NOT_EXISTANT_COL
-              }
-            } else {
-              if (lastVal == ReservedChangeValues.NOT_EXISTANT_ROW) {
-                //no change to add
-              } else {
-                finalChangeCube.addChange(Change(ts, e, p, ReservedChangeValues.NOT_EXISTANT_ROW))
-                lastVal = ReservedChangeValues.NOT_EXISTANT_ROW
-              }
-            }
-          }
-          }
+        val colSetsToConsider = columnSetsAtTimestamp
+          .filter{ case (ts, _) => ts.isBefore(t) }
+        addInitialHistoryToChangeCube(e,p,columnSetsAtTimestamp,colSetsToConsider,finalChangeCube)
       }
       enteredInitialValues((e,p)) = true
       finalChangeCube.addChange(Change(t, e, p, v))
+    }
+    }
+  }
+
+  def addInitialHistoryToChangeCube(e: Long, p: Int, columnSetsAtTimestamp: mutable.TreeMap[LocalDate, Set[Int]], colSetsToConsider: mutable.TreeMap[LocalDate, Set[Int]], finalChangeCube: ChangeCube) = {
+    var lastVal = ReservedChangeValues.NOT_EXISTANT_DATASET
+    if (columnSetsAtTimestamp.firstKey != IOService.STANDARD_TIME_FRAME_START) {
+      //add non-existant dataset until the first timestamp
+      finalChangeCube.addChange(Change(IOService.STANDARD_TIME_FRAME_START, e, p, ReservedChangeValues.NOT_EXISTANT_DATASET))
+    } else {
+      lastVal = null
+    }
+    colSetsToConsider.foreach { case (ts, colSet) => {
+      if (colSet.isEmpty) {
+        //dataset delete!
+        assert(lastVal != ReservedChangeValues.NOT_EXISTANT_DATASET)
+        finalChangeCube.addChange(Change(ts, e, p, ReservedChangeValues.NOT_EXISTANT_DATASET))
+        lastVal = ReservedChangeValues.NOT_EXISTANT_DATASET
+      } else if (!colSet.contains(p)) {
+        if (lastVal == ReservedChangeValues.NOT_EXISTANT_COL) {
+          //no change to add
+        } else {
+          finalChangeCube.addChange(Change(ts, e, p, ReservedChangeValues.NOT_EXISTANT_COL))
+          lastVal = ReservedChangeValues.NOT_EXISTANT_COL
+        }
+      } else {
+        if (lastVal == ReservedChangeValues.NOT_EXISTANT_ROW) {
+          //no change to add
+        } else {
+          finalChangeCube.addChange(Change(ts, e, p, ReservedChangeValues.NOT_EXISTANT_ROW))
+          lastVal = ReservedChangeValues.NOT_EXISTANT_ROW
+        }
+      }
     }
     }
   }

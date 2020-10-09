@@ -199,7 +199,6 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
       tableReferences.put(decomposedTemporalTable,foreignKeyLineages)
       (originalFDLHS,decomposedTemporalTable)
     }).toMap
-    println()
     //update table references and add needed extra attributes
     byLHS.values.foreach(dtt => {
       val referencedTablesLHS = tableReferences(dtt)

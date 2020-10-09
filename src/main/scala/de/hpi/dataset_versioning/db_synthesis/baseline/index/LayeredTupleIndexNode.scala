@@ -28,8 +28,6 @@ class LayeredTupleIndexNode[A](_isLeafNode:Boolean) extends Iterable[Iterable[(T
   private def createNewChildNode(chosenTimestamps: ArrayBuffer[LocalDate]) = {
     val newNode = new LayeredTupleIndexNode[A](chosenTimestamps.size == 1)
     //add stored wildcards:
-    if(containedWildcardTuples.get.size>0)
-      println()
     containedWildcardTuples.get.foreach(t => newNode.insert(t._1,t._2,t._3,t._4))
     newNode
   }

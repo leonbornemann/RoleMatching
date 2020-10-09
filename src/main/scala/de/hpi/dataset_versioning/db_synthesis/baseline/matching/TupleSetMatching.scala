@@ -16,8 +16,6 @@ class TupleSetMatching[A](val tableA: TemporalDatabaseTableTrait[A],
     println()
   }
   assert(is1to1Matching)
-  if(tableA.getID.contains("D.") && tableB.getID.contains("D."))
-    println()
 
 
   def unmatchedTupleIndicesA:collection.Set[Int] = unmatchedTupleIndicesA
@@ -89,9 +87,6 @@ class TupleSetMatching[A](val tableA: TemporalDatabaseTableTrait[A],
     addUnmatchedTuplesToTableBUnlessAlreadyMatched(curMatching.unmatchedTupleIndicesB)
     matchedTuples.clear()
     matchedTuples ++= byIndex.values
-    if(!is1to1Matching){
-      println()
-    }
   }
 }
 object TupleSetMatching extends StrictLogging{

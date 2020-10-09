@@ -51,6 +51,8 @@ class ChangeExporter extends StrictLogging{
           curDs = RelationalDataset.createEmpty(id, curVersion) //we have a delete
         }
         val curChanges = getChanges(prevDs, curDs)
+        //before we update last values we have to determine the new inserts:
+        val newlyInsertedEntities = curChanges.allChanges.map(_.e).toSet.diff(lastValues.keySet.map(_._1))
         updateLastValues(lastValues,curChanges)
         updateColumnSetsAtTime(columnSetsAtTimestamp,curChanges,curDs.version)
         if(curDs.isEmpty && prevDs.isEmpty){
@@ -96,6 +98,33 @@ class ChangeExporter extends StrictLogging{
             //update last values:
             lastValues((e,p))=newVal
           }}
+          //for all existing entities we need to check if they have no entry for any of the currently present columns,if so we need to set them to NOT_EXISTANT_ROW for that column
+          //TODO: this is currently very slow, but as it is mostly a one-shot process, we don't really care
+          val existingEntities = lastValues.keySet.map(_._1)
+          existingEntities.foreach(e => {
+            for(p<- newDsAttrSet){
+              if(!lastValues.contains((e,p))){
+                val newVal = ReservedChangeValues.NOT_EXISTANT_ROW
+                curChanges.addChange(Change(curDs.version,e,p,newVal))
+                //update last values:
+                lastValues((e,p))=newVal
+              }
+            }
+          })
+          //for all newly inserted entities - we need to update old columnvalues
+          val oldCols = lastValues.keySet.map(_._2).diff(newDsAttrSet)
+          oldCols.foreach(p => {
+            for(e <- newlyInsertedEntities){
+              if(lastValues.contains((e,p))){
+                assert(lastValues((2,p))==ReservedChangeValues.NOT_EXISTANT_COL)
+              } else {
+                val newVal = ReservedChangeValues.NOT_EXISTANT_COL
+                curChanges.addChange(Change(curDs.version, e, p, newVal))
+                //update last values:
+                lastValues((e, p)) = newVal
+              }
+            }
+          })
         }
         finalChangeCube.addToAttributeNameMapping(curDs.version,curDs.attributes)
         addNewChanges(finalChangeCube,curChanges,enteredInitialValues,columnSetsAtTimestamp)

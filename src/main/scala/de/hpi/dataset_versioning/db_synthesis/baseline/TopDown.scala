@@ -126,10 +126,9 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
       //logger.debug(s"total number of changes in this step: ${nChangesInAssociations+numberOfChangesInTablesWithNoDTTORAssociation}")
     }
     val queryTracker = new ViewQueryTracker(idsWithDecomposedTables)
-    assert(countChangesForAllSteps)
     val nChangesInAssociations = if(countChangesForAllSteps) uidToViewChanges.values.filter(_.nChangesInAssociationTables.isDefined).map(_.nChangesInAssociationTables.get).reduce(_ + _) else -1
     if(!countChangesForAllSteps)
-      logger.warn("Not counting all changes, thus initializing topdown optimizer with a dummy initial change value")
+      logger.debug("Not counting all changes, thus initializing topdown optimizer with a dummy initial change value")
     val topDownOptimizer = new TopDownOptimizer(allAssociations.toIndexedSeq,
       nChangesInAssociations,
       extraBCNFDtts.toSet,

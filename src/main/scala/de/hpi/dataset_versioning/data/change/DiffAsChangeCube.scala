@@ -67,18 +67,24 @@ class DiffAsChangeCube(val v1:RelationalDataset, val v2:RelationalDataset,
       .toMap
   }
 
-  def addRowDelete(version: LocalDate, row: RelationalDatasetRow, attributes: collection.IndexedSeq[Attribute],deletedAttributeIDs:collection.Set[Int]) = {
+  def addRowDelete(version: LocalDate, row: RelationalDatasetRow, attributes: collection.IndexedSeq[Attribute],insertedAttributeIDs:collection.Set[Int],deletedAttributeIDs:collection.Set[Int]) = {
     assert(row.fields.size == attributes.size)
     for( i <- (0 until row.fields.size)){
       val hammerValue = if(deletedAttributeIDs.contains(attributes(i).id)) ReservedChangeValues.NOT_EXISTANT_COL else ReservedChangeValues.NOT_EXISTANT_ROW
       changeCube.allChanges += Change(version,row.id,attributes(i).id,hammerValue)
     }
+    for(p <- insertedAttributeIDs){
+      changeCube.allChanges += Change(version,row.id,p,ReservedChangeValues.NOT_EXISTANT_ROW)
+    }
   }
 
-  def addRowInsert(version:LocalDate, row: RelationalDatasetRow, attributes: collection.IndexedSeq[Attribute]) = {
+  def addRowInsert(version:LocalDate, row: RelationalDatasetRow, attributes: collection.IndexedSeq[Attribute],deletedAttributeIDs:collection.Set[Int]) = {
     assert(row.fields.size == attributes.size)
     for( i <- (0 until row.fields.size)){
       changeCube.allChanges += Change(version,row.id,attributes(i).id,row.fields(i))
+    }
+    for(p <- deletedAttributeIDs){
+      changeCube.allChanges += Change(version,row.id,p,ReservedChangeValues.NOT_EXISTANT_COL)
     }
   }
 
@@ -197,10 +203,10 @@ object DiffAsChangeCube {
           val prev = v1RowsByID.getOrElse(rID, null)
           val current = v2RowsByID.getOrElse(rID, null)
           if (prev == null) {
-            diffAsChangeCUbe.addRowInsert(changeTimestamp, current, v2.attributes)
+            diffAsChangeCUbe.addRowInsert(changeTimestamp, current, v2.attributes,deletedAttributeIDs)
           } else if (current == null) {
             //here we need to switch-case according to the delete
-            diffAsChangeCUbe.addRowDelete(changeTimestamp, prev, v1.attributes,deletedAttributeIDs)
+            diffAsChangeCUbe.addRowDelete(changeTimestamp, prev, v1.attributes,insertedAttributeIDs,deletedAttributeIDs)
           } else {
             diffAsChangeCUbe.addChangesForMatchedTuples(changeTimestamp, prev, current, v1.attributes, v2.attributes,deletedAttributeIDs,insertedAttributeIDs)
           }

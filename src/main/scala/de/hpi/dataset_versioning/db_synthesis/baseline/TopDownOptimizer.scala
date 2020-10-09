@@ -17,7 +17,7 @@ class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],
 //  println(s"initilized with:")
 //  associations.map(_.informativeTableName).sorted.foreach(println(_))
   assert(associations.forall(_.isAssociation))
-  private val allAssociationSketches = mutable.HashSet() ++ associations.map(dtt => SynthesizedTemporalDatabaseTableSketch.initFrom(dtt))
+  private val allAssociationSketches = loadAssociations()
 
   //  Useful Debug statement but too expensive in full run (needs to load all tables)
 //  associations.foreach(as => {
@@ -29,6 +29,18 @@ class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],
 //    logger.debug(sketch.informativeTableName)
 //    sketch.printTable
 //  })
+
+  private def loadAssociations() = {
+    var read = 0
+    mutable.HashSet() ++ associations.map(dtt => {
+      val t = SynthesizedTemporalDatabaseTableSketch.initFrom(dtt)
+      read +=1
+      if(read%100==0) {
+        logger.debug(s"read $read/${associations.size} association sketches (${100*read/associations.size.toDouble}%)")
+      }
+      t
+    })
+  }
 
   val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,nChangesInAssociations,extraNonDecomposedViewTableChanges,extraBCNFTablesWithNoAssociations,tracker)
   private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())

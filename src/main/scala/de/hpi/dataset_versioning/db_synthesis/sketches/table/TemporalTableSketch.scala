@@ -23,7 +23,6 @@ abstract class TemporalTableSketch(unionedTables:mutable.HashSet[DecomposedTempo
 object TemporalTableSketch {
 
   def loadFromFile[A](f:File) = {
-    println(f.getAbsolutePath)
     val oi = new ObjectInputStream(new FileInputStream(f))
     val sketch = oi.readObject().asInstanceOf[A]
     oi.close()

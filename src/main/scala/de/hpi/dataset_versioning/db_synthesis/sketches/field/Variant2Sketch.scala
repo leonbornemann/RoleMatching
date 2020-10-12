@@ -9,7 +9,7 @@ import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch.{WILDCARD, byteArraySliceToInt, byteToTimestamp, timestampToByteRepresentation}
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch.{ROWDELETEHASHVALUE, WILDCARD, byteArraySliceToInt, byteToTimestamp, timestampToByteRepresentation}
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable
@@ -145,6 +145,10 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
   }
 
   override def nonWildCardValues: Iterable[Int] = getValueLineage.values.filter(_ != WILDCARD)
+
+  override def isRowDelete(a: Int): Boolean = a==ROWDELETEHASHVALUE
+
+  override def isWildcard(a: Int): Boolean = a==WILDCARD
 }
 
 object Variant2Sketch {

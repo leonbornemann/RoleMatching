@@ -11,10 +11,14 @@ class DatasetAndRowInitialInsertIgnoreFieldChangeCounter extends FieldChangeCoun
   override def countFieldChanges[A](viewInsertTime: LocalDate, f: TemporalFieldTrait[A]): Int = {
     val it = f.getValueLineage
       .iteratorFrom(viewInsertTime.plusDays(1))
-    var (_,curVal) = it.next()
-    while(it.hasNext && (f.isWildcard(curVal) || f.isRowDelete(curVal)))
-      curVal = it.next()._2
-    it.size
+    if(it.isEmpty)
+      0
+    else {
+      var (_, curVal) = it.next()
+      while (it.hasNext && (f.isWildcard(curVal) || f.isRowDelete(curVal)))
+        curVal = it.next()._2
+      it.size
+    }
   }
 
   override def name: String = "DatasetAndRowInsertIgnoreFieldChangeCounter"

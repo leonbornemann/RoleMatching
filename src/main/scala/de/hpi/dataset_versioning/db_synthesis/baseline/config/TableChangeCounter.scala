@@ -10,7 +10,7 @@ trait TableChangeCounter {
   def name :String
 
 
-  def countChanges(table: TemporalTable,primaryKeyAttributeIDs:Set[Int]):Long
+  def countChanges(table: TemporalTable, allDeterminantAttributeIDs:Set[Int]):Long
 
   def countColumnChanges[A](tc:TemporalColumnTrait[A],insertTime:LocalDate,colIsPk:Boolean):Long
 

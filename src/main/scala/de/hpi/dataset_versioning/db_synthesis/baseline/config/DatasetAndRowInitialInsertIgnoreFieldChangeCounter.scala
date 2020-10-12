@@ -23,7 +23,7 @@ class DatasetAndRowInitialInsertIgnoreFieldChangeCounter extends FieldChangeCoun
 
   override def name: String = "DatasetAndRowInsertIgnoreFieldChangeCounter"
 
-  override def countChanges(table: TemporalTable, primaryKeyAttributeIDs: Set[Int]): Long = {
+  override def countChanges(table: TemporalTable, allDeterminantAttributeIDs: Set[Int]): Long = {
     val insertTime = table.insertTime
     table.rows.flatMap(tr => tr.fields.map(f => countFieldChanges(insertTime,f).toLong)).sum
   }

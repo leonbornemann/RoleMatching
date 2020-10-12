@@ -13,7 +13,7 @@ class NormalFieldChangeCounter extends FieldChangeCounter {
 
   override def name: String = "NormalFieldChangeCounter"
 
-  override def countChanges(table: TemporalTable, primaryKeyAttributeIDs: Set[Int]): Long = table.rows.flatMap(_.fields.map(countFieldChanges(null,_))).sum
+  override def countChanges(table: TemporalTable, allDeterminantAttributeIDs: Set[Int]): Long = table.rows.flatMap(_.fields.map(countFieldChanges(null,_))).sum
 
   override def countColumnChanges[A](tc: TemporalColumnTrait[A], insertTime: LocalDate, colIsPk: Boolean): Long = tc.fieldLineages.map(countFieldChanges(null,_)).sum
 }

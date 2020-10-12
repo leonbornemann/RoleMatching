@@ -12,7 +12,7 @@ import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
 import de.hpi.dataset_versioning.db_synthesis.baseline.DetailedBCNFChangeCounting.subdomain
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{GLOBAL_CONFIG, DatasetInsertIgnoreFieldChangeCounter, NormalFieldChangeCounter, PKIgnoreChangeCounter}
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{GLOBAL_CONFIG, DatasetInsertIgnoreFieldChangeCounter, NormalFieldChangeCounter, AllDeterminantIgnoreChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd.FunctionalDependencySet
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnSketch
@@ -47,7 +47,7 @@ object ScriptMain extends App with StrictLogging{
     .toIndexedSeq
   val counterNormal = new NormalFieldChangeCounter()
   val counterWithOutInitialInsert = new DatasetInsertIgnoreFieldChangeCounter()
-  val pkIgnoreCounter = new PKIgnoreChangeCounter(counterWithOutInitialInsert)
+  val pkIgnoreCounter = new AllDeterminantIgnoreChangeCounter(counterWithOutInitialInsert)
   val counters = Seq(counterNormal,counterWithOutInitialInsert,pkIgnoreCounter)
   val idsWithDecomposedTables = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain, subdomainIds)
   val resFileWriter = new PrintWriter("bcnfBetter.txt")

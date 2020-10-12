@@ -6,7 +6,11 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.database.AbstractTemporal
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
-class PKIgnoreChangeCounter(changeCounter: FieldChangeCounter) extends TableChangeCounter {
+/***
+ * Ignores all determinant columns, no matter where they appear (Read: ignores keys AND foreign keys)
+ * @param changeCounter
+ */
+class AllDeterminantIgnoreChangeCounter(changeCounter: FieldChangeCounter) extends TableChangeCounter {
 
   override def countChanges[A](table: AbstractTemporalDatabaseTable[A]): Long = {
     val insertTime = table.insertTime
@@ -15,11 +19,11 @@ class PKIgnoreChangeCounter(changeCounter: FieldChangeCounter) extends TableChan
     cols.map(c => changeCounter.countColumnChanges(c,insertTime,false)).sum
   }
 
-  override def countChanges(table: TemporalTable, primaryKeyAttributeIDs: Set[Int]): Long = {
+  override def countChanges(table: TemporalTable, allDeterminantAttributeIDs: Set[Int]): Long = {
     val insertTime = table.insertTime
     table.rows.flatMap(tr => tr.fields
       .zip(table.attributes)
-      .withFilter(t => !primaryKeyAttributeIDs.contains(t._2.attrId))
+      .withFilter(t => !allDeterminantAttributeIDs.contains(t._2.attrId))
       .map{case (f,_) => changeCounter.countFieldChanges(insertTime,f).toLong}).sum
   }
 
@@ -28,5 +32,5 @@ class PKIgnoreChangeCounter(changeCounter: FieldChangeCounter) extends TableChan
     else changeCounter.countColumnChanges(tc,insertTime,colIsPk)
   }
 
-  override def name: String = changeCounter.name +"_PK_Ignored"
+  override def name: String = changeCounter.name +"_ALL_DETERMINANTS_IGNORED"
 }

@@ -22,8 +22,11 @@ object ColumnSketchExportMain extends App with StrictLogging {
       val f = DBSynthesis_IOService.getTemporalColumnSketchFile(tc.id, tc.attrId, sketch.fieldLineageSketches.head.getVariantName)
       sketch.writeToBinaryFile(f)
     })
+    //bcnf Tables:
+    val bcnfTables = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
     //whole tables:
-    val dtts = DecomposedTemporalTable.loadAllAssociations(subdomain, id)
+    val associations = if(DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain,id)) DecomposedTemporalTable.loadAllAssociations(subdomain, id) else Array[DecomposedTemporalTable]()
+    val dtts = bcnfTables ++ associations
     dtts.foreach(dtt => {
       val projection = tt.project(dtt)
       projection.projection.writeTableSketch(dtt.primaryKey.map(_.attrId))
@@ -37,7 +40,8 @@ object ColumnSketchExportMain extends App with StrictLogging {
     val subdomainIds = subDomainInfo(subdomain)
       .map(_.id)
       .toIndexedSeq
-    subdomainIds.foreach(exportForID(_))
+    val idsToSketch = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain,subdomainIds)
+    idsToSketch.foreach(exportForID(_))
   }
 
 }

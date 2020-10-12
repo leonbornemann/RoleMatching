@@ -9,7 +9,7 @@ import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
-class InitialInsertIgnoreFieldChangeCounter() extends FieldChangeCounter{
+class DatasetInsertIgnoreFieldChangeCounter() extends FieldChangeCounter{
 
   override def countFieldChanges[A](viewInsertTime: LocalDate, f: TemporalFieldTrait[A]) = {
     f.getValueLineage.iteratorFrom(viewInsertTime.plusDays(1)).toSet.filter(!ValueLineage.isWildcard(_)).size
@@ -29,5 +29,5 @@ class InitialInsertIgnoreFieldChangeCounter() extends FieldChangeCounter{
     tc.fieldLineages.map(f => countFieldChanges(insertTime,f).toLong).sum
   }
 
-  override def name: String = "#c_noInsert"
+  override def name: String = "DatasetInsertIgnoreFieldChangeCounter"
 }

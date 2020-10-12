@@ -28,5 +28,5 @@ class PKIgnoreChangeCounter(changeCounter: FieldChangeCounter) extends TableChan
     else changeCounter.countColumnChanges(tc,insertTime,colIsPk)
   }
 
-  override def name: String = "#c_noKey&NoInsert"
+  override def name: String = changeCounter.name +"_PK_Ignored"
 }

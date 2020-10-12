@@ -9,6 +9,10 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.config.FieldChangeCounter
 import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
+  def isRowDelete(a: T) :Boolean
+
+  def isWildcard(a: T) :Boolean
+
 
   def countChanges(viewInsertTime:LocalDate,changeCounter:FieldChangeCounter):Int
 

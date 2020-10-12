@@ -1,7 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{FieldChangeCounter, InitialInsertIgnoreFieldChangeCounter}
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{FieldChangeCounter, DatasetInsertIgnoreFieldChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{TableUnionMatch, TupleMatching}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage

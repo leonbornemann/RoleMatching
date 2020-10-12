@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables._
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.InitialInsertIgnoreFieldChangeCounter
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.DatasetInsertIgnoreFieldChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait

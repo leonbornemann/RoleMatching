@@ -12,7 +12,7 @@ import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.Attribute
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{GLOBAL_CONFIG, InitialInsertIgnoreFieldChangeCounter}
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{GLOBAL_CONFIG, DatasetInsertIgnoreFieldChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.SynthesizedTemporalDatabaseTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTable, DecomposedTemporalTable, TemporalTableDecomposer}
 import de.hpi.dataset_versioning.db_synthesis.database.query_tracking.ViewQueryTracker
@@ -24,7 +24,7 @@ import scala.concurrent.duration.Duration
 
 class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogging{
 
-  val changeCounters = Seq(new InitialInsertIgnoreFieldChangeCounter())
+  val changeCounters = Seq(new DatasetInsertIgnoreFieldChangeCounter())
 
   def synthesizeDatabase(countChangesForAllSteps:Boolean = true):Unit = {
     val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain

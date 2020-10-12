@@ -24,11 +24,13 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
       val chosen = getNextMostDiscriminatingTimestamp(chosenTimestamps,attributesOnWhichToIndex,nonCoveredAttributeIDs)
       chosenTimestamps += chosen
     }
+    logger.debug("Done Selecting timestamps, beginning to build index")
     val layeredTableIndex = new LayeredTupleIndex[A](chosenTimestamps,unmatchedAssociations.map(a => {
       val nonKeyAttr = a.nonKeyAttributeLineages.head
       val indexOfNonKeyAttr = a.columns.zipWithIndex.filter(_._1.attributeLineage.attrId==nonKeyAttr.attrId).head._2
       (a,indexOfNonKeyAttr)
     }))
+    logger.debug("Finished building index")
     layeredTableIndex
   }
 

@@ -20,7 +20,7 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
     val attributesOnWhichToIndex = unmatchedAssociations.flatMap(ua => ua.nonKeyAttributeLineages.map(al => (ua,al)))
     val nonCoveredAttributeIDs = mutable.HashSet() ++ attributesOnWhichToIndex.map(t => (t._1,t._2.attrId)).toSet
     val chosenTimestamps = mutable.ArrayBuffer[LocalDate]()
-    while(chosenTimestamps.size<=N_TIMESTAMPS_IN_INDEX && !nonCoveredAttributeIDs.isEmpty){
+    while(chosenTimestamps.size<N_TIMESTAMPS_IN_INDEX && !nonCoveredAttributeIDs.isEmpty){
       val chosen = getNextMostDiscriminatingTimestamp(chosenTimestamps,attributesOnWhichToIndex,nonCoveredAttributeIDs)
       chosenTimestamps += chosen
     }

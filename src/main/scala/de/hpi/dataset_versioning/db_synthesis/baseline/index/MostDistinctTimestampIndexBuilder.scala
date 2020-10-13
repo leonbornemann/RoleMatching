@@ -1,5 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
+import java.io.PrintWriter
 import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
@@ -17,6 +18,21 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
 
   val indexSize = Math.min(GLOBAL_CONFIG.INDEX_DEPTH,IOService.STANDARD_TIME_RANGE.size)
 
+  def exportIndexStats(layeredTableIndex: LayeredTupleIndex[A]) = {
+    val fileTuples = new PrintWriter("tuplesPerGroup.txt")
+    val fileTables = new PrintWriter("tablesPerGroup.txt")
+    val tuplePerTableFile = new PrintWriter("tuplePerTable.txt")
+    layeredTableIndex.tupleGroupIterator.foreach(g => {
+      val nTables = g.map(_._1).toSet.size
+      fileTables.println(nTables)
+      fileTuples.println(g.size)
+      tuplePerTableFile.println(g.size / nTables.toDouble)
+    })
+    fileTables.close()
+    fileTables.close()
+    tuplePerTableFile.close()
+  }
+
   def buildTableIndexOnNonKeyColumns() = {
     val attributesOnWhichToIndex = unmatchedAssociations.flatMap(ua => ua.nonKeyAttributeLineages.map(al => (ua,al)))
     val nonCoveredAttributeIDs = mutable.HashSet() ++ attributesOnWhichToIndex.map(t => (t._1,t._2.attrId)).toSet
@@ -32,7 +48,7 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
       (a,indexOfNonKeyAttr)
     }))
     logger.debug("Finished building index")
-    //exportIndexStats(layeredTableIndex)
+    exportIndexStats(layeredTableIndex)
     layeredTableIndex
   }
 

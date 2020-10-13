@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.io.IOService
 
@@ -14,13 +15,13 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
 
   assert(unmatchedAssociations.forall(_.isAssociation))
 
-  val N_TIMESTAMPS_IN_INDEX = Math.min(2,IOService.STANDARD_TIME_RANGE.size)
+  val indexSize = Math.min(GLOBAL_CONFIG.INDEX_DEPTH,IOService.STANDARD_TIME_RANGE.size)
 
   def buildTableIndexOnNonKeyColumns() = {
     val attributesOnWhichToIndex = unmatchedAssociations.flatMap(ua => ua.nonKeyAttributeLineages.map(al => (ua,al)))
     val nonCoveredAttributeIDs = mutable.HashSet() ++ attributesOnWhichToIndex.map(t => (t._1,t._2.attrId)).toSet
     val chosenTimestamps = mutable.ArrayBuffer[LocalDate]()
-    while(chosenTimestamps.size<N_TIMESTAMPS_IN_INDEX && !nonCoveredAttributeIDs.isEmpty){
+    while(chosenTimestamps.size<indexSize && !nonCoveredAttributeIDs.isEmpty){
       val chosen = getNextMostDiscriminatingTimestamp(chosenTimestamps,attributesOnWhichToIndex,nonCoveredAttributeIDs)
       chosenTimestamps += chosen
     }
@@ -31,6 +32,7 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
       (a,indexOfNonKeyAttr)
     }))
     logger.debug("Finished building index")
+    //exportIndexStats(layeredTableIndex)
     layeredTableIndex
   }
 

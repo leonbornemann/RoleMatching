@@ -80,6 +80,16 @@ public class Main {
 				.collect(Collectors.toList());
 		FDValidator validator = new FDValidator(subdomain, datasetID,MAX_FD_SIZE_FOR_UNION);
 		Map<BitSet, BitSet> intersectedFds = validator.getFDIntersection();
+		//additional filter step to make normalization possible if the FD size is smaller:
+		Map<BitSet, BitSet> filteredBySize = new HashMap<BitSet, BitSet>();
+		for (BitSet lhs : intersectedFds.keySet()) {
+			BitSet rhs = filteredBySize.get(lhs);
+			if(lhs.cardinality()<=maxFDLHSSize || maxFDLHSSize ==-1){
+				filteredBySize.put(lhs,rhs);
+			}
+		}
+		intersectedFds = filteredBySize;
+		//done with additional filtering
 		Path lastDataset = result.get(result.size() - 1);
 		LocalDate dateOfLast = LocalDate.parse(lastDataset.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter());
 		Path datasetVersionCSV = DBSynthesis_IOService.getExportedCSVFile(subdomain, datasetID, dateOfLast).toPath();

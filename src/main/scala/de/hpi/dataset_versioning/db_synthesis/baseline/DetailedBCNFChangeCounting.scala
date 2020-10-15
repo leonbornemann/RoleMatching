@@ -5,7 +5,7 @@ import java.io.PrintWriter
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{AllDeterminantIgnoreChangeCounter, DatasetAndRowInitialInsertIgnoreFieldChangeCounter, DatasetInsertIgnoreFieldChangeCounter, GLOBAL_CONFIG, NormalFieldChangeCounter}
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{AllDeterminantIgnoreChangeCounter, DatasetAndRowInitialInsertIgnoreFieldChangeCounter, DatasetInsertIgnoreFieldChangeCounter, FieldChangeCounter, GLOBAL_CONFIG, NormalFieldChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
 import de.hpi.dataset_versioning.io.IOService
 
@@ -51,7 +51,40 @@ object DetailedBCNFChangeCounting extends App with StrictLogging{
 
   //doIDExploration
 
-  doBCNFCounting
+  //doBCNFCounting
+  doPkChangeCounting
+
+
+  def doPkChangeCounting = {
+    val ids = DatasetInfo.getViewIdsInSubdomain(subdomain)
+    val idsWithDecomposedTables = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain, ids)
+    val fieldChangeCounters = Seq(new DatasetAndRowInitialInsertIgnoreFieldChangeCounter(),
+      new DatasetInsertIgnoreFieldChangeCounter(),
+      new NormalFieldChangeCounter())
+    val countDeterminantCounters = fieldChangeCounters.map(cc => ColumnChangeReport(cc,true,false,new PrintWriter(cc.name + "_DeterminantOnly")))
+    val countNonDeterminantCounters = fieldChangeCounters.map(cc => ColumnChangeReport(cc,false,true,new PrintWriter(cc.name + "_NonDeterminantOnly")))
+    idsWithDecomposedTables.foreach(id =>{
+      val tt = TemporalTable.load(id)
+      val insertTime = tt.insertTime
+      val allBCNFTables = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id)
+        .map(dtt => tt.project(dtt).projection)
+      val determinants = allBCNFTables.flatMap(_.dtt.get.primaryKey.map(_.attrId).toSet)
+      allBCNFTables.foreach(bcnf => {
+        val (keyCols,nonKeyCols) = bcnf.getTemporalColumns().partition(tc => determinants.contains(tc.attrID))
+        countDeterminantCounters.foreach(ccR => {
+          val fieldCount = bcnf.rows.size*keyCols.size
+          val res = keyCols.map(tc => ccR.cc.countColumnChanges(tc,insertTime,true)).sum / fieldCount.toDouble
+          ccR.writer.println(res)
+        })
+        countNonDeterminantCounters.foreach(ccR => {
+          val fieldCount = bcnf.rows.size*nonKeyCols.size
+          val res = nonKeyCols.map(tc => ccR.cc.countColumnChanges(tc,insertTime,false)).sum / fieldCount.toDouble
+          ccR.writer.println(res)
+        })
+      })
+    })
+    (countDeterminantCounters ++ countNonDeterminantCounters).foreach(_.writer.close())
+  }
 
   private def doBCNFCounting = {
     val ids = DatasetInfo.getViewIdsInSubdomain(subdomain)
@@ -93,4 +126,7 @@ object DetailedBCNFChangeCounting extends App with StrictLogging{
     })
     ccToWriter.foreach(_._2.close())
   }
+
+  case class ColumnChangeReport(cc: FieldChangeCounter, countPk: Boolean,countNonPK:Boolean, writer: PrintWriter)
+
 }

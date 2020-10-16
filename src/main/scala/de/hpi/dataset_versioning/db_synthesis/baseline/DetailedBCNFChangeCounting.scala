@@ -9,6 +9,8 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.config.{AllDeterminantIgn
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
 import de.hpi.dataset_versioning.io.IOService
 
+import scala.collection.mutable
+
 object DetailedBCNFChangeCounting extends App with StrictLogging{
 
   IOService.socrataDir = args(0)
@@ -68,19 +70,18 @@ object DetailedBCNFChangeCounting extends App with StrictLogging{
       val insertTime = tt.insertTime
       val allBCNFTables = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id)
         .map(dtt => tt.project(dtt).projection)
-      val determinants = allBCNFTables.flatMap(_.dtt.get.primaryKey.map(_.attrId).toSet)
-      allBCNFTables.foreach(bcnf => {
-        val (keyCols,nonKeyCols) = bcnf.getTemporalColumns().partition(tc => determinants.contains(tc.attrID))
-        countDeterminantCounters.foreach(ccR => {
-          val fieldCount = bcnf.rows.size*keyCols.size
-          val res = keyCols.map(tc => ccR.cc.countColumnChanges(tc,insertTime,true)).sum / fieldCount.toDouble
-          ccR.writer.println(res)
-        })
-        countNonDeterminantCounters.foreach(ccR => {
-          val fieldCount = bcnf.rows.size*nonKeyCols.size
-          val res = nonKeyCols.map(tc => ccR.cc.countColumnChanges(tc,insertTime,false)).sum / fieldCount.toDouble
-          ccR.writer.println(res)
-        })
+      val determinants = allBCNFTables.flatMap(_.dtt.get.primaryKey.map(_.attrId).toSet).toSet
+      tt.getTemporalColumns().foreach(tc => {
+        val isDeterminant = determinants.contains(tc.attrID)
+        if(isDeterminant){
+          countDeterminantCounters.foreach(cct => {
+            cct.writer.println(cct.cc.countColumnChanges(tc,insertTime,isDeterminant) / tt.rows.size.toDouble)
+          })
+        } else {
+          countNonDeterminantCounters.foreach(cct => {
+            cct.writer.println(cct.cc.countColumnChanges(tc,insertTime,isDeterminant) / tt.rows.size.toDouble)
+          })
+        }
       })
     })
     (countDeterminantCounters ++ countNonDeterminantCounters).foreach(_.writer.close())

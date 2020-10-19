@@ -32,7 +32,7 @@ class DecomposedTemporalTableSketch(val tableID:DecomposedTemporalTableIdentifie
     .map(_.attributeLineage)
     .filter(al => primaryKeyIDs.contains(al.attrId)).toSet
 
-  override def nonKeyAttributeLineages: collection.IndexedSeq[AttributeLineage] = temporalColumnSketches
+  override def attributeLineages: collection.IndexedSeq[AttributeLineage] = temporalColumnSketches
     .map(_.attributeLineage)
     .filter(al => !primaryKeyIDs.contains(al.attrId))
 

@@ -49,7 +49,7 @@ class SynthesizedTemporalDatabaseTable(val id:String,
     schema.map(_.activeTimeIntervals).reduce((a,b) => a.union(b))
   }
 
-  def nonKeyAttributeLineages = schema.filter(al => !keyAttributeLineages.contains(al))
+  def attributeLineages = schema.filter(al => !keyAttributeLineages.contains(al))
 
   var keyIsArtificial = false
 

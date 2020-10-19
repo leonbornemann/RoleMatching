@@ -18,7 +18,7 @@ trait TemporalDatabaseTableTrait[A] {
 
   def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts: LocalDate): A
 
-  def isAssociation: Boolean = nonKeyAttributeLineages.size == 1
+  def isAssociation: Boolean = attributeLineages.size == 1
 
   def isTrueUnion = getUnionedTables.size > 1
 
@@ -36,7 +36,7 @@ trait TemporalDatabaseTableTrait[A] {
 
   def primaryKey: collection.Set[AttributeLineage]
 
-  def nonKeyAttributeLineages: collection.IndexedSeq[AttributeLineage]
+  def attributeLineages: collection.IndexedSeq[AttributeLineage]
 
   def executeUnion(other: TemporalDatabaseTableTrait[A], bestMatch: TableUnionMatch[A]): TemporalDatabaseTableTrait[A]
 

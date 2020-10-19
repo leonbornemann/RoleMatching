@@ -185,8 +185,8 @@ object FullBaselinePipelineTest extends App {
 
   def runAttributeMappingIntegrityCheck(synthTable: SynthesizedTemporalDatabaseTable) = {
     if(synthTable.unionedTables == Set(dttA2.id,dttB2.id,dttC1.id,dttD1.id,dttD2.id)){
-      val cityAttr = synthTable.nonKeyAttributeLineages.head
-      assert(synthTable.nonKeyAttributeLineages.size==1)
+      val cityAttr = synthTable.attributeLineages.head
+      assert(synthTable.attributeLineages.size==1)
       assert(synthTable.schemaTracking(cityAttr)(dttA2.id) == Set(3))
       assert(synthTable.schemaTracking(cityAttr)(dttB2.id) == Set(3))
       assert(synthTable.schemaTracking(cityAttr)(dttC1.id) == Set(0))

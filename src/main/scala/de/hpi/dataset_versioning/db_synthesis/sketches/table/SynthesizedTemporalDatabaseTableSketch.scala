@@ -23,7 +23,7 @@ class SynthesizedTemporalDatabaseTableSketch(id:String,
 
   def schema = temporalColumnSketches.map(tc => tc.attributeLineage).toIndexedSeq
 
-  def nonKeyAttributeLineages = schema.filter(al => !primaryKey.contains(al))
+  def attributeLineages = schema.filter(al => !primaryKey.contains(al))
 
   override def columns: IndexedSeq[TemporalColumnTrait[Int]] = temporalColumnSketches
 

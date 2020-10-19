@@ -15,7 +15,7 @@ class TemporalSchemaMapper() extends StrictLogging{
 
   def getSameBCNFTableOriginMapping[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]) = {
     val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-    mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
+    mapping.put(Set(tableA.attributeLineages.head),Set(tableB.attributeLineages.head))
     assert(tableA.primaryKey.size==tableB.primaryKey.size)
     val pkMapping = tableA.primaryKey.toIndexedSeq.sortBy(_.attrId)
       .zip(tableB.primaryKey.toIndexedSeq.sortBy(_.attrId))
@@ -26,7 +26,7 @@ class TemporalSchemaMapper() extends StrictLogging{
 
   def getSimplePkSize1Mapping[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]): collection.Seq[collection.Map[Set[AttributeLineage], Set[AttributeLineage]]] ={
     val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-    mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
+    mapping.put(Set(tableA.attributeLineages.head),Set(tableB.attributeLineages.head))
     mapping.put(Set(tableA.primaryKey.head),Set(tableB.primaryKey.head))
     Seq(mapping)
   }
@@ -45,7 +45,7 @@ class TemporalSchemaMapper() extends StrictLogging{
 
   def getSimpleBagofWordsBased1To1Mapping[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]): collection.Seq[collection.Map[Set[AttributeLineage], Set[AttributeLineage]]] = {
     val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-    mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
+    mapping.put(Set(tableA.attributeLineages.head),Set(tableB.attributeLineages.head))
     val aToBagOfWords = tableA.primaryKey
       .map(al => (al,tableA.columns.filter(_.attributeLineage==al).head.getBagOfWords()))
       .toMap
@@ -71,8 +71,8 @@ class TemporalSchemaMapper() extends StrictLogging{
   }
 
   def enumerateAllValidSchemaMappings[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]):collection.Seq[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]] = {
-    assert(tableA.nonKeyAttributeLineages.size==1)
-    assert(tableA.nonKeyAttributeLineages.size==1)
+    assert(tableA.attributeLineages.size==1)
+    assert(tableA.attributeLineages.size==1)
     val allMappings = mutable.ArrayBuffer[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]]()
     if(tableA.getUnionedTables.size==1 && tableB.getUnionedTables.size==1 && fromSameBCNFTable(tableA.getUnionedTables.head,tableB.getUnionedTables.head)){
       //we can do an easy mapping, because we know the mapping (by ID)
@@ -94,7 +94,7 @@ class TemporalSchemaMapper() extends StrictLogging{
       if(allValidAttributeCombinationsA.size==1 && allValidAttributeCombinationsB.contains(tableB.primaryKey) ||
         allValidAttributeCombinationsB.size==1 && allValidAttributeCombinationsA.contains(tableA.primaryKey)){
         val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-        mapping.put(Set(tableA.nonKeyAttributeLineages.head),Set(tableB.nonKeyAttributeLineages.head))
+        mapping.put(Set(tableA.attributeLineages.head),Set(tableB.attributeLineages.head))
         mapping.put(Set() ++ tableA.primaryKey,Set() ++ tableB.primaryKey)
         allMappings.addOne(mapping)
       } else {

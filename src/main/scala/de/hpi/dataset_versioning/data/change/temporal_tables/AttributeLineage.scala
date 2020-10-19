@@ -8,7 +8,7 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
 import scala.collection.mutable
 
 @SerialVersionUID(3L)
-class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,AttributeState],isSurrogate:Boolean = false) extends Serializable{
+class AttributeLineage(val attrId:Int,val lineage:mutable.TreeMap[LocalDate,AttributeState]) extends Serializable{
 
   def lastName = lineage.filter(_._2.exists).last._2.attr.get.name
 

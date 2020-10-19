@@ -17,7 +17,7 @@ object ScriptMain3 extends App {
   val avg1 = getAVG(values1)
 
   def getAVG(values2: IndexedSeq[Double]) = {
-    val filtered = values2.filter(d => !d.isNaN && d!=0.0)
+    val filtered = values2.filter(d => !d.isNaN /*&& d!=0.0*/)
     filtered.sum / filtered.size
   }
 

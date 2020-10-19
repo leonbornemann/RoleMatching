@@ -17,6 +17,7 @@ case class DecomposedTemporalTable(id: DecomposedTemporalTableIdentifier,
                                    originalFDLHS: collection.Set[AttributeLineage],
                                    primaryKeyByVersion: Map[LocalDate,collection.Set[Attribute]],
                                    referencedTables:mutable.HashSet[DecomposedTemporalTableIdentifier]) extends Serializable{
+
   def informativeTableName: String = id.compositeID + "(" + containedAttrLineages.map(_.lastName).mkString(",") + ")"
 
   private var activeTime:Option[TimeIntervalSequence] = None
@@ -94,6 +95,10 @@ case class DecomposedTemporalTable(id: DecomposedTemporalTableIdentifier,
   def getSchemaString = id.viewID + "_" +id.bcnfID + "(" +
     primaryKey.toIndexedSeq.map(pk => pk.lastName).sorted.mkString(",") + "  ->  " +
     nonKeyAttributeLineages.toIndexedSeq.map(_.lastName).sorted.mkString(",") + ")"
+
+  def getSchemaStringWithIds: String = id.viewID + "_" +id.bcnfID + "(" +
+    primaryKey.toIndexedSeq.map(pk => pk.lastName + s"[${pk.attrId}]").sorted.mkString(",") + "  ->  " +
+    nonKeyAttributeLineages.toIndexedSeq.map(nk => nk.lastName  + s"[${nk.attrId}]").sorted.mkString(",") + ")"
 
 }
 

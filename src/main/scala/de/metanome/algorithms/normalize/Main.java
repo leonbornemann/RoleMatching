@@ -39,6 +39,7 @@ public class Main {
 	private static boolean runOnlyStatistics = false;
 	private static int MAX_FD_SIZE_FOR_UNION = 4;
 	private static int maxFDLHSSize = -1;
+	private static boolean limitLHSSizeBetweenIntersectionSteps;
 
 	public static void main(String[] args) {
 		IOService.socrataDir_$eq(args[0]);
@@ -46,6 +47,7 @@ public class Main {
 		datasetID = args[2];
 		runOnlyStatistics = Boolean.parseBoolean(args[3]);
 		maxFDLHSSize = Integer.parseInt(args[4]);
+		limitLHSSizeBetweenIntersectionSteps = Boolean.parseBoolean(args[5]);
 		conf = new Config();
 		///home/leon/data/dataset_versioning/socrata/fromServer/db_synthesis/decomposition/csv/org.cityofchicago/
 		conf.inputFolderPath = DBSynthesis_IOService.getExportedCSVSubdomainDir(subdomain).getAbsolutePath() + File.separator;
@@ -79,11 +81,11 @@ public class Main {
 				.sorted(Comparator.comparing(f -> LocalDate.parse(f.getFileName().toString().split("\\.")[0], IOService.dateTimeFormatter()).toEpochDay()))
 				.collect(Collectors.toList());
 		FDValidator validator = new FDValidator(subdomain, datasetID,MAX_FD_SIZE_FOR_UNION);
-		Map<BitSet, BitSet> intersectedFds = validator.getFDIntersection();
+		Map<BitSet, BitSet> intersectedFds = validator.getFDIntersection(limitLHSSizeBetweenIntersectionSteps);
 		//additional filter step to make normalization possible if the FD size is smaller:
 		Map<BitSet, BitSet> filteredBySize = new HashMap<BitSet, BitSet>();
 		for (BitSet lhs : intersectedFds.keySet()) {
-			BitSet rhs = filteredBySize.get(lhs);
+			BitSet rhs = intersectedFds.get(lhs);
 			if(lhs.cardinality()<=maxFDLHSSize || maxFDLHSSize ==-1){
 				filteredBySize.put(lhs,rhs);
 			}

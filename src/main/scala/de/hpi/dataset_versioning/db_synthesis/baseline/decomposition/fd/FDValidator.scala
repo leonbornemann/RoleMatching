@@ -79,21 +79,25 @@ class FDValidator(subdomain:String,id:String,maxFDSizeForUnion:Int) extends Stri
     filtered.toMap.asJava
   }
 
-  def getFDIntersection: java.util.Map[java.util.BitSet, java.util.BitSet] = {
+  def getFDIntersection(limitSizePerVersion:Boolean = false): java.util.Map[java.util.BitSet, java.util.BitSet] = {
     val attributeLineagesByID = temporalSchema.byID
     val files = DBSynthesis_IOService.getSortedFDFiles(subdomain,id)
     //initialize fds:
     val f = files(0)
     var curDate = LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter)
     val firstFDs = readFDs(id,curDate)
-    val fdsWithCOLIDS = translateFDs(firstFDs,curDate)
+    var fdsWithCOLIDS = translateFDs(firstFDs,curDate)
+    if(limitSizePerVersion)
+      fdsWithCOLIDS = fdsWithCOLIDS.filter(_._1.size<=maxFDSizeForUnion)
     serializeFds(curDate, fdsWithCOLIDS)
     prefixTree.initializeFDSet(fdsWithCOLIDS)
     for(i <- 1 until files.size){
       val f = files(i)
       curDate = LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter)
       val newFDs = readFDs(id,curDate)
-      val fdsWithCOLIDS = translateFDs(newFDs,curDate)
+      var fdsWithCOLIDS = translateFDs(newFDs,curDate)
+      if(limitSizePerVersion)
+        fdsWithCOLIDS = fdsWithCOLIDS.filter(_._1.size<=maxFDSizeForUnion)
       serializeFds(curDate, fdsWithCOLIDS)
       val intersectedFDs = prefixTree.intersectFDs(fdsWithCOLIDS,maxFDSizeForUnion)
           .filter(fd => fd._1.forall(colID => attributeLineagesByID(colID).valueAt(curDate)._2.exists)) //filters out fds that have an element in LHS that does not exist at curDate

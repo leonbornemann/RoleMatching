@@ -18,7 +18,8 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
     .map(al => (al.attrId,al))
     .toMap
   val latestVersion = versionHistory.latestChangeTimestamp
-  val decomposedTablesAtLastTimestamp = DecomposedTable.load(subdomain,id,latestVersion)
+  val decomposedTablesAtLastTimestamp = DecomposedTable.load(subdomain,id,latestVersion) //Those should be in-order (?)
+  //decomposedTablesAtLastTimestamp.foreach(dt => println(dt.getSchemaStringWithIds))
   val coveredAttributeLineages = decomposedTablesAtLastTimestamp
     .flatMap(dt => dt.attributes.map(_.id))
     .toSet
@@ -172,9 +173,11 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
       val extraNonKeyAttributes = freeAttributeAssignment.getOrElse(dt,Set())
         .filter(!_._2)
         .map(_._1)
-      val containedAttrLineages = (dt.attributes.map(a => attrLineageByID(a.id))
+      var containedAttrLineages = (dt.attributes.map(a => attrLineageByID(a.id))
         ++ extraNonKeyAttributes)
         .sortBy(_.lastDefinedValue.position.getOrElse(Int.MaxValue))
+      //add extra key attributes:
+      containedAttrLineages = containedAttrLineages ++ extraKeyAttributes.filter(al => !containedAttrLineages.contains(al))
       val originalFDLHS = dt.primaryKey.map(a => attrLineageByID(a.id))
       val primaryKey = dt.primaryKey.map(a => attrLineageByID(a.id)) ++ extraKeyAttributes//TODO
       //build pk info:
@@ -200,6 +203,9 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
       (originalFDLHS,decomposedTemporalTable)
     }).toMap
     //update table references and add needed extra attributes
+    val allFKsAndPks = byLHS.values.flatMap(_.primaryKey.map(_.attrId)).toSet
+    val a = byLHS.values.flatMap(_.containedAttrLineages.filter(dtt => !allFKsAndPks.contains(dtt.attrId)).map(_.attrId).toIndexedSeq).groupBy(identity)
+      .filter(_._2.size>1)
     byLHS.values.foreach(dtt => {
       val referencedTablesLHS = tableReferences(dtt)
       val references = referencedTablesLHS.map(lhs => byLHS(lhs))

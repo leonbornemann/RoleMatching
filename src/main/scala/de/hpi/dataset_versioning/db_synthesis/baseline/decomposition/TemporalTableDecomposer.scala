@@ -13,6 +13,7 @@ import scala.collection.mutable.ArrayBuffer
 
 class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:DatasetVersionHistory) {
 
+
   val temporalSchema = TemporalSchema.load(id)
   val attrLineageByID = temporalSchema.attributes
     .map(al => (al.attrId,al))

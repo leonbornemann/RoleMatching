@@ -148,21 +148,31 @@ object FullBaselinePipelineTest extends App {
   //write decomposed associations:
   temporallyDecomposedTables.foreach(_.writeToStandardFile())
   //write table sketches of associations:
-  Seq((ttA,dttA1),(ttA,dttA2),(ttA,dttA3),(ttB,dttB1),(ttB,dttB2),(ttC,dttC1),(ttC,dttC2),(ttD,dttD1),(ttD,dttD2),(ttD,dttD3),(ttSplitPK,dttSplitPK),(ttNormalPk,dttNormalPK))
-    .foreach{case (tt,dtt) =>   tt.project(dtt).projection.writeTableSketch(dtt.primaryKey.map(_.attrId))
+//  Seq((ttA,dttA1),(ttA,dttA2),(ttA,dttA3),(ttB,dttB1),(ttB,dttB2),(ttC,dttC1),(ttC,dttC2),(ttD,dttD1),(ttD,dttD2),(ttD,dttD3),(ttSplitPK,dttSplitPK),(ttNormalPk,dttNormalPK))
+//    .foreach{case (tt,dtt) =>   tt.project(dtt).projection.writeTableSketch(dtt.primaryKey.map(_.attrId))
+//    }
+//
+
+//
+//  val nChangesInDecomposedTemporalTables = temporallyDecomposedTables
+//    .map(dtt => SynthesizedTemporalDatabaseTable
+//      .initFrom(dtt)
+//      .countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).reduce(_ + _)
+//  val topDownOptimizer = new TopDownOptimizer(temporallyDecomposedTables,nChangesInDecomposedTemporalTables,Set(),Map())
+//  val db = topDownOptimizer.optimize()
+//  db.finalSynthesizedTableIDs.foreach(id => {
+    //    val synthTable = SynthesizedTemporalDatabaseTable.loadFromStandardFile(id)
+    //    runAttributeMappingIntegrityCheck(synthTable)
+    //    synthTable.rows.foreach(r => {
+    //      val synthRow = r.asInstanceOf[SynthesizedTemporalRow]
+    //      runRowIntegrityCheck(synthRow)
+    //    })
+    //  })
+
+    def getNonAssociation(dttAssocaition: DecomposedTemporalTable) = {
+      new DecomposedTemporalTable(DecomposedTemporalTableIdentifier(dttAssocaition.id.subdomain, dttAssocaition.id.viewID, dttAssocaition.id.bcnfID, None),
+        dttAssocaition.containedAttrLineages, dttAssocaition.primaryKey, dttAssocaition.primaryKeyByVersion, mutable.HashSet[DecomposedTemporalTableIdentifier]())
     }
-
-  def getNonAssociation(dttAssocaition: DecomposedTemporalTable) = {
-    new DecomposedTemporalTable(DecomposedTemporalTableIdentifier(dttAssocaition.id.subdomain, dttAssocaition.id.viewID, dttAssocaition.id.bcnfID, None),
-      dttAssocaition.containedAttrLineages, dttAssocaition.primaryKey, dttAssocaition.primaryKeyByVersion, mutable.HashSet[DecomposedTemporalTableIdentifier]())
-  }
-
-  val nChangesInDecomposedTemporalTables = temporallyDecomposedTables
-    .map(dtt => SynthesizedTemporalDatabaseTable
-      .initFrom(dtt)
-      .countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).reduce(_ + _)
-  val topDownOptimizer = new TopDownOptimizer(temporallyDecomposedTables,nChangesInDecomposedTemporalTables,Set(),Map())
-  val db = topDownOptimizer.optimize()
 
   def runRowIntegrityCheck(synthRow: SynthesizedTemporalRow) = {
     if(synthRow.fields.contains(ValueLineage(mutable.TreeMap(versions(0)->"00000")))){
@@ -185,12 +195,5 @@ object FullBaselinePipelineTest extends App {
     }
   }
 
-  db.finalSynthesizedTableIDs.foreach(id => {
-    val synthTable = SynthesizedTemporalDatabaseTable.loadFromStandardFile(id)
-    runAttributeMappingIntegrityCheck(synthTable)
-    synthTable.rows.foreach(r => {
-      val synthRow = r.asInstanceOf[SynthesizedTemporalRow]
-      runRowIntegrityCheck(synthRow)
-    })
-  })
+//
 }

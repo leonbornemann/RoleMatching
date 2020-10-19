@@ -5,7 +5,7 @@ import java.time.LocalDate
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables._
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.DatasetInsertIgnoreFieldChangeCounter
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier, SurrogateBasedDecomposedTemporalTable}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
@@ -147,33 +147,38 @@ object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTempor
 
   def loadFromStandardFile(id:Int) = loadFromFile(DBSynthesis_IOService.getSynthesizedTableTempFile(id))
 
+  def initFrom(dttToMerge: SurrogateBasedDecomposedTemporalTable, originalTemporalTable:TemporalTable):SynthesizedTemporalDatabaseTable = {
+    ???
+  }
+
   def initFrom(dttToMerge: DecomposedTemporalTable,originalTemporalTable:TemporalTable):SynthesizedTemporalDatabaseTable = {
-    val tt = originalTemporalTable.project(dttToMerge)
-    val synthesizedSchema = dttToMerge.containedAttrLineages
-    var curEntityID:Long = 0
-    val entityIDMatchingSynthesizedToOriginal = mutable.HashMap[Long,Long]()
-    val newRows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
-    tt.projection.rows.foreach(tr => {
-      val projectedTemporalRow = tr.asInstanceOf[ProjectedTemporalRow]
-      val originalIds = mutable.HashMap[DecomposedTemporalTableIdentifier,Long](tt.projection.dtt.get.id -> tr.entityID)
-      val toViewIds = mutable.HashMap[String,mutable.HashSet[Long]](tt.original.id -> (mutable.HashSet() ++ projectedTemporalRow.mappedEntityIds))
-      newRows.addOne(new SynthesizedTemporalRow(curEntityID,tr.fields,originalIds,toViewIds))
-      entityIDMatchingSynthesizedToOriginal.put(curEntityID,tr.entityID)
-      curEntityID +=1
-    })
-    val attributeTrackingSynthesizedToDTT = mutable.HashMap() ++ synthesizedSchema.map(al => {
-      val map = mutable.HashMap[DecomposedTemporalTableIdentifier,mutable.HashSet[Int]]()
-      map.put(tt.projection.dtt.get.id,mutable.HashSet(al.attrId))
-      (al,map)
-    }).toMap
-    val synthTable = new SynthesizedTemporalDatabaseTable(dttToMerge.compositeID,
-      mutable.HashSet(dttToMerge.id),
-      synthesizedSchema,
-      dttToMerge.primaryKey,
-      newRows,
-      attributeTrackingSynthesizedToDTT
-    )
-    synthTable
+    ???
+//    val tt = originalTemporalTable.project(dttToMerge)
+//    val synthesizedSchema = dttToMerge.containedAttrLineages
+//    var curEntityID:Long = 0
+//    val entityIDMatchingSynthesizedToOriginal = mutable.HashMap[Long,Long]()
+//    val newRows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
+//    tt.projection.rows.foreach(tr => {
+//      val projectedTemporalRow = tr.asInstanceOf[ProjectedTemporalRow]
+//      val originalIds = mutable.HashMap[DecomposedTemporalTableIdentifier,Long](tt.projection.dtt.get.id -> tr.entityID)
+//      val toViewIds = mutable.HashMap[String,mutable.HashSet[Long]](tt.original.id -> (mutable.HashSet() ++ projectedTemporalRow.mappedEntityIds))
+//      newRows.addOne(new SynthesizedTemporalRow(curEntityID,tr.fields,originalIds,toViewIds))
+//      entityIDMatchingSynthesizedToOriginal.put(curEntityID,tr.entityID)
+//      curEntityID +=1
+//    })
+//    val attributeTrackingSynthesizedToDTT = mutable.HashMap() ++ synthesizedSchema.map(al => {
+//      val map = mutable.HashMap[DecomposedTemporalTableIdentifier,mutable.HashSet[Int]]()
+//      map.put(tt.projection.dtt.get.id,mutable.HashSet(al.attrId))
+//      (al,map)
+//    }).toMap
+//    val synthTable = new SynthesizedTemporalDatabaseTable(dttToMerge.compositeID,
+//      mutable.HashSet(dttToMerge.id),
+//      synthesizedSchema,
+//      dttToMerge.primaryKey,
+//      newRows,
+//      attributeTrackingSynthesizedToDTT
+//    )
+//    synthTable
   }
 
   def initFrom(dttToMerge: DecomposedTemporalTable):SynthesizedTemporalDatabaseTable = {

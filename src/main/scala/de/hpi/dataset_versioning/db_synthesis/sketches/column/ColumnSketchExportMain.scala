@@ -3,7 +3,7 @@ package de.hpi.dataset_versioning.db_synthesis.sketches.column
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, SurrogateBasedDecomposedTemporalTable}
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.DecomposedTemporalTableSketch
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
@@ -23,13 +23,20 @@ object ColumnSketchExportMain extends App with StrictLogging {
       sketch.writeToBinaryFile(f)
     })
     //bcnf Tables:
-    val bcnfTables = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
+    val bcnfTables = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
     //whole tables:
-    val associations = if(DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain,id)) DecomposedTemporalTable.loadAllAssociations(subdomain, id) else Array[DecomposedTemporalTable]()
+    val associations = if(DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain,id)) SurrogateBasedDecomposedTemporalTable.loadAllAssociations(subdomain, id) else Array[SurrogateBasedDecomposedTemporalTable]()
+    val allSurrogates = bcnfTables.flatMap(_.surrogateKey)
+      .groupBy(_.surrogateID)
+      .map{case (k,v) => (k,v.head)}
+    //integrity check: all references must also be used as keys:
+    assert(bcnfTables.flatMap(_.foreignSurrogateKeysToReferencedTables.toMap.keySet).forall(s => allSurrogates.contains(s.surrogateID)))
+
+    tt.addSurrogates(allSurrogates.values.toSet)
     val dtts = bcnfTables ++ associations
     dtts.foreach(dtt => {
       val projection = tt.project(dtt)
-      projection.projection.writeTableSketch(dtt.primaryKey.map(_.attrId))
+      projection.projection.writeTableSketch
     })
   }
 
@@ -40,7 +47,7 @@ object ColumnSketchExportMain extends App with StrictLogging {
     val subdomainIds = subDomainInfo(subdomain)
       .map(_.id)
       .toIndexedSeq
-    val idsToSketch = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain,subdomainIds)
+    val idsToSketch = SurrogateBasedDecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain,subdomainIds)
     idsToSketch.foreach(exportForID(_))
   }
 

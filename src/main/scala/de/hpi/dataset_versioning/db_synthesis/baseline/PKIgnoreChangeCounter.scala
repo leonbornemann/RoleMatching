@@ -5,7 +5,7 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.{DatasetAndRowInitialInsertIgnoreFieldChangeCounter, FieldChangeCounter, TableChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.AbstractTemporalDatabaseTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, SurrogateBasedDecomposedTemporalTable}
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 
 /***
@@ -41,12 +41,7 @@ class PKIgnoreChangeCounter(subdomain:String,changeCounter: FieldChangeCounter) 
   override def countChanges(table: TemporalTable, allDeterminantAttributeIDs: Set[Int]): Long = {
     //TODO: this is inefficient, but fine for now:
     var originalKey:Set[Int] = null
-    if (table.dtt.isEmpty) {
-      val bcnfTables = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, table.id)
-      originalKey = getOriginalPK(bcnfTables)
-    } else {
-      originalKey = table.dtt.get.primaryKey.map(_.attrId)
-    }
+    originalKey = Set()
     val insertTime = table.insertTime
     table.rows.flatMap(tr => tr.fields
       .zip(table.attributes)

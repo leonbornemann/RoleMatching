@@ -9,13 +9,13 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedT
 
 object DBSynthesis_IOService extends StrictLogging{
   def decomposedTemporalAssociationsExist(subdomain: String, id: String) = {
-    val dir = getDecomposedTemporalAssociationDir(subdomain, id)
+    val dir = getSurrogateBasedDecomposedTemporalAssociationDir(subdomain, id)
     dir.exists() && !dir.listFiles().isEmpty
   }
 
 
   def decomposedTemporalTablesExist(subdomain:String,id: String) = {
-    val dir = getDecomposedTemporalTableDir(subdomain, id)
+    val dir = getSurrogateBasedDecomposedTemporalTableDir(subdomain, id)
     dir.exists() && !dir.listFiles().isEmpty
   }
 
@@ -43,12 +43,12 @@ object DBSynthesis_IOService extends StrictLogging{
 
   def getStatisticsDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$STATISTICS_DIR/$subdomain/$originalID/"))
 
-  def getDecomposedTemporalTableDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/$subdomain/$viewID/"))
-  def getDecomposedTemporalAssociationDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$DECOMPOSED_Temporal_ASSOCIATION_DIR/$subdomain/$viewID/"))
+  def getSurrogateBasedDecomposedTemporalTableDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$DECOMPOSED_TEMPORAL_TABLE_DIR/$subdomain/$viewID/"))
+  def getSurrogateBasedDecomposedTemporalAssociationDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$DECOMPOSED_TEMPORAL_ASSOCIATION_DIR/$subdomain/$viewID/"))
 
 
-  def getDecomposedTemporalTableFile(id:DecomposedTemporalTableIdentifier) = {
-    val topDir = if(id.associationID.isDefined) DECOMPOSED_Temporal_ASSOCIATION_DIR else DECOMPOSED_Temporal_TABLE_DIR
+  def getSurrogateBasedDecomposedTemporalTableFile(id:DecomposedTemporalTableIdentifier) = {
+    val topDir = if(id.isPurePKToFKReference) DECOMPOSED_TEMPORAL_TABLE_PURE_PK_TO_FK_REFERENCES_DIR else if(id.associationID.isDefined) DECOMPOSED_TEMPORAL_ASSOCIATION_DIR else DECOMPOSED_TEMPORAL_TABLE_DIR
     createParentDirs(new File(s"$topDir/${id.subdomain}/${id.viewID}/${id.compositeID}.json"))
   }
 
@@ -89,8 +89,9 @@ object DBSynthesis_IOService extends StrictLogging{
   def DECOMPOSITION_EXPORT_CSV_DIR = DECOMPOSTION_DIR + "/csv/"
   def DECOMPOSITION_RESULT_DIR = DECOMPOSTION_DIR + "/results/"
   def DECOMPOSED_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTables/"
-  def DECOMPOSED_Temporal_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTemporalTables/"
-  def DECOMPOSED_Temporal_ASSOCIATION_DIR = DECOMPOSTION_DIR + "/decomposedTemporalAssociations/"
+  def DECOMPOSED_TEMPORAL_TABLE_DIR = DECOMPOSTION_DIR + "/surrogateBasedDecomposedTemporalTables/"
+  def DECOMPOSED_TEMPORAL_ASSOCIATION_DIR = DECOMPOSTION_DIR + "/surrogateBasedDecomposedTemporalAssociations/"
+  def DECOMPOSED_TEMPORAL_TABLE_PURE_PK_TO_FK_REFERENCES_DIR = DECOMPOSTION_DIR + "/surrogateBasedDecomposedTemporalTablePKTPFK_REFERENCES/"
   def SYNTHESIZED_TABLES_WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/synthesizedTables/"
   def SYNTHESIZED_DATABASE_FINAL_DIR = DB_SYNTHESIS_DIR + "/finalSynthesizedDatabase/synthesizedTables/"
   def SKETCH_DIR = DB_SYNTHESIS_DIR + "/sketches/"

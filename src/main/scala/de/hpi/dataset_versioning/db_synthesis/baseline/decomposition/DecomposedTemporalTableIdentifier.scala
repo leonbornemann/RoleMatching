@@ -1,9 +1,9 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
 @SerialVersionUID(3L)
-case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnfID:Int,associationID:Option[Int]) extends Serializable{
+case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnfID:Int,associationID:Option[Int],isPurePKToFKReference:Boolean=false) extends Serializable{
 
-  def compositeID: String = subdomain + "." + viewID + "." + bcnfID + (if(associationID.isDefined) "_" + associationID.get.toString else "")
+  def compositeID: String = subdomain + "." + viewID + "." + bcnfID + (if(associationID.isDefined) "_" + associationID.get.toString else "") + (if(isPurePKToFKReference) "_PKTOFK" else "")
 
 }
 

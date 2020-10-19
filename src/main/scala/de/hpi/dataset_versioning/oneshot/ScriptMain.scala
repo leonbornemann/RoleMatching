@@ -12,8 +12,8 @@ import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
 import de.hpi.dataset_versioning.db_synthesis.baseline.DetailedBCNFChangeCounting.subdomain
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{GLOBAL_CONFIG, DatasetInsertIgnoreFieldChangeCounter, NormalFieldChangeCounter, AllDeterminantIgnoreChangeCounter}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{AllDeterminantIgnoreChangeCounter, DatasetInsertIgnoreFieldChangeCounter, GLOBAL_CONFIG, NormalFieldChangeCounter}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, SurrogateBasedDecomposedTemporalTable}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd.FunctionalDependencySet
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnSketch
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
@@ -49,17 +49,16 @@ object ScriptMain extends App with StrictLogging{
   val counterWithOutInitialInsert = new DatasetInsertIgnoreFieldChangeCounter()
   val pkIgnoreCounter = new AllDeterminantIgnoreChangeCounter(counterWithOutInitialInsert)
   val counters = Seq(counterNormal,counterWithOutInitialInsert,pkIgnoreCounter)
-  val idsWithDecomposedTables = DecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain, subdomainIds)
+  val idsWithDecomposedTables = SurrogateBasedDecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain, subdomainIds)
   val resFileWriter = new PrintWriter("bcnfBetter.txt")
   private val idsToProcess = idsWithDecomposedTables
     .sorted
   for(id <- idsToProcess){
     val tt = TemporalTable.load(id)
-    val dtts = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id)
+    val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id)
       .sortBy(_.id.bcnfID)
     val allBCNFTables = dtts
       .map(dtt => tt.project(dtt).projection)
-    val ttKeyCols = dtts.flatMap(_.primaryKey.map(_.attrId)).toSet
     val colsInOriginal = tt.getTemporalColumns()
     val insertTime = tt.insertTime
     val nrowView = tt.rows.size
@@ -70,12 +69,12 @@ object ScriptMain extends App with StrictLogging{
     println(tt.id)
     resFileWriter.print(s"Original View: ")
     print(s"Original View: ")
-    val kvPairs:Seq[(String,Long)] = Seq(("nrow",tt.rows.size.toLong)) ++ counters.map(c => (c.name,c.countChanges(tt,ttKeyCols)))
+    val kvPairs:Seq[(String,Long)] = Seq(("nrow",tt.rows.size.toLong)) ++ counters.map(c => (c.name,c.countChanges(tt)))
     printKvPairs(kvPairs)
     printKvPairsToSTDOUT(kvPairs)
     val bcnfResults = allBCNFTables.map(bcnf => {
       val schemaString = bcnf.dtt.get.getSchemaString
-      val bcnfKVPairs = Seq(("nrow",bcnf.rows.size.toLong)) ++ counters.map(c => (c.name,c.countChanges(bcnf,ttKeyCols)))
+      val bcnfKVPairs = Seq(("nrow",bcnf.rows.size.toLong)) ++ counters.map(c => (c.name,c.countChanges(bcnf)))
       (schemaString,bcnfKVPairs)
     })
     val bcnfAggregatedKvPairs = bcnfResults.map(_._2).reduce((a,b) => {

@@ -12,6 +12,8 @@ trait TableChangeCounter {
 
   def countChanges(table: TemporalTable, allDeterminantAttributeIDs:Set[Int]):Long
 
+  def countChanges(table: TemporalTable):Long = ???
+
   def countColumnChanges[A](tc:TemporalColumnTrait[A],insertTime:LocalDate,colIsPk:Boolean):Long
 
   def countChanges[A](table: AbstractTemporalDatabaseTable[A]):Long

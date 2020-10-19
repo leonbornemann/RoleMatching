@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, AttributeState}
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.Attribute
@@ -164,6 +164,62 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
   }
 
 
+  def createSurrogateBasedDtts(dtts: IndexedSeq[DecomposedTemporalTable]) = {
+    var curSurrogateKeyID = 0
+    val allAttrIds = dtts.flatMap(_.containedAttrLineages.map(_.attrId)).toSet
+    val idToReferredTables = allAttrIds.map( id => {
+      (id,dtts.filter(_.primaryKey.exists(_.attrId == id)))
+    }).toMap
+    val idToLineages = dtts.flatMap(_.containedAttrLineages)
+      .groupBy(_.attrId)
+    //assert equality:
+    //idToLineages.foreach(t => assert((0 until t._2.size-1).forall(i => t._2(i).lineage==t._2(i+1).lineage)))
+    val idToAttribute = idToLineages.map{case (id,group) => (id,group.head)}
+    val pkIds = dtts
+      .flatMap(_.primaryKey.map(_.attrId)).toSet
+    val naturalKeyIDToSurrogateID = pkIds.map(i => {
+        val attr = idToAttribute(i)
+        val toReturn = (i,(curSurrogateKeyID,attr))
+        curSurrogateKeyID+=1
+        (toReturn)
+    }).toMap
+    val surrogateBasedTables = dtts.map(dtt => {
+      val newNonKeys = mutable.ArrayBuffer[AttributeLineage]()
+      val oldReferences = mutable.ArrayBuffer[(AttributeLineage,collection.IndexedSeq[DecomposedTemporalTableIdentifier])]()
+      dtt.containedAttrLineages.foreach(al => {
+        val otherReferencedTables = idToReferredTables(al.attrId).filter(_!=dtt)
+        if(otherReferencedTables.isEmpty)
+          newNonKeys += al
+        else {
+          val toAdd = (al,otherReferencedTables.map(_.id))
+          oldReferences.addOne(toAdd)
+        }
+      })
+      //dtt.containedAttrLineages.partition(al => idToReferredTables(al.attrId).filter(_.))
+      val newKey = dtt.primaryKey.toIndexedSeq
+        .map(pk => {
+          createSurrogateAttribute(naturalKeyIDToSurrogateID, pk)
+        })
+      val newReferences = oldReferences.map{case (fk,referredTables) => {
+        (createSurrogateAttribute(naturalKeyIDToSurrogateID, fk),referredTables)
+      }}.toIndexedSeq.sortBy(_._1.surrogateID)
+      new SurrogateBasedDecomposedTemporalTable(dtt.id,newKey,newNonKeys,newReferences)
+    })
+    surrogateBasedTables.foreach(sbdtt => {
+      sbdtt.writeToStandardFile()
+      sbdtt.furtherDecomposeToAssociations.foreach(sbdta => sbdta.writeToStandardFile())
+      sbdtt.getReferenceSkeleton().writeToStandardFile()
+    })
+    //new AttributeLineage(curSurrogateKeyID,mutable.TreeMap[LocalDate,AttributeState](initialInsert -> ),true)
+  }
+
+  private def createSurrogateAttribute(naturalKeyIDToSurrogateID: Map[Int, (Int, AttributeLineage)], pk: AttributeLineage) = {
+    val (surrogateID, original) = naturalKeyIDToSurrogateID(pk.attrId)
+    val newName = original.lastName + s"_SURROGATE_ID[$surrogateID]"
+    val newAttributeState = new AttributeState(Some(Attribute(original.lastName + s"_SURROGATE_ID[$surrogateID]", surrogateID, None, None))) //this will always be position 0 now
+    new SurrogateAttributeLineage(surrogateID, original.attrId,original.lineage.firstKey)
+  }
+
   def createDecomposedTemporalTables() = {
     val dttToExtraKeyAttributes = mutable.HashMap[DecomposedTemporalTableIdentifier,Set[AttributeLineage]]()
     val tableReferences = mutable.HashMap[DecomposedTemporalTable,collection.Set[Set[AttributeLineage]]]() //maps to the identifying LHS
@@ -207,6 +263,7 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
     val allFKsAndPks = byLHS.values.flatMap(_.primaryKey.map(_.attrId)).toSet
     val a = byLHS.values.flatMap(_.containedAttrLineages.filter(dtt => !allFKsAndPks.contains(dtt.attrId)).map(_.attrId).toIndexedSeq).groupBy(identity)
       .filter(_._2.size>1)
+
     byLHS.values.foreach(dtt => {
       val referencedTablesLHS = tableReferences(dtt)
       val references = referencedTablesLHS.map(lhs => byLHS(lhs))
@@ -218,10 +275,11 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
       })
       dtt.containedAttrLineages.addAll(attributeLineagesToAdd.diff(dtt.containedAttrLineages.toSet))
       //write to file:
-      dtt.writeToStandardFile()
-      //also create associations:
-      dtt.furtherDecomposeToAssociations.foreach(dta => dta.writeToStandardFile())
+//      dtt.writeToStandardFile()
+//      //also create associations:
+//      dtt.furtherDecomposeToAssociations.foreach(dta => dta.writeToStandardFile())
     })
+    createSurrogateBasedDtts(byLHS.values.toIndexedSeq)
     //TODO:       decomposedTemporalTable.writeToStandardFile()
   }
 

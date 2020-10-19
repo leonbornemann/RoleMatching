@@ -5,7 +5,7 @@ import java.time.LocalDate
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.{ChangeCube, ReservedChangeValues}
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.{DatasetInsertIgnoreFieldChangeCounter, TableChangeCounter}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier, SurrogateAttributeLineage, SurrogateBasedDecomposedTemporalTable}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable}
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnSketch
@@ -18,13 +18,44 @@ import scala.collection.mutable
 class TemporalTable(val id:String,
                     val attributes:collection.IndexedSeq[AttributeLineage],
                     val rows:collection.IndexedSeq[TemporalRow],
-                    val dtt:Option[DecomposedTemporalTable] = None) extends Serializable with BinarySerializable{
+                    val dtt:Option[SurrogateBasedDecomposedTemporalTable] = None) extends Serializable with BinarySerializable{
+
+  var surrogateAttributes = IndexedSeq[SurrogateAttributeLineage]()
+  var surrogateRows = scala.collection.mutable.ArrayBuffer[IndexedSeq[Int]]()
+
   def tableSchemaString = id + "(" + attributes.map(_.lastName).mkString(",")+")"
 
   def insertTime = rows.flatMap(r => r.fields.flatMap(vl => vl.lineage).filter(t => !ValueLineage.isWildcard(t._2)).map(_._1)).minBy(_.toEpochDay)
 
   def countChanges(changeCounter: TableChangeCounter, pkSet:Set[Int]): Long = {
     changeCounter.countChanges(this,pkSet)
+  }
+
+  def addSurrogates(surrogateKeys: Set[SurrogateAttributeLineage]) = {
+    //fill with content:
+    val cols = getTemporalColumns().map(tc => (tc.attrID,tc)).toMap
+    val surrogateKeysOrdered = surrogateKeys.toIndexedSeq.sortBy(_.surrogateID)
+    surrogateAttributes = surrogateKeysOrdered
+    val surrogateColsOrdered = surrogateKeysOrdered.map(sk => {
+      val col = cols(sk.attrId)
+      assert(col.fieldLineages.size==rows.size)
+      val valToKey = mutable.HashMap[ValueLineage,Int]()
+      var curKeyValue = 0
+      val surrogateCol = col.fieldLineages.map(vl => {
+        if(valToKey.contains(vl))
+          valToKey(vl)
+        else {
+          valToKey.put(vl,curKeyValue)
+          curKeyValue +=1
+          curKeyValue-1
+        }
+      })
+      surrogateCol
+    })
+    for( rowIndex <- 0 until rows.size){
+      val surrogateKeyValuesForCurRow = (0 until surrogateColsOrdered.size).map( colIndex => surrogateColsOrdered(colIndex)(rowIndex))
+      surrogateRows += surrogateKeyValuesForCurRow
+    }
   }
 
   def serializeToStandardBinaryFile() = {
@@ -34,42 +65,72 @@ class TemporalTable(val id:String,
 
   def isProjection = dtt.isDefined
 
-  def writeTableSketch(primaryKey:Set[Int]) = {
-    assert(isProjection)
-    val tcs = getTemporalColumns()
-    val firstEntityIds = tcs.head.lineages.map(_.entityID)
-    assert(tcs.forall(tc => tc.lineages.map(_.entityID)==firstEntityIds))
-    val dttSketch = new DecomposedTemporalTableSketch(dtt.get.id,primaryKey,mutable.HashSet(),tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
-    dttSketch.writeToStandardFile()
+  def writeTableSketch = {
+    ???
+//    assert(isProjection)
+//    val tcs = getTemporalColumns()
+//    val firstEntityIds = tcs.head.lineages.map(_.entityID)
+//    assert(tcs.forall(tc => tc.lineages.map(_.entityID)==firstEntityIds))
+//    val dttSketch = new DecomposedTemporalTableSketch(dtt.get.id,primaryKey,mutable.HashSet(),tcs.map(tc => TemporalColumnSketch.from(tc)).toArray)
+//    dttSketch.writeToStandardFile()
   }
 
-
-  def project(dttToMerge: DecomposedTemporalTable) = {
-    val newSchema = dttToMerge.containedAttrLineages
-    val rows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
-    val alIDToPosInNewTable = dttToMerge.containedAttrLineages.zipWithIndex.map{case (al,i) => (al.attrId,i)}.toMap
+  def project(dttToMerge: SurrogateBasedDecomposedTemporalTable) = {
+    val newSchema = dttToMerge.attributes
+    val newRows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()
+    val newPKRows:collection.mutable.ArrayBuffer[IndexedSeq[Int]] = collection.mutable.ArrayBuffer()
+    val newFKRows:collection.mutable.ArrayBuffer[IndexedSeq[Int]] = collection.mutable.ArrayBuffer()
+    //primary key surrogate in new table:
+    val surrogateKeyToPosInNewTable = dttToMerge.surrogateKey.zipWithIndex.map{case (al,i) => (al.attrId,i)}.toMap
+    val oldSurogateKeyPositionToNewSurrogatePosition = this.surrogateAttributes.zipWithIndex
+      .withFilter(s => surrogateKeyToPosInNewTable.contains(s._1.attrId))
+      .map{case (al,i) => (i,surrogateKeyToPosInNewTable(al.attrId))}.toIndexedSeq
+    //attributes in new table:
+    val alIDToPosInNewTable = dttToMerge.attributes.zipWithIndex.map{case (al,i) => (al.attrId,i)}.toMap
     val oldAttributePositionToNewAttributePosition = this.attributes.zipWithIndex
       .withFilter(al => alIDToPosInNewTable.contains(al._1.attrId))
       .map{case (al,i) => (i,alIDToPosInNewTable(al.attrId))}.toIndexedSeq
-    this.rows.foreach(tr => {
+    //foreign key surrogate in new table:
+    val surrogateForeignKEyToPosInNewTable = dttToMerge.foreignSurrogateKeysToReferencedTables.zipWithIndex.map{case (al,i) => (al._1.attrId,i)}.toMap
+    val oldForeignKeySurogatePositionToNewForeignKeySurrogatePosition = this.surrogateAttributes.zipWithIndex
+      .withFilter(s => surrogateForeignKEyToPosInNewTable.contains(s._1.attrId))
+      .map{case (al,i) => (i,surrogateForeignKEyToPosInNewTable(al.attrId))}.toIndexedSeq
+    val byPK = new mutable.HashMap[collection.IndexedSeq[Int],(TemporalRow,collection.IndexedSeq[Int])]()
+    this.rows.zipWithIndex.foreach{case (tr,rowIndex) => {
+      //row content:
       val newRowContent = oldAttributePositionToNewAttributePosition.map{case (oldIndex,newIndex) => {
         (newIndex,tr.fields(oldIndex))
       }}.sortBy(_._1)
       assert(newRowContent.map(_._1) == (0 until newSchema.size))
       val newRow = new TemporalRow(tr.entityID,newRowContent.map(_._2))
-      rows.addOne(newRow)
-    })
-    //filter out duplicate rows:
-    val bySameTupleLineages = rows.groupBy(tr => {
-      val a = tr.fields.map(_.lineage)
-      a
-    })
-    val rowsProjected:collection.mutable.ArrayBuffer[ProjectedTemporalRow] = collection.mutable.ArrayBuffer()
-    bySameTupleLineages.foreach{case (k,v) => {
-      val id = v.sortBy(_.entityID).head.entityID
-      rowsProjected += new ProjectedTemporalRow(id,v.head.fields,v.map(_.entityID).toSet)
+      //primary key content:
+      val newPKContent = oldSurogateKeyPositionToNewSurrogatePosition.map{case (oldIndex,newIndex) => {
+        (newIndex,surrogateRows(rowIndex)(oldIndex))
+      }}.sortBy(_._1)
+      assert(newPKContent.map(_._1) == (0 until dttToMerge.surrogateKey.size))
+      val newPKRow = newPKContent.map(_._2)
+      //foreign key content:
+      val newFKContent = oldForeignKeySurogatePositionToNewForeignKeySurrogatePosition.map{case (oldIndex,newIndex) => {
+        (newIndex,surrogateRows(rowIndex)(oldIndex))
+      }}.sortBy(_._1)
+      assert(newFKContent.map(_._1) == (0 until dttToMerge.foreignSurrogateKeysToReferencedTables.size))
+      val newFKRow = newFKContent.map(_._2)
+      if(byPK.contains(newPKRow)){
+        val (mappedRow,mappedFKRow) = byPK(newPKRow)
+        assert(newRow.fields == mappedRow.fields && mappedFKRow == newFKRow)
+      } else {
+        byPK.put(newPKRow,(newRow,newFKRow))
+        newRows.addOne(newRow)
+        newPKRows.addOne(newPKRow)
+        newFKRows.addOne(newFKRow)
+      }
     }}
-    new ProjectedTemporalTable(new TemporalTable(dttToMerge.compositeID,newSchema,rowsProjected,Some(dttToMerge)),this)
+    val projectedTable = new TemporalTable(dttToMerge.compositeID,newSchema,newRows,Some(dttToMerge))
+    val newSurrogateKeyAttributes = oldSurogateKeyPositionToNewSurrogatePosition.sortBy(_._2).map{case (oldI,_) => surrogateAttributes(oldI)}
+    val newSurrogateFKAttributes = oldForeignKeySurogatePositionToNewForeignKeySurrogatePosition.sortBy(_._2).map{case (oldI,_) => surrogateAttributes(oldI)}
+    projectedTable.surrogateAttributes = newSurrogateKeyAttributes ++ newSurrogateFKAttributes
+    projectedTable.surrogateRows = newPKRows.zip(newFKRows).map{case (pk,fk) =>pk++fk }
+    new ProjectedTemporalTable(new TemporalTable(dttToMerge.compositeID,newSchema,newRows,Some(dttToMerge)),this)
   }
 
   def getTemporalColumns() = {

@@ -5,8 +5,9 @@ import java.io.PrintWriter
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{AllDeterminantIgnoreChangeCounter, DatasetAndRowInitialInsertIgnoreFieldChangeCounter, DatasetInsertIgnoreFieldChangeCounter, FieldChangeCounter, GLOBAL_CONFIG, NormalFieldChangeCounter}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, SurrogateBasedDecomposedTemporalTable}
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.FieldChangeCounter
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable

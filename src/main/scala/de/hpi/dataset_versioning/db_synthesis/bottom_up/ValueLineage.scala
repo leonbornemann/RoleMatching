@@ -62,6 +62,8 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
   override def nonWildCardValues: Iterable[Any] = getValueLineage.values.filter(!isWildcard(_))
 
   override def isRowDelete(a: Any): Boolean = a==ReservedChangeValues.NOT_EXISTANT_ROW
+
+  override def numValues: Int = lineage.size
 }
 object ValueLineage{
 

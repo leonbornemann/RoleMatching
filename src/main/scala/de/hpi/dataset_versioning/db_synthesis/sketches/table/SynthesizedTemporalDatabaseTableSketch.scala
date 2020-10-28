@@ -4,7 +4,8 @@ import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.{TemporalColumnSketch, TemporalColumnTrait}
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.{TemporalFieldTrait, Variant2Sketch}
 
@@ -23,9 +24,9 @@ class SynthesizedTemporalDatabaseTableSketch(id:String,
 
   def schema = temporalColumnSketches.map(tc => tc.attributeLineage).toIndexedSeq
 
-  def attributeLineages = schema.filter(al => !primaryKey.contains(al))
+  def dataAttributeLineages = schema.filter(al => !primaryKey.contains(al))
 
-  override def columns: IndexedSeq[TemporalColumnTrait[Int]] = temporalColumnSketches
+  override def dataColumns: IndexedSeq[TemporalColumnTrait[Int]] = temporalColumnSketches
 
   override def getID: String = id
 
@@ -57,7 +58,7 @@ class SynthesizedTemporalDatabaseTableSketch(id:String,
 
   override def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean = fieldValueAtTimestamp(rowIndex, colIndex, ts) == Variant2Sketch.WILDCARD
 
-  override def getTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[Int]] = columns.map(c => c.fieldLineages(rowIndex))
+  override def getDataTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[Int]] = dataColumns.map(c => c.fieldLineages(rowIndex))
 }
 object SynthesizedTemporalDatabaseTableSketch{
 

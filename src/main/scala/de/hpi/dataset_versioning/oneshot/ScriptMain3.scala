@@ -4,6 +4,8 @@ import scala.io.Source
 
 object ScriptMain3 extends App {
 
+
+
   val path = "/home/leon/data/dataset_versioning/plotData/pkFIeldChanges/"
   val path1 = path + "NormalFieldChangeCounter_DeterminantOnly"
   val path2 = path + "NormalFieldChangeCounter_NonDeterminantOnly"

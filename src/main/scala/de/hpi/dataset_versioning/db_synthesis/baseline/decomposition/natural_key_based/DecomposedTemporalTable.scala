@@ -1,13 +1,11 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
+package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based
 
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
-import de.hpi.dataset_versioning.data.json.helper.DecomposedTemporalTableHelper
-import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.{AttributeLineageWithHashMap, TemporalSchema}
 import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
-import de.hpi.dataset_versioning.io.DBSynthesis_IOService
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 
 import scala.collection.mutable
 

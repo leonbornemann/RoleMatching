@@ -1,12 +1,13 @@
 package de.hpi.dataset_versioning.db_synthesis.database.query_tracking
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.SynthesizedTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
 
 class ViewTupleMappingTracker(val id: String, entityIds: collection.IndexedSeq[Long], attributeIDs: collection.IndexedSeq[Int]) {
 
-  def update(newSynthTable: SynthesizedTemporalDatabaseTable, executedMatch: TableUnionMatch[Int]) = {
+  def update(newSynthTable: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, executedMatch: TableUnionMatch[Int]) = {
     if(!executedMatch.firstMatchPartner.isTrueUnion && executedMatch.firstMatchPartner.getUnionedTables.head.viewID==id){
       throw new AssertionError("query tracking implementation missing")
     }

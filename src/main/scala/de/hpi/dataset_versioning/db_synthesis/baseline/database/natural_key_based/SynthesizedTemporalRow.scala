@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.database
+package de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalRow
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier

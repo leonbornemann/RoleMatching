@@ -4,9 +4,10 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.{ChangeCube, ReservedChangeValues}
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{DatasetInsertIgnoreFieldChangeCounter, TableChangeCounter}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier, SurrogateAttributeLineage, SurrogateBasedDecomposedTemporalTable}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.TableChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable}
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnSketch
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.DecomposedTemporalTableSketch

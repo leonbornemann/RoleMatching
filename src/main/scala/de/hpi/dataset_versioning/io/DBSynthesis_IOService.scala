@@ -8,17 +8,24 @@ import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 
 object DBSynthesis_IOService extends StrictLogging{
+
+  def getOptimizationInputAssociationSketchFile(head: DecomposedTemporalTableIdentifier) = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_Association_SKETCH_DIR/${head.viewID}/${head.compositeID}.binary"))
+  }
+
+  def getOptimizationInputAssociationFile(head: DecomposedTemporalTableIdentifier) = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/${head.viewID}/${head.compositeID}.binary"))
+  }
+
   def decomposedTemporalAssociationsExist(subdomain: String, id: String) = {
     val dir = getSurrogateBasedDecomposedTemporalAssociationDir(subdomain, id)
     dir.exists() && !dir.listFiles().isEmpty
   }
 
-
   def decomposedTemporalTablesExist(subdomain:String,id: String) = {
     val dir = getSurrogateBasedDecomposedTemporalTableDir(subdomain, id)
     dir.exists() && !dir.listFiles().isEmpty
   }
-
 
   //clear working directory for synthesized tables:
   logger.debug("Beginning to delete old synthesized tables from working directory")
@@ -92,6 +99,8 @@ object DBSynthesis_IOService extends StrictLogging{
   def DECOMPOSED_TEMPORAL_TABLE_DIR = DECOMPOSTION_DIR + "/surrogateBasedDecomposedTemporalTables/"
   def DECOMPOSED_TEMPORAL_ASSOCIATION_DIR = DECOMPOSTION_DIR + "/surrogateBasedDecomposedTemporalAssociations/"
   def DECOMPOSED_TEMPORAL_TABLE_PURE_PK_TO_FK_REFERENCES_DIR = DECOMPOSTION_DIR + "/surrogateBasedDecomposedTemporalTablePKTPFK_REFERENCES/"
+  def OPTIMIZATION_INPUT_Association_SKETCH_DIR = DB_SYNTHESIS_DIR + "/input/associationSketches/"
+  def OPTIMIZATION_INPUT_ASSOCIATION_DIR = DB_SYNTHESIS_DIR + "/input/associations/"
   def SYNTHESIZED_TABLES_WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/synthesizedTables/"
   def SYNTHESIZED_DATABASE_FINAL_DIR = DB_SYNTHESIS_DIR + "/finalSynthesizedDatabase/synthesizedTables/"
   def SKETCH_DIR = DB_SYNTHESIS_DIR + "/sketches/"

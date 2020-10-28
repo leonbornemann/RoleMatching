@@ -1,10 +1,11 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.database
+package de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{FieldChangeCounter, DatasetInsertIgnoreFieldChangeCounter}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{TableUnionMatch, TupleMatching}
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.FieldChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.util.TableFormatter
@@ -15,7 +16,9 @@ import scala.collection.mutable.ArrayBuffer
 @SerialVersionUID(3L)
 abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSet[DecomposedTemporalTableIdentifier]) extends TemporalDatabaseTableTrait[A] with Serializable{
 
-  def insertTime = columns
+  override def isSurrogateBased: Boolean = false
+
+  def insertTime = dataColumns
     .flatMap(c => c.fieldLineages
       .flatMap(vl => vl.getValueLineage)
       .filter(t => !ValueLineage.isWildcard(t._2))
@@ -27,7 +30,7 @@ abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSe
   }
 
   override def primaryKeyIsValid: Boolean = {
-    val pkCOlumns = columns.filter(c => primaryKey.contains(c.attributeLineage)).toIndexedSeq.sortBy(_.attributeLineage.attrId)
+    val pkCOlumns = dataColumns.filter(c => primaryKey.contains(c.attributeLineage)).toIndexedSeq.sortBy(_.attributeLineage.attrId)
     val rows = (0 until nrows).map(rID => {
       val keyPartOfTemporalRow = pkCOlumns.map(c => c.fieldLineages(rID).getValueLineage)
       keyPartOfTemporalRow
@@ -36,8 +39,8 @@ abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSe
   }
 
   def printTable = {
-    val dataRows:Seq[Seq[Any]] = (0 until nrows).map(rID => columns.map(c => "[" + c.fieldLineages(rID).getValueLineage.map(_._2).mkString(",") + "]"))
-    val schema = columns.map(_.attributeLineage)
+    val dataRows:Seq[Seq[Any]] = (0 until nrows).map(rID => dataColumns.map(c => "[" + c.fieldLineages(rID).getValueLineage.map(_._2).mkString(",") + "]"))
+    val schema = dataColumns.map(_.attributeLineage)
     val keys = primaryKey
     val header:Seq[Seq[Any]] = Seq(schema.map(al => {
       val keyString = if (keys.contains(al)) " (Key)" else ""
@@ -62,8 +65,8 @@ abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSe
                                   bestMatch: TableUnionMatch[A],
                                   unionedTableID:String) = {
     val mapping = bestMatch.schemaMapping.get
-    val leftColsByID = left.columns.map(c => (c.attrID,c)).toMap
-    val rightColsByID = right.columns.map(c => (c.attrID,c)).toMap
+    val leftColsByID = left.dataColumns.map(c => (c.attrID,c)).toMap
+    val rightColsByID = right.dataColumns.map(c => (c.attrID,c)).toMap
     assert(bestMatch.tupleMapping.isDefined)
     val tupleMapping = bestMatch.tupleMapping.get
     val leftTupleIndicesToNewTupleIndices = mutable.HashMap[Int,Int]()

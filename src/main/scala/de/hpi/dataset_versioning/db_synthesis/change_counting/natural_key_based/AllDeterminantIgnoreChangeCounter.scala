@@ -1,10 +1,10 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.config
+package de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based
+
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.AbstractTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.AbstractTemporalDatabaseTable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
-import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
 /***
  * Ignores all determinant columns, no matter where they appear (Read: ignores keys AND foreign keys)
@@ -15,7 +15,7 @@ class AllDeterminantIgnoreChangeCounter(changeCounter: FieldChangeCounter) exten
   override def countChanges[A](table: AbstractTemporalDatabaseTable[A]): Long = {
     val insertTime = table.insertTime
     val pk = table.primaryKey.map(_.attrId).toSet
-    val cols = table.columns.filter(c => !pk.contains(c.attrID))
+    val cols = table.dataColumns.filter(c => !pk.contains(c.attrID))
     cols.map(c => changeCounter.countColumnChanges(c,insertTime,false)).sum
   }
 

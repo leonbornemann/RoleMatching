@@ -26,17 +26,17 @@ class DecomposedTemporalTableSketch(val tableID:DecomposedTemporalTableIdentifie
 
   override def getID: String = tableID.compositeID
 
-  override def columns: IndexedSeq[TemporalColumnTrait[Int]] = temporalColumnSketches.toIndexedSeq
+  override def dataColumns: IndexedSeq[TemporalColumnTrait[Int]] = temporalColumnSketches.toIndexedSeq
 
   override def primaryKey: collection.Set[AttributeLineage] = temporalColumnSketches
     .map(_.attributeLineage)
     .filter(al => primaryKeyIDs.contains(al.attrId)).toSet
 
-  override def attributeLineages: collection.IndexedSeq[AttributeLineage] = temporalColumnSketches
+  override def dataAttributeLineages: collection.IndexedSeq[AttributeLineage] = temporalColumnSketches
     .map(_.attributeLineage)
     .filter(al => !primaryKeyIDs.contains(al.attrId))
 
-  override def nrows: Int = columns.head.fieldLineages.size
+  override def nrows: Int = dataColumns.head.fieldLineages.size
 
   override def buildTemporalColumn(unionedColID: String, unionedAttrLineage: AttributeLineage, unionedFieldLineages: ArrayBuffer[TemporalFieldTrait[Int]],unionedTableID:String): TemporalColumnTrait[Int] = {
     throw new AssertionError("This should never be called on this class")
@@ -65,7 +65,7 @@ class DecomposedTemporalTableSketch(val tableID:DecomposedTemporalTableIdentifie
 
   override def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts: LocalDate): Int = temporalColumnSketches(colIndex).fieldLineageSketches(colIndex).valueAt(ts)
 
-  override def getTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[Int]] = columns.map(c => c.fieldLineages(rowIndex))
+  override def getDataTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[Int]] = dataColumns.map(c => c.fieldLineages(rowIndex))
 }
 
 object DecomposedTemporalTableSketch{

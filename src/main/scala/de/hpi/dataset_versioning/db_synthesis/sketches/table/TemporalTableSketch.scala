@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.sketches.table
 
 import java.io._
 
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.AbstractTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.AbstractTemporalDatabaseTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnSketch
 

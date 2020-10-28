@@ -35,7 +35,7 @@ public class Main {
 	private static String subdomain;
 	private static Config conf;
 	private static String datasetID;
-	private static boolean runStatistics = true;
+	private static boolean runStatistics = false;
 	private static boolean runOnlyStatistics = false;
 	private static int MAX_FD_SIZE_FOR_UNION = 4;
 	private static int maxFDLHSSize = -1;
@@ -228,6 +228,7 @@ public class Main {
 		scala.collection.Set<Attribute> pk = getPrimaryKey(DS,colNameToAttributeState,pkString);
 		scala.collection.Set<scala.collection.Set<Attribute>> fks = getForeignKey(DS,colNameToAttributeState,fkStrings);
 		DecomposedTable res = new DecomposedTable(DS,version,decomposedTableID, schema,pk,fks.toSet());
+		System.out.println(res.getSchemaStringWithIds());
 		res.appendToWriter(writer,false,true,true);
 	}
 
@@ -256,10 +257,6 @@ public class Main {
 		List<String> schema = Arrays.asList(schemaString.split(","));
 		schema.forEach(s -> {
 			String colname = s.split("\\.")[1];
-			System.out.println(colname);
-			System.out.println("--------------");
-			System.out.println(colNameToAttributeState);
-			System.out.println("--------------");
 			schemaAsScala.addOne(colNameToAttributeState.get(colname).get());
 		});
 		return schemaAsScala;

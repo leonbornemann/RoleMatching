@@ -2,7 +2,7 @@ import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.ChangeExporter
 import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, ProjectedTemporalRow, TemporalTable}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable

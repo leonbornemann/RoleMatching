@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, SurrogateBasedDecomposedTemporalTable}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 object AssociationExploration extends App with StrictLogging{

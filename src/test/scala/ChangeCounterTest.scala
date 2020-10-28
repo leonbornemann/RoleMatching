@@ -14,6 +14,6 @@ object ChangeCounterTest extends App {
   tt = TemporalTable.loadFromChangeCube("pubx-yq2d")
   end = System.currentTimeMillis()
   println(s"Json Took ${end-start}ms")
-  val res = tt.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD,Set())
-  println(res)
+//  val res = tt.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD,Set())
+//  println(res)
 }

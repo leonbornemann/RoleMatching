@@ -1,8 +1,9 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.config
+package de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based
+
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.AbstractTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.AbstractTemporalDatabaseTable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
@@ -34,6 +35,6 @@ class DatasetAndRowInitialInsertIgnoreFieldChangeCounter extends FieldChangeCoun
 
   override def countChanges[A](table: AbstractTemporalDatabaseTable[A]): Long = {
     val insertTime = table.insertTime
-    table.columns.map(c => countColumnChanges(c,insertTime,false)).sum
+    table.dataColumns.map(c => countColumnChanges(c,insertTime,false)).sum
   }
 }

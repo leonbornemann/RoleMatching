@@ -1,64 +1,59 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.database
+package de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
 import de.hpi.dataset_versioning.db_synthesis.database.query_tracking.ViewQueryTracker
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.SynthesizedTemporalDatabaseTableSketch
 
 import scala.collection.mutable
 
-class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTable],
+class SynthesizedTemporalDatabase(associations: IndexedSeq[SurrogateBasedDecomposedTemporalTable],
                                   var curChangeCount:Long,
                                   val extraNonDecomposedViewTableChanges:Map[String,Long],
-                                  val extraBCNFTables:Set[DecomposedTemporalTable],
                                   tracker:Option[ViewQueryTracker] = None) extends StrictLogging{
 
   //tables which we can't optimize with our approach:
   logger.debug("Initilializing extra BCNF tables")
-  val extraBCNFSynthTableIDs = mutable.HashSet[Int]()
-  var extraBCNFChangeCount:Long = 0
   //convert the initial tables to synth tables and serialize them:
-  //bcnf tables:
-  extraBCNFTables.groupBy(_.id.viewID).foreach{case (viewID,dtts) => {
-    val tt = TemporalTable.load(viewID)
-    dtts.foreach(dtt => {
-      val table = SynthesizedTemporalDatabaseTable.initFrom(dtt,tt)
-      extraBCNFSynthTableIDs.addOne(table.uniqueSynthTableID)
-      table.writeToStandardFinalDatabaseFile()
-      extraBCNFChangeCount += table.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
-    })
-  }}
-  logger.debug(s"Initialized database with ${associations.size} associations, ${extraBCNFTables.size} Non-Decomposed BCNF tables and ${extraNonDecomposedViewTableChanges.size} non-decomposed views")
+  logger.debug(s"Initialized database with ${associations.size} associations and ${extraNonDecomposedViewTableChanges.size} non-decomposed views")
   logger.debug("Initial change counts:")
   logger.debug(s"Associations: ${curChangeCount}")
-  logger.debug(s"Extra BCNF tables: ${extraBCNFChangeCount}")
   logger.debug(s"Undecomposed View tables: ${extraNonDecomposedViewTableChanges.values.sum}")
-  logger.debug(s"Total (without associations): ${extraBCNFChangeCount+extraNonDecomposedViewTableChanges.values.sum}")
-  logger.debug(s"Total (with associations): ${curChangeCount+extraBCNFChangeCount+extraNonDecomposedViewTableChanges.values.sum}")
+  logger.debug(s"Total (without associations): ${extraNonDecomposedViewTableChanges.values.sum}")
+  logger.debug(s"Total (with associations): ${curChangeCount+extraNonDecomposedViewTableChanges.values.sum}")
+
+  def standardChangeCount(synthTable: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation) = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(synthTable)
 
   def writeToStandardFiles() = {
     var nChangesInUnionedAssociations:Long = 0
     finalSynthesizedTableIDs.foreach(id => {
-      val synthTable = SynthesizedTemporalDatabaseTable.loadFromStandardFile(id)
-      val changesInThisTable = synthTable.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
+      val synthTable = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardFile(id)
+      val changesInThisTable = standardChangeCount(synthTable)
       nChangesInUnionedAssociations += changesInThisTable
       logger.debug(s"writing table ${synthTable.informativeTableName} to file with id $id (#changes:$changesInThisTable")
       synthTable.writeToStandardTemporaryFile()
     })
     //all remaining associations are serialized as-is:
     logger.debug(s"Serializing ${allUnmatchedAssociations.size} remaining unmatched associations as-is")
-    allUnmatchedAssociations.values.foreach(a => {
-      val asSynthTable = SynthesizedTemporalDatabaseTable.initFrom(a)
-      val changesInThisTable = asSynthTable.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
-      nChangesInUnionedAssociations += changesInThisTable
-      logger.debug(s"writing table ${asSynthTable.informativeTableName} to file with id ${asSynthTable.uniqueSynthTableID} (#changes:$changesInThisTable)")
-    })
+    allUnmatchedAssociations.values
+      .groupBy(_.id.viewID)
+      .foreach{case(viewID,g) => {
+        val tt = TemporalTable.load(viewID)
+        g.foreach(a => {
+          val asSynthTable = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.initFrom(a,tt)
+          val changesInThisTable = standardChangeCount(asSynthTable)
+          nChangesInUnionedAssociations += changesInThisTable
+          logger.debug(s"writing table ${asSynthTable.informativeTableName} to file with id ${asSynthTable.uniqueSynthTableID} (#changes:$changesInThisTable)")
+        })
+      }}
     logger.debug(s"Final Database has $nChangesInUnionedAssociations number of changes in associations")
     logger.debug(s"During synthesis we recorded the number of changes in associations to be $curChangeCount")
-    logger.debug(s"Total number of changes in final database: ${nChangesInUnionedAssociations + extraBCNFChangeCount+extraNonDecomposedViewTableChanges.values.sum}")
+    logger.debug(s"Total number of changes in final database: ${nChangesInUnionedAssociations +extraNonDecomposedViewTableChanges.values.sum}")
     if(curChangeCount!=nChangesInUnionedAssociations)
       println()
     assert(curChangeCount==nChangesInUnionedAssociations)
@@ -67,15 +62,20 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
   def printChangeCounts() = {
     var nChanges:Long = 0
     finalSynthesizedTableIDs.foreach(id => {
-      val synthTable = SynthesizedTemporalDatabaseTable.loadFromStandardFile(id)
-      val changesInThisTable = synthTable.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
+      val synthTable = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardFile(id)
+      val changesInThisTable = standardChangeCount(synthTable)
       nChanges += changesInThisTable
     })
-    allUnmatchedAssociations.values.foreach(a => {
-      val asSynthTable = SynthesizedTemporalDatabaseTable.initFrom(a)
-      val changesInThisTable = asSynthTable.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
-      nChanges += changesInThisTable
-    })
+    allUnmatchedAssociations.values
+      .groupBy(_.id.viewID)
+      .foreach{case (viewID,g) => {
+        val tt = TemporalTable.load(viewID)
+        g.foreach(a => {
+          val asSynthTable = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.initFrom(a,tt)
+          val changesInThisTable = standardChangeCount(asSynthTable)
+          nChanges += changesInThisTable
+        })
+      }}
     println(s"tracked $curChangeCount real: $nChanges")
   }
 
@@ -89,24 +89,24 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
   private val allUnmatchedAssociations = mutable.HashMap() ++ associations.map(a => (a.id,a)).toMap
 
   private val dttByID = associations.map(a => (a.id,a)).toMap
-  var sketchToSynthTableID = mutable.HashMap[SynthesizedTemporalDatabaseTableSketch,Int]()
+  var sketchToSynthTableID = mutable.HashMap[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch,Int]()
   var finalSynthesizedTableIDs = mutable.HashSet[Int]()
 
 
-  def updateSynthesizedDatabase(newSynthTable: SynthesizedTemporalDatabaseTable,
-                                newSynthTableSketch: SynthesizedTemporalDatabaseTableSketch,
+  def updateSynthesizedDatabase(newSynthTable: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation,
+                                newSynthTableSketch: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch,
                                 executedMatch:TableUnionMatch[Int]) = {
     newSynthTable.writeToStandardTemporaryFile()
     sketchToSynthTableID.put(newSynthTableSketch,newSynthTable.uniqueSynthTableID)
     finalSynthesizedTableIDs += newSynthTable.uniqueSynthTableID
     //remove old ids:
-    val ts = newSynthTable.unionedTables.map(allUnmatchedAssociations.get(_))
-    val removed = newSynthTable.unionedTables.map(allUnmatchedAssociations.remove(_))
+    val ts = newSynthTable.getUnionedTables.map(allUnmatchedAssociations.get(_))
+    val removed = newSynthTable.getUnionedTables.map(allUnmatchedAssociations.remove(_))
       .filter(_.isDefined)
       .size
     logger.debug(s"Removed $removed tables from unmatched Associations as they are now matched to a synthesized table")
-    val sketchA = executedMatch.firstMatchPartner.asInstanceOf[SynthesizedTemporalDatabaseTableSketch]
-    val sketchB = executedMatch.secondMatchPartner.asInstanceOf[SynthesizedTemporalDatabaseTableSketch]
+    val sketchA = executedMatch.firstMatchPartner.asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
+    val sketchB = executedMatch.secondMatchPartner.asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
     removeOldSynthIDIFUnion(sketchA)
     removeOldSynthIDIFUnion(sketchB)
     //table serialization
@@ -119,7 +119,7 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
   }
 
 
-  private def removeOldSynthIDIFUnion(sketchA: SynthesizedTemporalDatabaseTableSketch) = {
+  private def removeOldSynthIDIFUnion(sketchA: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = {
     if (sketchA.isTrueUnion) {
       assert(sketchToSynthTableID.contains(sketchA))
       val idToRemove = sketchToSynthTableID(sketchA)
@@ -128,14 +128,14 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[DecomposedTemporalTab
     }
   }
 
-  def loadSynthesizedTable(sketchA: SynthesizedTemporalDatabaseTableSketch) = {
-    if (sketchA.unionedTables.size == 1) {
+  def loadSynthesizedTable(sketchA: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = {
+    if (sketchA.getUnionedTables.size == 1) {
       assert(!sketchToSynthTableID.contains(sketchA))
       //read from original:
-      SynthesizedTemporalDatabaseTable.initFrom(dttByID(sketchA.unionedTables.head))
+      SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(sketchA.getUnionedTables.head)
     } else {
       assert(sketchToSynthTableID.contains(sketchA))
-      SynthesizedTemporalDatabaseTable.loadFromStandardFile(sketchToSynthTableID(sketchA))
+      SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardFile(sketchToSynthTableID(sketchA))
     }
   }
 

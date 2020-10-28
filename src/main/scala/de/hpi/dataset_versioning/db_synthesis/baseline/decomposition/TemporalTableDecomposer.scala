@@ -2,11 +2,13 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, AttributeState}
+import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, AttributeState, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd.FunctionalDependencySet
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -20,7 +22,7 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
     .toMap
   val latestVersion = versionHistory.latestChangeTimestamp
   val decomposedTablesAtLastTimestamp = DecomposedTable.load(subdomain,id,latestVersion) //Those should be in-order (?)
-  //decomposedTablesAtLastTimestamp.foreach(dt => println(dt.getSchemaStringWithIds))
+  decomposedTablesAtLastTimestamp.foreach(dt => println(dt.getSchemaStringWithIds))
   val coveredAttributeLineages = decomposedTablesAtLastTimestamp
     .flatMap(dt => dt.attributes.map(_.id))
     .toSet
@@ -249,7 +251,7 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
             ++ extraKeyAttributesThisVersion)
           (v,curPk)
       }).toMap
-      val decomposedTemporalTable = DecomposedTemporalTable(DecomposedTemporalTableIdentifier(subdomain,dt.originalID,dt.id,None),
+      val decomposedTemporalTable = natural_key_based.DecomposedTemporalTable(DecomposedTemporalTableIdentifier(subdomain,dt.originalID,dt.id,None),
         mutable.ArrayBuffer() ++ containedAttrLineages,
         originalFDLHS,
         pkByTimestampMap,

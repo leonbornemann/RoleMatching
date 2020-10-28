@@ -1,11 +1,12 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.database
+package de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based
 
 import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables._
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.DatasetInsertIgnoreFieldChangeCounter
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier, SurrogateBasedDecomposedTemporalTable}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
@@ -37,7 +38,7 @@ class SynthesizedTemporalDatabaseTable(val id:String,
     writeToBinaryFile(f)
   }
 
-  override def columns: IndexedSeq[TemporalColumnTrait[Any]] = {
+  override def dataColumns: IndexedSeq[TemporalColumnTrait[Any]] = {
     val a = (0 until schema.size).map(attrIndex => {
       val col = rows.map(tr => new EntityFieldLineage(tr.entityID,tr.fields(attrIndex)))
       new TemporalColumn(id,schema(attrIndex),col)
@@ -49,7 +50,7 @@ class SynthesizedTemporalDatabaseTable(val id:String,
     schema.map(_.activeTimeIntervals).reduce((a,b) => a.union(b))
   }
 
-  def attributeLineages = schema.filter(al => !keyAttributeLineages.contains(al))
+  def dataAttributeLineages = schema.filter(al => !keyAttributeLineages.contains(al))
 
   var keyIsArtificial = false
 
@@ -57,7 +58,7 @@ class SynthesizedTemporalDatabaseTable(val id:String,
 
   override def getID: String = id
 
-  override def nrows: Int = columns.head.fieldLineages.size
+  override def nrows: Int = dataColumns.head.fieldLineages.size
 
   override def buildTemporalColumn(unionedColID: String,
                                    unionedAttrLineage: AttributeLineage,
@@ -139,17 +140,13 @@ class SynthesizedTemporalDatabaseTable(val id:String,
     ValueLineage.isWildcard(fieldValueAtTimestamp(rowIndex, colIndex, ts))
   }
 
-  override def getTuple(rowIndex: Int): IndexedSeq[TemporalFieldTrait[Any]] = rows(rowIndex).fields.map(_.asInstanceOf[TemporalFieldTrait[Any]]).toIndexedSeq
+  override def getDataTuple(rowIndex: Int): IndexedSeq[TemporalFieldTrait[Any]] = rows(rowIndex).fields.map(_.asInstanceOf[TemporalFieldTrait[Any]]).toIndexedSeq
 }
 
 object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTemporalDatabaseTable] with StrictLogging {
   logger.debug("Potential Optimization: The columns method (in synth table), the columns have to be generated from the row representation - if this is too slow, it would be good to revisit this")
 
   def loadFromStandardFile(id:Int) = loadFromFile(DBSynthesis_IOService.getSynthesizedTableTempFile(id))
-
-  def initFrom(dttToMerge: SurrogateBasedDecomposedTemporalTable, originalTemporalTable:TemporalTable):SynthesizedTemporalDatabaseTable = {
-    ???
-  }
 
   def initFrom(dttToMerge: DecomposedTemporalTable,originalTemporalTable:TemporalTable):SynthesizedTemporalDatabaseTable = {
     ???

@@ -1,12 +1,13 @@
 package de.hpi.dataset_versioning.db_synthesis.database.query_tracking
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.SynthesizedTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
 
 class ViewQueryTracker(ids:collection.IndexedSeq[String]) {
-  def updateForSynthTable(newSynthTable: SynthesizedTemporalDatabaseTable, executedMatch: TableUnionMatch[Int]) = {
-    newSynthTable.unionedTables.foreach(dttID => {
+  def updateForSynthTable(newSynthTable: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, executedMatch: TableUnionMatch[Int]) = {
+    newSynthTable.getUnionedTables.foreach(dttID => {
       val viewID = dttID.viewID
       val toUpdate = byID(viewID)
       toUpdate.update(newSynthTable,executedMatch)

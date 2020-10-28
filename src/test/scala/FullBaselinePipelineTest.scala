@@ -4,8 +4,9 @@ import de.hpi.dataset_versioning.data.change.ChangeExporter
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.TopDownOptimizer
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedTemporalDatabaseTable, SynthesizedTemporalRow}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.{SynthesizedTemporalDatabaseTable, SynthesizedTemporalRow}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.io.IOService
 
@@ -185,8 +186,8 @@ object FullBaselinePipelineTest extends App {
 
   def runAttributeMappingIntegrityCheck(synthTable: SynthesizedTemporalDatabaseTable) = {
     if(synthTable.unionedTables == Set(dttA2.id,dttB2.id,dttC1.id,dttD1.id,dttD2.id)){
-      val cityAttr = synthTable.attributeLineages.head
-      assert(synthTable.attributeLineages.size==1)
+      val cityAttr = synthTable.dataAttributeLineages.head
+      assert(synthTable.dataAttributeLineages.size==1)
       assert(synthTable.schemaTracking(cityAttr)(dttA2.id) == Set(3))
       assert(synthTable.schemaTracking(cityAttr)(dttB2.id) == Set(3))
       assert(synthTable.schemaTracking(cityAttr)(dttC1.id) == Set(0))

@@ -1,5 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 
+import java.time.LocalDate
+
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
@@ -11,11 +13,13 @@ import scala.collection.mutable
 
 class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A], index: LayeredTupleIndex[A], mapping: collection.Map[Set[AttributeLineage], Set[AttributeLineage]]) {
 
-  val aColsByID = tableA.columns.map(c => (c.attrID,c)).toMap
-  val bColsByID = tableB.columns.map(c => (c.attrID,c)).toMap
+  val aColsByID = tableA.dataColumns.map(c => (c.attrID,c)).toMap
+  val bColsByID = tableB.dataColumns.map(c => (c.attrID,c)).toMap
   val insertTimeA = tableA.insertTime
   val insertTimeB = tableB.insertTime
   val mergedInsertTime = Seq(tableA.insertTime,tableB.insertTime).min
+  val isSurrogateBased = tableA.isSurrogateBased
+  if(tableA.isSurrogateBased) assert(tableB.isSurrogateBased)
 
   def sizesAreTooBig(tupleCount1:Int, tupleCount2:Int): Boolean = {
     tupleCount1*tupleCount2>100000
@@ -64,6 +68,15 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
     }}
   }
 
+  def countChanges(tuple: collection.Seq[TemporalFieldTrait[A]],insertTime:LocalDate) = {
+    if(isSurrogateBased){
+      GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countFieldChanges(tuple)
+    } else {
+      ???
+      //tuple.map(_.countChanges(insertTime, GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).sum
+    }
+  }
+
   def getBestTupleMatching(tuplesA: collection.IndexedSeq[Int], tuplesB: collection.IndexedSeq[Int]) = {
     //we do simple pairwise matching here until we find out its a problem
     val tuplesBRemaining = mutable.HashSet() ++ tuplesB
@@ -72,19 +85,19 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
     for(tupA<-tuplesA){
       var bestMatchScore = 0
       var curBestTupleB = -1
-      val originalTupleA = tableA.getTuple(tupA)
+      val originalTupleA = tableA.getDataTuple(tupA)
       for(tupB <-tuplesBRemaining){
         //apply mapping
-        val originalTupleB = tableB.getTuple(tupB)
+        val originalTupleB = tableB.getDataTuple(tupB)
         val mappedFieldLineages = buildTuples(tupA,tupB) // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
         val mergedTupleOptions = mergeTupleSketches(mappedFieldLineages)
         if(mergedTupleOptions.exists(_.isEmpty)){
           //illegalMatch - we do nothing
         } else{
           val mergedTuple = mergedTupleOptions.map(_.get)
-          val sizeAfterMerge = mergedTuple.map(_.countChanges(mergedInsertTime,GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).sum
-          val sizeBeforeMergeA = originalTupleA.map(_.countChanges(insertTimeA,GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).sum
-          val sizeBeforeMergeB = originalTupleB.map(_.countChanges(insertTimeB,GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).sum
+          val sizeAfterMerge = countChanges(mergedTuple,mergedInsertTime)//
+          val sizeBeforeMergeA = countChanges(originalTupleA,insertTimeA)
+          val sizeBeforeMergeB = countChanges(originalTupleB,insertTimeB)
           val curScore = sizeBeforeMergeA+sizeBeforeMergeB-sizeAfterMerge
           if(curScore>bestMatchScore){
             bestMatchScore = curScore

@@ -12,9 +12,12 @@ import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.Attribute
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{DatasetInsertIgnoreFieldChangeCounter, GLOBAL_CONFIG}
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.SynthesizedTemporalDatabaseTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTable, DecomposedTemporalTable, SurrogateBasedDecomposedTemporalTable, TemporalTableDecomposer}
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTable, TemporalTableDecomposer}
+import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.DatasetInsertIgnoreFieldChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.database.query_tracking.ViewQueryTracker
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
@@ -34,16 +37,7 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
     synthesizeDatabase(subdomainIds,countChangesForAllSteps)
   }
 
-  def loadDecomposedAssocations(ids: IndexedSeq[String]):mutable.IndexedSeq[DecomposedTemporalTable] = {
-    ??? //TODO
-    //    ids.filter(id => DBSynthesis_IOService.getSurrogateBasedDecomposedTemporalAssociationDir(subdomain, id).exists())
-//      .flatMap(id => {
-//        logger.debug(s"Loading temporally decomposed tables for $id")
-//        val associations = DecomposedTemporalTable.loadAllAssociations(subdomain, id)
-//        val dtts = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id)
-//        associations
-//      })
-  }
+  def countChanges(table: TemporalTable) = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(table)
 
   def synthesizeDatabase(ids: IndexedSeq[String], countChangesForAllSteps: Boolean):Unit = {
     val uidToViewChanges:mutable.HashMap[String,ChangeStats] = mutable.HashMap()
@@ -53,7 +47,7 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
       val nonDecomposed = ids.diff(idsWithDecomposedTables)
       var nChanges:Long = 0
       nonDecomposed.foreach(id => {
-        nChanges += TemporalTable.load(id).countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD,Set())
+        nChanges += countChanges(TemporalTable.load(id))
       })
       logger.debug(s"nCHanges of non-decomposed tables: $nChanges")
     }
@@ -84,7 +78,7 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
       } else if(!DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain,id) && countChangesForAllSteps){
         if(tt==null)
           tt = TemporalTable.load(id)
-        extraNonDecomposedViewTableChanges.put(id,tt.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD,Set()))
+        extraNonDecomposedViewTableChanges.put(id,countChanges(tt))
       }
       if(countChangesForAllSteps) {
         if(tt==null)
@@ -95,14 +89,14 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
           logger.debug(s"no decomposed Temporal tables found for $id, skipping this")
         } else {
           val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain, id)
-          bcnfChangeCount = Some(dtts.map(dtt => SynthesizedTemporalDatabaseTable.initFrom(dtt, tt).countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).reduce(_ + _))
+          bcnfChangeCount = Some(dtts.map(dtt => GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.initFrom(dtt, tt))).sum)
         }
         if(!DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain, id)) {
           logger.debug(s"no decomposed Temporal associations found for $id, skipping this")
         } else{
-          associationChangeCount = Some(associations.map(a => SynthesizedTemporalDatabaseTable.initFrom(a, tt).countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).reduce(_ + _))
+          associationChangeCount = Some(associations.map(a => GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.initFrom(a, tt))).sum)
         }
-        uidToViewChanges.put(id, ChangeStats(tt.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD,Set()), bcnfChangeCount, associationChangeCount))
+        uidToViewChanges.put(id, ChangeStats(countChanges(tt), bcnfChangeCount, associationChangeCount))
       }
     })
     if (countChangesForAllSteps) {

@@ -3,6 +3,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.AbstractSurrogateBasedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 
 import scala.collection.mutable
@@ -15,7 +16,7 @@ class TemporalSchemaMapper() extends StrictLogging{
 
   def getSameBCNFTableOriginMapping[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]) = {
     val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-    mapping.put(Set(tableA.attributeLineages.head),Set(tableB.attributeLineages.head))
+    mapping.put(Set(tableA.dataAttributeLineages.head),Set(tableB.dataAttributeLineages.head))
     assert(tableA.primaryKey.size==tableB.primaryKey.size)
     val pkMapping = tableA.primaryKey.toIndexedSeq.sortBy(_.attrId)
       .zip(tableB.primaryKey.toIndexedSeq.sortBy(_.attrId))
@@ -26,7 +27,7 @@ class TemporalSchemaMapper() extends StrictLogging{
 
   def getSimplePkSize1Mapping[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]): collection.Seq[collection.Map[Set[AttributeLineage], Set[AttributeLineage]]] ={
     val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-    mapping.put(Set(tableA.attributeLineages.head),Set(tableB.attributeLineages.head))
+    mapping.put(Set(tableA.dataAttributeLineages.head),Set(tableB.dataAttributeLineages.head))
     mapping.put(Set(tableA.primaryKey.head),Set(tableB.primaryKey.head))
     Seq(mapping)
   }
@@ -45,12 +46,12 @@ class TemporalSchemaMapper() extends StrictLogging{
 
   def getSimpleBagofWordsBased1To1Mapping[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]): collection.Seq[collection.Map[Set[AttributeLineage], Set[AttributeLineage]]] = {
     val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-    mapping.put(Set(tableA.attributeLineages.head),Set(tableB.attributeLineages.head))
+    mapping.put(Set(tableA.dataAttributeLineages.head),Set(tableB.dataAttributeLineages.head))
     val aToBagOfWords = tableA.primaryKey
-      .map(al => (al,tableA.columns.filter(_.attributeLineage==al).head.getBagOfWords()))
+      .map(al => (al,tableA.dataColumns.filter(_.attributeLineage==al).head.getBagOfWords()))
       .toMap
     val bToBagOfWords = tableB.primaryKey
-      .map(al => (al,tableB.columns.filter(_.attributeLineage==al).head.getBagOfWords()))
+      .map(al => (al,tableB.dataColumns.filter(_.attributeLineage==al).head.getBagOfWords()))
       .toMap
     val attrsBUsed = mutable.HashSet[AttributeLineage]()
     for(attrA <- tableA.primaryKey){
@@ -70,9 +71,9 @@ class TemporalSchemaMapper() extends StrictLogging{
     Seq(mapping)
   }
 
-  def enumerateAllValidSchemaMappings[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]):collection.Seq[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]] = {
-    assert(tableA.attributeLineages.size==1)
-    assert(tableA.attributeLineages.size==1)
+  def enumerateAllValidSchemaMappingsNaturalKeyBased[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]):collection.Seq[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]] = {
+    assert(tableA.dataAttributeLineages.size==1)
+    assert(tableA.dataAttributeLineages.size==1)
     val allMappings = mutable.ArrayBuffer[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]]()
     if(tableA.getUnionedTables.size==1 && tableB.getUnionedTables.size==1 && fromSameBCNFTable(tableA.getUnionedTables.head,tableB.getUnionedTables.head)){
       //we can do an easy mapping, because we know the mapping (by ID)
@@ -94,7 +95,7 @@ class TemporalSchemaMapper() extends StrictLogging{
       if(allValidAttributeCombinationsA.size==1 && allValidAttributeCombinationsB.contains(tableB.primaryKey) ||
         allValidAttributeCombinationsB.size==1 && allValidAttributeCombinationsA.contains(tableA.primaryKey)){
         val mapping = mutable.HashMap[Set[AttributeLineage],Set[AttributeLineage]]()
-        mapping.put(Set(tableA.attributeLineages.head),Set(tableB.attributeLineages.head))
+        mapping.put(Set(tableA.dataAttributeLineages.head),Set(tableB.dataAttributeLineages.head))
         mapping.put(Set() ++ tableA.primaryKey,Set() ++ tableB.primaryKey)
         allMappings.addOne(mapping)
       } else {
@@ -103,9 +104,25 @@ class TemporalSchemaMapper() extends StrictLogging{
     }
     allMappings
   }
+
+  def enumerateAllValidSchemaMappings[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A]):collection.Seq[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]] = {
+    if(tableA.isSurrogateBased){
+      val tableASurrogateBased = tableA.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,_]]
+      val tableBSurrogateBased = tableB.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,_]]
+      if(tableASurrogateBased.primaryKey.size==tableBSurrogateBased.primaryKey){
+        val a = mutable.ArrayBuffer(collection.Map(Set(tableASurrogateBased.dataAttributeLineages.head) -> Set(tableBSurrogateBased.dataAttributeLineages.head)))
+        a
+      } else {
+        mutable.ArrayBuffer[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]]()
+      }
+    } else{
+      enumerateAllValidSchemaMappingsNaturalKeyBased(tableA,tableB)
+    }
+  }
 }
 object TemporalSchemaMapper extends StrictLogging{
   logger.debug("TemporalSchemaMapper currently only supports 1-to-1 matchings for key attribute lineages of size >1 and returns empty mappings for cases where the primary keys do not have the same size")
   logger.debug("For this, it uses a greedy algorithm - might not be optimal, but should be in most cases")
+  logger.debug("We are currently not considering how to match the surrogate keys of multi-column surrogate keys")
 
 }

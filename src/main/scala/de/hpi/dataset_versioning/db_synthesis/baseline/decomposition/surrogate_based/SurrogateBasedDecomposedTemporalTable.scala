@@ -1,8 +1,9 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
+package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
-import de.hpi.dataset_versioning.data.json.helper.DecomposedTemporalTableHelper
+import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, SurrogateAttributeLineage, TemporalTable}
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.{AttributeLineageWithHashMap, TemporalSchema}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable.ArrayBuffer
@@ -12,6 +13,8 @@ class SurrogateBasedDecomposedTemporalTable(val id: DecomposedTemporalTableIdent
                                             val surrogateKey: IndexedSeq[SurrogateAttributeLineage],
                                             val attributes: ArrayBuffer[AttributeLineage],
                                             val foreignSurrogateKeysToReferencedTables: IndexedSeq[(SurrogateAttributeLineage, collection.IndexedSeq[DecomposedTemporalTableIdentifier])])  extends Serializable{
+  def isAssociation: Boolean = attributes.size==1
+
   def getSchemaString = {
     id.viewID + "_" +id.bcnfID + "(" +
       surrogateKey.map(pk => pk.surrogateID).mkString(",") + "  ->  " +
@@ -47,7 +50,6 @@ class SurrogateBasedDecomposedTemporalTable(val id: DecomposedTemporalTableIdent
   }
 }
 object SurrogateBasedDecomposedTemporalTable{
-
 
   def loadAllDecomposedTemporalTables(subdomain: String, originalID: String) = {
     val dir = DBSynthesis_IOService.getSurrogateBasedDecomposedTemporalTableDir(subdomain,originalID)

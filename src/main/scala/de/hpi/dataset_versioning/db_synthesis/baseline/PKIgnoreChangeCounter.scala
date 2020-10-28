@@ -3,9 +3,10 @@ package de.hpi.dataset_versioning.db_synthesis.baseline
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.{DatasetAndRowInitialInsertIgnoreFieldChangeCounter, FieldChangeCounter, TableChangeCounter}
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.AbstractTemporalDatabaseTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, SurrogateBasedDecomposedTemporalTable}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.AbstractTemporalDatabaseTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.{FieldChangeCounter, TableChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 
 /***
@@ -57,7 +58,7 @@ class PKIgnoreChangeCounter(subdomain:String,changeCounter: FieldChangeCounter) 
   override def countChanges[A](table: AbstractTemporalDatabaseTable[A]): Long = {
     val insertTime = table.insertTime
     val pk = table.primaryKey.map(_.attrId).toSet
-    val cols = table.columns.filter(c => !pk.contains(c.attrID))
+    val cols = table.dataColumns.filter(c => !pk.contains(c.attrID))
     cols.map(c => changeCounter.countColumnChanges(c,insertTime,false)).sum
   }
 }

@@ -5,7 +5,8 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.AttributeLineageWithHashMap
 import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTemporalTable, DecomposedTemporalTableIdentifier}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
 
 import scala.collection.mutable
 

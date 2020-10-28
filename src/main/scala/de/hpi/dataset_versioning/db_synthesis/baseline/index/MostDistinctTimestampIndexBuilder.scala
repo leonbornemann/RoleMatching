@@ -34,7 +34,7 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
   }
 
   def buildTableIndexOnNonKeyColumns() = {
-    val attributesOnWhichToIndex = unmatchedAssociations.flatMap(ua => ua.attributeLineages.map(al => (ua,al)))
+    val attributesOnWhichToIndex = unmatchedAssociations.flatMap(ua => ua.dataAttributeLineages.map(al => (ua,al)))
     val nonCoveredAttributeIDs = mutable.HashSet() ++ attributesOnWhichToIndex.map(t => (t._1,t._2.attrId)).toSet
     val chosenTimestamps = mutable.ArrayBuffer[LocalDate]()
     while(chosenTimestamps.size<indexSize && !nonCoveredAttributeIDs.isEmpty){
@@ -43,8 +43,8 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
     }
     logger.debug("Done Selecting timestamps, beginning to build index")
     val layeredTableIndex = new LayeredTupleIndex[A](chosenTimestamps,unmatchedAssociations.map(a => {
-      val nonKeyAttr = a.attributeLineages.head
-      val indexOfNonKeyAttr = a.columns.zipWithIndex.filter(_._1.attributeLineage.attrId==nonKeyAttr.attrId).head._2
+      val nonKeyAttr = a.dataAttributeLineages.head
+      val indexOfNonKeyAttr = a.dataColumns.zipWithIndex.filter(_._1.attributeLineage.attrId==nonKeyAttr.attrId).head._2
       (a,indexOfNonKeyAttr)
     }))
     logger.debug("Finished building index")

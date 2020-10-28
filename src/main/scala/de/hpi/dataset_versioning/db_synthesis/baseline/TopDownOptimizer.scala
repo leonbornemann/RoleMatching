@@ -1,23 +1,24 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedTemporalDatabase, SynthesizedTemporalDatabaseTable}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SynthesizedTemporalDatabase, SynthesizedTemporalDatabaseTable}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{DataBasedMatchCalculator, MatchCandidateGraph, TableUnionMatch}
 import de.hpi.dataset_versioning.db_synthesis.database.query_tracking.ViewQueryTracker
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.SynthesizedTemporalDatabaseTableSketch
 
 import scala.collection.mutable
 
-class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],
+class TopDownOptimizer(associations: IndexedSeq[SurrogateBasedDecomposedTemporalTable],
                        nChangesInAssociations:Long,
-                       val extraBCNFTablesWithNoAssociations:Set[DecomposedTemporalTable],
                        extraNonDecomposedViewTableChanges:Map[String,Long],
                        tracker:Option[ViewQueryTracker] = None) extends StrictLogging{
 //  println(s"initilized with:")
 //  associations.map(_.informativeTableName).sorted.foreach(println(_))
   assert(associations.forall(_.isAssociation))
-  private val allAssociationSketches = loadAssociations()
+  private val allAssociationSketches = loadAssociationSketches()
 
   //  Useful Debug statement but too expensive in full run (needs to load all tables)
 //  associations.foreach(as => {
@@ -30,33 +31,34 @@ class TopDownOptimizer(associations: IndexedSeq[DecomposedTemporalTable],
 //    sketch.printTable
 //  })
 
-  private def loadAssociations() = {
+  private def loadAssociationSketches() = {
     var read = 0
-    mutable.HashSet() ++ associations.map(dtt => {
-      val t = SynthesizedTemporalDatabaseTableSketch.initFrom(dtt)
-      read +=1
-      if(read%100==0) {
-        logger.debug(s"read $read/${associations.size} association sketches (${100*read/associations.size.toDouble}%)")
-      }
+    mutable.HashSet() ++ associations
+      .map(dtt => {
+        val t = SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.loadFromStandardOptimizationInputFile(dtt)
+        read +=1
+        if(read%100==0) {
+          logger.debug(s"read $read/${associations.size} association sketches (${100*read/associations.size.toDouble}%)")
+        }
       t
     })
   }
 
-  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,nChangesInAssociations,extraNonDecomposedViewTableChanges,extraBCNFTablesWithNoAssociations,tracker)
+  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,nChangesInAssociations,extraNonDecomposedViewTableChanges,tracker)
   private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
 
-  def executeMatch(bestMatch: TableUnionMatch[Int]) :(Option[SynthesizedTemporalDatabaseTable],SynthesizedTemporalDatabaseTableSketch) = {
+  def executeMatch(bestMatch: TableUnionMatch[Int]) :(Option[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation],SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = {
     //load the actual table
-    val sketchA = bestMatch.firstMatchPartner.asInstanceOf[SynthesizedTemporalDatabaseTableSketch]
-    val sketchB = bestMatch.secondMatchPartner.asInstanceOf[SynthesizedTemporalDatabaseTableSketch]
-    val synthTableA:SynthesizedTemporalDatabaseTable = synthesizedDatabase.loadSynthesizedTable(sketchA)
-    val synthTableB:SynthesizedTemporalDatabaseTable = synthesizedDatabase.loadSynthesizedTable(sketchB)
+    val sketchA = bestMatch.firstMatchPartner.asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
+    val sketchB = bestMatch.secondMatchPartner.asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
+    val synthTableA = synthesizedDatabase.loadSynthesizedTable(sketchA)
+    val synthTableB = synthesizedDatabase.loadSynthesizedTable(sketchB)
     val matchCalculator = new DataBasedMatchCalculator()
     val matchForSynth = matchCalculator.calculateMatch(synthTableA,synthTableB,true)
     if(matchForSynth.score>0){
       val bestMatchWithTupleMapping = matchCalculator.calculateMatch(sketchA,sketchB,true)
-      val sketchOfUnion = sketchA.executeUnion(sketchB,bestMatchWithTupleMapping).asInstanceOf[SynthesizedTemporalDatabaseTableSketch]
-      val synthTableUnion = synthTableA.executeUnion(synthTableB,matchForSynth).asInstanceOf[SynthesizedTemporalDatabaseTable]
+      val sketchOfUnion = sketchA.executeUnion(sketchB,bestMatchWithTupleMapping).asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
+      val synthTableUnion = synthTableA.executeUnion(synthTableB,matchForSynth).asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation]
       (Some(synthTableUnion),sketchOfUnion)
     } else{
       (None,null)

@@ -3,19 +3,21 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.InitialMatchinStrategy.{INDEX_BASED, InitialMatchinStrategy, NAIVE_PAIRWISE}
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.InitialMatchinStrategy
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedTemporalDatabaseTable, TemporalDatabaseTableTrait}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SynthesizedTemporalDatabaseTable}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.MostDistinctTimestampIndexBuilder
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.SynthesizedTemporalDatabaseTableSketch
 
 import scala.collection.mutable
 
-class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SynthesizedTemporalDatabaseTableSketch],
-                         heuristicMatchCalulator:DataBasedMatchCalculator,
-                         initialMatchingStrategy:InitialMatchinStrategy = InitialMatchinStrategy.INDEX_BASED) extends StrictLogging{
+class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch],
+                          heuristicMatchCalulator:DataBasedMatchCalculator,
+                          initialMatchingStrategy:InitialMatchinStrategy = InitialMatchinStrategy.INDEX_BASED) extends StrictLogging{
 
   def updateGraphAfterMatchExecution(executedMatch: TableUnionMatch[Int],
-                                     synthTable: SynthesizedTemporalDatabaseTable,
-                                     unionedTableSketch: SynthesizedTemporalDatabaseTableSketch): Unit = {
+                                     synthTable: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation,
+                                     unionedTableSketch: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch): Unit = {
     //remove both elements in best match and update all pointers to the new table
     removeAndDeleteIfEmpty(executedMatch)
     var scoresToDelete = mutable.HashSet[Int]()

@@ -12,13 +12,13 @@ trait TemporalDatabaseTableTrait[A] {
 
   def insertTime:LocalDate
 
-  def getTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[A]]
+  def getDataTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[A]]
 
   def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean
 
   def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts: LocalDate): A
 
-  def isAssociation: Boolean = attributeLineages.size == 1
+  def isAssociation: Boolean = dataAttributeLineages.size == 1
 
   def isTrueUnion = getUnionedTables.size > 1
 
@@ -32,11 +32,13 @@ trait TemporalDatabaseTableTrait[A] {
 
   def getUnionedTables: collection.Set[DecomposedTemporalTableIdentifier]
 
-  def columns: IndexedSeq[TemporalColumnTrait[A]]
+  def dataColumns: IndexedSeq[TemporalColumnTrait[A]]
 
   def primaryKey: collection.Set[AttributeLineage]
 
-  def attributeLineages: collection.IndexedSeq[AttributeLineage]
+  def dataAttributeLineages: collection.IndexedSeq[AttributeLineage]
+
+  def isSurrogateBased:Boolean
 
   def executeUnion(other: TemporalDatabaseTableTrait[A], bestMatch: TableUnionMatch[A]): TemporalDatabaseTableTrait[A]
 

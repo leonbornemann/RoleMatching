@@ -149,6 +149,8 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
   override def isRowDelete(a: Int): Boolean = a==ROWDELETEHASHVALUE
 
   override def isWildcard(a: Int): Boolean = a==WILDCARD
+
+  override def numValues: Int = numEntries
 }
 
 object Variant2Sketch {

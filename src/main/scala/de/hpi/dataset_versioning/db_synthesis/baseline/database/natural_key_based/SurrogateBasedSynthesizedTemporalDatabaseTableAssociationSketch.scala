@@ -4,25 +4,27 @@ import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, SurrogateAttributeLineage, TemporalTable}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{AbstractSurrogateBasedTemporalTable, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{AbstractSurrogateBasedTemporalRow, AbstractSurrogateBasedTemporalTable, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.db_synthesis.sketches.BinaryReadable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.{TemporalColumnSketch, TemporalColumnTrait}
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 @SerialVersionUID(3L)
-class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(val id:String,
+class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
                                                                       unionedTables:mutable.HashSet[DecomposedTemporalTableIdentifier],
-                                                                      val keys: collection.IndexedSeq[SurrogateAttributeLineage],
-                                                                      val nonKeyAttribute:AttributeLineage,
-                                                                      val foreignKeys:collection.IndexedSeq[SurrogateAttributeLineage],
-                                                                      val rows:collection.mutable.ArrayBuffer[SurrogateBasedTemporalRowSketch] = collection.mutable.ArrayBuffer(),
+                                                                      key: collection.IndexedSeq[SurrogateAttributeLineage],
+                                                                      nonKeyAttribute:AttributeLineage,
+                                                                      foreignKeys:collection.IndexedSeq[SurrogateAttributeLineage],
+                                                                      rows:collection.mutable.ArrayBuffer[SurrogateBasedTemporalRowSketch] = collection.mutable.ArrayBuffer(),
                                                                       val uniqueSynthTableID:Int = SynthesizedDatabaseTableRegistry.getNextID())
-  extends AbstractSurrogateBasedTemporalTable[Int,SurrogateBasedTemporalRowSketch](id,unionedTables,keys,nonKeyAttribute,foreignKeys,rows,uniqueSynthTableID) {
+  extends AbstractSurrogateBasedTemporalTable[Int,SurrogateBasedTemporalRowSketch](id,unionedTables,key,nonKeyAttribute,foreignKeys,rows,uniqueSynthTableID) {
 
   override def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean = {
     assert(colIndex==0)
@@ -42,6 +44,17 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(val id:Str
   }
 
   override def dataColumns: IndexedSeq[TemporalColumnTrait[Int]] = IndexedSeq(new TemporalColumnSketch(id,nonKeyAttribute,rows.map(r => r.valueSketch).toArray))
+
+  override def isSketch: Boolean = true
+
+  override def createNewTable(unionID: String, value: mutable.HashSet[DecomposedTemporalTableIdentifier], key: collection.IndexedSeq[SurrogateAttributeLineage], newNonKEyAttrLineage: AttributeLineage, newRows: ArrayBuffer[AbstractSurrogateBasedTemporalRow[Int]]): TemporalDatabaseTableTrait[Int] = {
+    new SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(unionID,
+      value,
+      key,
+      newNonKEyAttrLineage,
+      IndexedSeq(),
+      newRows.map(_.asInstanceOf[SurrogateBasedTemporalRowSketch]))
+  }
 }
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch extends BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]{
 
@@ -50,7 +63,7 @@ object SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch extends B
     loadFromFile(file)
   }
 
-  def loadFromStandardOptimizationInputFile(dtt:SurrogateBasedDecomposedTemporalTable):SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch = {
+  def loadFromStandardOptimizationInputFile(dtt:AssociationSchema):SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch = {
     loadFromStandardOptimizationInputFile(dtt.id)
   }
 }

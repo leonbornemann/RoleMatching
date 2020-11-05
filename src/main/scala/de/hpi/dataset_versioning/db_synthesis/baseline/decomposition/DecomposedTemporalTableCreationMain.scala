@@ -1,8 +1,11 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
+import java.time.LocalDate
+
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
+import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.TopDownMain.args
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
@@ -29,9 +32,10 @@ object DecomposedTemporalTableCreationMain extends App with StrictLogging{
     val versionHistoryMap = DatasetVersionHistory.load()
       .map(h => (h.id,h))
       .toMap
-    subdomainIds
-      .withFilter(id => DBSynthesis_IOService.getDecomposedTableFile(subdomain,id,versionHistoryMap(id).latestChangeTimestamp).exists())
-      .foreach(id => processID(versionHistoryMap, id))
+    val toProcess = subdomainIds
+      .filter(id => DBSynthesis_IOService.getDecomposedTableFile(subdomain,id,versionHistoryMap(id).latestChangeTimestamp).exists())
+    println()
+    toProcess.foreach(id => processID(versionHistoryMap, id))
   }
 
   private def processID(versionHistoryMap: Map[String, DatasetVersionHistory], id: String) = {

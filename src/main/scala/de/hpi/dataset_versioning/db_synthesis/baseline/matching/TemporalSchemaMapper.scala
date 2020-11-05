@@ -109,7 +109,7 @@ class TemporalSchemaMapper() extends StrictLogging{
     if(tableA.isSurrogateBased){
       val tableASurrogateBased = tableA.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,_]]
       val tableBSurrogateBased = tableB.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,_]]
-      if(tableASurrogateBased.primaryKey.size==tableBSurrogateBased.primaryKey){
+      if(tableASurrogateBased.key.size==tableBSurrogateBased.key){
         val a = mutable.ArrayBuffer(collection.Map(Set(tableASurrogateBased.dataAttributeLineages.head) -> Set(tableBSurrogateBased.dataAttributeLineages.head)))
         a
       } else {

@@ -2,8 +2,11 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 
 import java.time.LocalDate
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SurrogateBasedTemporalRowSketch}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.logger
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
 import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
@@ -12,15 +15,17 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 @SerialVersionUID(3L)
-abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBasedTemporalRow[A]](id: String,
-                                                      unionedTables: mutable.HashSet[DecomposedTemporalTableIdentifier],
-                                                      keys: collection.IndexedSeq[SurrogateAttributeLineage],
-                                                      nonKeyAttribute: AttributeLineage,
-                                                      foreignKeys: collection.IndexedSeq[SurrogateAttributeLineage],
-                                                      rows:collection.mutable.ArrayBuffer[B],
-                                                      uniqueSynthTableID: Int) extends  TemporalDatabaseTableTrait[A] with BinarySerializable with Serializable{
+abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBasedTemporalRow[A]](val id: String,
+                                                                                                val unionedTables: mutable.HashSet[DecomposedTemporalTableIdentifier],
+                                                                                                val key: collection.IndexedSeq[SurrogateAttributeLineage],
+                                                                                                val nonKeyAttribute: AttributeLineage,
+                                                                                                val foreignKeys: collection.IndexedSeq[SurrogateAttributeLineage],
+                                                                                                val rows:collection.mutable.ArrayBuffer[B],
+                                                                                                uniqueSynthTableID: Int) extends  TemporalDatabaseTableTrait[A] with BinarySerializable with StrictLogging with Serializable{
+  def isSketch: Boolean
 
   override def insertTime: LocalDate = rows
     .flatMap(_.value.getValueLineage
@@ -37,7 +42,7 @@ abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBased
 
   override def primaryKeyIsValid: Boolean = ???
 
-  override def informativeTableName: String = getID + "(" + keys.mkString(",") + ",  " + nonKeyAttribute.lastName + ",  " + foreignKeys.mkString(",") + ")"
+  override def informativeTableName: String = getID + "(" + key.mkString(",") + ",  " + nonKeyAttribute.lastName + ",  " + foreignKeys.mkString(",") + ")"
 
   override def nrows: Int = rows.size
 
@@ -51,7 +56,48 @@ abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBased
 
   override def isSurrogateBased: Boolean = true
 
-  override def executeUnion(other: TemporalDatabaseTableTrait[A], bestMatch: TableUnionMatch[A]): TemporalDatabaseTableTrait[A] = ???
+  def createNewTable(unionID: String, value: mutable.HashSet[DecomposedTemporalTableIdentifier], key: collection.IndexedSeq[SurrogateAttributeLineage], newNonKEyAttrLineage: AttributeLineage, newRows: ArrayBuffer[AbstractSurrogateBasedTemporalRow[A]]):TemporalDatabaseTableTrait[A]
 
+  def createUnionedTable(left: AbstractSurrogateBasedTemporalTable[A, B], right: AbstractSurrogateBasedTemporalTable[A, B], bestMatch: TableUnionMatch[A]) = {
+    val unionID = left.getID + "_UNION_" + right.getID
+    val newNonKEyAttrLineage:AttributeLineage = left.nonKeyAttribute.unionDisjoint(right.nonKeyAttribute,left.nonKeyAttribute.attrId)
+    logger.debug("Remember that the non-key attribute id is now the id of the left table - this change needs to be registered somewhere in the database")
+    var curSurrogateKeyCounter = left.rows.maxBy(_.keys.head).keys.head +1
+    val nonMatchedRowsRight = bestMatch.tupleMapping.get.unmatchedTupleIndicesB.toIndexedSeq.map(rowIndex => {
+      val r = right.rows(rowIndex).asInstanceOf[AbstractSurrogateBasedTemporalRow[A]]
+      assert(r.keys.size==1 && r.foreignKeys.size==0)
+      val newRow = r.cloneWithNewKey(curSurrogateKeyCounter)
+      curSurrogateKeyCounter +=1
+      newRow
+    })
+    val nonMatchedLeftRows =  bestMatch.tupleMapping.get.unmatchedTupleIndicesA.toIndexedSeq.map(rowIndex => {
+      left.rows(rowIndex).asInstanceOf[AbstractSurrogateBasedTemporalRow[A]]
+    })
+    val mergedRows = bestMatch.tupleMapping.get.matchedTuples.map(tm => {
+      val leftRow = left.rows(tm.tupleIndexA).asInstanceOf[AbstractSurrogateBasedTemporalRow[A]]
+      val rightRow = right.rows(tm.tupleIndexB).asInstanceOf[AbstractSurrogateBasedTemporalRow[A]]
+      leftRow.mergeWithConsistent(leftRow.keys,rightRow)
+    })
+    val newRows = mutable.ArrayBuffer() ++ (nonMatchedLeftRows ++ mergedRows ++ nonMatchedRowsRight).sortBy(_.keys.head)
+    assert(left.foreignKeys.isEmpty && right.foreignKeys.isEmpty)
+    var newTable:AbstractSurrogateBasedTemporalTable[A, B] = null
+    createNewTable(unionID,
+      mutable.HashSet() ++ left.getUnionedTables.union(right.getUnionedTables),
+      left.key,
+      newNonKEyAttrLineage,
+      newRows
+    )
+  }
 
+  override def executeUnion(other: TemporalDatabaseTableTrait[A], bestMatch: TableUnionMatch[A]): TemporalDatabaseTableTrait[A] = {
+    var left = this.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,B]]
+    var right = other.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,B]]
+    if(bestMatch.firstMatchPartner==right){
+      left = other.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,B]]
+      right = this.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,B]]
+    }
+    assert(left == bestMatch.firstMatchPartner && right == bestMatch.secondMatchPartner)
+    val a = createUnionedTable(left,right,bestMatch)
+    a
+  }
 }

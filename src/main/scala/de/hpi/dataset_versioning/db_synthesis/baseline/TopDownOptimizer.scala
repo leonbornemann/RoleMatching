@@ -6,18 +6,21 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{DataBasedMatchCalculator, MatchCandidateGraph, TableUnionMatch}
+import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
 import de.hpi.dataset_versioning.db_synthesis.database.query_tracking.ViewQueryTracker
+import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.SynthesizedTemporalDatabaseTableSketch
 
 import scala.collection.mutable
 
-class TopDownOptimizer(associations: IndexedSeq[SurrogateBasedDecomposedTemporalTable],
+class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
+                       bcnfReferenceSchemata:collection.IndexedSeq[BCNFTableSchema],
                        nChangesInAssociations:Long,
                        extraNonDecomposedViewTableChanges:Map[String,Long],
                        tracker:Option[ViewQueryTracker] = None) extends StrictLogging{
+  GlobalSurrogateRegistry.initSurrogateIDCounters(associations)
 //  println(s"initilized with:")
 //  associations.map(_.informativeTableName).sorted.foreach(println(_))
-  assert(associations.forall(_.isAssociation))
   private val allAssociationSketches = loadAssociationSketches()
 
   //  Useful Debug statement but too expensive in full run (needs to load all tables)
@@ -44,7 +47,7 @@ class TopDownOptimizer(associations: IndexedSeq[SurrogateBasedDecomposedTemporal
     })
   }
 
-  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,nChangesInAssociations,extraNonDecomposedViewTableChanges,tracker)
+  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,bcnfReferenceSchemata,nChangesInAssociations,extraNonDecomposedViewTableChanges,tracker)
   private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
 
   def executeMatch(bestMatch: TableUnionMatch[Int]) :(Option[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation],SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = {

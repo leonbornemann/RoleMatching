@@ -9,12 +9,28 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedT
 
 object DBSynthesis_IOService extends StrictLogging{
 
-  def getOptimizationInputAssociationSketchFile(head: DecomposedTemporalTableIdentifier) = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_Association_SKETCH_DIR/${head.viewID}/${head.compositeID}.binary"))
+  def getSurrogateBasedDecomposedTemporalTableFile(id: DecomposedTemporalTableIdentifier) = {
+    createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/${id.viewID}/${id.compositeID}.json"))
   }
 
-  def getOptimizationInputAssociationFile(head: DecomposedTemporalTableIdentifier) = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/${head.viewID}/${head.compositeID}.binary"))
+  def getSurrogateBasedDecomposedTemporalTableDir(subdomain: String, originalID: String) = {
+    createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/${originalID}/"))
+  }
+
+  def getOptimizationBCNFReferenceTableInputFile(id: DecomposedTemporalTableIdentifier) = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_BCNF_DIR/referenceTables/${id.viewID}/${id.compositeID}.binary"))
+  }
+
+  def getOptimizationBCNFTemporalTableFile(id: DecomposedTemporalTableIdentifier) = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_BCNF_DIR/contentTables/${id.viewID}/${id.compositeID}.binary"))
+  }
+
+  def getOptimizationInputAssociationSketchFile(id: DecomposedTemporalTableIdentifier) = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_Association_SKETCH_DIR/${id.viewID}/${id.compositeID}.binary"))
+  }
+
+  def getOptimizationInputAssociationFile(id: DecomposedTemporalTableIdentifier) = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/${id.viewID}/${id.compositeID}.binary"))
   }
 
   def decomposedTemporalAssociationsExist(subdomain: String, id: String) = {
@@ -23,7 +39,7 @@ object DBSynthesis_IOService extends StrictLogging{
   }
 
   def decomposedTemporalTablesExist(subdomain:String,id: String) = {
-    val dir = getSurrogateBasedDecomposedTemporalTableDir(subdomain, id)
+    val dir = getBCNFTableSchemaDir(subdomain, id)
     dir.exists() && !dir.listFiles().isEmpty
   }
 
@@ -39,7 +55,8 @@ object DBSynthesis_IOService extends StrictLogging{
 
 
   def getDecomposedTemporalTableSketchFile(tableID: DecomposedTemporalTableIdentifier, getVariantName: String) = {
-    createParentDirs(new File(s"$DTT_SKETCH_DIR/${tableID.viewID}_${tableID.bcnfID}_${tableID.associationID.getOrElse("")}_$getVariantName.binary"))
+    ???
+    //createParentDirs(new File(s"$DTT_SKETCH_DIR/${tableID.viewID}_${tableID.bcnfID}_${tableID.associationID.getOrElse("")}_$getVariantName.binary"))
   }
 
   def getTemporalColumnSketchDir(id: String) = new File(s"$COLUMN_SKETCH_DIR/$id/")
@@ -50,12 +67,18 @@ object DBSynthesis_IOService extends StrictLogging{
 
   def getStatisticsDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$STATISTICS_DIR/$subdomain/$originalID/"))
 
-  def getSurrogateBasedDecomposedTemporalTableDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$DECOMPOSED_TEMPORAL_TABLE_DIR/$subdomain/$viewID/"))
-  def getSurrogateBasedDecomposedTemporalAssociationDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$DECOMPOSED_TEMPORAL_ASSOCIATION_DIR/$subdomain/$viewID/"))
+  def getBCNFTableSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$BCNF_SCHEMA_FILE/$subdomain/$viewID/"))
+  def getSurrogateBasedDecomposedTemporalAssociationDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/$viewID/"))
 
+  def getAssociationSchemaFile(id:DecomposedTemporalTableIdentifier) = {
+    assert(id.associationID.isDefined)
+    val topDir = ASSOCIATION_SCHEMA_DIR
+    createParentDirs(new File(s"$topDir/${id.subdomain}/${id.viewID}/${id.compositeID}.json"))
+  }
 
-  def getSurrogateBasedDecomposedTemporalTableFile(id:DecomposedTemporalTableIdentifier) = {
-    val topDir = if(id.isPurePKToFKReference) DECOMPOSED_TEMPORAL_TABLE_PURE_PK_TO_FK_REFERENCES_DIR else if(id.associationID.isDefined) DECOMPOSED_TEMPORAL_ASSOCIATION_DIR else DECOMPOSED_TEMPORAL_TABLE_DIR
+  def getBCNFTableSchemaFile(id:DecomposedTemporalTableIdentifier) = {
+    assert(id.associationID.isEmpty)
+    val topDir = BCNF_SCHEMA_FILE
     createParentDirs(new File(s"$topDir/${id.subdomain}/${id.viewID}/${id.compositeID}.json"))
   }
 
@@ -96,16 +119,16 @@ object DBSynthesis_IOService extends StrictLogging{
   def DECOMPOSITION_EXPORT_CSV_DIR = DECOMPOSTION_DIR + "/csv/"
   def DECOMPOSITION_RESULT_DIR = DECOMPOSTION_DIR + "/results/"
   def DECOMPOSED_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTables/"
-  def DECOMPOSED_TEMPORAL_TABLE_DIR = DECOMPOSTION_DIR + "/surrogateBasedDecomposedTemporalTables/"
-  def DECOMPOSED_TEMPORAL_ASSOCIATION_DIR = DECOMPOSTION_DIR + "/surrogateBasedDecomposedTemporalAssociations/"
-  def DECOMPOSED_TEMPORAL_TABLE_PURE_PK_TO_FK_REFERENCES_DIR = DECOMPOSTION_DIR + "/surrogateBasedDecomposedTemporalTablePKTPFK_REFERENCES/"
+  def DECOMPOSED_Temporal_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTemporalTables/"
+  def BCNF_SCHEMA_FILE = DECOMPOSTION_DIR + "/bcnfSchemata/"
+  def ASSOCIATION_SCHEMA_DIR = DECOMPOSTION_DIR + "/associationSchemata/"
   def OPTIMIZATION_INPUT_Association_SKETCH_DIR = DB_SYNTHESIS_DIR + "/input/associationSketches/"
   def OPTIMIZATION_INPUT_ASSOCIATION_DIR = DB_SYNTHESIS_DIR + "/input/associations/"
+  def OPTIMIZATION_INPUT_BCNF_DIR = DB_SYNTHESIS_DIR + "/input/BCNF/"
   def SYNTHESIZED_TABLES_WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/synthesizedTables/"
   def SYNTHESIZED_DATABASE_FINAL_DIR = DB_SYNTHESIS_DIR + "/finalSynthesizedDatabase/synthesizedTables/"
   def SKETCH_DIR = DB_SYNTHESIS_DIR + "/sketches/"
   def COLUMN_SKETCH_DIR = SKETCH_DIR + "/temporalColumns/"
-  def DTT_SKETCH_DIR = SKETCH_DIR + "/decomposedTemporalTables/"
 
   def dateToStr(date: LocalDate) = IOService.dateTimeFormatter.format(date)
 

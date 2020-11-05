@@ -59,13 +59,6 @@ class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
       val tupleMapping = tupleMapper.mapGreedy()
       var bestPossibleScore = tupleMapping.totalScore
       if(bestPossibleScore > curBestScore){
-        if(GLOBAL_CONFIG.COUNT_SURROGATE_INSERTS){
-          val unionResult = sketchA.executeUnion(sketchB,new TableUnionMatch(sketchA,sketchB,Some(mapping),bestPossibleScore,true,Some(tupleMapping)))
-          if(!unionResult.primaryKeyIsValid && GLOBAL_CONFIG.COUNT_SURROGATE_INSERTS){
-            //we need to decrease the score because a primary key is required
-            bestPossibleScore -= unionResult.nrows
-          }
-        }
         if(bestPossibleScore>curBestScore){
           curBestScore = bestPossibleScore
           curBestMapping = mapping

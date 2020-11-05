@@ -4,6 +4,8 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, 
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.{AttributeLineageWithHashMap, TemporalSchema}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
+import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
+import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable.ArrayBuffer
@@ -13,6 +15,8 @@ class SurrogateBasedDecomposedTemporalTable(val id: DecomposedTemporalTableIdent
                                             val surrogateKey: IndexedSeq[SurrogateAttributeLineage],
                                             val attributes: ArrayBuffer[AttributeLineage],
                                             val foreignSurrogateKeysToReferencedTables: IndexedSeq[(SurrogateAttributeLineage, collection.IndexedSeq[DecomposedTemporalTableIdentifier])])  extends Serializable{
+  def allSurrogates: Set[SurrogateAttributeLineage] = surrogateKey.toSet ++ foreignSurrogateKeysToReferencedTables.map(_._1).toSet
+
   def isAssociation: Boolean = attributes.size==1
 
   def getSchemaString = {
@@ -25,7 +29,7 @@ class SurrogateBasedDecomposedTemporalTable(val id: DecomposedTemporalTableIdent
   def compositeID: String = id.compositeID
 
   def getReferenceSkeleton() = {
-    new SurrogateBasedDecomposedTemporalTable(new DecomposedTemporalTableIdentifier(id.subdomain,id.viewID,id.bcnfID,id.associationID,true),
+    new SurrogateBasedDecomposedTemporalTable(new DecomposedTemporalTableIdentifier(id.subdomain,id.viewID,id.bcnfID,id.associationID),
       surrogateKey,
       ArrayBuffer(),
       foreignSurrogateKeysToReferencedTables)
@@ -34,10 +38,14 @@ class SurrogateBasedDecomposedTemporalTable(val id: DecomposedTemporalTableIdent
   def furtherDecomposeToAssociations = {
     val associationTableIds = scala.collection.mutable.HashSet() ++ ((0 until attributes.size)
       .map(i => DecomposedTemporalTableIdentifier(id.subdomain,id.viewID,id.bcnfID,Some(i))))
-    attributes.zip(associationTableIds).map{case (rhs,associationTableID) => new SurrogateBasedDecomposedTemporalTable(associationTableID,
-      surrogateKey,
-      ArrayBuffer(rhs),
-      IndexedSeq())}
+    val associations = attributes.zip(associationTableIds).map{case (rhs,associationTableID) => new AssociationSchema(associationTableID,
+      new SurrogateAttributeLineage(GlobalSurrogateRegistry.getNextFreeSurrogateID,rhs.attrId,rhs.lineage.firstKey),
+      rhs)}
+    val newReferenceBasedBCNFTable = BCNFTableSchema(id,
+    surrogateKey,
+    associations.map(_.surrogateKey).toIndexedSeq,
+    foreignSurrogateKeysToReferencedTables)
+    (newReferenceBasedBCNFTable,associations)
   }
 
   def writeToStandardFile() = {
@@ -57,19 +65,11 @@ object SurrogateBasedDecomposedTemporalTable{
     ids.map(id => load(id))
   }
 
-  def loadAllAssociations(subdomain: String, originalID: String) = {
-    val dir = DBSynthesis_IOService.getSurrogateBasedDecomposedTemporalAssociationDir(subdomain,originalID)
-    val ids = dir.listFiles().map(f => DecomposedTemporalTableIdentifier.fromFilename(f.getName))
-    ids.map(id => load(id))
-  }
-
-
   def load(id:DecomposedTemporalTableIdentifier) = {
     val file = DBSynthesis_IOService.getSurrogateBasedDecomposedTemporalTableFile(id)
     val helper = SurrogateBasedDecomposedTemporalTableHelper.fromJsonFile(file.getAbsolutePath)
     helper.toSurrogateBasedDecomposedTemporalTable
   }
-
 
   def filterNotFullyDecomposedTables(subdomain:String,viewIds: collection.IndexedSeq[String]) = {
     val subdomainIdsWithDTT = viewIds
@@ -79,6 +79,7 @@ object SurrogateBasedDecomposedTemporalTable{
       val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
       val attrIds = dtts.flatMap(_.attributes.map(_.attrId)).toSet
       val originalSchema = schemata(id)
+      //val missing = originalSchema.attributes.map(_.attrId).toSet.diff(attrIds)
       attrIds!= originalSchema.attributes.map(_.attrId).toSet
     })
     subdomainIdsWithDTT.diff(filteredSecondStep)

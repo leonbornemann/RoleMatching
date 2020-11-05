@@ -5,6 +5,7 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.DecomposedTemporalTableSketch
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
@@ -24,24 +25,34 @@ object OptimizationInputExportMain extends App with StrictLogging {
 //      sketch.writeToBinaryFile(f)
 //    })
     //bcnf Tables:
-    val bcnfTables = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
+
+    val bcnfTables = BCNFTableSchema.loadAllBCNFTableSchemata(subdomain,id)
+    val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
+    //for change counting purposes we write the projections of bcnf tables containing data:
+    dtts.foreach(dtt =>{
+      val projection = tt.project(dtt)
+      projection.projection.writeTOBCNFTemporalTableFile
+    })
+    val bcnfByID = bcnfTables.map(a => ((a.id.subdomain,a.id.viewID,a.id.bcnfID),a)).toMap
     //whole tables:
-    val associations = if(DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain,id)) SurrogateBasedDecomposedTemporalTable.loadAllAssociations(subdomain, id) else Array[SurrogateBasedDecomposedTemporalTable]()
+    val associations = if(DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain,id)) AssociationSchema.loadAllAssociations(subdomain, id) else Array[AssociationSchema]()
     val allSurrogates = bcnfTables.flatMap(_.surrogateKey)
       .groupBy(_.surrogateID)
       .map{case (k,v) => (k,v.head)}
     //integrity check: all references must also be used as keys:
-    assert(bcnfTables.flatMap(_.foreignSurrogateKeysToReferencedTables.toMap.keySet).forall(s => allSurrogates.contains(s.surrogateID)))
-
+    assert(bcnfTables.flatMap(_.foreignSurrogateKeysToReferencedBCNFTables.toMap.keySet).forall(s => allSurrogates.contains(s.surrogateID)))
     tt.addSurrogates(allSurrogates.values.toSet)
-    val dtts = bcnfTables ++ associations
+    val byBcnf = associations.groupBy(a => (a.id.subdomain,a.id.viewID,a.id.bcnfID))
+      .map{case (k,v) => (bcnfByID(k),v)}
+    byBcnf.foreach{case (bcnf,associations) => {
+      val (bcnfReferenceTable,synthTableAssocitations) = tt.project(bcnf,associations)
+      bcnfReferenceTable.writeToStandardOptimizationInputFile
+      synthTableAssocitations.foreach(t => {
+        t.writeToStandardOptimizationInputFile
+        t.toSketch.writeToStandardOptimizationInputFile()
+      })
+    }}
     //associations:
-    associations.foreach(dtt => {
-      val table = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.initFrom(dtt,tt)
-      val sketch = table.toSketch
-      table.writeToStandardOptimizationInputFile
-      sketch.writeToStandardOptimizationInputFile()
-    })
   }
 
   if (id.isDefined)
@@ -55,7 +66,7 @@ object OptimizationInputExportMain extends App with StrictLogging {
       .split("\n")
       .map(_.split("/").last.split("\\.").head)
     subdomainIds = subdomainIds.diff(toFilter)
-    val idsToSketch = SurrogateBasedDecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain,subdomainIds)
+    val idsToSketch = BCNFTableSchema.filterNotFullyDecomposedTables(subdomain,subdomainIds)
     idsToSketch.foreach(exportForID(_))
   }
 

@@ -12,8 +12,12 @@ import scala.collection.mutable.ArrayBuffer
 @SerialVersionUID(3L)
 case class BCNFTableSchema(val id: DecomposedTemporalTableIdentifier,
                            val surrogateKey: IndexedSeq[SurrogateAttributeLineage],
-                           val attributes: IndexedSeq[SurrogateAttributeLineage],
+                           val attributes: scala.collection.mutable.IndexedSeq[SurrogateAttributeLineage],
                            val foreignSurrogateKeysToReferencedBCNFTables: IndexedSeq[(SurrogateAttributeLineage, collection.IndexedSeq[DecomposedTemporalTableIdentifier])]) extends JsonWritable[BCNFTableSchema] {
+
+  override def toString: String = id + s"(${surrogateKey.mkString(",")}  ,${attributes.mkString(",")})"
+
+  assert((surrogateKey.map(_.surrogateID).toSet ++ attributes.map(_.surrogateID).toSet).size == surrogateKey.size + attributes.size)
 
   def writeToStandardFile() = {
     val file = DBSynthesis_IOService.getBCNFTableSchemaFile(id)
@@ -36,17 +40,17 @@ object BCNFTableSchema extends JsonReadable[BCNFTableSchema]{
     BCNFTableSchema.fromJsonFile(file.getAbsolutePath)
   }
 
-    def filterNotFullyDecomposedTables(subdomain:String,viewIds: collection.IndexedSeq[String]) = {
-      val subdomainIdsWithDTT = viewIds
-        .filter(id => DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
-      val schemata = subdomainIdsWithDTT.map(id => TemporalSchema.load(id)).map(ts => (ts.id,ts)).toMap
-      val filteredSecondStep = subdomainIdsWithDTT.filter(id => {
-        val dtts = loadAllBCNFTableSchemata(subdomain,id)
-        val attrIds = dtts.flatMap(_.attributes.map(_.referencedAttrId)).toSet
-        val originalSchema = schemata(id)
-        //val missing = originalSchema.attributes.map(_.attrId).toSet.diff(attrIds)
-        attrIds!= originalSchema.attributes.map(_.attrId).toSet
-      })
-      subdomainIdsWithDTT.diff(filteredSecondStep)
-    }
+  def filterNotFullyDecomposedTables(subdomain:String,viewIds: collection.IndexedSeq[String]) = {
+    val subdomainIdsWithDTT = viewIds
+      .filter(id => DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
+    val schemata = subdomainIdsWithDTT.map(id => TemporalSchema.load(id)).map(ts => (ts.id,ts)).toMap
+    val filteredSecondStep = subdomainIdsWithDTT.filter(id => {
+      val dtts = loadAllBCNFTableSchemata(subdomain,id)
+      val attrIds = dtts.flatMap(_.attributes.map(_.referencedAttrId)).toSet
+      val originalSchema = schemata(id)
+      //val missing = originalSchema.attributes.map(_.attrId).toSet.diff(attrIds)
+      attrIds!= originalSchema.attributes.map(_.attrId).toSet
+    })
+    subdomainIdsWithDTT.diff(filteredSecondStep)
+  }
 }

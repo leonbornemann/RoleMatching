@@ -90,5 +90,4 @@ class TupleSetMatching[A](val tableA: TemporalDatabaseTableTrait[A],
   }
 }
 object TupleSetMatching extends StrictLogging{
-  logger.debug("We are currently assuming that a tupleMatching has to be 1-to-1 - if this changes we need to adapt this, as well as some other code (potentially) - rerun tests after changing this")
 }

@@ -7,7 +7,6 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{DataBasedMatchCalculator, MatchCandidateGraph, TableUnionMatch}
 import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
-import de.hpi.dataset_versioning.db_synthesis.database.query_tracking.ViewQueryTracker
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.db_synthesis.sketches.table.SynthesizedTemporalDatabaseTableSketch
 
@@ -16,8 +15,7 @@ import scala.collection.mutable
 class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
                        bcnfReferenceSchemata:collection.IndexedSeq[BCNFTableSchema],
                        nChangesInAssociations:Long,
-                       extraNonDecomposedViewTableChanges:Map[String,Long],
-                       tracker:Option[ViewQueryTracker] = None) extends StrictLogging{
+                       extraNonDecomposedViewTableChanges:Map[String,Long]) extends StrictLogging{
   GlobalSurrogateRegistry.initSurrogateIDCounters(associations)
 //  println(s"initilized with:")
 //  associations.map(_.informativeTableName).sorted.foreach(println(_))
@@ -47,10 +45,10 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
     })
   }
 
-  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,bcnfReferenceSchemata,nChangesInAssociations,extraNonDecomposedViewTableChanges,tracker)
+  val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,bcnfReferenceSchemata,nChangesInAssociations,extraNonDecomposedViewTableChanges)
   private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
 
-  def executeMatch(bestMatch: TableUnionMatch[Int]) :(Option[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation],SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = {
+  def executeMatch(bestMatch: TableUnionMatch[Int]):Option[(SurrogateBasedSynthesizedTemporalDatabaseTableAssociation,TableUnionMatch[Any],SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch,TableUnionMatch[Int])] = {
     //load the actual table
     val sketchA = bestMatch.firstMatchPartner.asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
     val sketchB = bestMatch.secondMatchPartner.asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
@@ -59,18 +57,19 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
     val matchCalculator = new DataBasedMatchCalculator()
     val matchForSynth = matchCalculator.calculateMatch(synthTableA,synthTableB,true)
     if(matchForSynth.score>0){
-      val bestMatchWithTupleMapping = matchCalculator.calculateMatch(sketchA,sketchB,true)
-      val sketchOfUnion = sketchA.executeUnion(sketchB,bestMatchWithTupleMapping).asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
+      val matchForSketchWithTupleMapping = matchCalculator.calculateMatch(sketchA,sketchB,true)
+      val sketchOfUnion = sketchA.executeUnion(sketchB,matchForSketchWithTupleMapping).asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
       val synthTableUnion = synthTableA.executeUnion(synthTableB,matchForSynth).asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation]
-      (Some(synthTableUnion),sketchOfUnion)
+      Some(synthTableUnion,matchForSynth,sketchOfUnion,matchForSketchWithTupleMapping)
     } else{
-      (None,null)
+      None
     }
   }
 
   def optimize() = {
     var done = false
     while(!matchCandidateGraph.isEmpty && !done){
+      logger.debug("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
       logger.debug("Entering new Main loop iteration")
       if(matchCandidateGraph.getNextBestHeuristicMatch().score==0) {
         logger.debug("Terminating main loop as no more promising matches are available")
@@ -78,17 +77,22 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
       } else {
         val bestMatch = matchCandidateGraph.getNextBestHeuristicMatch()
         assert(bestMatch.isHeuristic)
-        val (synthTable,synthTableSketch) = executeMatch(bestMatch)
-        if(synthTable.isDefined){
-          logger.debug(s"Unioning ${bestMatch.firstMatchPartner.informativeTableName} and ${bestMatch.secondMatchPartner.informativeTableName}")
-          matchCandidateGraph.updateGraphAfterMatchExecution(bestMatch,synthTable.get,synthTableSketch)
-          synthesizedDatabase.updateSynthesizedDatabase(synthTable.get,synthTableSketch,bestMatch)
+        val matchResult = executeMatch(bestMatch)
+        if(matchResult.isDefined){
+          val (synthTable,synthTableMatch,synthTableSketch,synthTableSketchMatch) = matchResult.get
+          if(bestMatch.firstMatchPartner.toString.contains("Team Logo") && bestMatch.secondMatchPartner.toString.contains("#Shots")){
+            println()
+          }
+          logger.debug(s"Unioning ${bestMatch.firstMatchPartner} and ${bestMatch.secondMatchPartner}")
+          matchCandidateGraph.updateGraphAfterMatchExecution(bestMatch,synthTable,synthTableSketch)
+          synthesizedDatabase.updateSynthesizedDatabase(synthTable,synthTableSketch,synthTableMatch,synthTableSketchMatch)
           synthesizedDatabase.printState()
         } else{
           logger.debug("Heuristic match was erroneous - we remove this from the matches and continue")
           matchCandidateGraph.removeMatch(bestMatch)
         }
       }
+      logger.debug("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
     }
     //the final synthesized database is assembled:
     logger.debug("the final synthesized database is assembled")

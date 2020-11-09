@@ -1,7 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.config
 
 import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.DatasetInsertIgnoreFieldChangeCounter
-import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.CountAllChangeCounter
+import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.{CountAllChangeCounter, UpdateChangeCounter}
 
 object GLOBAL_CONFIG {
 
@@ -9,5 +9,5 @@ object GLOBAL_CONFIG {
 
   val COUNT_SURROGATE_INSERTS: Boolean = false
   //val CHANGE_COUNT_METHOD = new DatasetInsertIgnoreFieldChangeCounter()
-  val NEW_CHANGE_COUNT_METHOD = new CountAllChangeCounter()
+  val NEW_CHANGE_COUNT_METHOD = new UpdateChangeCounter()
 }

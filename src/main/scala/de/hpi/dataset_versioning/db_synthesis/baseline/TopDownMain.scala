@@ -11,4 +11,6 @@ object TopDownMain extends App {
   val toIgnore = if(args.size>=5) args(4).split(",").toSet else Set[String]()
   val topDown = new TopDown(subdomain,toIgnore)
   topDown.synthesizeDatabase(countChangesForALlSteps)
+
+
 }

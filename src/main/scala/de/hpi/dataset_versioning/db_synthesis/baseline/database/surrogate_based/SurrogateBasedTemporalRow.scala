@@ -5,8 +5,8 @@ import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.{TemporalFieldTrait, Variant2Sketch}
 
 @SerialVersionUID(3L)
-class SurrogateBasedTemporalRow(keys:IndexedSeq[Int],val valueLineage:ValueLineage,foreignKeys:IndexedSeq[Int]) extends AbstractSurrogateBasedTemporalRow[Any](keys,valueLineage,foreignKeys) with Serializable{
-  def toRowSketch = new SurrogateBasedTemporalRowSketch(keys,Variant2Sketch.fromValueLineage(valueLineage),foreignKeys)
+class SurrogateBasedTemporalRow(pk:IndexedSeq[Int], val valueLineage:ValueLineage, foreignKeys:IndexedSeq[Int]) extends AbstractSurrogateBasedTemporalRow[Any](pk,valueLineage,foreignKeys) with Serializable{
+  def toRowSketch = new SurrogateBasedTemporalRowSketch(pk,Variant2Sketch.fromValueLineage(valueLineage),foreignKeys)
 
   override def mergeWithConsistent(keys: IndexedSeq[Int], rightRow: AbstractSurrogateBasedTemporalRow[Any]) = {
     //val a:TemporalFieldTrait[Any] = rightRow.value

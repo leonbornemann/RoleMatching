@@ -43,7 +43,7 @@ class SurrogateBasedDecomposedTemporalTable(val id: DecomposedTemporalTableIdent
       rhs)}
     val newReferenceBasedBCNFTable = BCNFTableSchema(id,
     surrogateKey,
-    associations.map(_.surrogateKey).toIndexedSeq,
+    associations.map(_.surrogateKey),
     foreignSurrogateKeysToReferencedTables)
     (newReferenceBasedBCNFTable,associations)
   }

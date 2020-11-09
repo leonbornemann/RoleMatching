@@ -87,8 +87,8 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
   }
 
   def getCorrectlyOrderedPair(tuple1: (TemporalDatabaseTableTrait[Int], Iterable[Int]), tuple2: (TemporalDatabaseTableTrait[Int], Iterable[Int])) = {
-    assert(tuple1._1.getUnionedTables.head.compositeID != tuple2._1.getUnionedTables.head.compositeID)
-    if(tuple1._1.getUnionedTables.head.compositeID < tuple2._1.getUnionedTables.head.compositeID){
+    assert(tuple1._1.getUnionedOriginalTables.head.compositeID != tuple2._1.getUnionedOriginalTables.head.compositeID)
+    if(tuple1._1.getUnionedOriginalTables.head.compositeID < tuple2._1.getUnionedOriginalTables.head.compositeID){
       (tuple1,tuple2)
     } else{
       (tuple2,tuple1)

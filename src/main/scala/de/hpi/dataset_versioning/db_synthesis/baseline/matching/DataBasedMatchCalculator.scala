@@ -9,7 +9,6 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.index.MostDistinctTimesta
 class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
 
   val schemaMapper = new TemporalSchemaMapper()
-  logger.debug("FIx needed: CUrrently we are not checking whether the pk remains a pk after unioning")
 
   def getNonWildCardOverlapForMatchedAttributes(left: Set[AttributeLineage], right: Set[AttributeLineage]) = {
     val nonWildCardLeft = unionAllActiveTimes(left)
@@ -53,7 +52,7 @@ class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
     for(mapping <- schemaMappings){
       //TODO: build an index on the overlap of each attribute (?)
       //for now we just do it on the non-key attributes:
-      val indexBuilder = new MostDistinctTimestampIndexBuilder[A](Set(sketchA,sketchB))
+      val indexBuilder = new MostDistinctTimestampIndexBuilder[A](Set(sketchA,sketchB),false)
       val index = indexBuilder.buildTableIndexOnNonKeyColumns()
       val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,index,mapping)
       val tupleMapping = tupleMapper.mapGreedy()

@@ -19,12 +19,16 @@ import scala.collection.mutable.ArrayBuffer
 
 @SerialVersionUID(3L)
 abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBasedTemporalRow[A]](val id: String,
-                                                                                                val unionedTables: mutable.HashSet[DecomposedTemporalTableIdentifier],
+                                                                                                val unionedTables: mutable.HashSet[Int],
+                                                                                                val unionedOriginalTables: mutable.HashSet[DecomposedTemporalTableIdentifier],
                                                                                                 val key: collection.IndexedSeq[SurrogateAttributeLineage],
                                                                                                 val nonKeyAttribute: AttributeLineage,
                                                                                                 val foreignKeys: collection.IndexedSeq[SurrogateAttributeLineage],
                                                                                                 val rows:collection.mutable.ArrayBuffer[B],
-                                                                                                uniqueSynthTableID: Int) extends  TemporalDatabaseTableTrait[A] with BinarySerializable with StrictLogging with Serializable{
+                                                                                                val uniqueSynthTableID: Int) extends  TemporalDatabaseTableTrait[A] with BinarySerializable with StrictLogging with Serializable{
+
+  override def toString: String = unionedOriginalTables.mkString("_UNION_")+ s"(${key.mkString(",")}, ${nonKeyAttribute})"
+
   def isSketch: Boolean
 
   override def insertTime: LocalDate = rows
@@ -48,7 +52,7 @@ abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBased
 
   override def getID: String = id
 
-  override def getUnionedTables: collection.Set[DecomposedTemporalTableIdentifier] = unionedTables
+  override def getUnionedOriginalTables: collection.Set[DecomposedTemporalTableIdentifier] = unionedOriginalTables
 
   override def primaryKey: collection.Set[AttributeLineage] = ???
 
@@ -56,12 +60,11 @@ abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBased
 
   override def isSurrogateBased: Boolean = true
 
-  def createNewTable(unionID: String, value: mutable.HashSet[DecomposedTemporalTableIdentifier], key: collection.IndexedSeq[SurrogateAttributeLineage], newNonKEyAttrLineage: AttributeLineage, newRows: ArrayBuffer[AbstractSurrogateBasedTemporalRow[A]]):TemporalDatabaseTableTrait[A]
+  def createNewTable(unionID: String,unionedTables: mutable.HashSet[Int], value: mutable.HashSet[DecomposedTemporalTableIdentifier], key: collection.IndexedSeq[SurrogateAttributeLineage], newNonKEyAttrLineage: AttributeLineage, newRows: ArrayBuffer[AbstractSurrogateBasedTemporalRow[A]]):TemporalDatabaseTableTrait[A]
 
   def createUnionedTable(left: AbstractSurrogateBasedTemporalTable[A, B], right: AbstractSurrogateBasedTemporalTable[A, B], bestMatch: TableUnionMatch[A]) = {
     val unionID = left.getID + "_UNION_" + right.getID
-    val newNonKEyAttrLineage:AttributeLineage = left.nonKeyAttribute.unionDisjoint(right.nonKeyAttribute,left.nonKeyAttribute.attrId)
-    logger.debug("Remember that the non-key attribute id is now the id of the left table - this change needs to be registered somewhere in the database")
+    val newNonKEyAttrLineage:AttributeLineage = left.nonKeyAttribute.union(right.nonKeyAttribute,left.nonKeyAttribute.attrId)
     var curSurrogateKeyCounter = left.rows.maxBy(_.keys.head).keys.head +1
     val nonMatchedRowsRight = bestMatch.tupleMapping.get.unmatchedTupleIndicesB.toIndexedSeq.map(rowIndex => {
       val r = right.rows(rowIndex).asInstanceOf[AbstractSurrogateBasedTemporalRow[A]]
@@ -82,7 +85,8 @@ abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBased
     assert(left.foreignKeys.isEmpty && right.foreignKeys.isEmpty)
     var newTable:AbstractSurrogateBasedTemporalTable[A, B] = null
     createNewTable(unionID,
-      mutable.HashSet() ++ left.getUnionedTables.union(right.getUnionedTables),
+      mutable.HashSet(left.uniqueSynthTableID,right.uniqueSynthTableID),
+      mutable.HashSet() ++ left.getUnionedOriginalTables.union(right.getUnionedOriginalTables),
       left.key,
       newNonKEyAttrLineage,
       newRows

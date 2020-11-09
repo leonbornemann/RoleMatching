@@ -20,7 +20,7 @@ trait TemporalDatabaseTableTrait[A] {
 
   def isAssociation: Boolean = dataAttributeLineages.size == 1
 
-  def isTrueUnion = getUnionedTables.size > 1
+  def isTrueUnion = getUnionedOriginalTables.size > 1
 
   def primaryKeyIsValid: Boolean
 
@@ -30,7 +30,7 @@ trait TemporalDatabaseTableTrait[A] {
 
   def getID: String
 
-  def getUnionedTables: collection.Set[DecomposedTemporalTableIdentifier]
+  def getUnionedOriginalTables: collection.Set[DecomposedTemporalTableIdentifier]
 
   def dataColumns: IndexedSeq[TemporalColumnTrait[A]]
 

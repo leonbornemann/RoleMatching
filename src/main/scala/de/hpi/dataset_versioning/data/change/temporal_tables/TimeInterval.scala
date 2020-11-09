@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import scala.collection.mutable.ArrayBuffer
 
-//begin inclusive, end exclusive
+//begin inclusive, end inclusive
 case class TimeInterval(begin:LocalDate,private val constructedEnd:Option[LocalDate]) extends Ordered[TimeInterval]{
 
   val end = if(constructedEnd.isDefined && constructedEnd.get == LocalDate.MAX) None else constructedEnd // convenience constructor, so that we can specify LocalDate.Max instead of None

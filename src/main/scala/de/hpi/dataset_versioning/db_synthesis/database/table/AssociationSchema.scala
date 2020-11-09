@@ -9,11 +9,14 @@ import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 class AssociationSchema(val id:DecomposedTemporalTableIdentifier,
                             val surrogateKey:SurrogateAttributeLineage,
                             val attributeLineage: AttributeLineage) {
+
+  override def toString: String = id + s"(${surrogateKey}, ${attributeLineage})"
+
   def compositeID: String = id.compositeID
 
 
   def writeToStandardFile() = {
-    val file = DBSynthesis_IOService.getBCNFTableSchemaFile(id)
+    val file = DBSynthesis_IOService.getAssociationSchemaFile(id)
     val helper = AssociationSchemaHelper(id,
       surrogateKey,
       AttributeLineageWithHashMap.from(attributeLineage))
@@ -24,13 +27,13 @@ class AssociationSchema(val id:DecomposedTemporalTableIdentifier,
 object AssociationSchema{
 
   def loadAllAssociations(subdomain: String, originalID: String) = {
-    val dir = DBSynthesis_IOService.getSurrogateBasedDecomposedTemporalAssociationDir(subdomain,originalID)
+    val dir = DBSynthesis_IOService.getAssociationSchemaDir(subdomain,originalID)
     val ids = dir.listFiles().map(f => DecomposedTemporalTableIdentifier.fromFilename(f.getName))
     ids.map(id => load(id))
   }
 
   def load(id:DecomposedTemporalTableIdentifier) = {
-    val file = DBSynthesis_IOService.getBCNFTableSchemaFile(id)
+    val file = DBSynthesis_IOService.getAssociationSchemaFile(id)
     val helper = AssociationSchemaHelper.fromJsonFile(file.getAbsolutePath)
     helper.AssociationSchema
   }

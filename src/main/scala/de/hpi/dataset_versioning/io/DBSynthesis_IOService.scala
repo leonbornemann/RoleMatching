@@ -7,7 +7,11 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 
+import scala.reflect.io.Directory
+
 object DBSynthesis_IOService extends StrictLogging{
+  def clearDatabaseSynthesisInputDir() = new Directory(new File(OPTIMIZATION_INPUT_DIR)).deleteRecursively()
+
 
   def getSurrogateBasedDecomposedTemporalTableFile(id: DecomposedTemporalTableIdentifier) = {
     createParentDirs(new File(s"$DECOMPOSED_Temporal_TABLE_DIR/${id.viewID}/${id.compositeID}.json"))
@@ -18,7 +22,7 @@ object DBSynthesis_IOService extends StrictLogging{
   }
 
   def getOptimizationBCNFReferenceTableInputFile(id: DecomposedTemporalTableIdentifier) = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_BCNF_DIR/referenceTables/${id.viewID}/${id.compositeID}.binary"))
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_BCNF_DIR/referenceTables/${id.viewID}/${id.compositeID}.json"))
   }
 
   def getOptimizationBCNFTemporalTableFile(id: DecomposedTemporalTableIdentifier) = {
@@ -33,8 +37,8 @@ object DBSynthesis_IOService extends StrictLogging{
     createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/${id.viewID}/${id.compositeID}.binary"))
   }
 
-  def decomposedTemporalAssociationsExist(subdomain: String, id: String) = {
-    val dir = getSurrogateBasedDecomposedTemporalAssociationDir(subdomain, id)
+  def associationSchemataExist(subdomain: String, id: String) = {
+    val dir = getAssociationSchemaDir(subdomain, id)
     dir.exists() && !dir.listFiles().isEmpty
   }
 
@@ -68,7 +72,7 @@ object DBSynthesis_IOService extends StrictLogging{
   def getStatisticsDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$STATISTICS_DIR/$subdomain/$originalID/"))
 
   def getBCNFTableSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$BCNF_SCHEMA_FILE/$subdomain/$viewID/"))
-  def getSurrogateBasedDecomposedTemporalAssociationDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/$viewID/"))
+  def getAssociationSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/$viewID/"))
 
   def getAssociationSchemaFile(id:DecomposedTemporalTableIdentifier) = {
     assert(id.associationID.isDefined)
@@ -122,11 +126,13 @@ object DBSynthesis_IOService extends StrictLogging{
   def DECOMPOSED_Temporal_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTemporalTables/"
   def BCNF_SCHEMA_FILE = DECOMPOSTION_DIR + "/bcnfSchemata/"
   def ASSOCIATION_SCHEMA_DIR = DECOMPOSTION_DIR + "/associationSchemata/"
-  def OPTIMIZATION_INPUT_Association_SKETCH_DIR = DB_SYNTHESIS_DIR + "/input/associationSketches/"
-  def OPTIMIZATION_INPUT_ASSOCIATION_DIR = DB_SYNTHESIS_DIR + "/input/associations/"
-  def OPTIMIZATION_INPUT_BCNF_DIR = DB_SYNTHESIS_DIR + "/input/BCNF/"
+  def OPTIMIZATION_INPUT_DIR = DB_SYNTHESIS_DIR + "/input/"
+  def OPTIMIZATION_INPUT_Association_SKETCH_DIR = OPTIMIZATION_INPUT_DIR + "/associationSketches/"
+  def OPTIMIZATION_INPUT_ASSOCIATION_DIR = OPTIMIZATION_INPUT_DIR + "/associations/"
+  def OPTIMIZATION_INPUT_BCNF_DIR = OPTIMIZATION_INPUT_DIR + "/BCNF/"
   def SYNTHESIZED_TABLES_WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/synthesizedTables/"
   def SYNTHESIZED_DATABASE_FINAL_DIR = DB_SYNTHESIS_DIR + "/finalSynthesizedDatabase/synthesizedTables/"
+  def DATABASE_ROOT_DIR = DB_SYNTHESIS_DIR + "/synthesizedDatabases/"
   def SKETCH_DIR = DB_SYNTHESIS_DIR + "/sketches/"
   def COLUMN_SKETCH_DIR = SKETCH_DIR + "/temporalColumns/"
 

@@ -18,7 +18,6 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTable, TemporalTableDecomposer}
 import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.DatasetInsertIgnoreFieldChangeCounter
-import de.hpi.dataset_versioning.db_synthesis.database.query_tracking.ViewQueryTracker
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
@@ -58,7 +57,7 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
     idsWithDecomposedTables.foreach(id => {
       var associations:Array[AssociationSchema] = null
       var tt:TemporalTable = null
-      if(DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain,id)) {
+      if(DBSynthesis_IOService.associationSchemataExist(subdomain,id)) {
         associations = AssociationSchema.loadAllAssociations(subdomain, id)
         allAssociations ++= associations
         //write sketches if not present:
@@ -79,7 +78,7 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
           val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
           bcnfChangeCount = Some(dtts.map(dtt => GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(TemporalTable.loadBCNFFromStandardBinaryFile(dtt.id))).sum)
         }
-        if(!DBSynthesis_IOService.decomposedTemporalAssociationsExist(subdomain, id)) {
+        if(!DBSynthesis_IOService.associationSchemataExist(subdomain, id)) {
           logger.debug(s"no decomposed Temporal associations found for $id, skipping this")
         } else{
           associationChangeCount = Some(associations.map(a => GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(a.id))).sum)
@@ -100,7 +99,6 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
       .map(_._2.nChangesInBCNFTables.get).sum}")
       //logger.debug(s"total number of changes in this step: ${nChangesInAssociations+numberOfChangesInTablesWithNoDTTORAssociation}")
     }
-    val queryTracker = new ViewQueryTracker(idsWithDecomposedTables)
     val nChangesInAssociations = if(countChangesForAllSteps) uidToViewChanges.values.filter(_.nChangesInAssociationTables.isDefined).map(_.nChangesInAssociationTables.get).reduce(_ + _) else -1
     if(!countChangesForAllSteps) {
       logger.debug("Not counting all changes, thus initializing topdown optimizer with a dummy initial change value")
@@ -110,8 +108,7 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
     val topDownOptimizer = new TopDownOptimizer(allAssociations.toIndexedSeq,
       bcnfSchemata,
       nChangesInAssociations,
-      extraNonDecomposedViewTableChanges.toMap,
-      Some(queryTracker))
+      extraNonDecomposedViewTableChanges.toMap)
     topDownOptimizer.optimize()
   }
 

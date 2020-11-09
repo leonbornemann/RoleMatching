@@ -14,11 +14,6 @@ object GlobalSurrogateRegistry {
     curSurrogateIDCounter = associations.map(_.surrogateKey.surrogateID).max+1
   }
 
-  def initCounter(surrogateID: Int, bool: Boolean, value: ArrayBuffer[Int]) = {
-
-  }
-
-
   val sketchSurrogateCounters = mutable.HashMap[Int,Int]()
   val surrogateCounters = mutable.HashMap[Int,Int]()
 

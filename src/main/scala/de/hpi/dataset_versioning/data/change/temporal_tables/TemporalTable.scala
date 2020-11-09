@@ -30,7 +30,6 @@ class TemporalTable(val id:String,
 
   def hasSurrogateValues = surrogateAttributes.size!=0 && surrogateRows.size!=0
 
-
   var surrogateAttributes = IndexedSeq[SurrogateAttributeLineage]()
   var surrogateRows = scala.collection.mutable.ArrayBuffer[IndexedSeq[Int]]()
 
@@ -108,7 +107,7 @@ class TemporalTable(val id:String,
           newPKContent = valueSet(newRowContent)
         } else {
           newSurrogateKeyCounter +=1
-          val newPKContent = newSurrogateKeyCounter-1
+          newPKContent = newSurrogateKeyCounter-1
           valueSet.put(newRowContent,newPKContent)
           val newRow = new SurrogateBasedTemporalRow(IndexedSeq(newPKContent),newRowContent,IndexedSeq())
           newRows.addOne(newRow)
@@ -117,6 +116,7 @@ class TemporalTable(val id:String,
         surrogateKeyColumnValues +=newPKContent
       }}
       val projectedAssociationTable = new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(association.id.compositeID,
+        mutable.HashSet(),
         mutable.HashSet(association.id),
         IndexedSeq(association.surrogateKey),
         association.attributeLineage,
@@ -129,10 +129,10 @@ class TemporalTable(val id:String,
     val surrogateKeyIDs = bcnfTable.surrogateKey.map(s => s.surrogateID)
     val surrogateFkIds = bcnfTable.foreignSurrogateKeysToReferencedBCNFTables.map(_._1.surrogateID)
     val bcnfReferenceTableRows = (0 until rows.size).map(rowIndex => {
-      val associationReferenceValues = associationResults.map{case (st,surogateValues) => {
+      val associationReferenceValues = mutable.IndexedSeq() ++ associationResults.map{case (st,surogateValues) => {
         surogateValues(rowIndex)
       }}
-      val pkRow = surrogateKeyIDs.map(id => surrogateRows(rowIndex)(surrogateAttrIDToPos(id)))
+      val pkRow = mutable.IndexedSeq() ++ surrogateKeyIDs.map(id => surrogateRows(rowIndex)(surrogateAttrIDToPos(id)))
       val fkRow = surrogateFkIds.map(id => surrogateRows(rowIndex)(surrogateAttrIDToPos(id)))
       new BCNFSurrogateReferenceRow(pkRow,associationReferenceValues,fkRow)
     })

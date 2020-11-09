@@ -50,7 +50,7 @@ abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSe
     println(TableFormatter.format(rows))
   }
 
-  override def getUnionedTables = unionedTables
+  override def getUnionedOriginalTables = unionedTables
 
   def buildAttrUnion(colsLeft: Set[AttributeLineage],newID:Int) = {
     colsLeft.reduce( (a,b)=> a.unionDisjoint(b,newID))
@@ -170,7 +170,7 @@ abstract class AbstractTemporalDatabaseTable[A](val unionedTables:mutable.HashSe
     assert(left == bestMatch.firstMatchPartner && right == bestMatch.secondMatchPartner)
     val unionedTableID = left.getID + "_UNION_" + right.getID
     val (newTcSketches,leftTupleIndicesToNewTupleIndices,rightTupleIndicesToNewTupleIndices,newColumnIDToOldColumnsLeft,newColumnIDToOldColumnsRight) = buildUnionedTemporalColumns(left,right,bestMatch,unionedTableID)
-    val unionedTables = mutable.HashSet() ++ left.getUnionedTables ++ right.getUnionedTables
+    val unionedTables = mutable.HashSet() ++ left.getUnionedOriginalTables ++ right.getUnionedOriginalTables
     val pkIDSet = left.primaryKey.map(_.attrId)
     val union:TemporalDatabaseTableTrait[A] = buildUnionedTable(unionedTableID,
       unionedTables,

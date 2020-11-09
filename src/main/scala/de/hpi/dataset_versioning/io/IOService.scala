@@ -45,7 +45,7 @@ object IOService extends StrictLogging{
     DBSynthesis_IOService.createParentDirs(new File(s"TEMPORAL_COLUMN_DIR/$id/${id}_$attrId.json"))
   }
 
-  def getTemporalSchemaFile(id: String) = new File(CUSTOM_METADATA_DIR + s"/temporalSchemata/$id.json")
+  def getTemporalSchemaFile(id: String) = createParentDirs(new File(CUSTOM_METADATA_DIR + s"/temporalSchemata/$id.json"))
 
   def getSimplifiedDatasetIDSInVersion(curVersion: LocalDate) = getSimplifiedDataDir(curVersion).listFiles()
     .filter(_.getName.endsWith(".json?"))

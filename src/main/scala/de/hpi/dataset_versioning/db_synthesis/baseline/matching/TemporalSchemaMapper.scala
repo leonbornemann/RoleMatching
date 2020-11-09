@@ -75,7 +75,7 @@ class TemporalSchemaMapper() extends StrictLogging{
     assert(tableA.dataAttributeLineages.size==1)
     assert(tableA.dataAttributeLineages.size==1)
     val allMappings = mutable.ArrayBuffer[collection.Map[Set[AttributeLineage],Set[AttributeLineage]]]()
-    if(tableA.getUnionedTables.size==1 && tableB.getUnionedTables.size==1 && fromSameBCNFTable(tableA.getUnionedTables.head,tableB.getUnionedTables.head)){
+    if(tableA.getUnionedOriginalTables.size==1 && tableB.getUnionedOriginalTables.size==1 && fromSameBCNFTable(tableA.getUnionedOriginalTables.head,tableB.getUnionedOriginalTables.head)){
       //we can do an easy mapping, because we know the mapping (by ID)
       return getSameBCNFTableOriginMapping(tableA,tableB)
     } else if(tableA.primaryKey.size == 1 && tableB.primaryKey.size==1) {
@@ -109,7 +109,7 @@ class TemporalSchemaMapper() extends StrictLogging{
     if(tableA.isSurrogateBased){
       val tableASurrogateBased = tableA.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,_]]
       val tableBSurrogateBased = tableB.asInstanceOf[AbstractSurrogateBasedTemporalTable[A,_]]
-      if(tableASurrogateBased.key.size==tableBSurrogateBased.key){
+      if(tableASurrogateBased.key.size==tableBSurrogateBased.key.size){
         val a = mutable.ArrayBuffer(collection.Map(Set(tableASurrogateBased.dataAttributeLineages.head) -> Set(tableBSurrogateBased.dataAttributeLineages.head)))
         a
       } else {

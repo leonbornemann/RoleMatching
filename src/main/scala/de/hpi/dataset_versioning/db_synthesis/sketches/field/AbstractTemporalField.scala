@@ -75,7 +75,7 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
         } else {
           toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex))
           //replace old interval with newer interval with begin set to myInterval.end+1
-          otherLineage(otherIndex) = (TimeInterval(myInterval.end.get, otherInterval.`end`), otherValue)
+          otherLineage(otherIndex) = (TimeInterval(myInterval.end.get.plusDays(1), otherInterval.`end`), otherValue)
           myIndex += 1
         }
       } else{
@@ -84,7 +84,7 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
           incompatible = true
         } else {
           toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex))
-          myLineage(myIndex) = (TimeInterval(otherInterval.end.get, myInterval.`end`), myValue)
+          myLineage(myIndex) = (TimeInterval(otherInterval.end.get.plusDays(1), myInterval.`end`), myValue)
           otherIndex += 1
         }
       }

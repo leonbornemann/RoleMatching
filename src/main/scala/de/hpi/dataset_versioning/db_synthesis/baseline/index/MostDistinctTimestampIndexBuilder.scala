@@ -12,7 +12,7 @@ import de.hpi.dataset_versioning.io.IOService
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set[TemporalDatabaseTableTrait[A]]) extends StrictLogging{
+class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set[TemporalDatabaseTableTrait[A]],enableLogging:Boolean=true) extends StrictLogging{
 
   assert(unmatchedAssociations.forall(_.isAssociation))
 
@@ -41,13 +41,15 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
       val chosen = getNextMostDiscriminatingTimestamp(chosenTimestamps,attributesOnWhichToIndex,nonCoveredAttributeIDs)
       chosenTimestamps += chosen
     }
-    logger.debug("Done Selecting timestamps, beginning to build index")
+    if(enableLogging)
+      logger.debug("Done Selecting timestamps, beginning to build index")
     val layeredTableIndex = new LayeredTupleIndex[A](chosenTimestamps,unmatchedAssociations.map(a => {
       val nonKeyAttr = a.dataAttributeLineages.head
       val indexOfNonKeyAttr = a.dataColumns.zipWithIndex.filter(_._1.attributeLineage.attrId==nonKeyAttr.attrId).head._2
       (a,indexOfNonKeyAttr)
     }))
-    logger.debug("Finished building index")
+    if(enableLogging)
+      logger.debug("Finished building index")
     exportIndexStats(layeredTableIndex)
     layeredTableIndex
   }
@@ -68,7 +70,8 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
       .head
     val nowCovered = bestNextTs._2.map(al => (al._1, al._2.attrId)).toSet
     nowCovered.foreach(nonCoveredAttributeIDs.remove(_))
-    logger.debug(s"${bestNextTs._1} covers ${bestNextTs._2.size} new attributes leaving ${bestNextTs._3.size} still open")
+    if(enableLogging)
+      logger.debug(s"${bestNextTs._1} covers ${bestNextTs._2.size} new attributes leaving ${bestNextTs._3.size} still open")
     bestNextTs._1
   }
 }

@@ -1,5 +1,6 @@
-package de.hpi.dataset_versioning.data.change.temporal_tables
+package de.hpi.dataset_versioning.data.change.temporal_tables.tuple
 
+import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.change.{FieldLineageCompatibility, ReservedChangeValues}
 
 case class FieldLineageReference(table: TemporalTable, rowIndex: Int, colIndex: Int) {

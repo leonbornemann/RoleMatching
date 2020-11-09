@@ -1,6 +1,6 @@
 package de.hpi.dataset_versioning.data.change
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.FieldLineageReference
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.FieldLineageReference
 
 trait FieldLineageCompatibility {
 

@@ -3,13 +3,12 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, SurrogateAttributeLineage}
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SurrogateBasedTemporalRowSketch}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.logger
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
-import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.BinarySerializable
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService

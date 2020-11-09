@@ -1,6 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 

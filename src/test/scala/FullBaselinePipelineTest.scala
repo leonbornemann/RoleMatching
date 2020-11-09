@@ -2,12 +2,12 @@ import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.ChangeExporter
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.TopDownOptimizer
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.{SynthesizedTemporalDatabaseTable, SynthesizedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable

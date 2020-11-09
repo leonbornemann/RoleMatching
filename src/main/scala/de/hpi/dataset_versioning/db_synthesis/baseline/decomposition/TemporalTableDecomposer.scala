@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, AttributeState, SurrogateAttributeLineage}
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, AttributeState, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.Attribute

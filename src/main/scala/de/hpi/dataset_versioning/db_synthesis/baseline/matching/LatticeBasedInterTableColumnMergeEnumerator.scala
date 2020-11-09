@@ -1,8 +1,8 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
-import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.time.TimeIntervalSequence
 
 case class LatticeBasedInterTableColumnMergeEnumerator() extends StrictLogging {
 

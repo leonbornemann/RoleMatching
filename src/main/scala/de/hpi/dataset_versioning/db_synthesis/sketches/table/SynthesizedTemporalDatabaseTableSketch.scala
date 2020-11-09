@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.sketches.table
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable

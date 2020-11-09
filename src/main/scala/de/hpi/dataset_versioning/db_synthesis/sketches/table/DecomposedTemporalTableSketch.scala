@@ -2,10 +2,10 @@ package de.hpi.dataset_versioning.db_synthesis.sketches.table
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.{TemporalColumnSketch, TemporalColumnTrait}
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.{TemporalFieldTrait, Variant2Sketch}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService

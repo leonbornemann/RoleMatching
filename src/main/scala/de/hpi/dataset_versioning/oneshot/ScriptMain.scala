@@ -11,7 +11,7 @@ import de.hpi.dataset_versioning.data.matching.ColumnMatchingRefinement
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
-import de.hpi.dataset_versioning.db_synthesis.baseline.DetailedBCNFChangeCounting.subdomain
+import de.hpi.dataset_versioning.db_synthesis.baseline.specific_experiments.DetailedBCNFChangeCounting.subdomain
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd.FunctionalDependencySet
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable

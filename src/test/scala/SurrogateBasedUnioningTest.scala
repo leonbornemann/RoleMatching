@@ -1,14 +1,15 @@
 import java.io.File
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, AttributeState, SurrogateAttributeLineage, TemporalRow, TemporalTable}
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, AttributeState, SurrogateAttributeLineage}
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.{TemporalRow, ValueLineage}
+import de.hpi.dataset_versioning.data.change.temporal_tables.{TemporalTable, attribute}
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.TopDown
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.{LayeredTupleIndex, MostDistinctTimestampIndexBuilder}
-import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
@@ -42,7 +43,7 @@ object SurrogateBasedUnioningTest extends App {
         nextAttrID+=1
         val attr = Attribute(elem, thisID, Some(thisID), None)
         val originalAttr = new AttributeLineage(thisID,mutable.TreeMap(intToTime(0) -> AttributeState(Some(attr))))
-        val surrogate = SurrogateAttributeLineage(GlobalSurrogateRegistry.getNextFreeSurrogateID,thisID,intToTime(0))
+        val surrogate = attribute.SurrogateAttributeLineage(GlobalSurrogateRegistry.getNextFreeSurrogateID,thisID,intToTime(0))
         (originalAttr,surrogate)
       })
     val viewID = testPath.getName

@@ -3,16 +3,16 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, SurrogateAttributeLineage, TemporalTable}
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.loadFromFile
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SurrogateBasedTemporalRowSketch, SynthesizedTemporalDatabaseTable}
+import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabaseTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabaseTable.loadFromFile
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
-import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait

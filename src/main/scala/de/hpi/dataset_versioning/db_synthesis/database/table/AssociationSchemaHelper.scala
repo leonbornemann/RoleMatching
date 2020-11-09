@@ -1,7 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.database.table
 
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.SurrogateAttributeLineage
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
-import de.hpi.dataset_versioning.data.change.temporal_tables.SurrogateAttributeLineage
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.AttributeLineageWithHashMap
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 

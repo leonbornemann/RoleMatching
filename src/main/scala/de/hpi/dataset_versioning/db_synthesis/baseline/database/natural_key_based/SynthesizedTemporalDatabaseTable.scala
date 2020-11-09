@@ -4,10 +4,11 @@ import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables._
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.{EntityFieldLineage, TemporalRow, ValueLineage}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable}

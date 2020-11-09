@@ -1,17 +1,13 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based
+package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 
-import java.io.File
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, SurrogateAttributeLineage, TemporalTable}
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{AbstractSurrogateBasedTemporalRow, AbstractSurrogateBasedTemporalTable, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.db_synthesis.sketches.BinaryReadable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.{TemporalColumnSketch, TemporalColumnTrait}
-import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable

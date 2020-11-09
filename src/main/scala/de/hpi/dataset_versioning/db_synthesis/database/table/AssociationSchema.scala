@@ -1,9 +1,8 @@
 package de.hpi.dataset_versioning.db_synthesis.database.table
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, SurrogateAttributeLineage}
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.AttributeLineageWithHashMap
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTableHelper
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 class AssociationSchema(val id:DecomposedTemporalTableIdentifier,

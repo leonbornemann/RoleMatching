@@ -1,11 +1,9 @@
-package de.hpi.dataset_versioning.db_synthesis.bottom_up
+package de.hpi.dataset_versioning.data.change.temporal_tables.tuple
 
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
-import de.hpi.dataset_versioning.data.change.temporal_tables.TimeInterval
-import de.hpi.dataset_versioning.db_synthesis.baseline.TimeIntervalSequence
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
+import de.hpi.dataset_versioning.data.change.temporal_tables.time.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.{AbstractTemporalField, TemporalFieldTrait}
 
 import scala.collection.mutable

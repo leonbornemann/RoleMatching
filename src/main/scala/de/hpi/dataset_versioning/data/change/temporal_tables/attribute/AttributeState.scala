@@ -1,4 +1,4 @@
-package de.hpi.dataset_versioning.data.change.temporal_tables
+package de.hpi.dataset_versioning.data.change.temporal_tables.attribute
 
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.simplified.Attribute

@@ -1,10 +1,10 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{TableUnionMatch, TupleMatching}
-import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.FieldChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait

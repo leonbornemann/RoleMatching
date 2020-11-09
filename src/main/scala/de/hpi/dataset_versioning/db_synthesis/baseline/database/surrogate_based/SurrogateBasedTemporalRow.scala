@@ -1,7 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SurrogateBasedTemporalRowSketch
-import de.hpi.dataset_versioning.db_synthesis.bottom_up.ValueLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.{TemporalFieldTrait, Variant2Sketch}
 
 @SerialVersionUID(3L)

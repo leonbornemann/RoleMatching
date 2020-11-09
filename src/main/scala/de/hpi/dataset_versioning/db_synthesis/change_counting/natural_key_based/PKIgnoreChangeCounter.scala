@@ -1,12 +1,10 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline
+package de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based
 
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.AbstractTemporalDatabaseTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.{FieldChangeCounter, TableChangeCounter}
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 
 /***

@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.database
 
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait

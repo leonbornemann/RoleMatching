@@ -3,7 +3,8 @@ package de.hpi.dataset_versioning.data.metadata.custom.schemaHistory
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, AttributeState, TemporalTable}
+import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, AttributeState}
 import de.hpi.dataset_versioning.data.json.helper.TemporalSchemaHelper
 import de.hpi.dataset_versioning.io.IOService
 

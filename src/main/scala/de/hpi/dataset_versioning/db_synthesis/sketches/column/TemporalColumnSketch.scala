@@ -1,6 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.sketches.column
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.{AttributeLineage, TemporalColumn}
+import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalColumn
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.{FieldLineageSketch, TemporalFieldTrait, Variant2Sketch}
 import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService

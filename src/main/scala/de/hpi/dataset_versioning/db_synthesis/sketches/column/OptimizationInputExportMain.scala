@@ -62,10 +62,6 @@ object OptimizationInputExportMain extends App with StrictLogging {
     var subdomainIds = subDomainInfo(subdomain)
       .map(_.id)
       .toIndexedSeq
-    val toFilter = "file:///home/leon/data/dataset_versioning/socrata/fromServer/workingDir/changes/sxs8-h27x.json\nfile:///home/leon/data/dataset_versioning/socrata/fromServer/workingDir/changes/4aki-r3np.json\nfile:///home/leon/data/dataset_versioning/socrata/fromServer/workingDir/changes/68nd-jvt3.json\nfile:///home/leon/data/dataset_versioning/socrata/fromServer/workingDir/changes/x2n5-8w5q.json\nfile:///home/leon/data/dataset_versioning/socrata/fromServer/workingDir/changes/ijzp-q8t2.json\nfile:///home/leon/data/dataset_versioning/socrata/fromServer/workingDir/changes/cygx-ui4j.json\nfile:///home/leon/data/dataset_versioning/socrata/fromServer/workingDir/changes/wrvz-psew.json\nfile:///home/leon/data/dataset_versioning/socrata/fromServer/workingDir/changes/v6vf-nfxy.json"
-      .split("\n")
-      .map(_.split("/").last.split("\\.").head)
-    subdomainIds = subdomainIds.diff(toFilter)
     val idsToSketch = BCNFTableSchema.filterNotFullyDecomposedTables(subdomain,subdomainIds)
     idsToSketch.foreach(exportForID(_))
   }

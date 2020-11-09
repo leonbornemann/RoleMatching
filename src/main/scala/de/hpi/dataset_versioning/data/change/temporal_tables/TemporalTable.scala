@@ -146,7 +146,7 @@ class TemporalTable(val id:String,
   }
 
 
-  def project(dttToMerge: SurrogateBasedDecomposedTemporalTable) = {
+  def project(dttToMerge: BCNFTableSchema) = {
     assert(dttToMerge.allSurrogates.forall(s => surrogateAttributes.contains(s)))
     val newSchema = dttToMerge.attributes
     val newRows:collection.mutable.ArrayBuffer[TemporalRow] = collection.mutable.ArrayBuffer()

@@ -212,7 +212,7 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
     })
     assert(surrogateBasedTables.flatMap(_.attributes.map(_.attrId)).size == dtts.flatMap(_.containedAttrLineages).map(_.attrId).toSet.size)
     surrogateBasedTables.foreach(sbdtt => {
-      //sbdtt.writeToStandardFile()
+      sbdtt.writeToStandardFile()
       val (bcnfReferenceTable,associations) = sbdtt.furtherDecomposeToAssociations
       associations.foreach(sbdta => sbdta.writeToStandardFile())
       //sbdtt.getReferenceSkeleton().writeToStandardFile()

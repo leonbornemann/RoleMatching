@@ -28,11 +28,6 @@ object OptimizationInputExportMain extends App with StrictLogging {
 
     val bcnfTables = BCNFTableSchema.loadAllBCNFTableSchemata(subdomain,id)
     val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
-    //for change counting purposes we write the projections of bcnf tables containing data:
-    dtts.foreach(dtt =>{
-      val projection = tt.project(dtt)
-      projection.projection.writeTOBCNFTemporalTableFile
-    })
     val bcnfByID = bcnfTables.map(a => ((a.id.subdomain,a.id.viewID,a.id.bcnfID),a)).toMap
     //whole tables:
     val associations = if(DBSynthesis_IOService.associationSchemataExist(subdomain,id)) AssociationSchema.loadAllAssociations(subdomain, id) else Array[AssociationSchema]()
@@ -42,6 +37,11 @@ object OptimizationInputExportMain extends App with StrictLogging {
     //integrity check: all references must also be used as keys:
     assert(bcnfTables.flatMap(_.foreignSurrogateKeysToReferencedBCNFTables.toMap.keySet).forall(s => allSurrogates.contains(s.surrogateID)))
     tt.addSurrogates(allSurrogates.values.toSet)
+    //for change counting purposes we write the projections of bcnf tables containing data:
+    dtts.foreach(dtt =>{
+      val projection = tt.project(dtt)
+      projection.projection.writeTOBCNFTemporalTableFile
+    })
     val byBcnf = associations.groupBy(a => (a.id.subdomain,a.id.viewID,a.id.bcnfID))
       .map{case (k,v) => (bcnfByID(k),v)}
     byBcnf.foreach{case (bcnf,associations) => {

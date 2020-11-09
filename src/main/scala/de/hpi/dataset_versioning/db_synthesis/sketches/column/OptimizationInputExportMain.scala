@@ -38,10 +38,10 @@ object OptimizationInputExportMain extends App with StrictLogging {
     assert(bcnfTables.flatMap(_.foreignSurrogateKeysToReferencedBCNFTables.toMap.keySet).forall(s => allSurrogates.contains(s.surrogateID)))
     tt.addSurrogates(allSurrogates.values.toSet)
     //for change counting purposes we write the projections of bcnf tables containing data:
-    dtts.foreach(dtt =>{
-      val projection = tt.project(dtt)
-      projection.projection.writeTOBCNFTemporalTableFile
-    })
+//    dtts.foreach(dtt =>{
+//      val projection = tt.project(dtt)
+//      projection.projection.writeTOBCNFTemporalTableFile
+//    })
     val byBcnf = associations.groupBy(a => (a.id.subdomain,a.id.viewID,a.id.bcnfID))
       .map{case (k,v) => (bcnfByID(k),v)}
     byBcnf.foreach{case (bcnf,associations) => {

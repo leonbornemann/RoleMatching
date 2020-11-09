@@ -43,7 +43,7 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
     val uidToViewChanges:mutable.HashMap[String,ChangeStats] = mutable.HashMap()
     val idsWithDecomposedTables = BCNFTableSchema.filterNotFullyDecomposedTables(subdomain,ids)
       .filter(!idsToIgnore.contains(_))
-    logger.debug(s"Running Database synthesis for ids $idsWithDecomposedTables")
+    logger.debug(s"Running Database synthesis for ${idsWithDecomposedTables.size} ids: $idsWithDecomposedTables")
     if(countChangesForAllSteps){
       val nonDecomposed = ids.diff(idsWithDecomposedTables)
       var nChanges:Long = 0

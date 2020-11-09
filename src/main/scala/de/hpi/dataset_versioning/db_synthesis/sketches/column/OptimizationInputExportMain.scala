@@ -35,7 +35,7 @@ object OptimizationInputExportMain extends App with StrictLogging {
       .map{case (k,v) => (k,v.head)}
     //integrity check: all references must also be used as keys:
     assert(bcnfTables.flatMap(_.foreignSurrogateKeysToReferencedBCNFTables.toMap.keySet).forall(s => allSurrogates.contains(s.surrogateID)))
-    tt.addSurrogates(allSurrogates.values.toSet)
+    tt.addSurrogates(allSurrogates.values.toSet  ++ associations.map(_.surrogateKey).toSet)
     //for change counting purposes we write the projections of bcnf tables containing data:
     //    val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
     //    dtts.foreach(dtt =>{

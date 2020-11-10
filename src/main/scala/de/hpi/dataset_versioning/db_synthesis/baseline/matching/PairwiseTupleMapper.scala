@@ -27,7 +27,7 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
 
   def mapGreedy() = {
     val finalMatching:TupleSetMatching[A] = new TupleSetMatching[A](tableA,tableB)
-    index.tupleGroupIterator.foreach(g => {
+    index.tupleGroupIterator.foreach{case (key,g) => {
       val byTable = g.groupMap(_._1)(_._2)
       if(!byTable.contains(tableA)){
         val tableBTuples = byTable(tableB)
@@ -46,7 +46,7 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
           finalMatching ++= matchingForGroup
         }
       }
-    })
+    }}
     finalMatching
   }
 

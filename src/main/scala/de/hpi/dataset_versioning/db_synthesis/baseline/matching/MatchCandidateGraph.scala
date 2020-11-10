@@ -103,11 +103,11 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
     index.serializeDetailedStatistics()
     val computedMatches = mutable.HashSet[(TemporalDatabaseTableTrait[Int],TemporalDatabaseTableTrait[Int])]()
     var nMatchesComputed = 0
-    it.foreach(g => {
+    it.foreach{case (key,g) => {
       val groupsWithTupleIndcies = g.groupMap(t => t._1)(t => t._2).toIndexedSeq
       if(groupsWithTupleIndcies.size>1) {
-        logger.debug(s"Processing group with ${groupsWithTupleIndcies.size} tables ")
-        logger.debug(s"Top tuple counts: ${groupsWithTupleIndcies.sortBy(-_._2.size).take(5).map{case (t,tuples) => (t.getID,tuples.size)}}")
+        logger.debug(s"Processing group $key with ${groupsWithTupleIndcies.size} tables with " +
+          s"Top tuple counts: ${groupsWithTupleIndcies.sortBy(-_._2.size).take(5).map{case (t,tuples) => (t.getID,tuples.size)}}")
       }
       for (i <- 0 until groupsWithTupleIndcies.size) {
         for (j <- (i + 1) until groupsWithTupleIndcies.size) {
@@ -122,7 +122,7 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
           }
         }
       }
-    })
+    }}
     logger.debug(s"Finished Index-Based initial matching, resulting in ${nMatchesComputed} checked matches, of which ${curMatches.map(_._2.size).sum} have a score > 0")
 
   }

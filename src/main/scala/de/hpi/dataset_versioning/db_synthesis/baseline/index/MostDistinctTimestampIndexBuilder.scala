@@ -22,12 +22,12 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
     val fileTuples = new PrintWriter("tuplesPerGroup.txt")
     val fileTables = new PrintWriter("tablesPerGroup.txt")
     val tuplePerTableFile = new PrintWriter("tuplePerTable.txt")
-    layeredTableIndex.tupleGroupIterator.foreach(g => {
+    layeredTableIndex.tupleGroupIterator.foreach{case (k,g) => {
       val nTables = g.map(_._1).toSet.size
       fileTables.println(nTables)
       fileTuples.println(g.size)
       tuplePerTableFile.println(g.size / nTables.toDouble)
-    })
+    }}
     fileTables.close()
     fileTables.close()
     tuplePerTableFile.close()

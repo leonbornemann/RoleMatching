@@ -21,6 +21,15 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
                                   bcnfReferenceSchemata:collection.IndexedSeq[BCNFTableSchema],
                                   var curChangeCount:Long,
                                   val extraNonDecomposedViewTableChanges:Map[String,Long]) extends StrictLogging{
+  //we assume that this method is called once the final database is assembled
+  def generateQueries() = {
+    //final database consists of finalSynthesizedTableIDs and allUnmatchedAssociations
+    val viewToBCNF = bcnfReferenceSchemata.groupBy(_.id.viewID)
+    viewToBCNF.foreach(id => {
+
+    })
+  }
+
 
   val bcnfSurrogateReferenceTables = bcnfReferenceSchemata
     .withFilter(s => !s.attributes.isEmpty)

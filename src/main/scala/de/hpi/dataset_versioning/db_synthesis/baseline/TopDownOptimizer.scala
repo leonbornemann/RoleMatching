@@ -102,6 +102,7 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
     //the final synthesized database is assembled:
     logger.debug("the final synthesized database is assembled")
     synthesizedDatabase.printState()
+    synthesizedDatabase.generateQueries()
     synthesizedDatabase.writeToStandardFiles()
     synthesizedDatabase
   }

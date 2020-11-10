@@ -71,6 +71,7 @@ object DBSynthesis_IOService extends StrictLogging{
 
   def getStatisticsDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$STATISTICS_DIR/$subdomain/$originalID/"))
 
+  def getBCNFTableSchemaDir(subdomain: String) = createParentDirs(new File(s"$BCNF_SCHEMA_FILE/$subdomain/"))
   def getBCNFTableSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$BCNF_SCHEMA_FILE/$subdomain/$viewID/"))
   def getAssociationSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/$viewID/"))
 

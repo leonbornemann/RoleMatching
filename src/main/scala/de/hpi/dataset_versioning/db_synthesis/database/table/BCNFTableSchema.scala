@@ -29,10 +29,16 @@ case class BCNFTableSchema(val id: DecomposedTemporalTableIdentifier,
 
 object BCNFTableSchema extends JsonReadable[BCNFTableSchema]{
 
-  def loadAllBCNFTableSchemata(subdomain: String, originalID: String) = {
+  def loadAllBCNFTableSchemata(subdomain: String, originalID: String):IndexedSeq[BCNFTableSchema] = {
     val dir = DBSynthesis_IOService.getBCNFTableSchemaDir(subdomain,originalID)
     val ids = dir.listFiles().map(f => DecomposedTemporalTableIdentifier.fromFilename(f.getName))
     ids.map(id => load(id))
+  }
+
+  def loadAllBCNFTableSchemata(subdomain: String):IndexedSeq[BCNFTableSchema] = {
+    val dir = DBSynthesis_IOService.getBCNFTableSchemaDir(subdomain)
+    val viewIds = dir.listFiles().map(f => f.getName)
+    viewIds.flatMap(viewID => loadAllBCNFTableSchemata(subdomain,viewID))
   }
 
   def load(id:DecomposedTemporalTableIdentifier) = {

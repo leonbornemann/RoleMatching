@@ -23,6 +23,7 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
                                   val extraNonDecomposedViewTableChanges:Map[String,Long]) extends StrictLogging{
 
   val bcnfSurrogateReferenceTables = bcnfReferenceSchemata
+    .withFilter(s => !s.attributes.isEmpty)
     .map(s => BCNFSurrogateReferenceTable.loadFromStandardOptimizationInputFile(s.id))
     .map(t => (t.bcnfTableSchema.id,t))
     .toMap

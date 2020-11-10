@@ -12,6 +12,18 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
   def serializeDetailedStatistics() = {
     val file = new File("indexStats.csv")
     val pr = new PrintWriter(file)
+    pr.println("NodeID,Timestamps,Node Values,#tables,#tuples,MostTuples_Rank_1,MostTuples_Rank_2,MostTuples_Rank_3,MostTuples_Rank_4,MostTuples_Rank_5")
+    val it = tupleGroupIterator
+    var id = 0
+    for(g <- it){
+      val bytable = g.groupBy(_._1)
+        .map(t => (t._1,t._2.map(_._2)))
+      val top5TupleCounts = bytable.toIndexedSeq.sortBy(-_._2.size).take(5).toBuffer.map(_._2.size)
+      while(top5TupleCounts.size<5) top5TupleCounts.append(0)
+      pr.println(s"$id,${chosenTimestamps.mkString(";")},$nodeValues,${bytable.keySet.size},${bytable.values.map(_.size).sum},${top5TupleCounts.mkString(",")}")
+      id+=1
+    }
+    pr.close()
   }
 
 

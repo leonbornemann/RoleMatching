@@ -1,6 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.{SynthesizedTemporalDatabase, SynthesizedTemporalDatabaseTable}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
@@ -34,12 +35,16 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
 
   private def loadAssociationSketches() = {
     var read = 0
+    var hasChanges = 0
     mutable.HashSet() ++ associations
       .map(dtt => {
         val t = SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.loadFromStandardOptimizationInputFile(dtt)
+        if(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(t)>0){
+          hasChanges +=1
+        }
         read +=1
         if(read%100==0) {
-          logger.debug(s"read $read/${associations.size} association sketches (${100*read/associations.size.toDouble}%)")
+          logger.debug(s"read $read/${associations.size} association sketches (${100*read/associations.size.toDouble}%) of which ${hasChanges} have changes (${100*hasChanges /read.toDouble}%)")
         }
       t
     })

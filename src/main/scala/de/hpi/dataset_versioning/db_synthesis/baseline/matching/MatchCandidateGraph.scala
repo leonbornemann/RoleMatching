@@ -100,10 +100,15 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
     val indexBuilder = new MostDistinctTimestampIndexBuilder[Int](unmatchedAssociations.map(_.asInstanceOf[TemporalDatabaseTableTrait[Int]]))
     val index = indexBuilder.buildTableIndexOnNonKeyColumns()
     val it = index.tupleGroupIterator
+    index.serializeDetailedStatistics()
     val computedMatches = mutable.HashSet[(TemporalDatabaseTableTrait[Int],TemporalDatabaseTableTrait[Int])]()
     var nMatchesComputed = 0
     it.foreach(g => {
       val groupsWithTupleIndcies = g.groupMap(t => t._1)(t => t._2).toIndexedSeq
+      if(groupsWithTupleIndcies.size>1) {
+        logger.debug(s"Processing group with ${groupsWithTupleIndcies.size} tables ")
+        logger.debug(s"Top tuple counts: ${groupsWithTupleIndcies.sortBy(-_._2.size).take(5).map{case (t,tuples) => (t.getID,tuples.size)}}")
+      }
       for (i <- 0 until groupsWithTupleIndcies.size) {
         for (j <- (i + 1) until groupsWithTupleIndcies.size) {
           val ((firstMatchPartner,_),(secondMatchPartner,_)) = getCorrectlyOrderedPair(groupsWithTupleIndcies(i),groupsWithTupleIndcies(j))

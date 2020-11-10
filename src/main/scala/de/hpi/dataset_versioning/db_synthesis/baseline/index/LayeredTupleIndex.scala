@@ -1,5 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
+import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
@@ -8,6 +9,11 @@ import scala.collection.mutable.ArrayBuffer
 
 class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
                            associationsWithColumnIndex: collection.Set[(TemporalDatabaseTableTrait[A],Int)]) {
+  def serializeDetailedStatistics() = {
+    val file = new File("indexStats.csv")
+    val pr = new PrintWriter(file)
+  }
+
 
   val allTsWildcardBucket = collection.mutable.ArrayBuffer[(TemporalDatabaseTableTrait[A],Int)]()
 
@@ -37,6 +43,10 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
       val nextCollection = treeIterator.next()
       nextCollection ++ allTsWildcardBucket
     }
+  }
+
+  def printDetailedInfo = {
+
   }
 
 }

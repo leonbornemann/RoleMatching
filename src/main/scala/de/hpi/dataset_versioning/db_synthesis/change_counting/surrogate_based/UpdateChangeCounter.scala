@@ -1,7 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SurrogateBasedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
 class UpdateChangeCounter() {
@@ -17,6 +17,10 @@ class UpdateChangeCounter() {
 
   def countChanges(table:SurrogateBasedSynthesizedTemporalDatabaseTableAssociation) = {
     table.surrogateBasedTemporalRows.map(r => countFieldChanges(r)).sum
+  }
+
+  def countChanges(table:SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = {
+    table.surrogateBasedTemporalRowSketches.map(r => countFieldChanges(Seq(r.valueSketch))).sum
   }
 
   def countChanges(table:TemporalTable) = {

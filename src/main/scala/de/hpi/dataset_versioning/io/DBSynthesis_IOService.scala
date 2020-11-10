@@ -10,6 +10,7 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedT
 import scala.reflect.io.Directory
 
 object DBSynthesis_IOService extends StrictLogging{
+
   def clearDatabaseSynthesisInputDir() = new Directory(new File(OPTIMIZATION_INPUT_DIR)).deleteRecursively()
 
 

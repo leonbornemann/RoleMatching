@@ -6,6 +6,7 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.Attribute
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.TimeIntervalSequence
 import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable
 
@@ -103,35 +104,15 @@ case class DecomposedTemporalTable(id: DecomposedTemporalTableIdentifier,
 }
 
 object DecomposedTemporalTable {
-//  def filterNotFullyDecomposedTables(subdomain:String,viewIds: collection.IndexedSeq[String]) = {
-//    val subdomainIdsWithDTT = viewIds
-//      .filter(id => DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
-//    val schemata = subdomainIdsWithDTT.map(id => TemporalSchema.load(id)).map(ts => (ts.id,ts)).toMap
-//    val filteredSecondStep = subdomainIdsWithDTT.filter(id => {
-//      val dtts = DecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
-//      val attrIds = dtts.flatMap(_.containedAttrLineages.map(_.attrId)).toSet
-//      val originalSchema = schemata(id)
-//      attrIds!= originalSchema.attributes.map(_.attrId).toSet
-//    })
-//    subdomainIdsWithDTT.diff(filteredSecondStep)
-//  }
 
-//
 //  def loadAllDecomposedTemporalTables(subdomain: String, originalID: String) = {
-//    val dir = DBSynthesis_IOService.getDecomposedTemporalTableDir(subdomain,originalID)
+//    val dir = DBSynthesis_IOService.getOldDecomposedTemporalTableDir(subdomain,originalID)
 //    val ids = dir.listFiles().map(f => DecomposedTemporalTableIdentifier.fromFilename(f.getName))
 //    ids.map(id => load(id))
 //  }
-//
-//  def loadAllAssociations(subdomain: String, originalID: String) = {
-//    val dir = DBSynthesis_IOService.getDecomposedTemporalAssociationDir(subdomain,originalID)
-//    val ids = dir.listFiles().map(f => DecomposedTemporalTableIdentifier.fromFilename(f.getName))
-//    ids.map(id => load(id))
-//  }
-//
 //
 //  def load(id:DecomposedTemporalTableIdentifier) = {
-//    val file = DBSynthesis_IOService.getDecomposedTemporalTableFile(id)
+//    val file = DBSynthesis_IOService.getOldDecomposedTemporalTableFile(id)
 //    val helper = DecomposedTemporalTableHelper.fromJsonFile(file.getAbsolutePath)
 //    helper.toDecomposedTemporalTable
 //  }

@@ -37,11 +37,11 @@ object OptimizationInputExportMain extends App with StrictLogging {
     assert(bcnfTables.flatMap(_.foreignSurrogateKeysToReferencedBCNFTables.toMap.keySet).forall(s => allSurrogates.contains(s.surrogateID)))
     tt.addSurrogates(allSurrogates.values.toSet  ++ associations.map(_.surrogateKey).toSet)
     //for change counting purposes we write the projections of bcnf tables containing data:
-    //    val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
-    //    dtts.foreach(dtt =>{
-//      val projection = tt.project(dtt)
-//      projection.projection.writeTOBCNFTemporalTableFile
-//    })
+    val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
+        dtts.foreach(dtt =>{
+      val projection = tt.project(dtt)
+      projection.projection.writeTOBCNFTemporalTableFile
+    })
     val byBcnf = associations.groupBy(a => (a.id.subdomain,a.id.viewID,a.id.bcnfID))
       .map{case (k,v) => (bcnfByID(k),v)}
     byBcnf.foreach{case (bcnf,associations) => {
@@ -52,7 +52,11 @@ object OptimizationInputExportMain extends App with StrictLogging {
         t.toSketch.writeToStandardOptimizationInputFile()
       })
     }}
-    //associations:
+    //additionally serialize bcnf tables that have only keys and foreign keys (and no associations, so they don't show up in byBcnf):
+    bcnfTables.toSet.diff(byBcnf.keySet).foreach(bcnf => {
+      val (bcnfReferenceTable,_) = tt.project(bcnf,Seq())
+      bcnfReferenceTable.writeToStandardOptimizationInputFile
+    })
   }
 
   if (id.isDefined)

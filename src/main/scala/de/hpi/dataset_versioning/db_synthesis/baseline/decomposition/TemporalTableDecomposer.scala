@@ -283,7 +283,7 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
       })
       dtt.containedAttrLineages.addAll(attributeLineagesToAdd.diff(dtt.containedAttrLineages.toSet))
       //write to file:
-//      dtt.writeToStandardFile()
+      //dtt.writeToStandardFile()
 //      //also create associations:
 //      dtt.furtherDecomposeToAssociations.foreach(dta => dta.writeToStandardFile())
     })

@@ -52,8 +52,9 @@ class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
     for(mapping <- schemaMappings){
       //TODO: build an index on the overlap of each attribute (?)
       //for now we just do it on the non-key attributes:
-      val indexBuilder = new MostDistinctTimestampIndexBuilder[A](Set(sketchA,sketchB),false)
-      val index = indexBuilder.buildTableIndexOnNonKeyColumns()
+//      val indexBuilder = new MostDistinctTimestampIndexBuilder[A](Set(sketchA,sketchB),false)
+//      val index = indexBuilder.buildTableIndexOnNonKeyColumns()
+      val index = new TableTupleFindIndex[A](sketchA,sketchB)
       val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,index,mapping)
       val tupleMapping = tupleMapper.mapGreedy()
       var bestPossibleScore = tupleMapping.totalScore

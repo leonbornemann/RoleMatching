@@ -9,6 +9,8 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrai
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
 trait TemporalDatabaseTableTrait[A] {
+  def wildcardValues:Seq[A]
+
 
   def insertTime:LocalDate
 

@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.InitialMatchinStrategy.{INDEX_BASED, InitialMatchinStrategy, NAIVE_PAIRWISE}
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.InitialMatchinStrategy
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.{GLOBAL_CONFIG, InitialMatchinStrategy}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabaseTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch}
@@ -95,18 +95,27 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
     }
   }
 
+  def gaussSUm(n: Int) = n*(n+1) / 2
+
   private def initMatchesIndexBased = {
     logger.debug("Starting Index-Based initial match computation")
     val indexBuilder = new MostDistinctTimestampIndexBuilder[Int](unmatchedAssociations.map(_.asInstanceOf[TemporalDatabaseTableTrait[Int]]))
     val index = indexBuilder.buildTableIndexOnNonKeyColumns()
     val it = index.tupleGroupIterator
-    index.serializeDetailedStatistics()
+    //index.serializeDetailedStatistics()
+    if(GLOBAL_CONFIG.SINGLE_LAYER_INDEX){
+      logger.debug("We are currently using a single-layered index and the following code relies on this!")
+    }
+    val indexSize = index.numLeafNodes
+    var processedNodes = 0
     val computedMatches = mutable.HashSet[(TemporalDatabaseTableTrait[Int],TemporalDatabaseTableTrait[Int])]()
     var nMatchesComputed = 0
-    it.foreach{case (key,g) => {
-      val groupsWithTupleIndcies = g.groupMap(t => t._1)(t => t._2).toIndexedSeq
+    logger.debug(s"starting to iterate through ${indexSize} index leaf nodes")
+    it.foreach{case g => {
+      val potentialTupleMatches = g.tuplesInNode
+      val groupsWithTupleIndcies = potentialTupleMatches.groupMap(t => t._1)(t => t._2).toIndexedSeq
       if(groupsWithTupleIndcies.size>1) {
-        logger.debug(s"Processing group $key with ${groupsWithTupleIndcies.size} tables with " +
+        logger.debug(s"Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndcies.size} tables with " +
           s"Top tuple counts: ${groupsWithTupleIndcies.sortBy(-_._2.size).take(5).map{case (t,tuples) => (t.getID,tuples.size)}}")
       }
       for (i <- 0 until groupsWithTupleIndcies.size) {
@@ -122,9 +131,24 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
           }
         }
       }
+      processedNodes +=1
+      if(processedNodes % 1000==0){
+        logger.debug(s"FInished $processedNodes out of $indexSize (${100*processedNodes/indexSize.toDouble}%)")
+      }
     }}
     logger.debug(s"Finished Index-Based initial matching, resulting in ${nMatchesComputed} checked matches, of which ${curMatches.map(_._2.size).sum} have a score > 0")
-
+    logger.debug(s"Naive pairwise approach would have had to compute ${gaussSUm(unmatchedAssociations.size)}")
+    logger.debug("Begin executing Wildcard matches")
+    val wildcards = index.allTsWildcardBucket
+    wildcards.foreach(wc => {
+      //calculate matches to all other association tables:
+      unmatchedAssociations
+        .withFilter(a=> a !=wc)
+        .foreach(a => {
+          ???
+          //(first,second) = getCorrectlyOrderedPair()
+      })
+    })
   }
 
   def getNextBestHeuristicMatch() = {

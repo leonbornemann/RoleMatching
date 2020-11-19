@@ -6,6 +6,8 @@ import scala.collection.mutable.ArrayBuffer
 
 //begin inclusive, end inclusive
 case class TimeInterval(begin:LocalDate,private val constructedEnd:Option[LocalDate]) extends Ordered[TimeInterval]{
+  def contains(ld: LocalDate): Boolean = ld.toEpochDay >=begin.toEpochDay && ld.toEpochDay <= endOrMax.toEpochDay
+
 
   val end = if(constructedEnd.isDefined && constructedEnd.get == LocalDate.MAX) None else constructedEnd // convenience constructor, so that we can specify LocalDate.Max instead of None
 

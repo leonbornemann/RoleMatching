@@ -5,7 +5,7 @@ import java.time.LocalDate
 @SerialVersionUID(3L)
 trait FieldLineageSketch extends AbstractTemporalField[Int] with Serializable {
 
-  def valueAt(ts: LocalDate): Int
+  //def valueAt(ts: LocalDate): Int
 
 
   def getVariantName: String

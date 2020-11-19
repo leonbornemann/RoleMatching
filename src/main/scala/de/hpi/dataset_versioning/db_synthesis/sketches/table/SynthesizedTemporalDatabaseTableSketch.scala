@@ -59,6 +59,8 @@ class SynthesizedTemporalDatabaseTableSketch(id:String,
   override def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean = fieldValueAtTimestamp(rowIndex, colIndex, ts) == Variant2Sketch.WILDCARD
 
   override def getDataTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[Int]] = dataColumns.map(c => c.fieldLineages(rowIndex))
+
+  override def wildcardValues: Seq[Int] = ???
 }
 object SynthesizedTemporalDatabaseTableSketch{
 

@@ -142,6 +142,8 @@ class SynthesizedTemporalDatabaseTable(val id:String,
   }
 
   override def getDataTuple(rowIndex: Int): IndexedSeq[TemporalFieldTrait[Any]] = rows(rowIndex).fields.map(_.asInstanceOf[TemporalFieldTrait[Any]]).toIndexedSeq
+
+  override def wildcardValues: Seq[Any] = ???
 }
 
 object SynthesizedTemporalDatabaseTable extends BinaryReadable[SynthesizedTemporalDatabaseTable] with StrictLogging {

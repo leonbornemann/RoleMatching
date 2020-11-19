@@ -66,6 +66,8 @@ class DecomposedTemporalTableSketch(val tableID:DecomposedTemporalTableIdentifie
   override def fieldValueAtTimestamp(rowIndex: Int, colIndex: Int, ts: LocalDate): Int = temporalColumnSketches(colIndex).fieldLineageSketches(colIndex).valueAt(ts)
 
   override def getDataTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[Int]] = dataColumns.map(c => c.fieldLineages(rowIndex))
+
+  override def wildcardValues: Seq[Int] = ???
 }
 
 object DecomposedTemporalTableSketch{

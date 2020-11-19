@@ -3,6 +3,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 import java.time.LocalDate
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
@@ -76,6 +77,8 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
         IndexedSeq(),
         newRows.map(_.asInstanceOf[SurrogateBasedTemporalRow]))
   }
+
+  override def wildcardValues = Seq(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_DATASET)
 }
 
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends

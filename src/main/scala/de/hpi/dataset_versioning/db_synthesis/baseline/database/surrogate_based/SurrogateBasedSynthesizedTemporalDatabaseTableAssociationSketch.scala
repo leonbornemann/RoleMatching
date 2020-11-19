@@ -8,6 +8,7 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedT
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.db_synthesis.sketches.BinaryReadable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.{TemporalColumnSketch, TemporalColumnTrait}
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable
@@ -54,6 +55,8 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
       IndexedSeq(),
       newRows.map(_.asInstanceOf[SurrogateBasedTemporalRowSketch]))
   }
+
+  override def wildcardValues: Seq[Int] = Seq(Variant2Sketch.WILDCARD)
 }
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch extends BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]{
 

@@ -62,7 +62,13 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
         allAssociations ++= associations
         //write sketches if not present:
         val missing = associations.filter(a => !DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists())
-        missing.foreach(a => println(s"${a.id}  $a"))
+//        missing.foreach(a => println(s"${a.id}  $a"))
+//        if(id=="72qm-3bwf"){
+//          println("ahaa")
+//          println(missing.size)
+//          associations.foreach(println(_))
+//
+//        }
         associations.foreach(a => assert(DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists()))
       } else if(!DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain,id) && countChangesForAllSteps){
         if(tt==null)

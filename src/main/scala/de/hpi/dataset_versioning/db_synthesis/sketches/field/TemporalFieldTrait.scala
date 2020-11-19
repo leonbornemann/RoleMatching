@@ -8,6 +8,16 @@ import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.
 import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
+  def valueAt(ts: LocalDate): T
+
+  def allTimestamps: Iterable[LocalDate] = getValueLineage.keySet
+
+  def allNonWildcardTimestamps: Iterable[LocalDate] = {
+    getValueLineage
+      .filter(t => !isWildcard(t._2))
+      .keySet
+  }
+
   def numValues:Int
 
   def isRowDelete(a: T) :Boolean
@@ -38,7 +48,6 @@ trait TemporalFieldTrait[T] {
   def getValueLineage: mutable.TreeMap[LocalDate, T]
 
   def toIntervalRepresentation: mutable.TreeMap[TimeInterval, T]
-
 
   //gets the hash values at the specified time-intervals, substituting missing values with the hash-value of ReservedChangeValues.NOT_EXISTANT_ROW
   def valuesAt(timeToExtract: TimeIntervalSequence): Map[TimeInterval, T]

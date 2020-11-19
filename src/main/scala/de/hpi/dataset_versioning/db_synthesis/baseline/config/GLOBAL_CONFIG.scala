@@ -4,6 +4,8 @@ import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.
 import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.{CountAllChangeCounter, UpdateChangeCounter}
 
 object GLOBAL_CONFIG {
+  val SINGLE_LAYER_INDEX: Boolean = true
+
 
   var INDEX_DEPTH = 2
 

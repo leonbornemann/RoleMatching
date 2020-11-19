@@ -1,5 +1,7 @@
 package de.hpi.dataset_versioning.data.change.temporal_tables.time
 
+import java.time.LocalDate
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -8,6 +10,8 @@ import scala.collection.mutable.ArrayBuffer
  * @param sortedTimeIntervals
  */
 case class TimeIntervalSequence(val sortedTimeIntervals: collection.immutable.IndexedSeq[TimeInterval] = IndexedSeq()) {
+  def contains(ld: LocalDate): Boolean = sortedTimeIntervals.exists(ti => ti.contains(ld))
+
 
   private def mergeIntoUnion(union: ArrayBuffer[TimeInterval], toMerge: TimeInterval) = {
     if (union.isEmpty)

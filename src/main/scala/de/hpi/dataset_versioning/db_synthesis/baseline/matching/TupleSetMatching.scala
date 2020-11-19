@@ -25,6 +25,8 @@ class TupleSetMatching[A](val tableA: TemporalDatabaseTableTrait[A],
 
   def addUnmatchedTuplesToTableBUnlessAlreadyMatched(tuplesB: collection.Iterable[Int]) = {
     val matchedIndicesB = matchedTuples.map(_.tupleIndexB).toSet
+    if(matchedIndicesB.size!=matchedTuples.size)
+      println()
     assert(matchedIndicesB.size==matchedTuples.size)
     addUnmatchedTuplesUnlessAlreadyMatched(tuplesB,unmatchedTupleIndicesB,matchedIndicesB)
   }

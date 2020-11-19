@@ -11,7 +11,7 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
 import scala.collection.mutable
 
-class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A], index: LayeredTupleIndex[A], mapping: collection.Map[Set[AttributeLineage], Set[AttributeLineage]]) {
+class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A], index: IterableTupleIndex[A], mapping: collection.Map[Set[AttributeLineage], Set[AttributeLineage]]) {
 
   val aColsByID = tableA.dataColumns.map(c => (c.attrID,c)).toMap
   val bColsByID = tableB.dataColumns.map(c => (c.attrID,c)).toMap
@@ -26,9 +26,11 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
   }
 
   def mapGreedy() = {
+    val oneToManyMatchings = mutable.HashMap[Int,mutable.ArrayBuffer[Int]]()
     val finalMatching:TupleSetMatching[A] = new TupleSetMatching[A](tableA,tableB)
-    index.tupleGroupIterator.foreach{case (key,g) => {
-      val byTable = g.groupMap(_._1)(_._2)
+    index.tupleGroupIterator.foreach{case g => {
+      val tuplesInNode = g.tuplesInNode
+      val byTable = tuplesInNode.groupMap(_._1)(_._2)
       if(!byTable.contains(tableA)){
         val tableBTuples = byTable(tableB)
         finalMatching ++= new TupleSetMatching(tableA,tableB,mutable.HashSet(),mutable.HashSet() ++ tableBTuples)
@@ -40,6 +42,12 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
         val tableBTuples = byTable(tableB)
         //we can do an easy check here: if pairwise-checking is too expensive, we further continue indexing
         if(sizesAreTooBig(tableATuples.size,tableBTuples.size)){
+          //recursively expand the index
+          println(g.chosenTimestamps)
+          println(tableA.toString)
+          println(tableB.toString)
+          println((tableA.getUnionedOriginalTables))
+          println((tableB.getUnionedOriginalTables))
           ??? //build more indices to further split the group
         } else{
           val matchingForGroup = getBestTupleMatching(tableATuples.toIndexedSeq,tableBTuples.toIndexedSeq)

@@ -17,12 +17,17 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
     ValueLineageWithHashMap(lineage.toMap)
   }
 
-  def valueAt(ts: LocalDate) = {
+  override def valueAt(ts: LocalDate) = {
     if(lineage.contains(ts))
       lineage(ts)
-    else
-      lineage.maxBefore(ts)
-        .getOrElse(ReservedChangeValues.NOT_EXISTANT_ROW)
+    else {
+      val res = lineage.maxBefore(ts)
+      if(res.isDefined) {
+        res.get._2
+      } else {
+        ReservedChangeValues.NOT_EXISTANT_ROW
+      }
+    }
   }
 
 
@@ -62,6 +67,8 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
   override def isRowDelete(a: Any): Boolean = a==ReservedChangeValues.NOT_EXISTANT_ROW
 
   override def numValues: Int = lineage.size
+
+  override def allTimestamps: Iterable[LocalDate] = lineage.keySet
 }
 object ValueLineage{
 

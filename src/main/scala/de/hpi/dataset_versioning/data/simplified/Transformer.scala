@@ -31,31 +31,39 @@ class Transformer() extends StrictLogging{
       logger.debug(s"Finished $count out of $size (${100.0*count/size}%)")
   }
 
-  def transformAll() = {
+  def transformAll(timeRange:Option[(LocalDate,LocalDate)]=None) = {
     val errorFile = new PrintWriter("errors.txt")
     errorFile.println("id","version")
     var count = 0
     val versionHistories = DatasetVersionHistory.load()
       .map(h => (h.id,h))
     versionHistories.foreach{case (id,h) => {
-      transformAllVersions(id,h.versionsWithChanges.toIndexedSeq,Some(errorFile))
+      transformAllVersions(id,h.versionsWithChanges.toIndexedSeq,Some(errorFile),timeRange)
       count+=1
       logProgress(count,versionHistories.size,100)
     }}
     errorFile.close()
   }
 
-  def transformAllForID(id: String) = {
+  def transformAllForID(id: String,timeRange:Option[(LocalDate,LocalDate)]=None) = {
     val versions = IOService.getSortedMinimalUmcompressedVersions
-      .filter(d => IOService.getMinimalUncompressedVersionDir(d).listFiles().exists(f => {
-        f.getName == IOService.jsonFilenameFromID(id)
-      }))
+      .filter(d => {
+        val fileExsists = IOService.getMinimalUncompressedVersionDir(d).listFiles().exists(f => {
+          f.getName == IOService.jsonFilenameFromID(id)
+        })
+        val versionInRange = !timeRange.isDefined || d.toEpochDay >= timeRange.get._1.toEpochDay && d.toEpochDay <= timeRange.get._2.toEpochDay
+        fileExsists && versionInRange
+      })
     transformAllVersions(id, versions)
   }
 
-  private def transformAllVersions(id: String, versions: IndexedSeq[LocalDate],errorLog:Option[PrintWriter] = None) = {
+  private def transformAllVersions(id: String,
+                                   versions: IndexedSeq[LocalDate],
+                                   errorLog:Option[PrintWriter] = None,
+                                   timeRange:Option[(LocalDate,LocalDate)]=None) = {
     for (version <- versions) {
-      tryTransformVersion(id, errorLog, version)
+      if(!timeRange.isDefined || version.toEpochDay >= timeRange.get._1.toEpochDay && version.toEpochDay <= timeRange.get._2.toEpochDay)
+        tryTransformVersion(id, errorLog, version)
     }
   }
 

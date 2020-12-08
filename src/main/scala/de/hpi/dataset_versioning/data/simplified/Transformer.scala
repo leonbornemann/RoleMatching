@@ -6,7 +6,6 @@ import java.time.LocalDate
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
-import de.hpi.dataset_versioning.data.simplified.TransformToImprovedMain.args
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.io.Source

@@ -2,9 +2,9 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -22,8 +22,8 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
     var id = 0
     logger.debug(s"Found ${allTsWildcardBucket.size} Wildcards that need to be considered in every bucket")
     it.foreach{case g =>
-      val bytable = g.tuplesInNode.groupBy(_._1)
-        .map(t => (t._1,t._2.map(_._2)))
+      val bytable = g.tuplesInNode.groupBy(_.table)
+        .map(t => (t._1,t._2.map(_.rowIndex)))
       val top5TupleCounts = bytable.toIndexedSeq.sortBy(-_._2.size)
         .take(5)
         .toBuffer
@@ -38,7 +38,7 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
   }
 
 
-  val allTsWildcardBucket = collection.mutable.ArrayBuffer[(TemporalDatabaseTableTrait[A],Int)]()
+  val allTsWildcardBucket = collection.mutable.ArrayBuffer[TupleReference[A]]()
 
   def tupleGroupIterator :Iterator[TupleGroup[A]] = {
     new TupleGroupIterator()
@@ -50,7 +50,7 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
     for (rowIndex <- 0 until table.nrows)  {
       val allValuesAreWildcards = chosenTimestamps.forall(ts => table.fieldIsWildcardAt(rowIndex,colIndex,ts))
       if(allValuesAreWildcards) {
-        allTsWildcardBucket.addOne((table,rowIndex))
+        allTsWildcardBucket.addOne(TupleReference(table,rowIndex))
       } else{
         rootNode.insert(table,rowIndex,colIndex,chosenTimestamps)
       }

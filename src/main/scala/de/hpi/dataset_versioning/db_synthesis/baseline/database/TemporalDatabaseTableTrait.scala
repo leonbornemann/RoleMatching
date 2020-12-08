@@ -11,7 +11,6 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 trait TemporalDatabaseTableTrait[A] {
   def wildcardValues:Seq[A]
 
-
   def insertTime:LocalDate
 
   def getDataTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[A]]

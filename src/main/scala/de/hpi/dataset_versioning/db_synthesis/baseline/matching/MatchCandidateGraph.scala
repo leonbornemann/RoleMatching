@@ -113,7 +113,7 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
     logger.debug(s"starting to iterate through ${indexSize} index leaf nodes")
     it.foreach{case g => {
       val potentialTupleMatches = g.tuplesInNode
-      val groupsWithTupleIndcies = potentialTupleMatches.groupMap(t => t._1)(t => t._2).toIndexedSeq
+      val groupsWithTupleIndcies = potentialTupleMatches.groupMap(t => t.table)(t => t.rowIndex).toIndexedSeq
       if(groupsWithTupleIndcies.size>1) {
         logger.debug(s"Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndcies.size} tables with " +
           s"Top tuple counts: ${groupsWithTupleIndcies.sortBy(-_._2.size).take(5).map{case (t,tuples) => (t.getID,tuples.size)}}")

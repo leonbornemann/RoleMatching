@@ -3,8 +3,6 @@ package de.hpi.dataset_versioning.data.simplified
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
-import de.hpi.dataset_versioning.data.DatasetInstance
-import de.hpi.dataset_versioning.data.simplified.TransformToImprovedMain.id
 import de.hpi.dataset_versioning.io.IOService
 
 object TransformToImprovedMain extends App {

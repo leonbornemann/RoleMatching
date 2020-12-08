@@ -1,12 +1,12 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
 import java.time.LocalDate
-
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 
 import scala.collection.mutable.ArrayBuffer
 
-class LayeredTupleIndexNode[A](val key:Option[A], val parent:LayeredTupleIndexNode[A], _isLeafNode:Boolean) extends Iterable[(IndexedSeq[A],Iterable[(TemporalDatabaseTableTrait[A], Int)])]{
+class LayeredTupleIndexNode[A](val key:Option[A], val parent:LayeredTupleIndexNode[A], _isLeafNode:Boolean) extends Iterable[(IndexedSeq[A],Iterable[TupleReference[A]])]{
 
   def insert(table: TemporalDatabaseTableTrait[A], rowIndex: Int,colIndex:Int, chosenTimestamps: ArrayBuffer[LocalDate]):Unit = {
     if(chosenTimestamps.isEmpty)
@@ -34,10 +34,10 @@ class LayeredTupleIndexNode[A](val key:Option[A], val parent:LayeredTupleIndexNo
   def isLeafNode = containedTuples.isDefined
 
   def addTupleReference(table: TemporalDatabaseTableTrait[A], rowIndex: Int) = {
-    containedTuples.get.addOne((table,rowIndex))
+    containedTuples.get.addOne(TupleReference(table,rowIndex))
   }
 
-  val containedTuples = if(_isLeafNode) Some(collection.mutable.ArrayBuffer[(TemporalDatabaseTableTrait[A],Int)]()) else None
+  val containedTuples = if(_isLeafNode) Some(collection.mutable.ArrayBuffer[TupleReference[A]]()) else None
   val children = collection.mutable.HashMap[A,LayeredTupleIndexNode[A]]()
   val containedWildcardTuples = if(!_isLeafNode) Some(collection.mutable.ArrayBuffer[(TemporalDatabaseTableTrait[A],Int,Int,ArrayBuffer[LocalDate])]()) else None
 
@@ -51,20 +51,20 @@ class LayeredTupleIndexNode[A](val key:Option[A], val parent:LayeredTupleIndexNo
     curKeys.reverse
   }
 
-  override def iterator: Iterator[(IndexedSeq[A],Iterable[(TemporalDatabaseTableTrait[A], Int)])] = new LeafNodeIterator()
+  override def iterator: Iterator[(IndexedSeq[A],Iterable[TupleReference[A]])] = new LeafNodeIterator()
 
-  class LeafNodeIterator() extends Iterator[(IndexedSeq[A],Iterable[(TemporalDatabaseTableTrait[A], Int)])]{
+  class LeafNodeIterator() extends Iterator[(IndexedSeq[A],Iterable[TupleReference[A]])]{
     if(isLeafNode)
       assert(children.isEmpty)
     var _hasNext = true
     var curChildrenIterator = children.iterator
-    var curChildIterator:Iterator[(IndexedSeq[A],Iterable[(TemporalDatabaseTableTrait[A], Int)])] = null
+    var curChildIterator:Iterator[(IndexedSeq[A],Iterable[TupleReference[A]])] = null
     if(!isLeafNode && !curChildrenIterator.hasNext)
       _hasNext = false
 
     override def hasNext: Boolean = _hasNext
 
-    override def next(): (IndexedSeq[A],Iterable[(TemporalDatabaseTableTrait[A], Int)]) = {
+    override def next(): (IndexedSeq[A],Iterable[TupleReference[A]]) = {
       if(!hasNext)
         throw new NoSuchElementException
       else if(isLeafNode) {

@@ -54,8 +54,7 @@ class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
       //for now we just do it on the non-key attributes:
 //      val indexBuilder = new MostDistinctTimestampIndexBuilder[A](Set(sketchA,sketchB),false)
 //      val index = indexBuilder.buildTableIndexOnNonKeyColumns()
-      val index = new TableTupleFindIndex[A](sketchA,sketchB)
-      val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,index,mapping)
+      val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,mapping)
       val tupleMapping = tupleMapper.mapGreedy()
       var bestPossibleScore = tupleMapping.totalScore
       if(bestPossibleScore > curBestScore){

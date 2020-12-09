@@ -1,8 +1,5 @@
 package de.hpi.dataset_versioning.data.change.temporal_tables
 
-import java.time.LocalDate
-
-import de.hpi.dataset_versioning.data.change.temporal_tables
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.{EntityFieldLineage, ValueLineage}
 import de.hpi.dataset_versioning.data.json.helper.TemporalColumnHelper
@@ -10,6 +7,7 @@ import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.AttributeLin
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.io.IOService
 
+import java.time.LocalDate
 import scala.collection.mutable
 
 class TemporalColumn(val id: String,

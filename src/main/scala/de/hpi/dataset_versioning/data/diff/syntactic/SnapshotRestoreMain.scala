@@ -1,8 +1,8 @@
 package de.hpi.dataset_versioning.data.diff.syntactic
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.io.IOService
+
+import java.time.LocalDate
 
 object SnapshotRestoreMain extends App {
   val socrataDir = args(0)

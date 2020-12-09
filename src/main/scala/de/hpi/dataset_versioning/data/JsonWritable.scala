@@ -1,12 +1,11 @@
 package de.hpi.dataset_versioning.data
 
-import java.io.{File, FileWriter, StringWriter}
-
-import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.json.custom_serializer.{DatasetInstanceKeySerializer, LocalDateKeySerializer, LocalDateSerializer}
 import de.hpi.dataset_versioning.data.metadata.Provenance
 import org.json4s.DefaultFormats
 import org.json4s.ext.EnumNameSerializer
+
+import java.io.{File, FileWriter, StringWriter}
 
 trait JsonWritable[T<:AnyRef] {
 

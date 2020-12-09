@@ -1,11 +1,11 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 
+import java.io.{File, PrintWriter}
+import java.time.LocalDate
 import scala.collection.mutable.ArrayBuffer
 
 class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],

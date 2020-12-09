@@ -1,16 +1,11 @@
 package de.hpi.dataset_versioning.data.history
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.diff.syntactic.DiffManager
 import de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`.SnapshotDiff
 import de.hpi.dataset_versioning.io.IOService
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
+import java.io.PrintWriter
 
 class VersionHistoryConstruction() extends StrictLogging{
 

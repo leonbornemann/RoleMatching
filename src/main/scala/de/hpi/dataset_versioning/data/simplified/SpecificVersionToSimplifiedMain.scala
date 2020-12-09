@@ -1,9 +1,8 @@
 package de.hpi.dataset_versioning.data.simplified
 
-import java.time.LocalDate
-
-import de.hpi.dataset_versioning.data.json.custom_serializer.LocalDateSerializer
 import de.hpi.dataset_versioning.io.IOService
+
+import java.time.LocalDate
 
 object SpecificVersionToSimplifiedMain extends App {
   IOService.socrataDir = args(0)

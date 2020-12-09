@@ -1,17 +1,14 @@
 package de.hpi.dataset_versioning.db_synthesis.sketches.field
 
-import java.lang.AssertionError
-import java.nio.{ByteBuffer, ByteOrder}
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.TimeInterval
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
-import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch.{ROWDELETEHASHVALUE, WILDCARD, byteArraySliceToInt, byteToTimestamp, timestampToByteRepresentation}
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch.{ROWDELETEHASHVALUE, WILDCARD, byteArraySliceToInt, byteToTimestamp}
 import de.hpi.dataset_versioning.io.IOService
 
+import java.nio.{ByteBuffer, ByteOrder}
+import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.HashMap
 

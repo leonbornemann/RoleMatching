@@ -1,8 +1,8 @@
 package de.hpi.dataset_versioning.data.diff.syntactic
 
-import java.io.File
-
 import de.hpi.dataset_versioning.io.IOService
+
+import java.io.File
 
 object SnapshotToDiffMain extends App {
   IOService.socrataDir = args(0)

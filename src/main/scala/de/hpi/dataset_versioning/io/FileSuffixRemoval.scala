@@ -1,8 +1,8 @@
 package de.hpi.dataset_versioning.io
 
 import java.io.File
-import scala.sys.process._
 import scala.language.postfixOps
+import scala.sys.process._
 
 object FileSuffixRemoval extends App {
   val dir = new File(args(0))

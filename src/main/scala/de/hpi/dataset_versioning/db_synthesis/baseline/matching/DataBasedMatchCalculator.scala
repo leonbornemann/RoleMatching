@@ -3,8 +3,6 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
-import de.hpi.dataset_versioning.db_synthesis.baseline.index.MostDistinctTimestampIndexBuilder
 
 class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
 
@@ -55,7 +53,7 @@ class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
 //      val indexBuilder = new MostDistinctTimestampIndexBuilder[A](Set(sketchA,sketchB),false)
 //      val index = indexBuilder.buildTableIndexOnNonKeyColumns()
       val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,mapping)
-      val tupleMapping = tupleMapper.mapGreedy()
+      val tupleMapping = new TupleSetMatching(tableA,tableB,scala.collection.mutable.ArrayBuffer() ++ tupleMapper.getOptimalMapping())
       var bestPossibleScore = tupleMapping.totalScore
       if(bestPossibleScore > curBestScore){
         if(bestPossibleScore>curBestScore){

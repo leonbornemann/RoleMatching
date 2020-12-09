@@ -1,14 +1,13 @@
 package de.hpi.dataset_versioning.data.diff.syntactic
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.io.IOService
 
+import java.io.{File, PrintWriter}
+import java.time.LocalDate
 import scala.io.Source
-import scala.sys.process._
 import scala.language.postfixOps
+import scala.sys.process._
 class DiffCalculator() extends StrictLogging{
 
 

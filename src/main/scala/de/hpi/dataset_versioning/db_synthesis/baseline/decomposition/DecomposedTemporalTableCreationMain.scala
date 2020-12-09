@@ -1,12 +1,8 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
-import de.hpi.dataset_versioning.data.simplified.Attribute
-import de.hpi.dataset_versioning.db_synthesis.baseline.TopDownMain.args
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 object DecomposedTemporalTableCreationMain extends App with StrictLogging{

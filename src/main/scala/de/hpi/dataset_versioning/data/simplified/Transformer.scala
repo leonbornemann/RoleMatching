@@ -1,13 +1,12 @@
 package de.hpi.dataset_versioning.data.simplified
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.io.IOService
 
+import java.io.{File, PrintWriter}
+import java.time.LocalDate
 import scala.io.Source
 
 class Transformer() extends StrictLogging{

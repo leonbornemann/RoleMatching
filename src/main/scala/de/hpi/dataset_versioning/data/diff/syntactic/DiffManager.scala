@@ -1,11 +1,11 @@
 package de.hpi.dataset_versioning.data.diff.syntactic
 
-import java.io.File
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`.SnapshotDiff
 import de.hpi.dataset_versioning.io.{IOService, IOUtil}
+
+import java.io.File
+import java.time.LocalDate
 
 class DiffManager(daysBetweenCheckpoints:Int=7) extends StrictLogging{
 

@@ -1,9 +1,9 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
-import java.time.LocalDate
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 
+import java.time.LocalDate
 import scala.collection.mutable.ArrayBuffer
 
 class LayeredTupleIndexNode[A](val key:Option[A], val parent:LayeredTupleIndexNode[A], _isLeafNode:Boolean) extends Iterable[(IndexedSeq[A],Iterable[TupleReference[A]])]{

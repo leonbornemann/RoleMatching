@@ -1,10 +1,9 @@
 package de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`
 
-import java.io.File
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.io.IOService
 
+import java.io.File
+import java.time.LocalDate
 import scala.collection.mutable
 import scala.io.Source
 

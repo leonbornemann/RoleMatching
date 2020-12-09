@@ -1,9 +1,9 @@
 package de.hpi.dataset_versioning.data
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.metadata.DatasetMetadata
 import de.hpi.dataset_versioning.io.IOService
+
+import java.time.LocalDate
 
 case class DatasetInstance(val id:String, val date:LocalDate) extends Serializable {
 

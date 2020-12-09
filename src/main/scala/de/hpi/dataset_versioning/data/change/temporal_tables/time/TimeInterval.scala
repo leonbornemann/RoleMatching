@@ -1,7 +1,6 @@
 package de.hpi.dataset_versioning.data.change.temporal_tables.time
 
 import java.time.LocalDate
-
 import scala.collection.mutable.ArrayBuffer
 
 //begin inclusive, end inclusive

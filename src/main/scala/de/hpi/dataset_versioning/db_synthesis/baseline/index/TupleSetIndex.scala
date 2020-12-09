@@ -1,8 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
-import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
 import java.time.LocalDate
 import scala.collection.mutable.ArrayBuffer

@@ -1,26 +1,18 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
-import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabaseTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabaseTable.loadFromFile
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
-import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
+import de.hpi.dataset_versioning.db_synthesis.sketches.BinaryReadable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
-import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
+import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -79,6 +71,10 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
   }
 
   override def wildcardValues = Seq(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_DATASET)
+
+  override def buildNewRow(pk: Int, res: TemporalFieldTrait[Any]): AbstractSurrogateBasedTemporalRow[Any] = {
+    new SurrogateBasedTemporalRow(IndexedSeq(pk),res.asInstanceOf[ValueLineage],IndexedSeq())
+  }
 }
 
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends

@@ -1,10 +1,9 @@
 package de.hpi.dataset_versioning.data.change.temporal_tables.attribute
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
 import de.hpi.dataset_versioning.data.simplified.Attribute
 
+import java.time.LocalDate
 import scala.collection.mutable
 
 @SerialVersionUID(3L)

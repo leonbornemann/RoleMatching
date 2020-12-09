@@ -1,10 +1,8 @@
 package de.hpi.dataset_versioning.db_synthesis.database
 
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 object GlobalSurrogateRegistry {
 

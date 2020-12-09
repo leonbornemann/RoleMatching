@@ -1,16 +1,13 @@
 package de.hpi.dataset_versioning.data.simplified
 
-import java.io.{File, FileReader}
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
-import de.hpi.dataset_versioning.data.simplified.ColumnOrderRestoreByVersionMain.version
 import de.hpi.dataset_versioning.io.IOService
 import org.apache.commons.csv.{CSVFormat, CSVParser}
-import collection.JavaConverters._
 
+import java.io.{File, FileReader}
+import java.time.LocalDate
 import scala.collection.mutable
 
 class ColumnOrderRestorer extends StrictLogging{

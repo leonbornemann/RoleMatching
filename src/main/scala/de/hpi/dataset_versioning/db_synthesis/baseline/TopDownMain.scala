@@ -1,13 +1,12 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.DataBasedMatchCalculator
 import de.hpi.dataset_versioning.io.IOService
 
+import java.time.LocalDate
 import scala.io.Source
 
 object TopDownMain extends App {

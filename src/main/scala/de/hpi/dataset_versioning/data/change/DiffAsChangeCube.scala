@@ -1,13 +1,9 @@
 package de.hpi.dataset_versioning.data.change
 
-import java.time.LocalDate
-
-import com.google.gson.{JsonElement, JsonNull}
-import de.hpi.dataset_versioning.data.diff.semantic.{DiffSimilarity}
+import de.hpi.dataset_versioning.data.diff.semantic.DiffSimilarity
 import de.hpi.dataset_versioning.data.simplified.{Attribute, RelationalDataset, RelationalDatasetRow}
-import de.hpi.dataset_versioning.util.TableFormatter
 
-import scala.collection.mutable
+import java.time.LocalDate
 
 class DiffAsChangeCube(val v1:RelationalDataset, val v2:RelationalDataset,
                        var changeCube: ChangeCube = null) {

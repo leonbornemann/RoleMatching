@@ -1,7 +1,5 @@
 package de.hpi.dataset_versioning.oneshot
 
-import java.io.PrintWriter
-
 import scala.io.Source
 
 object ReadNonZeroExitValIDsMain extends App {

@@ -1,14 +1,11 @@
 package de.hpi.dataset_versioning.data.history
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data
-import de.hpi.dataset_versioning.data.parser.JsonDataParser
 import de.hpi.dataset_versioning.data.{DatasetInstance, JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.io.IOService
 
+import java.time.LocalDate
 import scala.collection.mutable
 import scala.io.Source
 

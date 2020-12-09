@@ -1,10 +1,10 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.specific_experiments
 
-import java.io.PrintWriter
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.FieldChangeCounter
 import de.hpi.dataset_versioning.io.IOService
+
+import java.io.PrintWriter
 
 object DetailedBCNFChangeCounting extends App with StrictLogging {
 

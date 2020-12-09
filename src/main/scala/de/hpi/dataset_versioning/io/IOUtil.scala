@@ -4,8 +4,6 @@ import java.io.File
 import java.nio.file.Files
 import java.util
 
-import scala.io.Source
-
 object IOUtil {
   def clearDirectoryContent(dir: File) = dir.listFiles().foreach(_.delete())
 

@@ -1,9 +1,9 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.fd
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
+
+import java.time.LocalDate
 
 case class FunctionalDependencySet(subdomain:String,id:String,curDate: LocalDate, fds: collection.IndexedSeq[(collection.Set[Int], collection.Set[Int])]) extends JsonWritable[FunctionalDependencySet]{
 

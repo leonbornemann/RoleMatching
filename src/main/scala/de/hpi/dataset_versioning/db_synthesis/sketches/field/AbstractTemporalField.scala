@@ -1,9 +1,9 @@
 package de.hpi.dataset_versioning.db_synthesis.sketches.field
 
 import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.FieldChangeCounter
 
 import scala.collection.mutable
@@ -123,6 +123,19 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
     }).toMap
     a
   }
-
-
+}
+object AbstractTemporalField{
+  def mergeAll[A](refs:Seq[TupleReference[A]]):TemporalFieldTrait[A] = {
+    if(refs.size==1)
+      refs.head.getDataTuple.head
+    else {
+      val toMerge = refs.tail.map(tr => tr.getDataTuple)
+      assert(toMerge.head.size == 1)
+      var res = toMerge.head.head
+      (1 until toMerge.size).foreach(i => {
+        res = res.mergeWithConsistent(toMerge(i).head)
+      })
+      res
+    }
+  }
 }

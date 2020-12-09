@@ -1,13 +1,9 @@
 package de.hpi.dataset_versioning.data.simplified
 
-import java.io.File
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.io.IOService
 
-import scala.collection.mutable
+import java.time.LocalDate
 
 object ColumnOrderRestoreByVersionMain extends App with StrictLogging{
 

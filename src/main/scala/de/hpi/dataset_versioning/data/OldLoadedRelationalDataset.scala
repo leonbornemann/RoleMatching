@@ -1,8 +1,5 @@
 package de.hpi.dataset_versioning.data
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
-
 import com.google.gson._
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`.Column
@@ -10,10 +7,11 @@ import de.hpi.dataset_versioning.data.parser.exceptions.SchemaMismatchException
 import de.hpi.dataset_versioning.io.IOService
 import de.hpi.dataset_versioning.util.TableFormatter
 
+import java.io.{File, PrintWriter}
+import java.time.LocalDate
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
 
 class OldLoadedRelationalDataset(val id:String, val version:LocalDate, val rows:ArrayBuffer[scala.collection.IndexedSeq[JsonElement]]=ArrayBuffer()) extends StrictLogging{
 

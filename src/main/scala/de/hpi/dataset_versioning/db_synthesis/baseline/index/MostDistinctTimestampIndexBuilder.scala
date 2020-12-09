@@ -1,14 +1,12 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
-import java.io.PrintWriter
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.io.IOService
 
+import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 

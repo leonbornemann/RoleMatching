@@ -1,12 +1,9 @@
 package de.hpi.dataset_versioning.data.matching
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
-import de.hpi.dataset_versioning.data.matching.ColumnMatchingRefinementMain.id
-import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.io.IOService
 
+import java.time.LocalDate
 import scala.collection.mutable
 
 class ColumnMatchingRefinement(val id:String) {

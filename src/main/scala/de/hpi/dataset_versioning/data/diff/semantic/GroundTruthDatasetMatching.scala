@@ -1,9 +1,9 @@
 package de.hpi.dataset_versioning.data.diff.semantic
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.io.IOService
+
+import java.time.LocalDate
 
 class GroundTruthDatasetMatching {
 

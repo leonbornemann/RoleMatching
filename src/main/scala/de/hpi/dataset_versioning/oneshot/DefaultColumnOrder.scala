@@ -1,11 +1,8 @@
 package de.hpi.dataset_versioning.oneshot
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.io.IOService
 
-import scala.io.Source
+import java.io.{File, PrintWriter}
 
 object DefaultColumnOrder extends App {
 

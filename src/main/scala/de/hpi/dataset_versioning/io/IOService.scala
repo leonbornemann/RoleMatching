@@ -1,28 +1,26 @@
 package de.hpi.dataset_versioning.io
 
-import java.io.{File, FileInputStream, FileOutputStream, StringReader}
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import java.util.zip.{ZipEntry, ZipInputStream}
-
 import com.google.gson.JsonParser
 import com.google.gson.stream.JsonReader
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.{DatasetInstance, OldLoadedRelationalDataset}
 import de.hpi.dataset_versioning.data.diff.syntactic.DiffManager
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.DatasetMetadata
 import de.hpi.dataset_versioning.data.parser.JsonDataParser
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
+import de.hpi.dataset_versioning.data.{DatasetInstance, OldLoadedRelationalDataset}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import org.joda.time.Days
 
-import scala.sys.process._
+import java.io.{File, FileInputStream, FileOutputStream, StringReader}
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.zip.{ZipEntry, ZipInputStream}
 import scala.collection.mutable
 import scala.io.Source
-import scala.reflect.io.Directory
 import scala.language.postfixOps
+import scala.reflect.io.Directory
+import scala.sys.process._
 
 object IOService extends StrictLogging{
   def getTemporalTableBinaryFile(id: String, dttID: Option[DecomposedTemporalTableIdentifier]) = {

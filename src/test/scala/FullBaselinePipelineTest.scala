@@ -5,7 +5,6 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.TopDownOptimizer
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.{SynthesizedTemporalDatabaseTable, SynthesizedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
 import de.hpi.dataset_versioning.io.IOService
@@ -175,26 +174,6 @@ object FullBaselinePipelineTest extends App {
         dttAssocaition.containedAttrLineages, dttAssocaition.primaryKey, dttAssocaition.primaryKeyByVersion, mutable.HashSet[DecomposedTemporalTableIdentifier]())
     }
 
-  def runRowIntegrityCheck(synthRow: SynthesizedTemporalRow) = {
-    if(synthRow.fields.contains(ValueLineage(mutable.TreeMap(versions(0)->"00000")))){
-      assert(synthRow.tupleIDTOViewTupleIDs.keySet == Set(idA,idB,idC,idD))
-      assert(synthRow.tupleIDTOViewTupleIDs(idA) == Set(0,1))
-    } else{
-      assert(!synthRow.tupleIDTOViewTupleIDs.isEmpty && !synthRow.tupleIDToDTTTupleID.isEmpty)
-    }
-  }
-
-  def runAttributeMappingIntegrityCheck(synthTable: SynthesizedTemporalDatabaseTable) = {
-    if(synthTable.unionedTables == Set(dttA2.id,dttB2.id,dttC1.id,dttD1.id,dttD2.id)){
-      val cityAttr = synthTable.dataAttributeLineages.head
-      assert(synthTable.dataAttributeLineages.size==1)
-      assert(synthTable.schemaTracking(cityAttr)(dttA2.id) == Set(3))
-      assert(synthTable.schemaTracking(cityAttr)(dttB2.id) == Set(3))
-      assert(synthTable.schemaTracking(cityAttr)(dttC1.id) == Set(0))
-      assert(synthTable.schemaTracking(cityAttr)(dttD1.id) == Set(0))
-      assert(synthTable.schemaTracking(cityAttr)(dttD2.id) == Set(4))
-    }
-  }
 
 //
 }

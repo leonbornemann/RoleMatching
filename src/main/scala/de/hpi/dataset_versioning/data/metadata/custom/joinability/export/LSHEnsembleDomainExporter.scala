@@ -1,14 +1,12 @@
 package de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`
 
-import java.io.{File, PrintWriter}
-import java.nio.file.{CopyOption, Path}
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.data.diff.syntactic.DiffManager
 import de.hpi.dataset_versioning.io.IOService
 
+import java.io.{File, PrintWriter}
+import java.time.LocalDate
 import scala.collection.mutable.ArrayBuffer
 
 class LSHEnsembleDomainExporter() extends StrictLogging{

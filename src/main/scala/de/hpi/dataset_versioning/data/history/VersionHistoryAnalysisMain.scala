@@ -1,10 +1,8 @@
 package de.hpi.dataset_versioning.data.history
 
-import java.io.{File, PrintWriter}
-
 import de.hpi.dataset_versioning.io.IOService
 
-import scala.io.Source
+import java.io.PrintWriter
 
 object VersionHistoryAnalysisMain extends App {
   IOService.socrataDir = args(0)

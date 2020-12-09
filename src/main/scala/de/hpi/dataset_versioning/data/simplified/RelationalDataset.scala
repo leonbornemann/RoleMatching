@@ -1,15 +1,13 @@
 package de.hpi.dataset_versioning.data.simplified
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.change.DiffAsChangeCube
 import de.hpi.dataset_versioning.data.{DatasetInstance, JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.io.IOService
-import org.apache.commons.csv.{CSVFormat, CSVPrinter, CSVRecord}
+import org.apache.commons.csv.{CSVFormat, CSVPrinter}
 
+import java.io.{File, PrintWriter}
+import java.time.LocalDate
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
 
 case class RelationalDataset(id:String,
                              version:LocalDate,

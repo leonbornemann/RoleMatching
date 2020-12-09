@@ -1,7 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.sketches.field.{TemporalFieldTrait, Variant2Sketch}
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
 
 @SerialVersionUID(3L)
 class SurrogateBasedTemporalRow(pk:IndexedSeq[Int], val valueLineage:ValueLineage, foreignKeys:IndexedSeq[Int]) extends AbstractSurrogateBasedTemporalRow[Any](pk,valueLineage,foreignKeys) with Serializable{

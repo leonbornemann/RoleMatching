@@ -1,13 +1,10 @@
 package de.hpi.dataset_versioning.oneshot
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.{DecomposedTable, TemporalTableDecomposer}
 import de.hpi.dataset_versioning.db_synthesis.database.table.BCNFTableSchema
 import de.hpi.dataset_versioning.io.IOService
-
-import scala.io.Source
 
 object ScriptMain3 extends App {
   IOService.socrataDir = "/home/leon/data/dataset_versioning/socrata/fromServer/"

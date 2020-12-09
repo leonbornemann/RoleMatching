@@ -1,16 +1,15 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.db_synthesis.sketches.BinaryReadable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.{TemporalColumnSketch, TemporalColumnTrait}
-import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.{TemporalFieldTrait, Variant2Sketch}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
+import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -57,6 +56,10 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
   }
 
   override def wildcardValues: Seq[Int] = Seq(Variant2Sketch.WILDCARD)
+
+  override def buildNewRow(pk: Int, res: TemporalFieldTrait[Int]): AbstractSurrogateBasedTemporalRow[Int] = {
+      new SurrogateBasedTemporalRowSketch(IndexedSeq(pk),res.asInstanceOf[Variant2Sketch],IndexedSeq())
+  }
 }
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch extends BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]{
 

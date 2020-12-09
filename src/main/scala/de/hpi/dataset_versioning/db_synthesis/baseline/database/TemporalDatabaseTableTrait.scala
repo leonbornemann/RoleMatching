@@ -1,14 +1,30 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database
 
-import java.time.LocalDate
-
-import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.AbstractSurrogateBasedTemporalRow
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
+import java.time.LocalDate
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+
 trait TemporalDatabaseTableTrait[A] {
+
+  def createNewTable(unionID: String,unionedTables: mutable.HashSet[Int], value: mutable.HashSet[DecomposedTemporalTableIdentifier], key: collection.IndexedSeq[SurrogateAttributeLineage], newNonKEyAttrLineage: AttributeLineage, newRows: ArrayBuffer[AbstractSurrogateBasedTemporalRow[A]]):TemporalDatabaseTableTrait[A]
+
+  def getKey:collection.IndexedSeq[SurrogateAttributeLineage]
+
+  def getUniqueSynthTableID: Int
+
+  def getForeignKeys:collection.IndexedSeq[SurrogateAttributeLineage]
+
+  def buildNewRow(curSurrogateKeyCounter: Int, res: TemporalFieldTrait[A]): AbstractSurrogateBasedTemporalRow[A]
+
+  def getNonKeyAttribute:AttributeLineage
+
   def wildcardValues:Seq[A]
 
   def insertTime:LocalDate

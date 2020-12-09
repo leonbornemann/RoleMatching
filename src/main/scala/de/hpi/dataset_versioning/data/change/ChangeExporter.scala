@@ -1,15 +1,14 @@
 package de.hpi.dataset_versioning.data.change
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
 import de.hpi.dataset_versioning.io.IOService
 
-import scala.collection.{SortedMapOps, mutable}
+import java.io.File
+import java.time.LocalDate
+import scala.collection.mutable
 
 class ChangeExporter extends StrictLogging{
 

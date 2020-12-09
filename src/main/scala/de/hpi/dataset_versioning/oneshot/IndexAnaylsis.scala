@@ -1,7 +1,6 @@
 package de.hpi.dataset_versioning.oneshot
 
 import java.time.LocalDate
-
 import scala.io.Source
 
 object IndexAnaylsis extends App {

@@ -1,9 +1,8 @@
 package de.hpi.dataset_versioning.data.simplified
 
-import java.io.{File, PrintWriter}
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.io.IOService
+
+import java.time.LocalDate
 
 object TransformToImprovedMain extends App {
   IOService.socrataDir = args(0)

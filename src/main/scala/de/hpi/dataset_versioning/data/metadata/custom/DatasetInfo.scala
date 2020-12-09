@@ -1,11 +1,10 @@
 package de.hpi.dataset_versioning.data.metadata.custom
 
-import java.time.LocalDate
-import java.time.format.DateTimeParseException
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.io.IOService
 
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 import scala.io.Source
 
 case class DatasetInfo(subdomain:String,id:String,numChanges:Int,numDeletes:Int,firstInsert:Option[LocalDate],latestChange:Option[LocalDate],latestDelete:Option[LocalDate]) extends StrictLogging{

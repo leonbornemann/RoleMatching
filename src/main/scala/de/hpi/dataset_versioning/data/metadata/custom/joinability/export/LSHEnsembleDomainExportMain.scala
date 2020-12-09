@@ -1,9 +1,9 @@
 package de.hpi.dataset_versioning.data.metadata.custom.joinability.`export`
 
+import de.hpi.dataset_versioning.io.IOService
+
 import java.io.File
 import java.time.LocalDate
-
-import de.hpi.dataset_versioning.io.IOService
 
 object LSHEnsembleDomainExportMain extends App {
   IOService.socrataDir = args(0)

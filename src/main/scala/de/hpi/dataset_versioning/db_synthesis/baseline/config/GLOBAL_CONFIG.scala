@@ -1,7 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.config
 
-import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.DatasetInsertIgnoreFieldChangeCounter
-import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.{CountAllChangeCounter, UpdateChangeCounter}
+import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.UpdateChangeCounter
 
 object GLOBAL_CONFIG {
   val SINGLE_LAYER_INDEX: Boolean = true

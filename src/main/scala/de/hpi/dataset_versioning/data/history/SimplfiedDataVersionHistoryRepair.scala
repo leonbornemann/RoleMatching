@@ -1,9 +1,9 @@
 package de.hpi.dataset_versioning.data.history
 
-import java.io.File
-
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.io.IOService
+
+import java.io.File
 
 object SimplfiedDataVersionHistoryRepair extends App {
   IOService.socrataDir = args(0)

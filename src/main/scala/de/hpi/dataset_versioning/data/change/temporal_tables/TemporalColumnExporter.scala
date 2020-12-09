@@ -3,7 +3,6 @@ package de.hpi.dataset_versioning.data.change.temporal_tables
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.io.IOService
-import de.hpi.dataset_versioning.oneshot.ScriptMain.args
 
 object TemporalColumnExporter extends App with StrictLogging {
   IOService.socrataDir = args(0)

@@ -1,10 +1,9 @@
 package de.hpi.dataset_versioning.util
 
-import java.io.{File, FileInputStream, PrintWriter, StringWriter}
-import java.util.zip.{ZipEntry, ZipInputStream}
-
 import com.google.gson.{JsonObject, JsonPrimitive}
 
+import java.io.{File, FileInputStream, PrintWriter, StringWriter}
+import java.util.zip.{ZipEntry, ZipInputStream}
 import scala.collection.mutable
 
 

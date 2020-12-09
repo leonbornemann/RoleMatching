@@ -3,7 +3,6 @@ package de.hpi.dataset_versioning.db_synthesis.database.table
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.SurrogateAttributeLineage
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 @SerialVersionUID(3L)

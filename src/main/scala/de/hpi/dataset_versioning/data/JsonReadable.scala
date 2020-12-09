@@ -1,14 +1,12 @@
 package de.hpi.dataset_versioning.data
 
-import java.io.{BufferedReader, File, FileInputStream}
-
-import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.json.custom_serializer.{DatasetInstanceKeySerializer, LocalDateKeySerializer, LocalDateSerializer}
 import de.hpi.dataset_versioning.data.metadata.Provenance
+import org.json4s.ext.EnumNameSerializer
 import org.json4s.jackson.JsonMethods.parse
 import org.json4s.{DefaultFormats, _}
-import org.json4s.ext.EnumNameSerializer
 
+import java.io.{File, FileInputStream}
 import scala.io.Source
 
 trait JsonReadable[T<:AnyRef] {

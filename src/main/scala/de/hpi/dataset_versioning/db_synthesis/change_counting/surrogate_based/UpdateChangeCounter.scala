@@ -1,15 +1,16 @@
 package de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based
 
 import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SurrogateBasedTemporalRow}
+import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.FieldChangeCounter
+import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
 import scala.collection.mutable
 
-class UpdateChangeCounter() {
+class UpdateChangeCounter() extends FieldChangeCounter{
 
   def countChangesForValueLineage[A](vl: mutable.TreeMap[LocalDate, A],isWildcard : (A => Boolean)) = {
     val it = vl.valuesIterator
@@ -47,7 +48,7 @@ class UpdateChangeCounter() {
     countChangesForValueLineage[Any](vl,ValueLineage.isWildcard)
   }
 
-  def countFieldChanges[A](tuple: collection.Seq[TemporalFieldTrait[A]]) = {
+  def countFieldChangesSimple[A](tuple: collection.Seq[TemporalFieldTrait[A]]) = {
     assert(tuple.size==1)
     val vl = tuple(0).getValueLineage
     countChangesForValueLineage[A](vl,tuple(0).isWildcard)
@@ -58,11 +59,20 @@ class UpdateChangeCounter() {
   }
 
   def countChanges(table:SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = {
-    table.surrogateBasedTemporalRowSketches.map(r => countFieldChanges(Seq(r.valueSketch))).sum
+    table.surrogateBasedTemporalRowSketches.map(r => countFieldChangesSimple(Seq(r.valueSketch))).sum
   }
 
-  def countChanges(table:TemporalTable) = {
+  override def countChanges(table:TemporalTable) = {
     table.rows.flatMap(_.fields.map(vl => countChangesForValueLineage(vl.lineage,ValueLineage.isWildcard).toLong)).sum
   }
+
+  override def countFieldChanges[A](viewInsertTime: LocalDate, f: TemporalFieldTrait[A]): Int = countFieldChangesSimple(Seq(f))
+
+  override def name: String = "UpdateChangeCounter"
+
+  override def countChanges(table: TemporalTable, allDeterminantAttributeIDs: Set[Int]): Long = countChanges(table)
+
+  override def countColumnChanges[A](tc: TemporalColumnTrait[A], insertTime: LocalDate, colIsPk: Boolean): Long = tc.fieldLineages
+    .map(_.countChanges(insertTime,this)).sum
 
 }

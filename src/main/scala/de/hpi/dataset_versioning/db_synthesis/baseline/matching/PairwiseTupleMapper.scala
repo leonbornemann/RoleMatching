@@ -1,13 +1,14 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 
-import java.time.LocalDate
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
-import de.hpi.dataset_versioning.db_synthesis.baseline.index.{LayeredTupleIndex, TableTupleFindIndex, TupleSetIndex}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
+import de.hpi.dataset_versioning.db_synthesis.baseline.index.TupleSetIndex
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
+import java.time.LocalDate
 import scala.collection.mutable
 
 class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A], mapping: collection.Map[Set[AttributeLineage], Set[AttributeLineage]]) {
@@ -37,7 +38,11 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
     val index = new TupleSetIndex[A](tuples,IndexedSeq(),IndexedSeq(),tableA.wildcardValues.toSet)
     val edges = mutable.HashSet[General_1_to_1_TupleMatching[A]]()
     buildGraph(index,edges)
-    val graphBasedTupleMapper = new GraphBasedTupleMapper(edges)
+    val graphBasedTupleMapper = new GraphBasedTupleMapper(tuples,edges)
+    if(tableA.toString=="coll-eges.0_1(SK2, College Logo)" && tableB.toString == "team-s000.0_1(SK10, Team Logo)" ||
+      tableB.toString=="coll-eges.0_1(SK2, College Logo)" && tableA.toString == "team-s000.0_1(SK10, Team Logo)" &&
+    tableA.isInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation])
+      println()
     graphBasedTupleMapper.mapGreedy()
   }
 
@@ -87,8 +92,7 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
         println(originalTupleB)
         println(mergedTuple)
       }
-      assert(score > 0)
-      assert(false) //TODO: think about edge order!
+      assert(score >= 0)
       Some(General_1_to_1_TupleMatching(ref1,ref2, score))
     }
   }
@@ -96,42 +100,8 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
   def buildTuples(ref1: TupleReference[A], ref2: TupleReference[A]) = {
     val lineages1 = ref1.getDataTuple
     val lineages2 = ref2.getDataTuple
-    assert(lineages1.size==1 && lineages2.size==2)
+    assert(lineages1.size==1 && lineages2.size==1)
     (lineages1.head,lineages2.head)
-  }
-
-  def mapGreedy() = {
-    val index = new TableTupleFindIndex[A](tableA,tableB)
-    val oneToManyMatchings = mutable.HashMap[Int,mutable.ArrayBuffer[Int]]()
-    val finalMatching:TupleSetMatching[A] = new TupleSetMatching[A](tableA,tableB)
-    index.tupleGroupIterator.foreach{case g => {
-      val tuplesInNode = g.tuplesInNode
-      val byTable = tuplesInNode.groupMap(_.table)(_.rowIndex)
-      if(!byTable.contains(tableA)){
-        val tableBTuples = byTable(tableB)
-        finalMatching ++= new TupleSetMatching(tableA,tableB,mutable.HashSet(),mutable.HashSet() ++ tableBTuples)
-      } else if(!byTable.contains(tableB)){
-        val tableATuples = byTable(tableA)
-        finalMatching ++= new TupleSetMatching(tableA,tableB,mutable.HashSet() ++ tableATuples,mutable.HashSet())
-      } else{
-        val tableATuples = byTable(tableA)
-        val tableBTuples = byTable(tableB)
-        //we can do an easy check here: if pairwise-checking is too expensive, we further continue indexing
-        if(sizesAreTooBig(tableATuples.size,tableBTuples.size)){
-          //recursively expand the index
-          println(g.chosenTimestamps)
-          println(tableA.toString)
-          println(tableB.toString)
-          println((tableA.getUnionedOriginalTables))
-          println((tableB.getUnionedOriginalTables))
-          ??? //build more indices to further split the group
-        } else{
-          val matchingForGroup = getBestTupleMatching(tableATuples.toIndexedSeq,tableBTuples.toIndexedSeq)
-          finalMatching ++= matchingForGroup
-        }
-      }
-    }}
-    finalMatching
   }
 
   def mergeTupleSketches(mappedFieldLineages:collection.Map[TemporalFieldTrait[A], TemporalFieldTrait[A]]) = {
@@ -154,49 +124,11 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
 
   def countChanges(tuple: collection.Seq[TemporalFieldTrait[A]],insertTime:LocalDate) = {
     if(isSurrogateBased){
-      GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countFieldChanges(tuple)
+      GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countFieldChangesSimple(tuple)
     } else {
       ???
       //tuple.map(_.countChanges(insertTime, GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).sum
     }
-  }
-
-  def getBestTupleMatching(tuplesA: collection.IndexedSeq[Int], tuplesB: collection.IndexedSeq[Int]) = {
-    //we do simple pairwise matching here until we find out its a problem
-    val tuplesBRemaining = mutable.HashSet() ++ tuplesB
-    val unmatchedTuplesA = mutable.HashSet[Int]()
-    var tupleMatching = mutable.ArrayBuffer[TupleMatching]()
-    for(tupA<-tuplesA){
-      var bestMatchScore = 0
-      var curBestTupleB = -1
-      val originalTupleA = tableA.getDataTuple(tupA)
-      for(tupB <-tuplesBRemaining){
-        //apply mapping
-        val originalTupleB = tableB.getDataTuple(tupB)
-        val mappedFieldLineages = buildTuples(tupA,tupB) // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
-        val mergedTupleOptions = mergeTupleSketches(mappedFieldLineages)
-        if(mergedTupleOptions.exists(_.isEmpty)){
-          //illegalMatch - we do nothing
-        } else{
-          val mergedTuple = mergedTupleOptions.map(_.get)
-          val sizeAfterMerge = countChanges(mergedTuple,mergedInsertTime)//
-          val sizeBeforeMergeA = countChanges(originalTupleA,insertTimeA)
-          val sizeBeforeMergeB = countChanges(originalTupleB,insertTimeB)
-          val curScore = sizeBeforeMergeA+sizeBeforeMergeB-sizeAfterMerge
-          if(curScore>bestMatchScore){
-            bestMatchScore = curScore
-            curBestTupleB = tupB
-          }
-        }
-      }
-      if(curBestTupleB!= -1){
-        tupleMatching +=TupleMatching(tupA,curBestTupleB,bestMatchScore)
-        tuplesBRemaining.remove(curBestTupleB)
-      } else{
-        unmatchedTuplesA.add(tupA)
-      }
-    }
-    new TupleSetMatching(tableA,tableB,unmatchedTuplesA,tuplesBRemaining,tupleMatching)
   }
 }
 object PairwiseTupleMapper extends StrictLogging{

@@ -1,7 +1,5 @@
 package de.hpi.dataset_versioning.data.simplified
 
-import com.google.gson.JsonElement
-
 case class RelationalDatasetRow(id:Long = -1, var fields:collection.IndexedSeq[Any]) {
 
   def reorderColumns(oldToNewOrder: Map[Int, Int]) = {

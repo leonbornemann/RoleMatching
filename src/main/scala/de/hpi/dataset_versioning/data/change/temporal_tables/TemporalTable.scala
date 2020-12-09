@@ -1,22 +1,19 @@
 package de.hpi.dataset_versioning.data.change.temporal_tables
 
-import java.time.LocalDate
-
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, AttributeState, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.TimeInterval
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.{EntityFieldLineage, FieldLineageReference, TemporalRow, ValueLineage}
 import de.hpi.dataset_versioning.data.change.{ChangeCube, ReservedChangeValues}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.TableChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFSurrogateReferenceRow, BCNFSurrogateReferenceTable, BCNFTableSchema}
 import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable}
-import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnSketch
-import de.hpi.dataset_versioning.db_synthesis.sketches.table.DecomposedTemporalTableSketch
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
+import java.time.LocalDate
 import scala.collection.mutable
 
 @SerialVersionUID(3L)

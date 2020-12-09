@@ -1,18 +1,11 @@
 package de.hpi.dataset_versioning.oneshot
 
+import de.hpi.dataset_versioning.data.change.ChangeCube
+import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
+import de.hpi.dataset_versioning.io.IOService
+
 import java.io.{File, PrintWriter}
 import java.sql.Timestamp
-import java.time.LocalDate
-
-import de.hpi.dataset_versioning.data.change.{ChangeCube, ChangeExporter}
-import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
-import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.sketches.table.{DecomposedTemporalTableSketch, SynthesizedTemporalDatabaseTableSketch}
-import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
-import de.hpi.dataset_versioning.oneshot.ScriptMain.args
-
-import scala.sys.process._
 import scala.language.postfixOps
 
 object ScriptMain2 extends App {

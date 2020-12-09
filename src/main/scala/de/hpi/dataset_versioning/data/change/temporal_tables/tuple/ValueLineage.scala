@@ -1,11 +1,10 @@
 package de.hpi.dataset_versioning.data.change.temporal_tables.tuple
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.{AbstractTemporalField, TemporalFieldTrait}
 
+import java.time.LocalDate
 import scala.collection.mutable
 
 @SerialVersionUID(3L)

@@ -1,16 +1,14 @@
 package de.hpi.dataset_versioning.data.parser
 
-import java.io.{File, FileReader, PrintWriter, StringReader}
-import java.time.LocalDate
-
-import com.google.gson.{JsonParser, JsonPrimitive}
+import com.google.gson.JsonParser
 import com.google.gson.stream.JsonReader
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.OldLoadedRelationalDataset
 import de.hpi.dataset_versioning.data.parser.exceptions.{ContainsArrayException, FirstElementNotObjectException, SchemaMismatchException}
 import de.hpi.dataset_versioning.io.IOService
 
-import scala.collection.JavaConverters._
+import java.io.{File, FileReader, PrintWriter}
+import java.time.LocalDate
 import scala.collection.mutable
 
 class JsonDataParser extends StrictLogging{

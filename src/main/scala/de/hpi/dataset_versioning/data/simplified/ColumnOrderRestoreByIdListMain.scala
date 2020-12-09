@@ -1,7 +1,5 @@
 package de.hpi.dataset_versioning.data.simplified
 
-import java.time.LocalDate
-
 import de.hpi.dataset_versioning.io.IOService
 
 import scala.io.Source

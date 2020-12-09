@@ -1,10 +1,9 @@
 package de.hpi.dataset_versioning.io
 
+import com.typesafe.scalalogging.StrictLogging
+
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
-
-import com.typesafe.scalalogging.StrictLogging
-import de.hpi.dataset_versioning.data.StatusReportMain.args
 
 object InteractiveSaveDeleteMain extends App with StrictLogging {
   IOService.socrataDir = args(0)

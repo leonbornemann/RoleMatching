@@ -6,7 +6,6 @@ import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
-import de.hpi.dataset_versioning.db_synthesis.sketches.table.DecomposedTemporalTableSketch
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 object OptimizationInputExportMain extends App with StrictLogging {

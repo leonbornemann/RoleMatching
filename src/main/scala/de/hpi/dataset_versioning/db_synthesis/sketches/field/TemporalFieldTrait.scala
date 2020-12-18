@@ -1,13 +1,13 @@
 package de.hpi.dataset_versioning.db_synthesis.sketches.field
 
 import java.time.LocalDate
-
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
-import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.FieldChangeCounter
+import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.{FieldChangeCounter, UpdateChangeCounter}
 
 import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
+
   def valueAt(ts: LocalDate): T
 
   def allTimestamps: Iterable[LocalDate] = getValueLineage.keySet
@@ -24,8 +24,7 @@ trait TemporalFieldTrait[T] {
 
   def isWildcard(a: T) :Boolean
 
-
-  def countChanges(viewInsertTime:LocalDate,changeCounter:FieldChangeCounter):Int
+  def countChanges(changeCounter:FieldChangeCounter):(Int,Int)
 
   def nonWildCardValues:Iterable[T]
 

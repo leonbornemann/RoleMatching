@@ -47,7 +47,7 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
   }
 
   def buildGraph(index: TupleSetIndex[A],edges:mutable.HashSet[General_1_to_1_TupleMatching[A]]):Unit = {
-    index.tupleGroupIterator.foreach{case g => {
+    index.tupleGroupIterator(true).foreach{case g => {
       val tuplesInNode = (g.tuplesInNode ++ g.wildcardTuples)
       if(squareProductTooBig(tuplesInNode.size)){
         //further index this: new Index

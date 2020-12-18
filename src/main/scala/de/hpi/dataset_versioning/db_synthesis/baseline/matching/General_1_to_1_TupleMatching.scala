@@ -4,7 +4,7 @@ import scala.math.Ordered.orderingToOrdered
 
 case class General_1_to_1_TupleMatching[A] private (tupleReferenceA:TupleReference[A],
                                            tupleReferenceB: TupleReference[A],
-                                           var score:Int){
+                                           var evidence:Int){
 }
 object General_1_to_1_TupleMatching{
   def apply[A](tupleReferenceA:TupleReference[A],

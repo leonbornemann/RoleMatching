@@ -11,17 +11,21 @@ class TupleSetIndex[A](tuples: IndexedSeq[TupleReference[A]],
                        val wildcardKeyValues:Set[A]) extends IterableTupleIndex[A]{
 
   val indexableTimestamps = getRelevantTimestamps.diff(parentNodesTimestamps.toSet)
-  if(indexableTimestamps.isEmpty){
-    tuples.take(1000).foreach(println(_))
-    println(parentNodesTimestamps)
-    assert(false)
+
+  var indexTimestamp:LocalDate = null
+  var index:Map[A, IndexedSeq[TupleReference[A]]] = null
+  var iterableKeys:Set[A] = null
+  var indexedTimestamps:ArrayBuffer[LocalDate] = null
+
+  if(!indexableTimestamps.isEmpty){
+    indexTimestamp = getBestTimestamp(indexableTimestamps)
+    index = tuples
+      .groupBy(getField(_).valueAt(indexTimestamp))
+    iterableKeys = index.keySet.diff(wildcardKeyValues)
+    indexedTimestamps = ArrayBuffer() ++ parentNodesTimestamps ++ Seq(indexTimestamp)
   }
 
-  val indexTimestamp = getBestTimestamp(indexableTimestamps)
-  val index = tuples
-    .groupBy(getField(_).valueAt(indexTimestamp))
-  val iterableKeys = index.keySet.diff(wildcardKeyValues)
-  val indexedTimestamps = ArrayBuffer() ++ parentNodesTimestamps ++ Seq(indexTimestamp)
+  def indexBuildWasSuccessfull = !indexableTimestamps.isEmpty
 
   def getField(tupleReference: TupleReference[A]) = tupleReference.table
     .getDataTuple(tupleReference.rowIndex).head
@@ -44,9 +48,14 @@ class TupleSetIndex[A](tuples: IndexedSeq[TupleReference[A]],
       .head._1
   }
 
-  override def tupleGroupIterator:Iterator[TupleGroup[A]] = new TupleGroupIterator()
+  def getWildcardBucket = wildcardKeyValues.toIndexedSeq
+    .map(k => index.getOrElse(k,IndexedSeq()))
+    .flatten
 
-  class TupleGroupIterator() extends Iterator[TupleGroup[A]] {
+  override def tupleGroupIterator(skipWildCardBuckets: Boolean):Iterator[TupleGroup[A]] = new TupleGroupIterator(skipWildCardBuckets)
+
+  class TupleGroupIterator(skipWildCardBuckets: Boolean) extends Iterator[TupleGroup[A]] {
+    assert(skipWildCardBuckets)
     val indexNodeIterator = iterableKeys.iterator
 
     override def hasNext: Boolean = indexNodeIterator.hasNext
@@ -54,11 +63,17 @@ class TupleSetIndex[A](tuples: IndexedSeq[TupleReference[A]],
     override def next(): TupleGroup[A] = {
       val key = indexNodeIterator.next()
       val tuples = index(key)
-      val wildcards = wildcardKeyValues.toIndexedSeq
-        .map(k => index.getOrElse(k,IndexedSeq()))
-        .flatten
+      val wildcards = getWildcardBucket
       TupleGroup(indexedTimestamps,parentNodesKeys ++ Seq(key),tuples,wildcards)
     }
   }
+}
+object TupleSetIndex{
 
+  def tryBuildIndex[A](tuples: IndexedSeq[TupleReference[A]],
+    parentNodesTimestamps:IndexedSeq[LocalDate],
+    parentNodesKeys:IndexedSeq[A],
+    wildcardKeyValues:Set[A]) = {
+
+  }
 }

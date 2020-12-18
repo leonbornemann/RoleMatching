@@ -10,7 +10,8 @@ import scala.collection.mutable
 class TableUnionMatch[A](val firstMatchPartner:TemporalDatabaseTableTrait[A],
                       val secondMatchPartner:TemporalDatabaseTableTrait[A],
                       val schemaMapping:Option[collection.Map[Set[AttributeLineage], Set[AttributeLineage]]],
-                      val score:Int,
+                      val evidence:Int,
+                      val changeBenefit:(Int,Int),
                       val isHeuristic:Boolean,
                       val tupleMapping:Option[TupleSetMatching[A]]) {
 

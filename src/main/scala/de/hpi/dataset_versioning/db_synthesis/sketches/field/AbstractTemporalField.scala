@@ -4,14 +4,14 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
-import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.FieldChangeCounter
+import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.FieldChangeCounter
 
 import scala.collection.mutable
 
 @SerialVersionUID(3L)
 abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
 
-  override def countChanges(viewInsertTime:LocalDate,changeCounter: FieldChangeCounter): Int = {
+  override def countChanges(viewInsertTime:LocalDate,changeCounter: FieldChangeCounter): Float = {
     changeCounter.countFieldChanges(viewInsertTime,this)
   }
 

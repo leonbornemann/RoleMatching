@@ -20,7 +20,7 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
     pr.println("NodeID,Timestamps,Node Values,#tables,#tuples,MostTuples_Rank_1,MostTuples_Rank_2,MostTuples_Rank_3,MostTuples_Rank_4,MostTuples_Rank_5")
     val it = tupleGroupIterator
     var id = 0
-    logger.debug(s"Found ${allTsWildcardBucket.size} Wildcards that need to be considered in every bucket")
+    logger.debug(s"Found ${wildCardBucket.size} Wildcards that need to be considered in every bucket")
     it.foreach{case g =>
       val bytable = g.tuplesInNode.groupBy(_.table)
         .map(t => (t._1,t._2.map(_.rowIndex)))
@@ -38,7 +38,7 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
   }
 
 
-  val allTsWildcardBucket = collection.mutable.ArrayBuffer[TupleReference[A]]()
+  val wildCardBucket = collection.mutable.ArrayBuffer[TupleReference[A]]()
 
   def tupleGroupIterator :Iterator[TupleGroup[A]] = {
     new TupleGroupIterator()
@@ -50,7 +50,7 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
     for (rowIndex <- 0 until table.nrows)  {
       val allValuesAreWildcards = chosenTimestamps.forall(ts => table.fieldIsWildcardAt(rowIndex,colIndex,ts))
       if(allValuesAreWildcards) {
-        allTsWildcardBucket.addOne(TupleReference(table,rowIndex))
+        wildCardBucket.addOne(TupleReference(table,rowIndex))
       } else{
         rootNode.insert(table,rowIndex,colIndex,chosenTimestamps)
       }
@@ -64,7 +64,7 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
 
     override def next(): TupleGroup[A] = {
       val (keys,nextCollection) = treeIterator.next()
-      TupleGroup(chosenTimestamps,keys,nextCollection,allTsWildcardBucket)
+      TupleGroup(chosenTimestamps,keys,nextCollection,wildCardBucket)
     }
   }
 

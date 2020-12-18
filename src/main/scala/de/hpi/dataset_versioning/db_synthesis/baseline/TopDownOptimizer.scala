@@ -4,16 +4,18 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabase
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch}
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{DataBasedMatchCalculator, MatchCandidateGraph, TableUnionMatch}
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{AssociationClusterer, DataBasedMatchCalculator, MatchCandidateGraph, TableUnionMatch}
 import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
+import de.hpi.dataset_versioning.io.IOService
 
+import java.io.PrintWriter
 import scala.collection.mutable
 
 class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
                        bcnfReferenceSchemata:collection.IndexedSeq[BCNFTableSchema],
-                       nChangesInAssociations:Long,
-                       extraNonDecomposedViewTableChanges:Map[String,Long]) extends StrictLogging{
+                       nChangesInAssociations:(Int,Int),
+                       extraNonDecomposedViewTableChanges:Map[String,(Int,Int)]) extends StrictLogging{
   GlobalSurrogateRegistry.initSurrogateIDCounters(associations)
 
 //  logger.debug("Executing Histogram")
@@ -49,23 +51,33 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
 
   private def loadAssociationSketches() = {
     var read = 0
-    var hasChanges = 0
-    mutable.HashSet() ++ associations
+    var hasObservedChange = 0
+    val changeAssociationPR = new PrintWriter("associationsWithChanges.json")
+    val sketches = mutable.HashSet() ++ associations
       .map(dtt => {
         val t = SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.loadFromStandardOptimizationInputFile(dtt)
-        if(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(t)>0){
-          hasChanges +=1
+        if(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(t)._1>0){
+          hasObservedChange +=1
+          dtt.id.appendToWriter(changeAssociationPR,false,true,false)
+          //changeAssociationPR.println(t.getUnionedOriginalTables.head.toJson())
+        } else{
+          assert(t.rows.forall(r => {
+            r.valueSketch.getValueLineage.size==1 && r.valueSketch.getValueLineage.firstKey==IOService.STANDARD_TIME_FRAME_START
+          }))
         }
         read +=1
         if(read%100==0) {
-          logger.debug(s"read $read/${associations.size} association sketches (${100*read/associations.size.toDouble}%) of which ${hasChanges} have changes (${100*hasChanges /read.toDouble}%)")
+          logger.debug(s"read $read/${associations.size} association sketches (${100*read/associations.size.toDouble}%) of which ${hasObservedChange} have observed changes (${100*hasObservedChange /read.toDouble}%)")
         }
       t
     })
+    changeAssociationPR.close()
+    sketches
   }
 
   val synthesizedDatabase = new SynthesizedTemporalDatabase(associations,bcnfReferenceSchemata,nChangesInAssociations,extraNonDecomposedViewTableChanges)
-  private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
+  private val associationCLusterer = new AssociationClusterer(allAssociationSketches,new DataBasedMatchCalculator())
+  //private val matchCandidateGraph = new MatchCandidateGraph(allAssociationSketches,new DataBasedMatchCalculator())
 
   def executeMatch(bestMatch: TableUnionMatch[Int]):Option[ExecutedTableUnion] = {
     //load the actual table
@@ -75,7 +87,7 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
     val synthTableB = synthesizedDatabase.loadSynthesizedTable(sketchB)
     val matchCalculator = new DataBasedMatchCalculator()
     val matchForSynth = matchCalculator.calculateMatch(synthTableA,synthTableB,true)
-    if(matchForSynth.score>0){
+    if(matchForSynth.evidence>0){
       val matchForSketchWithTupleMapping = matchCalculator.calculateMatch(sketchA,sketchB,true)
       val (sketchOfUnion,sketchTupleMapping) = matchForSketchWithTupleMapping.buildUnionedTable  //sketchA.executeUnion(sketchB,matchForSketchWithTupleMapping).asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]
       val (synthTableUnion,synthTupleMapping) = matchForSynth.buildUnionedTable //  synthTableA.executeUnion(synthTableB,matchForSynth).asInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation]
@@ -94,25 +106,26 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
 
   def optimize() = {
     var done = false
-    while(!matchCandidateGraph.isEmpty && !done){
+    val sortedMatchListIterator = associationCLusterer.sortedMatches.iterator
+    while(!sortedMatchListIterator.hasNext && !done){
       logger.debug("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
       logger.debug("Entering new Main loop iteration")
-      if(matchCandidateGraph.getNextBestHeuristicMatch().score==0) {
+      val curMatch = sortedMatchListIterator.next()
+      if(curMatch.evidence==0) {
         logger.debug("Terminating main loop as no more promising matches are available")
         done = true
       } else {
-        val bestMatch = matchCandidateGraph.getNextBestHeuristicMatch()
-        assert(bestMatch.isHeuristic)
-        val matchResult = executeMatch(bestMatch)
+        assert(curMatch.isHeuristic)
+        val matchResult = executeMatch(curMatch)
         if(matchResult.isDefined){
           val executedUnion = matchResult.get
-          logger.debug(s"Unioning ${bestMatch.firstMatchPartner} and ${bestMatch.secondMatchPartner}")
-          matchCandidateGraph.updateGraphAfterMatchExecution(bestMatch,executedUnion.unionedTableSketch)
+          logger.debug(s"Unioning ${curMatch.firstMatchPartner} and ${curMatch.secondMatchPartner}")
+          associationCLusterer.updateGraphAfterMatchExecution(curMatch,executedUnion.unionedTableSketch)
           synthesizedDatabase.updateSynthesizedDatabase(executedUnion)
           synthesizedDatabase.printState()
         } else{
           logger.debug("Heuristic match was erroneous - we remove this from the matches and continue")
-          matchCandidateGraph.removeMatch(bestMatch)
+          associationCLusterer.removeMatch(curMatch)
         }
       }
       logger.debug("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")

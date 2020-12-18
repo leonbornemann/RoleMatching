@@ -11,8 +11,13 @@ import scala.collection.mutable
 
 class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
                                   bcnfReferenceSchemata:collection.IndexedSeq[BCNFTableSchema],
-                                  var curChangeCount:Long,
-                                  val extraNonDecomposedViewTableChanges:Map[String,Long]) extends StrictLogging{
+                                  var curChangeCount:(Int,Int),
+                                  val extraNonDecomposedViewTableChanges:Map[String,(Int,Int)]) extends StrictLogging{
+
+  implicit class TuppleAdd(t: (Int, Int)) {
+    def +(p: (Int, Int)) = (p._1 + t._1, p._2 + t._2)
+  }
+
   //we assume that this method is called once the final database is assembled
   def generateQueries() = {
     //final database consists of finalSynthesizedTableIDs and allUnmatchedAssociations
@@ -42,9 +47,12 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
   logger.debug(s"Initialized database with ${associations.size} associations and ${extraNonDecomposedViewTableChanges.size} non-decomposed views")
   logger.debug("Initial change counts:")
   logger.debug(s"Associations: ${curChangeCount}")
-  logger.debug(s"Undecomposed View tables: ${extraNonDecomposedViewTableChanges.values.sum}")
-  logger.debug(s"Total (without associations): ${extraNonDecomposedViewTableChanges.values.sum}")
-  logger.debug(s"Total (with associations): ${curChangeCount+extraNonDecomposedViewTableChanges.values.sum}")
+
+  def sumChangeRange(values: Iterable[(Int, Int)]) = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(values)
+
+  logger.debug(s"Undecomposed View tables: ${sumChangeRange(extraNonDecomposedViewTableChanges.values)}")
+  logger.debug(s"Total (without associations): ${sumChangeRange(extraNonDecomposedViewTableChanges.values)}")
+  logger.debug(s"Total (with associations): ${curChangeCount+sumChangeRange(extraNonDecomposedViewTableChanges.values)}")
   logger.debug("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
   logger.debug("Initialized with the following bcnf tables:")
   bcnfSurrogateReferenceTables.foreach(bcnf => {
@@ -59,7 +67,7 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
   def standardChangeCount(synthTable: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation) = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(synthTable)
 
   def writeToStandardFiles() = {
-    var nChangesInUnionedAssociations:Long = 0
+    var nChangesInUnionedAssociations:(Int,Int) = (0,0)
     finalSynthesizedTableIDs.foreach(id => {
       val synthTable = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromSynthDatabaseTableFile(id)
       val changesInThisTable = standardChangeCount(synthTable)
@@ -78,14 +86,14 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
       })
     logger.debug(s"Final Database has $nChangesInUnionedAssociations number of changes in associations")
     logger.debug(s"During synthesis we recorded the number of changes in associations to be $curChangeCount")
-    logger.debug(s"Total number of changes in final database: ${nChangesInUnionedAssociations +extraNonDecomposedViewTableChanges.values.sum}")
+    logger.debug(s"Total number of changes in final database: ${nChangesInUnionedAssociations +GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(extraNonDecomposedViewTableChanges.values)}")
     if(curChangeCount!=nChangesInUnionedAssociations)
       logger.debug(s"Warning: change counts do not match: $curChangeCount vs $nChangesInUnionedAssociations")
     //assert(curChangeCount==nChangesInUnionedAssociations)
   }
 
   def printChangeCounts() = {
-    var nChanges:Long = 0
+    var nChanges:(Int,Int) = (0,0)
     finalSynthesizedTableIDs.foreach(id => {
       val synthTable = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromSynthDatabaseTableFile(id)
       val changesInThisTable = standardChangeCount(synthTable)
@@ -159,8 +167,8 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
     removeOldSynthIDIFUnion(sketchB)
     //table serialization
     logger.debug(s"Executed Match between ${sketchMatch.firstMatchPartner} {${sketchMatch.firstMatchPartner.nrows} rows} and ${sketchMatch.secondMatchPartner} {${sketchMatch.secondMatchPartner.nrows} rows}, new row count: {${newSynthTable.nrows}}")
-    logger.debug(s"Reducing changes by ${sketchMatch.score}")
-    curChangeCount -= sketchMatch.score
+    logger.debug(s"Reducing changes by ${sketchMatch.changeBenefit}")
+    curChangeCount = (curChangeCount._1 - sketchMatch.changeBenefit._1,curChangeCount._2+sketchMatch.changeBenefit._2)
   }
 
 

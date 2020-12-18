@@ -4,7 +4,6 @@ import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SurrogateBasedTemporalRow}
-import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.FieldChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
@@ -12,35 +11,46 @@ import scala.collection.mutable
 
 class UpdateChangeCounter() extends FieldChangeCounter{
 
-  def countChangesForValueLineage[A](vl: mutable.TreeMap[LocalDate, A],isWildcard : (A => Boolean)) = {
+  def countChangesForValueLineage[A](vl: mutable.TreeMap[LocalDate, A],isWildcard : (A => Boolean)):(Int,Int) = {
     val it = vl.valuesIterator
     var prevprev:Option[A] = None
     var prev:Option[A] = None
     var cur:Option[A] = None
-    var curChangeCount = 0
-    var hadFirstInsert = false
+    var curMinChangeCount = 0
+    var curMaxChangeCount = 0
+    var hadFirstNonWildcardInsert = false
+    var hadFirstElem = false
     while(it.hasNext){
       val newElem = Some(it.next())
       //update pointers
       prevprev = prev
       prev = cur
       cur = newElem
+      //min change count:
       if(!isWildcard(newElem.get)){
-        if(!hadFirstInsert){
+        if(!hadFirstNonWildcardInsert){
           //do not count first insert
-          hadFirstInsert = true
+          hadFirstNonWildcardInsert = true
         } else{
           //we count this, only if prev was not WC and prevprev the same as this (avoids Wildcard to element Ping-Pong)
           assert(prev.isDefined)
           if(isWildcard(prev.get) && prevprev.isDefined && prevprev.get == cur.get){
             //skip this
           } else{
-            curChangeCount+=1
+            curMinChangeCount+=1
           }
         }
       }
+      //max change count:
+      if(!hadFirstElem){
+        hadFirstElem = true
+      } else {
+        if(cur.get!=prev.get || isWildcard(cur.get) || isWildcard(prev.get)){
+          curMaxChangeCount +=1
+        }
+      }
     }
-    curChangeCount
+    (curMinChangeCount,curMaxChangeCount)
   }
 
   def countFieldChanges(r: SurrogateBasedTemporalRow) = {
@@ -55,24 +65,33 @@ class UpdateChangeCounter() extends FieldChangeCounter{
   }
 
   def countChanges(table:SurrogateBasedSynthesizedTemporalDatabaseTableAssociation) = {
-    table.surrogateBasedTemporalRows.map(r => countFieldChanges(r)).sum
+    sumChangeRanges(table.surrogateBasedTemporalRows.map(r => countFieldChanges(r)))
   }
 
   def countChanges(table:SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = {
-    table.surrogateBasedTemporalRowSketches.map(r => countFieldChangesSimple(Seq(r.valueSketch))).sum
+    sumChangeRanges(table.surrogateBasedTemporalRowSketches.map(r => countFieldChangesSimple(Seq(r.valueSketch))))
   }
 
   override def countChanges(table:TemporalTable) = {
-    table.rows.flatMap(_.fields.map(vl => countChangesForValueLineage(vl.lineage,ValueLineage.isWildcard).toLong)).sum
+    sumChangeRanges(table.rows.flatMap(_.fields.map(vl => countChangesForValueLineage(vl.lineage,ValueLineage.isWildcard))))
   }
-
-  override def countFieldChanges[A](viewInsertTime: LocalDate, f: TemporalFieldTrait[A]): Int = countFieldChangesSimple(Seq(f))
 
   override def name: String = "UpdateChangeCounter"
 
-  override def countChanges(table: TemporalTable, allDeterminantAttributeIDs: Set[Int]): Long = countChanges(table)
+  override def countColumnChanges[A](tc: TemporalColumnTrait[A]): (Int,Int) = {
+    val minMaxScores = tc.fieldLineages
+      .map(_.countChanges(this))
+    sumChangeRanges(minMaxScores)
+  }
 
-  override def countColumnChanges[A](tc: TemporalColumnTrait[A], insertTime: LocalDate, colIsPk: Boolean): Long = tc.fieldLineages
-    .map(_.countChanges(insertTime,this)).sum
+  def sumChangeRanges[A](minMaxScores: collection.Iterable[(Int, Int)]) = {
+    if (minMaxScores.size == 1)
+      minMaxScores.head
+    else
+      minMaxScores.reduce((a, b) => (a._1 + b._1, a._2 + b._2))
+  }
+
+  override def countFieldChanges[A](f: TemporalFieldTrait[A]): (Int, Int) =  countChangesForValueLineage[A](f.getValueLineage,f.isWildcard)
+
 
 }

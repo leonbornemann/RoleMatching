@@ -8,7 +8,7 @@ import de.hpi.dataset_versioning.data.change.{ChangeCube, ReservedChangeValues}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.change_counting.natural_key_based.TableChangeCounter
+import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.TableChangeCounter
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFSurrogateReferenceRow, BCNFSurrogateReferenceTable, BCNFTableSchema}
 import de.hpi.dataset_versioning.db_synthesis.sketches.{BinaryReadable, BinarySerializable}
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
@@ -36,8 +36,8 @@ class TemporalTable(val id:String,
 
   def insertTime = rows.flatMap(r => r.fields.flatMap(vl => vl.lineage).filter(t => !ValueLineage.isWildcard(t._2)).map(_._1)).minBy(_.toEpochDay)
 
-  def countChanges(changeCounter: TableChangeCounter, pkSet:Set[Int]): Long = {
-    changeCounter.countChanges(this,pkSet)
+  def countChanges(changeCounter: TableChangeCounter, pkSet:Set[Int]): (Int,Int) = {
+    changeCounter.countChanges(this)
   }
 
   def addSurrogates(surrogateKeys: Set[SurrogateAttributeLineage]) = {

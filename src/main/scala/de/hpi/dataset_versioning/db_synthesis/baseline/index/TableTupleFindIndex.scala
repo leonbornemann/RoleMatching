@@ -32,7 +32,7 @@ class TableTupleFindIndex[A](sketchA: TemporalDatabaseTableTrait[A], sketchB: Te
     .groupBy(i => sketchB.getDataTuple(i).head.valueAt(bestTimestamp))
   val commonGroupsKeys = indexA.keySet.union(indexB.keySet).diff(wildcardKeys)
 
-  override def tupleGroupIterator:Iterator[TupleGroup[A]] = new TupleGroupIterator()
+  override def tupleGroupIterator(skipWildCardBuckets: Boolean):Iterator[TupleGroup[A]] = new TupleGroupIterator(skipWildCardBuckets)
 
   private def getRelevantTimestamps(sketch: TemporalDatabaseTableTrait[A]) = {
     (0 until sketch.nrows).toSet
@@ -43,7 +43,8 @@ class TableTupleFindIndex[A](sketchA: TemporalDatabaseTableTrait[A], sketchB: Te
       }).flatten
   }
 
-  class TupleGroupIterator() extends Iterator[TupleGroup[A]] {
+  class TupleGroupIterator(skipWildCardBuckets: Boolean) extends Iterator[TupleGroup[A]] {
+    assert(skipWildCardBuckets)
     val groupIterator = commonGroupsKeys.iterator
 
     override def hasNext: Boolean = groupIterator.hasNext

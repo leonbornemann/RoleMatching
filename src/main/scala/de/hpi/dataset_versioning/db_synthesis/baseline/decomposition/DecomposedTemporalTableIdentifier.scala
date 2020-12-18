@@ -1,7 +1,9 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
+import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
+
 @SerialVersionUID(3L)
-case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnfID:Int,associationID:Option[Int]) extends Serializable{
+case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnfID:Int,associationID:Option[Int]) extends Serializable with JsonWritable[DecomposedTemporalTableIdentifier]{
 
   override def toString: String = viewID + "." + bcnfID + (if(associationID.isDefined) "_" + associationID.get.toString else "")
 
@@ -9,7 +11,7 @@ case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnf
 
 }
 
-object DecomposedTemporalTableIdentifier {
+object DecomposedTemporalTableIdentifier extends JsonReadable[DecomposedTemporalTableIdentifier]{
   def fromFilename(fileName: String) = {
     val tokens1 = fileName.split("\\.")
     val viewIDs = tokens1.zipWithIndex.filter(t => t._1.size == 9 && t._1.charAt(4) == '-')

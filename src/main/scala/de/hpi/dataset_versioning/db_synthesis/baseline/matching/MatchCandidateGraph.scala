@@ -17,9 +17,9 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
                                      unionedTableSketch: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch): Unit = {
     //remove both elements in best match and update all pointers to the new table
     removeAndDeleteIfEmpty(executedMatch)
-    var scoresToDelete = mutable.HashSet[Int]()
+    var scoresToDelete = mutable.HashSet[Float]()
     var matchesToRecompute = mutable.HashSet[TemporalDatabaseTableTrait[Int]]()
-    val outdatedMatches = mutable.HashSet[(Int,TableUnionMatch[Int])]()
+    val outdatedMatches = mutable.HashSet[(Float,TableUnionMatch[Int])]()
     curMatches.foreach{case (score,matches) => {
       val overlappingMatches = matches.filter(m => m.hasParterOverlap(executedMatch))
       matchesToRecompute ++= overlappingMatches.map(m => m.getNonOverlappingElement(executedMatch))
@@ -54,7 +54,7 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
   def isEmpty = curMatches.isEmpty
 
   //we need to distinguish between sure matches and heuristic matches
-  val curMatches = mutable.TreeMap[Int,mutable.HashSet[TableUnionMatch[Int]]]()
+  val curMatches = mutable.TreeMap[Float,mutable.HashSet[TableUnionMatch[Int]]]()
   initHeuristicMatches()
   logger.debug("Finished Heuristic Match calculation")
 
@@ -112,8 +112,9 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
       val potentialTupleMatches = g.tuplesInNode
       val groupsWithTupleIndcies = potentialTupleMatches.groupMap(t => t.table)(t => t.rowIndex).toIndexedSeq
       if(groupsWithTupleIndcies.size>1) {
-        logger.debug(s"Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndcies.size} tables with " +
+        logger.debug(s"Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndcies.size} tables (head:${groupsWithTupleIndcies.take(5).map(_._1)}) with " +
           s"Top tuple counts: ${groupsWithTupleIndcies.sortBy(-_._2.size).take(5).map{case (t,tuples) => (t.getID,tuples.size)}}")
+        println()
       }
       for (i <- 0 until groupsWithTupleIndcies.size) {
         for (j <- (i + 1) until groupsWithTupleIndcies.size) {
@@ -136,7 +137,7 @@ class MatchCandidateGraph(unmatchedAssociations: mutable.HashSet[SurrogateBasedS
     logger.debug(s"Finished Index-Based initial matching, resulting in ${nMatchesComputed} checked matches, of which ${curMatches.map(_._2.size).sum} have a score > 0")
     logger.debug(s"Naive pairwise approach would have had to compute ${gaussSUm(unmatchedAssociations.size)}")
     logger.debug("Begin executing Wildcard matches")
-    val wildcards = index.allTsWildcardBucket
+    val wildcards = index.wildCardBucket
     wildcards.foreach(wc => {
       //calculate matches to all other association tables:
       unmatchedAssociations

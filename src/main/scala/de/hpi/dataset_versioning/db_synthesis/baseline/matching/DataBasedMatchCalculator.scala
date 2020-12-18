@@ -44,7 +44,7 @@ class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
     val sketchB = tableB
     //enumerate all schema mappings:
     val schemaMappings = schemaMapper.enumerateAllValidSchemaMappings(tableA,tableB)
-    var curBestScore = 0
+    var bestEvidence = 0
     var curBestMapping:collection.Map[Set[AttributeLineage], Set[AttributeLineage]] = null
     var curTupleMatching:TupleSetMatching[A] = null
     for(mapping <- schemaMappings){
@@ -54,19 +54,20 @@ class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
 //      val index = indexBuilder.buildTableIndexOnNonKeyColumns()
       val tupleMapper = new PairwiseTupleMapper(sketchA,sketchB,mapping)
       val tupleMapping = new TupleSetMatching(tableA,tableB,scala.collection.mutable.ArrayBuffer() ++ tupleMapper.getOptimalMapping())
-      var bestPossibleScore = tupleMapping.totalScore
-      if(bestPossibleScore > curBestScore){
-        if(bestPossibleScore>curBestScore){
-          curBestScore = bestPossibleScore
+      var bestPossibleEvidence = tupleMapping.totalEvidence
+      if(bestPossibleEvidence > bestEvidence){
+        if(bestPossibleEvidence>bestEvidence){
+          bestEvidence = bestPossibleEvidence
           curBestMapping = mapping
           curTupleMatching = tupleMapping
         }
       }
     }
     val tupleMapping = if(includeTupleMapping && curTupleMatching!=null) Some(curTupleMatching) else None
+    val totalChangeBenefit = curTupleMatching.totalChangeBenefit
     if(curBestMapping==null)
-      new TableUnionMatch(tableA,tableB,None,0,true,tupleMapping)
+      new TableUnionMatch(tableA,tableB,None,0,totalChangeBenefit,true,tupleMapping)
     else
-      new TableUnionMatch(tableA,tableB,Some(curBestMapping),curBestScore,true,tupleMapping)
+      new TableUnionMatch(tableA,tableB,Some(curBestMapping),bestEvidence,totalChangeBenefit,true,tupleMapping)
   }
 }

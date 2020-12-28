@@ -6,13 +6,14 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabase
 
 import scala.collection.mutable.ArrayBuffer
 
+@SerialVersionUID(3L)
 class TupleSetMatching[A](val tableA: TemporalDatabaseTableTrait[A],
                           val tableB: TemporalDatabaseTableTrait[A],
-                          val matchedTuples: ArrayBuffer[General_Many_To_Many_TupleMatching[A]] = ArrayBuffer[General_Many_To_Many_TupleMatching[A]]()) {
+                          val matchedTuples: ArrayBuffer[General_Many_To_Many_TupleMatching[A]] = ArrayBuffer[General_Many_To_Many_TupleMatching[A]]()) extends Serializable{
 
   implicit class TuppleAdd(t: (Int, Int)) {
     def +(p: (Int, Int)) = (p._1 + t._1, p._2 + t._2)
-    def -(p: (Int, Int)) = (p._1 - t._1, p._2 - t._2)
+    def -(p: (Int, Int)) = (t._1 - p._1, t._2 - p._2)
   }
 
   def totalEvidence = matchedTuples.map(_.evidence).sum

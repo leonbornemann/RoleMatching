@@ -2,7 +2,8 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 
-case class TupleReference[A](table:TemporalDatabaseTableTrait[A], rowIndex:Int) extends Comparable[TupleReference[A]]{
+@SerialVersionUID(3L)
+case class TupleReference[A](table:TemporalDatabaseTableTrait[A], rowIndex:Int) extends Comparable[TupleReference[A]] with Serializable{
   import scala.math.Ordering.Implicits._
 
   def getDataTuple = table.getDataTuple(rowIndex)

@@ -15,6 +15,8 @@ import scala.collection.mutable.HashMap
 @SerialVersionUID(3L)
 class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLogging{
 
+  override def toString: String = ValueLineage(mutable.TreeMap[LocalDate,Any]() ++ getValueLineage).toString
+
   assert(byteToTimestamp(0)==IOService.STANDARD_TIME_FRAME_START) //we need this for all lineages because otherwise we don't know if it is wildcard or not!
 
   override def hashCode(): Int = getBytes.toIndexedSeq.hashCode()

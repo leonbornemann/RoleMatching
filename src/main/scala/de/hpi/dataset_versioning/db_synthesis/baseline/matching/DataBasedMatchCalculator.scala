@@ -64,10 +64,11 @@ class DataBasedMatchCalculator extends MatchCalculator with StrictLogging{
       }
     }
     val tupleMapping = if(includeTupleMapping && curTupleMatching!=null) Some(curTupleMatching) else None
-    val totalChangeBenefit = curTupleMatching.totalChangeBenefit
     if(curBestMapping==null)
-      new TableUnionMatch(tableA,tableB,None,0,totalChangeBenefit,true,tupleMapping)
-    else
+      new TableUnionMatch(tableA,tableB,None,0,(-1,-1),true,tupleMapping)
+    else {
+      val totalChangeBenefit = curTupleMatching.totalChangeBenefit
       new TableUnionMatch(tableA,tableB,Some(curBestMapping),bestEvidence,totalChangeBenefit,true,tupleMapping)
+    }
   }
 }

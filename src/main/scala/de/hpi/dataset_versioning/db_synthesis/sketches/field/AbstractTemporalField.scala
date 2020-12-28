@@ -11,8 +11,8 @@ import scala.collection.mutable
 @SerialVersionUID(3L)
 abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
 
-  override def countChanges(viewInsertTime:LocalDate,changeCounter: FieldChangeCounter): Float = {
-    changeCounter.countFieldChanges(viewInsertTime,this)
+  override def countChanges(changeCounter: FieldChangeCounter): (Int,Int) = {
+    changeCounter.countFieldChanges(this)
   }
 
   override def toIntervalRepresentation:mutable.TreeMap[TimeInterval,A] = {

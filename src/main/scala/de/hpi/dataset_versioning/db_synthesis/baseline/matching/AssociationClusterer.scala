@@ -6,7 +6,9 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.config.InitialMatchinStra
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.{MostDistinctTimestampIndexBuilder, TupleGroup, TupleSetIndex}
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
+import java.io.PrintWriter
 import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -17,6 +19,13 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
 
   def updateGraphAfterMatchExecution(curMatch: TableUnionMatch[Int], unionedTableSketch: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = ???
 
+  logger.debug(s"Starting association clustering with ${unmatchedAssociations.size} associations --> ${gaussSum(unmatchedAssociations.size-1)} matches possible")
+  val associationGraphEdgeWriter = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeFile)
+  var indexTimeInSeconds:Double = 0.0
+  var matchTimeInSeconds:Double = 0.0
+  var matchSkips = 0
+
+  var tableGraphEdges = mutable.HashSet[AssociationGraphEdge]()
 
   val adjacencyList = unmatchedAssociations
     .map(a => (a.asInstanceOf[TemporalDatabaseTableTrait[Int]],mutable.HashMap[TemporalDatabaseTableTrait[Int],TableUnionMatch[Int]]()))
@@ -26,12 +35,13 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   var processedNodes = 0
   var topLvlIndexSize = -1
   initMatchGraph()
+  associationGraphEdgeWriter.close()
   //create sorted list
   val sortedMatches = adjacencyList
     .flatMap{case (t,adjacent) => adjacent.map(_._2)}
     .toSet
     .toIndexedSeq
-    .sortBy( (m:TableUnionMatch[Int]) => m.score)(Ordering[Float].reverse)
+    .sortBy( (m:TableUnionMatch[Int]) => m.evidence)(Ordering[Int].reverse)
 
 
   def matchWasAlreadyCalculated(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]) = {
@@ -52,19 +62,38 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
 
   private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]) = {
     if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner)) {
-      val curMatch = heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner)
+      val (curMatch,time) = executionTimeInSeconds(heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner))
+      matchTimeInSeconds +=time
       nMatchesComputed += 1
-      if (curMatch.score != 0) {
+      if (curMatch.evidence != 0) {
         adjacencyList(curMatch.firstMatchPartner).put(curMatch.secondMatchPartner, curMatch)
         adjacencyList(curMatch.secondMatchPartner).put(curMatch.firstMatchPartner, curMatch)
+        val newAssociationGraphEdge = AssociationGraphEdge(curMatch.firstMatchPartner.getUnionedOriginalTables.head, curMatch.secondMatchPartner.getUnionedOriginalTables.head, curMatch.evidence, curMatch.changeBenefit._1,curMatch.changeBenefit._2)
+        tableGraphEdges.add(newAssociationGraphEdge)
+        newAssociationGraphEdge.appendToWriter(associationGraphEdgeWriter,false,true,true)
       } else{
         //register that we should not try this again, even though we had
         matchesWithZeroScore.add(Set(firstMatchPartner,secondMatchPartner))
       }
+    } else{
+      matchSkips +=1
     }
   }
 
+  def executionTimeInSeconds[R](block: => R): (R,Double) = {
+    val t0 = System.nanoTime()
+    val result = block    // call-by-name
+    val t1 = System.nanoTime()
+    val resultTime = (t1-t0)/1000000000.0
+    (result,resultTime)
+  }
+
+
   def gaussSum(n: Int) = n*(n+1) / 2
+
+  def logRecursionWhitespacePrefix(depth:Int) = "  ".repeat(depth)
+
+  def nonZeroScoreMatches = tableGraphEdges.size
 
   def executeMatchesInIterator(it: Iterator[TupleGroup[Int]],
                                wildCardNodes: Iterable[TupleReference[Int]],
@@ -74,21 +103,21 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
       val potentialTupleMatches = g.tuplesInNode
       val groupsWithTupleIndices = potentialTupleMatches.groupMap(t => t.table)(t => t.rowIndex).toIndexedSeq
       if(groupsWithTupleIndices.size>1) {
-        logger.debug(s"Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndices.size} tables (head:${groupsWithTupleIndices.take(5).map(_._1)}) with " +
-          s"Top tuple counts: ${groupsWithTupleIndices.sortBy(-_._2.size).take(5).map{case (t,tuples) => (t.getID,tuples.size)}} [Recurse Depth:$recurseDepth]")
-        println()
+        logger.debug(s"${logRecursionWhitespacePrefix(recurseDepth)}Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndices.size} tables [Recurse Depth:$recurseDepth]") //(head:${groupsWithTupleIndices.take(5).map(_._1)}) with " +s"Top tuple counts: ${groupsWithTupleIndices.sortBy(-_._2.size).take(5).map{case (t,tuples) => (t.getID,tuples.size)}}
+        logger.debug(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}s, 0-score matches: ${matchesWithZeroScore.size}, non-zero score matches: ${nonZeroScoreMatches}, match-Skips:$matchSkips")
       }
       if(gaussSum(groupsWithTupleIndices.size)>100){
         assert(g.chosenTimestamps.size==g.valuesAtTimestamps.size)
-        val newIndex = new TupleSetIndex[Int]((potentialTupleMatches).toIndexedSeq,
+        val (newIndex,time) = executionTimeInSeconds(new TupleSetIndex[Int]((potentialTupleMatches).toIndexedSeq,
           g.chosenTimestamps.toIndexedSeq,
           g.valuesAtTimestamps,
-          potentialTupleMatches.head.table.wildcardValues.toSet)
+          potentialTupleMatches.head.table.wildcardValues.toSet))
+        indexTimeInSeconds +=time
         if(newIndex.indexBuildWasSuccessfull) {
-          logger.debug(s"Starting recursive call because size ${groupsWithTupleIndices.size} is too large [Recurse Depth:$recurseDepth]")
+          logger.debug(s"${logRecursionWhitespacePrefix(recurseDepth)}Starting recursive call because size ${groupsWithTupleIndices.size} is too large [Recurse Depth:$recurseDepth]")
           executeMatchesInIterator(newIndex.tupleGroupIterator(true),newIndex.getWildcardBucket,recurseDepth+1)
         } else {
-          logger.debug(s"Executing pairwise matching with ${groupsWithTupleIndices.size} because we can't refine the index anymore [Recurse Depth:$recurseDepth]")
+          logger.debug(s"${logRecursionWhitespacePrefix(recurseDepth)}Executing pairwise matching with ${groupsWithTupleIndices.size} because we can't refine the index anymore [Recurse Depth:$recurseDepth]")
           executePairwiseMatching(groupsWithTupleIndices.map(_._1))
         }
       } else {
@@ -121,7 +150,8 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   def initMatchGraph() = {
     logger.debug("Starting Index-Based initial match computation")
     val indexBuilder = new MostDistinctTimestampIndexBuilder[Int](unmatchedAssociations.map(_.asInstanceOf[TemporalDatabaseTableTrait[Int]]))
-    val index = indexBuilder.buildTableIndexOnNonKeyColumns()
+    val (index,time) = executionTimeInSeconds(indexBuilder.buildTableIndexOnNonKeyColumns())
+    indexTimeInSeconds +=time
     val it = index.tupleGroupIterator
     //index.serializeDetailedStatistics()
     if(GLOBAL_CONFIG.SINGLE_LAYER_INDEX){

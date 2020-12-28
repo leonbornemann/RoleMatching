@@ -4,10 +4,10 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.natural_key_based.SynthesizedTemporalDatabase
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch}
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{AssociationClusterer, DataBasedMatchCalculator, MatchCandidateGraph, TableUnionMatch}
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{AssociationClusterer, DataBasedMatchCalculator, TableUnionMatch}
 import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
-import de.hpi.dataset_versioning.io.IOService
+import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 import java.io.PrintWriter
 import scala.collection.mutable
@@ -52,7 +52,7 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
   private def loadAssociationSketches() = {
     var read = 0
     var hasObservedChange = 0
-    val changeAssociationPR = new PrintWriter("associationsWithChanges.json")
+    val changeAssociationPR = new PrintWriter(DBSynthesis_IOService.getAssociationsWithChangesFile())
     val sketches = mutable.HashSet() ++ associations
       .map(dtt => {
         val t = SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.loadFromStandardOptimizationInputFile(dtt)
@@ -60,10 +60,6 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
           hasObservedChange +=1
           dtt.id.appendToWriter(changeAssociationPR,false,true,false)
           //changeAssociationPR.println(t.getUnionedOriginalTables.head.toJson())
-        } else{
-          assert(t.rows.forall(r => {
-            r.valueSketch.getValueLineage.size==1 && r.valueSketch.getValueLineage.firstKey==IOService.STANDARD_TIME_FRAME_START
-          }))
         }
         read +=1
         if(read%100==0) {
@@ -107,7 +103,7 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
   def optimize() = {
     var done = false
     val sortedMatchListIterator = associationCLusterer.sortedMatches.iterator
-    while(!sortedMatchListIterator.hasNext && !done){
+    while(sortedMatchListIterator.hasNext && !done){
       logger.debug("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
       logger.debug("Entering new Main loop iteration")
       val curMatch = sortedMatchListIterator.next()

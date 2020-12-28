@@ -5,13 +5,14 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 import scala.collection.mutable
 
-class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogging{
+class TopDown(subdomain:String,loadFilteredAssociationsOnly:Boolean,idsToIgnore:Set[String]=Set()) extends StrictLogging{
 
   def synthesizeDatabase(countChangesForAllSteps:Boolean = true):Unit = {
     val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
@@ -25,25 +26,17 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
 
   def synthesizeDatabase(ids: IndexedSeq[String], countChangesForAllSteps: Boolean):Unit = {
     val uidToViewChanges:mutable.HashMap[String,ChangeStats] = mutable.HashMap()
-    val idsWithDecomposedTables = BCNFTableSchema.filterNotFullyDecomposedTables(subdomain,ids)
-      .filter(!idsToIgnore.contains(_))
-    logger.debug(s"Running Database synthesis for ${idsWithDecomposedTables.size} ids: $idsWithDecomposedTables")
-    if(countChangesForAllSteps){
-      val nonDecomposed = ids.diff(idsWithDecomposedTables)
-      var nChanges = mutable.ArrayBuffer[(Int,Int)]()
-      nonDecomposed.foreach(id => {
-        nChanges += countChanges(TemporalTable.load(id))
-      })
-      logger.debug(s"nCHanges of non-decomposed tables: ${GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(nChanges)}")
-    }
+    logger.debug(s"Running Database synthesis for ${ids.size} ids: $ids")
     val allAssociations:mutable.ArrayBuffer[AssociationSchema] = mutable.ArrayBuffer()
     val extraNonDecomposedViewTableChanges = mutable.HashMap[String,(Int,Int)]()
-    idsWithDecomposedTables.foreach(id => {
+    val associationsWithChanges:Set[DecomposedTemporalTableIdentifier] = if(loadFilteredAssociationsOnly) DecomposedTemporalTableIdentifier.loadAllAssociationsWithChanges().toSet else Set()
+    ids.foreach(id => {
       var associations:Array[AssociationSchema] = null
       var tt:TemporalTable = null
       if(DBSynthesis_IOService.associationSchemataExist(subdomain,id)) {
         associations = AssociationSchema.loadAllAssociations(subdomain, id)
         allAssociations ++= associations
+          .filter(a => !loadFilteredAssociationsOnly || associationsWithChanges.contains(a.id))
         //write sketches if not present:
         val missing = associations.filter(a => !DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists())
 //        missing.foreach(a => println(s"${a.id}  $a"))
@@ -53,7 +46,11 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
 //          associations.foreach(println(_))
 //
 //        }
-        associations.foreach(a => assert(DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists()))
+        associations.foreach(a => {
+          if(!DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists())
+            println()
+          assert(DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists())
+        })
       } else if(!DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain,id) && countChangesForAllSteps){
         if(tt==null)
           tt = TemporalTable.load(id)
@@ -98,7 +95,7 @@ class TopDown(subdomain:String,idsToIgnore:Set[String]=Set()) extends StrictLogg
       logger.debug("Not counting all changes, thus initializing topdown optimizer with a dummy initial change value")
     }
     //TODO: use this:
-    val bcnfSchemata = idsWithDecomposedTables.flatMap(id => BCNFTableSchema.loadAllBCNFTableSchemata(subdomain,id))
+    val bcnfSchemata:IndexedSeq[BCNFTableSchema] = IndexedSeq()//ids.flatMap(id => BCNFTableSchema.loadAllBCNFTableSchemata(subdomain,id))
     val topDownOptimizer = new TopDownOptimizer(allAssociations.toIndexedSeq,
       bcnfSchemata,
       nChangesInAssociations,

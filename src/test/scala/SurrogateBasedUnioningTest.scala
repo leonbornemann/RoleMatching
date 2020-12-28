@@ -102,7 +102,7 @@ object SurrogateBasedUnioningTest extends App {
   val indexBuilder = new MostDistinctTimestampIndexBuilder[Any](Set(goalsTable,teamTable),true)
   val index = indexBuilder.buildTableIndexOnNonKeyColumns()
   val groups = index.tupleGroupIterator.toIndexedSeq
-  val topDown = new TopDown(subdomain)
+  val topDown = new TopDown(subdomain,false)
   topDown.synthesizeDatabase(viewIDs,false)
 
 }

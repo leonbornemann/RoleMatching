@@ -18,14 +18,19 @@ class TupleSetIndex[A](tuples: IndexedSeq[TupleReference[A]],
   var indexedTimestamps:ArrayBuffer[LocalDate] = null
 
   if(!indexableTimestamps.isEmpty){
-    indexTimestamp = getBestTimestamp(indexableTimestamps)
-    index = tuples
-      .groupBy(getField(_).valueAt(indexTimestamp))
-    iterableKeys = index.keySet.diff(wildcardKeyValues)
-    indexedTimestamps = ArrayBuffer() ++ parentNodesTimestamps ++ Seq(indexTimestamp)
+    val (bestIndexTimestamp,numValues) = getBestTimestamp(indexableTimestamps)
+    if(numValues>1) {
+      indexTimestamp = bestIndexTimestamp
+      index = tuples
+        .groupBy(getField(_).valueAt(indexTimestamp))
+      iterableKeys = index.keySet.diff(wildcardKeyValues)
+      indexedTimestamps = ArrayBuffer() ++ parentNodesTimestamps ++ Seq(indexTimestamp)
+    } else{
+      //no point in indexing
+    }
   }
 
-  def indexBuildWasSuccessfull = !indexableTimestamps.isEmpty
+  def indexBuildWasSuccessfull = indexTimestamp!=null
 
   def getField(tupleReference: TupleReference[A]) = tupleReference.table
     .getDataTuple(tupleReference.rowIndex).head
@@ -45,7 +50,7 @@ class TupleSetIndex[A](tuples: IndexedSeq[TupleReference[A]],
       (ts,values.size)
     }).toIndexedSeq
       .sortBy(-_._2)
-      .head._1
+      .head
   }
 
   def getWildcardBucket = wildcardKeyValues.toIndexedSeq

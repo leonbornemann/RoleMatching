@@ -39,10 +39,6 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
     val edges = mutable.HashSet[General_1_to_1_TupleMatching[A]]()
     buildGraph(index,edges)
     val graphBasedTupleMapper = new GraphBasedTupleMapper(tuples,edges)
-    if(tableA.toString=="coll-eges.0_1(SK2, College Logo)" && tableB.toString == "team-s000.0_1(SK10, Team Logo)" ||
-      tableB.toString=="coll-eges.0_1(SK2, College Logo)" && tableA.toString == "team-s000.0_1(SK10, Team Logo)" &&
-    tableA.isInstanceOf[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation])
-      println()
     graphBasedTupleMapper.mapGreedy()
   }
 
@@ -74,26 +70,30 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
     val originalTupleA = ref1.getDataTuple
     val originalTupleB = ref2.getDataTuple
     val mappedFieldLineages = buildTuples(ref1, ref2) // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
-    val mergedTupleOptions = mergeTupleSketches(Map(mappedFieldLineages))
-    if (mergedTupleOptions.exists(_.isEmpty)) {
+    val evidence = mappedFieldLineages._1.countOverlapEvidence(mappedFieldLineages._2)
+//    val mergedTupleOptions = mergeTupleSketches(Map(mappedFieldLineages))
+//    if(evidence!= -1 && !mergedTupleOptions.head.isDefined){
+//      println()
+//    }
+    if (evidence == -1) {
       //illegalMatch - we do nothing
       None
     } else {
-      val mergedTuple = mergedTupleOptions.map(_.get)
-      val sizeAfterMerge = countChanges(mergedTuple, mergedInsertTime) //
-      val sizeBeforeMergeA = countChanges(originalTupleA, insertTimeA)
-      val sizeBeforeMergeB = countChanges(originalTupleB, insertTimeB)
-      val score = sizeBeforeMergeA + sizeBeforeMergeB - sizeAfterMerge
-      if (score < 0) {
-        //debug
-        println(ref1)
-        println(ref2)
-        println(originalTupleA)
-        println(originalTupleB)
-        println(mergedTuple)
-      }
-      assert(score >= 0)
-      Some(General_1_to_1_TupleMatching(ref1,ref2, score))
+//      val mergedTuple = mergedTupleOptions.map(_.get)
+//      val sizeAfterMerge = countChanges(mergedTuple, mergedInsertTime) //
+//      val sizeBeforeMergeA = countChanges(originalTupleA, insertTimeA)
+//      val sizeBeforeMergeB = countChanges(originalTupleB, insertTimeB)
+//      val bestCaseChangeImprovement = sizeBeforeMergeA._1 + sizeBeforeMergeB._1 - sizeAfterMerge._1
+//      if (bestCaseChangeImprovement < 0) {
+//        //debug
+//        println(ref1)
+//        println(ref2)
+//        println(originalTupleA)
+//        println(originalTupleB)
+//        println(mergedTuple)
+//        assert(false)
+//      }
+      Some(General_1_to_1_TupleMatching(ref1,ref2, evidence))
     }
   }
 
@@ -132,5 +132,5 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
   }
 }
 object PairwiseTupleMapper extends StrictLogging{
-  logger.debug("Current implementation does not yet reduce the size of the tuple groups - this still needs to be implemented")
+  logger.debug("Current implementiation allows for negative change-gain when having evidence >=0 - we will need to see if we want this!")
 }

@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.{UpdateChangeCounter, Wildcard0_5Counter}
+import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.UpdateChangeCounter
 import de.hpi.dataset_versioning.io.IOService
 
 import java.io.PrintWriter
@@ -33,8 +33,7 @@ object ScriptMain extends App with StrictLogging{
     .map(_.id)
     .toIndexedSeq
   val updateOnlyChangeCounter = new UpdateChangeCounter()
-  val wildcardHalfCounter = new Wildcard0_5Counter()
-  val counters = Seq(updateOnlyChangeCounter,wildcardHalfCounter)
+  val counters = Seq(updateOnlyChangeCounter)
   val idsWithDecomposedTables = SurrogateBasedDecomposedTemporalTable.filterNotFullyDecomposedTables(subdomain, subdomainIds)
   val resFileWriter = new PrintWriter("bcnfBetter.txt")
   private val idsToProcess = idsWithDecomposedTables
@@ -55,7 +54,7 @@ object ScriptMain extends App with StrictLogging{
     println(tt.id)
     resFileWriter.print(s"Original View: ")
     print(s"Original View: ")
-    val kvPairs:Seq[(String,Float)] = Seq(("nrow",tt.rows.size.toFloat)) ++ counters.map(c => (c.name,c.countChanges(tt)))
+    val kvPairs:Seq[(String,(Int,Int))] = Seq(("nrow",(tt.rows.size,tt.rows.size))) ++ counters.map(c => (c.name,c.countChanges(tt)))
     printKvPairs(kvPairs)
     printKvPairsToSTDOUT(kvPairs)
     val bcnfResults = allBCNFTables.map(bcnf => {

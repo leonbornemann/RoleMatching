@@ -25,33 +25,29 @@ class GraphBasedTupleMapper[A](vertices:IndexedSeq[TupleReference[A]],edges: mut
       false
     } else {
       assert(elemsClusterA.intersect(elemsClusterB).size==0)
-      if(elemsClusterA.size==1 && elemsClusterB.size==1)
-        true
-      else {
-        var mergedClusterIsClique = true
-        val clusterAList = elemsClusterA.toIndexedSeq
-        val clusterBList = elemsClusterB.toIndexedSeq
-        var interClusterEvidenceSum = 0
-        for(i <- 0 until clusterAList.size){
-          val neighborsAElem = adjacencyList(clusterAList(i))
-          for(j <- 0 until clusterBList.size){
-            val edge = neighborsAElem.get(clusterBList(j))
-            if(edge.isDefined){
-              interClusterEvidenceSum +=edge.get
-            } else{
-              mergedClusterIsClique = false
-            }
-            //TODO: code this with early abort if it is a runtime problem!
+      var mergedClusterIsClique = true
+      val clusterAList = elemsClusterA.toIndexedSeq
+      val clusterBList = elemsClusterB.toIndexedSeq
+      var interClusterEvidenceSum = 0
+      for(i <- 0 until clusterAList.size){
+        val neighborsAElem = adjacencyList(clusterAList(i))
+        for(j <- 0 until clusterBList.size){
+          val edge = neighborsAElem.get(clusterBList(j))
+          if(edge.isDefined){
+            interClusterEvidenceSum +=edge.get
+          } else{
+            mergedClusterIsClique = false
           }
+          //TODO: code this with early abort if it is a runtime problem!
         }
-        if(mergedClusterIsClique) {
-          val mergedCluster = (elemsClusterA ++ elemsClusterB,evidenceCluster1+evidenceCluster2+interClusterEvidenceSum)
-          clusters(edge.tupleReferenceA) = mergedCluster
-          clusters(edge.tupleReferenceB) = mergedCluster
-          true
-        } else {
-          false
-        }
+      }
+      if(mergedClusterIsClique) {
+        val mergedCluster = (elemsClusterA ++ elemsClusterB,evidenceCluster1+evidenceCluster2+interClusterEvidenceSum)
+        clusters(edge.tupleReferenceA) = mergedCluster
+        clusters(edge.tupleReferenceB) = mergedCluster
+        true
+      } else {
+        false
       }
     }
   }
@@ -74,7 +70,7 @@ class GraphBasedTupleMapper[A](vertices:IndexedSeq[TupleReference[A]],edges: mut
 
   def mapGreedy() = {
     val edgesSorted = edges.toIndexedSeq
-      .sortBy(_.evidence)
+      .sortBy(- _.evidence)
     var i=0
     while(i<edgesSorted.size && edgesSorted(i).evidence>0){
       val e = edgesSorted(i)

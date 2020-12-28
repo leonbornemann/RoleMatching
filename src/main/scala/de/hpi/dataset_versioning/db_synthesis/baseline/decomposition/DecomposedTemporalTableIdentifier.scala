@@ -1,6 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 @SerialVersionUID(3L)
 case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnfID:Int,associationID:Option[Int]) extends Serializable with JsonWritable[DecomposedTemporalTableIdentifier]{
@@ -12,6 +13,11 @@ case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnf
 }
 
 object DecomposedTemporalTableIdentifier extends JsonReadable[DecomposedTemporalTableIdentifier]{
+  def loadAllAssociationsWithChanges() = {
+    val file = DBSynthesis_IOService.getAssociationsWithChangesFile()
+    fromJsonObjectPerLineFile(file)
+  }
+
   def fromFilename(fileName: String) = {
     val tokens1 = fileName.split("\\.")
     val viewIDs = tokens1.zipWithIndex.filter(t => t._1.size == 9 && t._1.charAt(4) == '-')

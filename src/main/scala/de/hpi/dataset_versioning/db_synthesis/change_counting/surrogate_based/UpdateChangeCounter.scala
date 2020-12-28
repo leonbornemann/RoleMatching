@@ -3,7 +3,8 @@ package de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based
 import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SurrogateBasedTemporalRow}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{AbstractSurrogateBasedTemporalTable, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SurrogateBasedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
@@ -58,6 +59,10 @@ class UpdateChangeCounter() extends FieldChangeCounter{
     countChangesForValueLineage[Any](vl,ValueLineage.isWildcard)
   }
 
+  override def countChanges[A](table: TemporalDatabaseTableTrait[A]): (Int,Int) = {
+    sumChangeRanges((0 until table.nrows).map( i=> countFieldChangesSimple(table.getDataTuple(i))))
+  }
+
   def countFieldChangesSimple[A](tuple: collection.Seq[TemporalFieldTrait[A]]) = {
     assert(tuple.size==1)
     val vl = tuple(0).getValueLineage
@@ -85,7 +90,9 @@ class UpdateChangeCounter() extends FieldChangeCounter{
   }
 
   def sumChangeRanges[A](minMaxScores: collection.Iterable[(Int, Int)]) = {
-    if (minMaxScores.size == 1)
+    if (minMaxScores.size == 0)
+      (0,0)
+    else if (minMaxScores.size == 1)
       minMaxScores.head
     else
       minMaxScores.reduce((a, b) => (a._1 + b._1, a._2 + b._2))

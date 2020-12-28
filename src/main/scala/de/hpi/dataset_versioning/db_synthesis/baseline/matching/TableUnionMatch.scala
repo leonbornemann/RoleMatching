@@ -7,14 +7,16 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.field.AbstractTemporalFie
 
 import scala.collection.mutable
 
+@SerialVersionUID(3L)
 class TableUnionMatch[A](val firstMatchPartner:TemporalDatabaseTableTrait[A],
                       val secondMatchPartner:TemporalDatabaseTableTrait[A],
                       val schemaMapping:Option[collection.Map[Set[AttributeLineage], Set[AttributeLineage]]],
                       val evidence:Int,
                       val changeBenefit:(Int,Int),
                       val isHeuristic:Boolean,
-                      val tupleMapping:Option[TupleSetMatching[A]]) {
+                      val tupleMapping:Option[TupleSetMatching[A]]) extends Serializable{
 
+  override def toString: String = s"(${firstMatchPartner},$secondMatchPartner){$evidence} --> [${changeBenefit._1},${changeBenefit._2}])"
 
   def buildUnionedTable = {
     val unionID = firstMatchPartner.getID + "_UNION_" + secondMatchPartner.getID

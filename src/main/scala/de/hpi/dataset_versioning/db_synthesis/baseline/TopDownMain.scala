@@ -12,8 +12,6 @@ import scala.io.Source
 object TopDownMain extends App {
   IOService.socrataDir = args(0)
   val subdomain = args(1)
-  val a = AssociationGraphEdge.fromJsonObjectPerLineFile(DBSynthesis_IOService.getAssociationGraphEdgeFile.getAbsolutePath)
-  println()
   GLOBAL_CONFIG.INDEX_DEPTH = args(2).toInt
   val countChangesForALlSteps = args(3).toBoolean
   val loadFilteredAssociationsOnly = args(4).toBoolean

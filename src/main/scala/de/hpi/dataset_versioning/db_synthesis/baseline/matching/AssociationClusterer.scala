@@ -19,6 +19,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
 
   def updateGraphAfterMatchExecution(curMatch: TableUnionMatch[Int], unionedTableSketch: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = ???
 
+  val recurseLogDepth = 0
   logger.debug(s"Starting association clustering with ${unmatchedAssociations.size} associations --> ${gaussSum(unmatchedAssociations.size-1)} matches possible")
   val associationGraphEdgeWriter = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeFile)
   var indexTimeInSeconds:Double = 0.0
@@ -91,9 +92,21 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
 
   def gaussSum(n: Int) = n*(n+1) / 2
 
-  def logRecursionWhitespacePrefix(depth:Int) = "  ".repeat(depth)
+  def logRecursionWhitespacePrefix(depth:Int) = {
+    var curRepeat = depth
+    val sb = new StringBuilder()
+    while(depth>0) {
+      sb.append("  ")
+      curRepeat -=1
+    }
+  }
 
   def nonZeroScoreMatches = tableGraphEdges.size
+
+  def maybeLog(str: String, recurseDepth: Int) = {
+    if(recurseDepth<=recurseLogDepth)
+      logger.debug(str)
+  }
 
   def executeMatchesInIterator(it: Iterator[TupleGroup[Int]],
                                wildCardNodes: Iterable[TupleReference[Int]],
@@ -103,8 +116,8 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
       val potentialTupleMatches = g.tuplesInNode
       val groupsWithTupleIndices = potentialTupleMatches.groupMap(t => t.table)(t => t.rowIndex).toIndexedSeq
       if(groupsWithTupleIndices.size>1) {
-        logger.debug(s"${logRecursionWhitespacePrefix(recurseDepth)}Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndices.size} tables [Recurse Depth:$recurseDepth]") //(head:${groupsWithTupleIndices.take(5).map(_._1)}) with " +s"Top tuple counts: ${groupsWithTupleIndices.sortBy(-_._2.size).take(5).map{case (t,tuples) => (t.getID,tuples.size)}}
-        logger.debug(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}s, 0-score matches: ${matchesWithZeroScore.size}, non-zero score matches: ${nonZeroScoreMatches}, match-Skips:$matchSkips")
+        maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndices.size} tables [Recurse Depth:$recurseDepth]",recurseDepth)
+        maybeLog(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}s, 0-score matches: ${matchesWithZeroScore.size}, non-zero score matches: ${nonZeroScoreMatches}, match-Skips:$matchSkips",recurseDepth)
       }
       if(gaussSum(groupsWithTupleIndices.size)>100){
         assert(g.chosenTimestamps.size==g.valuesAtTimestamps.size)
@@ -114,10 +127,10 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
           potentialTupleMatches.head.table.wildcardValues.toSet))
         indexTimeInSeconds +=time
         if(newIndex.indexBuildWasSuccessfull) {
-          logger.debug(s"${logRecursionWhitespacePrefix(recurseDepth)}Starting recursive call because size ${groupsWithTupleIndices.size} is too large [Recurse Depth:$recurseDepth]")
+          maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Starting recursive call because size ${groupsWithTupleIndices.size} is too large [Recurse Depth:$recurseDepth]",recurseDepth)
           executeMatchesInIterator(newIndex.tupleGroupIterator(true),newIndex.getWildcardBucket,recurseDepth+1)
         } else {
-          logger.debug(s"${logRecursionWhitespacePrefix(recurseDepth)}Executing pairwise matching with ${groupsWithTupleIndices.size} because we can't refine the index anymore [Recurse Depth:$recurseDepth]")
+          maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Executing pairwise matching with ${groupsWithTupleIndices.size} because we can't refine the index anymore [Recurse Depth:$recurseDepth]",recurseDepth)
           executePairwiseMatching(groupsWithTupleIndices.map(_._1))
         }
       } else {

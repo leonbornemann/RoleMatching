@@ -11,7 +11,7 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import java.time.LocalDate
 import scala.collection.mutable
 
-class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A], mapping: collection.Map[Set[AttributeLineage], Set[AttributeLineage]]) {
+class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: TemporalDatabaseTableTrait[A], mapping: collection.Map[Set[AttributeLineage], Set[AttributeLineage]]) extends StrictLogging {
 
   val aColsByID = tableA.dataColumns.map(c => (c.attrID,c)).toMap
   val bColsByID = tableB.dataColumns.map(c => (c.attrID,c)).toMap
@@ -21,14 +21,10 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
   val isSurrogateBased = tableA.isSurrogateBased
   if(tableA.isSurrogateBased) assert(tableB.isSurrogateBased)
 
-  def sizesAreTooBig(tupleCount1:Int, tupleCount2:Int): Boolean = {
-    tupleCount1*tupleCount2>100000
-  }
-
   def gaussSum(n: Int) = n*n+1/2
 
   def squareProductTooBig(n:Int): Boolean = {
-    if(gaussSum(n) > 10000) true else false
+    if(gaussSum(n) > 1000) true else false
   }
 
   def getOptimalMapping() = {
@@ -37,33 +33,42 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
       .flatten
     val index = new TupleSetIndex[A](tuples,IndexedSeq(),IndexedSeq(),tableA.wildcardValues.toSet)
     val edges = mutable.HashSet[General_1_to_1_TupleMatching[A]]()
-    buildGraph(index,edges)
+    buildGraph(tuples,index,edges)
     val graphBasedTupleMapper = new GraphBasedTupleMapper(tuples,edges)
     graphBasedTupleMapper.mapGreedy()
   }
 
-  def buildGraph(index: TupleSetIndex[A],edges:mutable.HashSet[General_1_to_1_TupleMatching[A]]):Unit = {
-    index.tupleGroupIterator(true).foreach{case g => {
-      val tuplesInNode = (g.tuplesInNode ++ g.wildcardTuples)
-      if(squareProductTooBig(tuplesInNode.size)){
-        //further index this: new Index
-        val newIndexForSubNode = new TupleSetIndex[A](tuplesInNode.toIndexedSeq,index.indexedTimestamps.toIndexedSeq,g.valuesAtTimestamps,index.wildcardKeyValues)
-        buildGraph(newIndexForSubNode,edges)
-      } else{
-        val tuplesInNodeAsIndexedSeq = tuplesInNode.toIndexedSeq
-        //we construct a graph as an adjacency list:
-        //pairwise matching to find out the edge-weights:
-        for( i <- 0 until tuplesInNodeAsIndexedSeq.size){
-          for( j <- i+1 until tuplesInNodeAsIndexedSeq.size){
-            val ref1 = tuplesInNodeAsIndexedSeq(i)
-            val ref2 = tuplesInNodeAsIndexedSeq(j)
-            val edge = getTupleMatchOption(ref1, ref2)
-            if(edge.isDefined)
-              edges.add(edge.get)
-          }
+  def buildGraph(originalInput:IndexedSeq[TupleReference[A]], index: TupleSetIndex[A],edges:mutable.HashSet[General_1_to_1_TupleMatching[A]]):Unit = {
+    if(index.indexBuildWasSuccessfull){
+      index.tupleGroupIterator(true).foreach{case g => {
+        val tuplesInNode = (g.tuplesInNode ++ g.wildcardTuples)
+        if(squareProductTooBig(tuplesInNode.size)){
+          //further index this: new Index
+          val newIndexForSubNode = new TupleSetIndex[A](tuplesInNode.toIndexedSeq,index.indexedTimestamps.toIndexedSeq,g.valuesAtTimestamps,index.wildcardKeyValues)
+          buildGraph(tuplesInNode.toIndexedSeq,newIndexForSubNode,edges)
+        } else{
+          val tuplesInNodeAsIndexedSeq = tuplesInNode.toIndexedSeq
+          doPairwiseMatching(edges, tuplesInNodeAsIndexedSeq)
         }
+      }}
+    } else {
+      logger.debug(s"WARN: executing pairwise matching between ${originalInput.size} tuples of $tableA and $tableB because further index build was unsuccessful")
+      doPairwiseMatching(edges,originalInput)
+    }
+  }
+
+  private def doPairwiseMatching(edges: mutable.HashSet[General_1_to_1_TupleMatching[A]], tuplesInNodeAsIndexedSeq: IndexedSeq[TupleReference[A]]) = {
+    //we construct a graph as an adjacency list:
+    //pairwise matching to find out the edge-weights:
+    for (i <- 0 until tuplesInNodeAsIndexedSeq.size) {
+      for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
+        val ref1 = tuplesInNodeAsIndexedSeq(i)
+        val ref2 = tuplesInNodeAsIndexedSeq(j)
+        val edge = getTupleMatchOption(ref1, ref2)
+        if (edge.isDefined)
+          edges.add(edge.get)
       }
-    }}
+    }
   }
 
   private def getTupleMatchOption(ref1:TupleReference[A], ref2:TupleReference[A]) = {

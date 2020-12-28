@@ -103,7 +103,6 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   }
 
   def nonZeroScoreMatches = tableGraphEdges.size
-
   def maybeLog(str: String, recurseDepth: Int) = {
     if(recurseDepth<=recurseLogDepth)
       logger.debug(str)

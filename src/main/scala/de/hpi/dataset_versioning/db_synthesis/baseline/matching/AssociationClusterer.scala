@@ -95,10 +95,11 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   def logRecursionWhitespacePrefix(depth:Int) = {
     var curRepeat = depth
     val sb = new StringBuilder()
-    while(depth>0) {
+    while(curRepeat>0) {
       sb.append("  ")
       curRepeat -=1
     }
+    sb.toString()
   }
 
   def nonZeroScoreMatches = tableGraphEdges.size

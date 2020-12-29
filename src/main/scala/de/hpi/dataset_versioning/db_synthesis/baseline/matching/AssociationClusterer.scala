@@ -19,9 +19,11 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
 
   def updateGraphAfterMatchExecution(curMatch: TableUnionMatch[Int], unionedTableSketch: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = ???
 
-  val recurseLogDepth = 0
+  val recurseLogDepth = 1
   logger.debug(s"Starting association clustering with ${unmatchedAssociations.size} associations --> ${gaussSum(unmatchedAssociations.size-1)} matches possible")
   val associationGraphEdgeWriter = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeFile)
+  val matchTimeWriter = new PrintWriter(DBSynthesis_IOService.WOKRING_DIR + "matchTimes.csv")
+  matchTimeWriter.println(s"tableA,tableB,nrowsA,nrowsB,time[s]")
   var indexTimeInSeconds:Double = 0.0
   var matchTimeInSeconds:Double = 0.0
   var matchSkips = 0
@@ -37,6 +39,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   var topLvlIndexSize = -1
   initMatchGraph()
   associationGraphEdgeWriter.close()
+  matchTimeWriter.close()
   //create sorted list
   val sortedMatches = adjacencyList
     .flatMap{case (t,adjacent) => adjacent.map(_._2)}
@@ -64,6 +67,8 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]) = {
     if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner)) {
       val (curMatch,time) = executionTimeInSeconds(heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner))
+      matchTimeWriter.println(s"${firstMatchPartner.getUnionedOriginalTables.head},${secondMatchPartner.getUnionedOriginalTables.head},${firstMatchPartner.nrows},${secondMatchPartner.nrows},$time")
+      matchTimeWriter.flush()
       matchTimeInSeconds +=time
       nMatchesComputed += 1
       if (curMatch.evidence != 0) {
@@ -75,6 +80,9 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
       } else{
         //register that we should not try this again, even though we had
         matchesWithZeroScore.add(Set(firstMatchPartner,secondMatchPartner))
+      }
+      if(nMatchesComputed%1000==0){
+        logger.debug(s"Completed ${nMatchesComputed} match calculations out of ${gaussSum(unmatchedAssociations.size-1)} potential matches (${100*nMatchesComputed/gaussSum(unmatchedAssociations.size-1).toDouble}%)")
       }
     } else{
       matchSkips +=1
@@ -119,7 +127,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
         maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndices.size} tables [Recurse Depth:$recurseDepth]",recurseDepth)
         maybeLog(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}s, 0-score matches: ${matchesWithZeroScore.size}, non-zero score matches: ${nonZeroScoreMatches}, match-Skips:$matchSkips",recurseDepth)
       }
-      if(gaussSum(groupsWithTupleIndices.size)>100){
+      if(groupsWithTupleIndices.size>2){
         assert(g.chosenTimestamps.size==g.valuesAtTimestamps.size)
         val (newIndex,time) = executionTimeInSeconds(new TupleSetIndex[Int]((potentialTupleMatches).toIndexedSeq,
           g.chosenTimestamps.toIndexedSeq,
@@ -127,7 +135,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
           potentialTupleMatches.head.table.wildcardValues.toSet))
         indexTimeInSeconds +=time
         if(newIndex.indexBuildWasSuccessfull) {
-          maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Starting recursive call because size ${groupsWithTupleIndices.size} is too large [Recurse Depth:$recurseDepth]",recurseDepth)
+          //maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Starting recursive call because size ${groupsWithTupleIndices.size} is too large [Recurse Depth:$recurseDepth]",recurseDepth)
           executeMatchesInIterator(newIndex.tupleGroupIterator(true),newIndex.getWildcardBucket,recurseDepth+1)
         } else {
           maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Executing pairwise matching with ${groupsWithTupleIndices.size} because we can't refine the index anymore [Recurse Depth:$recurseDepth]",recurseDepth)

@@ -56,7 +56,8 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
     val sketches = mutable.HashSet() ++ associations
       .map(dtt => {
         val t = SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.loadFromStandardOptimizationInputFile(dtt)
-        if(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(t)._1>0){
+        val hasChanges = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(t)._1 > 0
+        if(hasChanges){
           hasObservedChange +=1
           dtt.id.appendToWriter(changeAssociationPR,false,true,false)
           //changeAssociationPR.println(t.getUnionedOriginalTables.head.toJson())
@@ -65,8 +66,10 @@ class TopDownOptimizer(associations: IndexedSeq[AssociationSchema],
         if(read%100==0) {
           logger.debug(s"read $read/${associations.size} association sketches (${100*read/associations.size.toDouble}%) of which ${hasObservedChange} have observed changes (${100*hasObservedChange /read.toDouble}%)")
         }
-      t
-    })
+        (t,hasChanges)
+      })
+      .filter(_._2)
+      .map(_._1)
     changeAssociationPR.close()
     sketches
   }

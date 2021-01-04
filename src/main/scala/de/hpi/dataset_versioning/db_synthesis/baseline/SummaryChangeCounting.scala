@@ -30,6 +30,7 @@ object SummaryChangeCounting extends App with StrictLogging{
     val associations = AssociationSchema.loadAllAssociations(subdomain, id)
     assert(DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
     val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
+    tt.addSurrogates(dtts.flatMap(_.surrogateKey).toSet)
     dtts.foreach(dtt => {
       if(!TemporalTable.bcnfContentTableExists(dtt.id)){
         val projection = tt.project(dtt).projection

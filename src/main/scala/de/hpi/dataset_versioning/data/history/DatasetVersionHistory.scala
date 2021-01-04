@@ -55,6 +55,9 @@ class DatasetVersionHistory(val id:String,
 object DatasetVersionHistory extends JsonReadable[DatasetVersionHistory] with StrictLogging{
   def load() = fromJsonObjectPerLineFile(IOService.getCleanedVersionHistoryFile().getAbsolutePath)
 
+  def loadAsMap() = load()
+    .map(h => (h.id,h))
+    .toMap
   /***
    * Removes a version and a previous delete from the history for each version
    */

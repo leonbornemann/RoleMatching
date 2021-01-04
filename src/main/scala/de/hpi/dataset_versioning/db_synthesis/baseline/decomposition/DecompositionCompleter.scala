@@ -27,7 +27,7 @@ class DecompositionCompleter(subdomain:String) {
     )
     //dtt.writeToStandardFile()
     val versionHistory = histories(viewID)
-    val a = new TemporalTableDecomposer(subdomain,viewID,versionHistory)
+    val a = new SurrogateBasedTemporalTableDecomposer()
     a.createSurrogateBasedDtts(IndexedSeq(dtt))
   }
 

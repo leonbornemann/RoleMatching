@@ -89,6 +89,16 @@ class UpdateChangeCounter() extends FieldChangeCounter{
     sumChangeRanges(minMaxScores)
   }
 
+  def sumChangeRangesAsLong[A](minMaxScoresInt: collection.Iterable[(Int, Int)]) = {
+    val minMaxScores = minMaxScoresInt.map(t => (t._1.toLong,t._2.toLong))
+    if (minMaxScores.size == 0)
+      (0,0)
+    else if (minMaxScores.size == 1)
+      minMaxScores.head
+    else
+      minMaxScores.reduce((a, b) => (a._1 + b._1, a._2 + b._2))
+  }
+
   def sumChangeRanges[A](minMaxScores: collection.Iterable[(Int, Int)]) = {
     if (minMaxScores.size == 0)
       (0,0)

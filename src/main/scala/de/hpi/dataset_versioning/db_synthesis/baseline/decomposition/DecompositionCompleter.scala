@@ -25,7 +25,7 @@ class DecompositionCompleter(subdomain:String) {
       }).toMap,
       scala.collection.mutable.HashSet()
     )
-    dtt.writeToStandardFile()
+    //dtt.writeToStandardFile()
     val versionHistory = histories(viewID)
     val a = new TemporalTableDecomposer(subdomain,viewID,versionHistory)
     a.createSurrogateBasedDtts(IndexedSeq(dtt))

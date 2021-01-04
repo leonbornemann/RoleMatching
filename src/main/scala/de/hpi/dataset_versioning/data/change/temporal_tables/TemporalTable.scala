@@ -22,11 +22,11 @@ class TemporalTable(val id:String,
                     val rows:collection.IndexedSeq[TemporalRow],
                     val dtt:Option[SurrogateBasedDecomposedTemporalTable] = None) extends Serializable with BinarySerializable{
 
-  assert(attributes.size>0)
-  if(rows.size==0){
-    println(id)
-    println(dtt)
-  }
+//  assert(attributes.size>0)
+//  if(rows.size==0){
+//    println(id)
+//    println(dtt)
+//  }
 
   def writeTOBCNFTemporalTableFile = {
     assert(dtt.isDefined && !dtt.get.isAssociation)
@@ -226,7 +226,7 @@ class TemporalTable(val id:String,
       allFields.forall(vl => vl.valueAt(ts)==ReservedChangeValues.NOT_EXISTANT_ROW)
   }
 
-  val activeTimeIntervals = {
+  def activeTimeIntervals = {
     var curBegin = timestampsWithChanges(0)
     var curEnd:LocalDate = null
     var activeTimeIntervals = mutable.ArrayBuffer[TimeInterval]()

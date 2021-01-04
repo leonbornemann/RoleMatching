@@ -9,7 +9,7 @@ import java.io.{File, FileWriter, StringWriter}
 
 trait JsonWritable[T<:AnyRef] {
 
-  implicit val formats = (DefaultFormats.preservingEmptyValues
+  @transient implicit val formats = (DefaultFormats.preservingEmptyValues
     + new EnumNameSerializer(Provenance)
     + LocalDateSerializer
     + DatasetInstanceKeySerializer

@@ -38,14 +38,6 @@ class TopDown(subdomain:String,loadFilteredAssociationsOnly:Boolean,idsToIgnore:
         allAssociations ++= associations
           .filter(a => !loadFilteredAssociationsOnly || associationsWithChanges.contains(a.id))
         //write sketches if not present:
-        val missing = associations.filter(a => !DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists())
-//        missing.foreach(a => println(s"${a.id}  $a"))
-//        if(id=="72qm-3bwf"){
-//          println("ahaa")
-//          println(missing.size)
-//          associations.foreach(println(_))
-//
-//        }
         associations.foreach(a => {
           if(!DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists())
             println()

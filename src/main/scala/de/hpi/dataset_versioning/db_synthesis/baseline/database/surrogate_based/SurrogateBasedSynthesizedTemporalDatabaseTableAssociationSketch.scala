@@ -62,6 +62,8 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
   }
 }
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch extends BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]{
+  def getStandardOptimizationInputFile(id: DecomposedTemporalTableIdentifier) = DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(id)
+
 
   def loadFromStandardOptimizationInputFile(id:DecomposedTemporalTableIdentifier):SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch = {
     val file = DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(id)

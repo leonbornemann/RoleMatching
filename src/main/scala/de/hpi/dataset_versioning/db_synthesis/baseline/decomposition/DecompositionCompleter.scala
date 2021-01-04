@@ -3,6 +3,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.decomposition
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.AttributeLineage
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.natural_key_based.DecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
@@ -43,6 +44,16 @@ class DecompositionCompleter(subdomain:String) {
       val associationSchemata = AssociationSchema.loadAllAssociations(subdomain, id)
       if(schemaHistory.size<associationSchemata.size){
         println(s"wow more associations than registered in schema history - problematic! in id $id")
+        val doubleAssociations = associationSchemata.groupBy(_.attributeLineage.attrId)
+          .filter(_._2.size>1)
+        doubleAssociations.map(_._2.tail.map(aSchema => {
+          val associationSchemaFile = aSchema.getStandardFilePath()
+          val associationSketchFile = SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.getStandardOptimizationInputFile(aSchema.id).getAbsolutePath
+          val associationFile = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.getStandardOptimizationInputFile(aSchema.id).getAbsolutePath
+          println(associationSchemaFile)
+          println(associationSketchFile)
+          println(associationFile)
+        }))
       } else if (schemaHistory.size<associationSchemata.size){
         println(s"incomplete: $id, beginning to complete")
         val coveredLineages = associationSchemata.map(_.attributeLineage)

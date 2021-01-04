@@ -8,6 +8,8 @@ import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 class AssociationSchema(val id:DecomposedTemporalTableIdentifier,
                             val surrogateKey:SurrogateAttributeLineage,
                             val attributeLineage: AttributeLineage) {
+  def getStandardFilePath() = DBSynthesis_IOService.getAssociationSchemaFile(id).getAbsolutePath
+
 
   override def toString: String = id + s"(${surrogateKey}, ${attributeLineage})"
 

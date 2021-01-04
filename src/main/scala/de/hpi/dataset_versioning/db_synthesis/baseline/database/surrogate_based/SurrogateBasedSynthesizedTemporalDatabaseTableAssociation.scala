@@ -79,6 +79,8 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
 
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends
   BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation] with StrictLogging{
+  def getStandardOptimizationInputFile(id: DecomposedTemporalTableIdentifier) = DBSynthesis_IOService.getOptimizationInputAssociationFile(id)
+
 
   def loadFromSynthDatabaseTableFile(id: Int):SurrogateBasedSynthesizedTemporalDatabaseTableAssociation = {
     loadFromFile(DBSynthesis_IOService.getSynthesizedTableTempFile(id))

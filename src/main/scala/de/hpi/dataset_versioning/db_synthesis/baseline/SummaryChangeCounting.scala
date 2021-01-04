@@ -30,6 +30,12 @@ object SummaryChangeCounting extends App with StrictLogging{
     val associations = AssociationSchema.loadAllAssociations(subdomain, id)
     assert(DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
     val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
+    dtts.foreach(dtt => {
+      if(!TemporalTable.bcnfContentTableExists(dtt.id)){
+        val projection = tt.project(dtt).projection
+        projection.writeTOBCNFTemporalTableFile
+      }
+    })
     val bcnfChangeCount = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(dtts.map(dtt => GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(TemporalTable.loadBCNFFromStandardBinaryFile(dtt.id))))
     val associationChangeCounts = associations.map(a => {
       val association = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(a.id)

@@ -275,6 +275,10 @@ object TemporalTable extends StrictLogging with BinaryReadable[TemporalTable]{
     loadFromFile(DBSynthesis_IOService.getOptimizationBCNFTemporalTableFile(id))
   }
 
+  def bcnfContentTableExists(id:DecomposedTemporalTableIdentifier) = {
+    DBSynthesis_IOService.getOptimizationBCNFTemporalTableFile(id).exists()
+  }
+
   def load(id: String) = {
     //this turned out to be not worth it - json is actually faster
 //    if(!IOService.getTemporalTableBinaryFile(id,None).exists()) {

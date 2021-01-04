@@ -36,12 +36,19 @@ class DecompositionCompleter(subdomain:String) {
       createNewBCNF(id,TemporalSchema.load(id).attributes,0)
       println(s"found missing BCNF for $id, creating a single new one")
     } else{
+      if(id == "tfm3-3j95"){
+        println()
+      }
       val schemaHistory = TemporalSchema.load(id).attributes
       val associationSchemata = AssociationSchema.loadAllAssociations(subdomain, id)
-      if(schemaHistory.size!=associationSchemata.size){
+      if(schemaHistory.size<associationSchemata.size){
+        println(s"wow more associations than registered in schema history - problematic! in id $id")
+      } else if (schemaHistory.size<associationSchemata.size){
         println(s"incomplete: $id, beginning to complete")
         val coveredLineages = associationSchemata.map(_.attributeLineage)
-        val uncoveredLineages = schemaHistory.diff(coveredLineages)
+        val uncoveredLineageIds = schemaHistory.map(_.attrId).diff(coveredLineages.map(_.attrId))
+        val uncoveredLineages = schemaHistory.filter(al => uncoveredLineageIds.contains(al.attrId))
+        assert(uncoveredLineageIds.size>0)
         val newBcnfID = associationSchemata.map(_.id.bcnfID).max +1
         createNewBCNF(id,uncoveredLineages,newBcnfID)
       }

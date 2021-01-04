@@ -181,7 +181,6 @@ class TemporalTable(val id:String,
       val newFKContent = oldForeignKeySurogatePositionToNewForeignKeySurrogatePosition.map{case (oldIndex,newIndex) => {
         (newIndex,surrogateRows(rowIndex)(oldIndex))
       }}.sortBy(_._1)
-      assert(newFKContent.map(_._1) == (0 until dttToMerge.foreignSurrogateKeysToReferencedTables.size))
       val newFKRow = newFKContent.map(_._2)
       if(byPK.contains(newPKRow)){
         val (mappedRow,mappedFKRow) = byPK(newPKRow)

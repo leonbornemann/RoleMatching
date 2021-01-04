@@ -16,7 +16,7 @@ class SurrogateBasedDecomposedTemporalTable(val id: DecomposedTemporalTableIdent
                                             val foreignSurrogateKeysToReferencedTables: IndexedSeq[(SurrogateAttributeLineage, collection.IndexedSeq[DecomposedTemporalTableIdentifier])])  extends Serializable{
   def allSurrogates: Set[SurrogateAttributeLineage] = surrogateKey.toSet ++ foreignSurrogateKeysToReferencedTables.map(_._1).toSet
 
-  def isAssociation: Boolean = attributes.size==1
+  def isAssociation: Boolean = id.associationID.isDefined
 
   def getSchemaString = {
     id.viewID + "_" +id.bcnfID + "(" +

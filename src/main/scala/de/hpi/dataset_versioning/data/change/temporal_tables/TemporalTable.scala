@@ -22,6 +22,12 @@ class TemporalTable(val id:String,
                     val rows:collection.IndexedSeq[TemporalRow],
                     val dtt:Option[SurrogateBasedDecomposedTemporalTable] = None) extends Serializable with BinarySerializable{
 
+  assert(attributes.size>0)
+  if(rows.size==0){
+    println(id)
+    println(dtt)
+  }
+
   def writeTOBCNFTemporalTableFile = {
     assert(dtt.isDefined && !dtt.get.isAssociation)
     writeToBinaryFile(DBSynthesis_IOService.getOptimizationBCNFTemporalTableFile(dtt.get.id))

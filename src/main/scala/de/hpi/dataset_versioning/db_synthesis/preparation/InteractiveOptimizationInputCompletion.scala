@@ -26,7 +26,7 @@ object InteractiveOptimizationInputCompletion extends App with StrictLogging {
           !SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.getStandardOptimizationInputFile(a.id).exists()
       })
     val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
-    val res2 = dtts.exists(dtt => !TemporalTable.bcnfContentTableExists(dtt.id))
+    val res2 = dtts.filter(_.attributes.size>0).exists(dtt => !TemporalTable.bcnfContentTableExists(dtt.id))
     res || res2
     })
   logger.debug(s"Found the following ids to complete: $toComplete")

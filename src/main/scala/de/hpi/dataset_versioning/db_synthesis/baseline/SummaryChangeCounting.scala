@@ -16,10 +16,9 @@ import scala.collection.mutable
 object SummaryChangeCounting extends App with StrictLogging{
   IOService.socrataDir = args(0)
   val subdomain = args(1)
+  val maybeIds:Seq[String] = if (args.size>2) args(2).split(",") else Seq()
   val subDomainInfo = DatasetInfo.readDatasetInfoBySubDomain
-  val ids = subDomainInfo(subdomain)
-    .map(_.id)
-    .toIndexedSeq
+  val ids = if(maybeIds.size==0) subDomainInfo(subdomain).map(_.id).toIndexedSeq else maybeIds
   val uidToViewChanges:mutable.HashMap[String,ChangeStats] = mutable.HashMap()
   logger.debug(s"Running Database synthesis for ${ids.size} ids: $ids")
   var nFieldsInViewSet = 0

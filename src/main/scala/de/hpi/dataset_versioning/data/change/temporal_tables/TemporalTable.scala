@@ -193,6 +193,9 @@ class TemporalTable(val id:String,
         if(!(newRow.fields == mappedRow.fields && mappedFKRow == newFKRow)){
           println(id)
           println(dttToMerge.id)
+          println(dttToMerge.surrogateKey)
+          println(dttToMerge.attributes.size)
+          println(dttToMerge.foreignSurrogateKeysToReferencedTables.size)
         }
         assert(newRow.fields == mappedRow.fields && mappedFKRow == newFKRow)
       } else {

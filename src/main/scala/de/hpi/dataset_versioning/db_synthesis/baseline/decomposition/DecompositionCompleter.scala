@@ -37,9 +37,6 @@ class DecompositionCompleter(subdomain:String) {
       createNewBCNF(id,TemporalSchema.load(id).attributes,0)
       println(s"found missing BCNF for $id, creating a single new one")
     } else{
-      if(id == "tfm3-3j95"){
-        println()
-      }
       val schemaHistory = TemporalSchema.load(id).attributes
       val associationSchemata = AssociationSchema.loadAllAssociations(subdomain, id)
       if(schemaHistory.size<associationSchemata.size){

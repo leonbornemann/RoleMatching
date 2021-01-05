@@ -190,6 +190,10 @@ class TemporalTable(val id:String,
       val newFKRow = newFKContent.map(_._2)
       if(byPK.contains(newPKRow)){
         val (mappedRow,mappedFKRow) = byPK(newPKRow)
+        if(!(newRow.fields == mappedRow.fields && mappedFKRow == newFKRow)){
+          println(id)
+          println(dttToMerge.id)
+        }
         assert(newRow.fields == mappedRow.fields && mappedFKRow == newFKRow)
       } else {
         byPK.put(newPKRow,(newRow,newFKRow))

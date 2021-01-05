@@ -28,6 +28,8 @@ object AssociationGraphEdgeExplorationMain extends App {
     IOService.cachedMetadata(lastVersion)(firstMatchPartner.viewID)
   }
 
+  def getIfInRange(seq: Seq[Any],supposedSize:Int, pos: Int) = if(pos>=seq.size) "OutOfBounds" else if(supposedSize!=seq.size) "sizes don't match" else seq(pos)
+
   def printMetaInfo(association: DecomposedTemporalTableIdentifier, metadata: DatasetMetadata, pr: PrintWriter) = {
     pr.println(s"------------------------------${association.viewID}----------------------------------")
     pr.println(s"${metadata.resource.name}")
@@ -38,12 +40,13 @@ object AssociationGraphEdgeExplorationMain extends App {
     if(attrPosTry1 == -1 && attrPosTry2== -1)
       pr.println("No column info because name is not found")
     else {
-      val pos = if(attrPosTry1 != -1) attrPosTry1 else attrPosTry2
-      pr.println(s"Column Display Name: ${metadata.resource.columns_name(pos)}")
-      pr.println(s"Column Field Name: ${metadata.resource.columns_field_name(pos)}")
-      pr.println(s"Column Format: ${metadata.resource.columns_format(pos)}")
-      pr.println(s"Column Datatype: ${metadata.resource.columns_dataytpe(pos)}")
-      pr.println(s"Column Description: ${metadata.resource.columns_description(pos)}")
+      val pos = if(attrPosTry1 != -1) metadata.resource.columns_field_name.size else metadata.resource.columns_name.size
+      val nEntries = if(attrPosTry1 != -1) attrPosTry1 else attrPosTry2
+      pr.println(s"Column Display Name: ${getIfInRange(metadata.resource.columns_name,nEntries,pos)}")
+      pr.println(s"Column Field Name: ${getIfInRange(metadata.resource.columns_field_name,nEntries,pos)}")
+      pr.println(s"Column Format: ${getIfInRange(metadata.resource.columns_format,nEntries,pos)}")
+      pr.println(s"Column Datatype: ${getIfInRange(metadata.resource.columns_dataytpe,nEntries,pos)}")
+      pr.println(s"Column Description: ${getIfInRange(metadata.resource.columns_description,nEntries,pos)}")
     }
     pr.println(s"-----------------------------------------------------------------------------------")
     pr.println(s"-----------------------------------------------------------------------------------")

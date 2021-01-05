@@ -1,8 +1,11 @@
 package de.hpi.dataset_versioning.db_synthesis.preparation
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
+import de.hpi.dataset_versioning.db_synthesis.baseline.SummaryChangeCounting.subdomain
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch}
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.io.IOService
 import de.hpi.dataset_versioning.io.InteractiveSaveDeleteMain.logger
@@ -22,7 +25,9 @@ object InteractiveOptimizationInputCompletion extends App with StrictLogging {
         !SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.getStandardOptimizationInputFile(a.id).exists() ||
           !SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.getStandardOptimizationInputFile(a.id).exists()
       })
-      res
+    val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
+    val res2 = dtts.exists(dtt => !TemporalTable.bcnfContentTableExists(dtt.id))
+    res || res2
     })
   logger.debug(s"Found the following ids to complete: $toComplete")
   logger.debug("Type in y to continue, anything else to quit")

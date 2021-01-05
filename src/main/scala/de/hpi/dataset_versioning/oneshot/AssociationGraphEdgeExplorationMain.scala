@@ -55,9 +55,11 @@ object AssociationGraphEdgeExplorationMain extends App {
   def inspect(edges: collection.Seq[AssociationGraphEdge]) = {
     val targetDir = new File(resultDir)
     edges.foreach( e => {
-      val pr = new PrintWriter(targetDir.getAbsolutePath + e.firstMatchPartner.compositeID + "_U_" + e.secondMatchPartner.compositeID)
-      pr.println(s"First: ${e.firstMatchPartner}")
-      pr.println(s"Second: ${e.secondMatchPartner}")
+      val pr = new PrintWriter(targetDir.getAbsolutePath + "/" + e.firstMatchPartner.compositeID + "_U_" + e.secondMatchPartner.compositeID)
+      val associationSchema1 = AssociationSchema.load(e.firstMatchPartner)
+      val associationSchema2 = AssociationSchema.load(e.secondMatchPartner)
+      pr.println(s"First: ${e.firstMatchPartner}, attribute: ${associationSchema1.attributeLineage.nameSet}")
+      pr.println(s"Second: ${e.secondMatchPartner}, attribute: ${associationSchema2.attributeLineage.nameSet}")
       pr.println(s"${e.toJson()}")
       val metadataView1 = loadMetadata(e.firstMatchPartner)
       val metadataView2 = loadMetadata(e.secondMatchPartner)

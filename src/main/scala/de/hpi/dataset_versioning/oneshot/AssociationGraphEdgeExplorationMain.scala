@@ -78,7 +78,7 @@ object AssociationGraphEdgeExplorationMain extends App {
       unionMatch.tupleMapping.get.matchedTuples
         .filter(_.evidence>0)
         .foreach(tm => {
-          pr.println(s"--------------------------------------------------Match $matchCount------------------------------------------------")
+          pr.println(s"--------------------------------------------------Match $matchCount (EVIDENCE ${tm.evidence}, change improvement: ${tm.changeRange})------------------------------------------------")
           pr.println("First Relation")
           val byTAble = tm.tupleReferences.groupBy(_.table)
           byTAble.getOrElse(a1,Seq()).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))

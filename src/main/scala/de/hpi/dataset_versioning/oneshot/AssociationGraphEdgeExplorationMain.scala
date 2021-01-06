@@ -73,17 +73,19 @@ object AssociationGraphEdgeExplorationMain extends App {
       unionMatch.tupleMapping.get.totalEvidence
       pr.println(s"True Evidence: ${unionMatch.tupleMapping.get.totalEvidence}")
       pr.println(s"True Change Benefit: ${unionMatch.tupleMapping.get.totalChangeBenefit}")
-      println("-----------------------------------------Matches:------------------------------------------")
+      pr.println("-----------------------------------------Matches:------------------------------------------")
       var matchCount = 0
-      unionMatch.tupleMapping.get.matchedTuples.foreach(tm => {
-        pr.println(s"--------------------------------------------------Match $matchCount------------------------------------------------")
-        pr.println("First Relation")
-        val byTAble = tm.tupleReferences.groupBy(_.table)
-        byTAble.getOrElse(a1,Seq()).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
-        pr.println("Second Relation")
-        byTAble.getOrElse(a2,Seq()).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
-        pr.println(s"-------------------------------------------------------------------------------------------------------------------")
-        matchCount+=1
+      unionMatch.tupleMapping.get.matchedTuples
+        .filter(_.evidence>0)
+        .foreach(tm => {
+          pr.println(s"--------------------------------------------------Match $matchCount------------------------------------------------")
+          pr.println("First Relation")
+          val byTAble = tm.tupleReferences.groupBy(_.table)
+          byTAble.getOrElse(a1,Seq()).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
+          pr.println("Second Relation")
+          byTAble.getOrElse(a2,Seq()).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
+          pr.println(s"-------------------------------------------------------------------------------------------------------------------")
+          matchCount+=1
       })
       pr.close()
     })

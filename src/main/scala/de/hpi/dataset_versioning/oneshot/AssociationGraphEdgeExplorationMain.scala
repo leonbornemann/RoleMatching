@@ -79,9 +79,9 @@ object AssociationGraphEdgeExplorationMain extends App {
         pr.println(s"--------------------------------------------------Match $matchCount------------------------------------------------")
         pr.println("First Relation")
         val byTAble = tm.tupleReferences.groupBy(_.table)
-        byTAble(a1).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
+        byTAble.getOrElse(a1,Seq()).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
         pr.println("Second Relation")
-        byTAble(a2).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
+        byTAble.getOrElse(a2,Seq()).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
         pr.println(s"-------------------------------------------------------------------------------------------------------------------")
         matchCount+=1
       })

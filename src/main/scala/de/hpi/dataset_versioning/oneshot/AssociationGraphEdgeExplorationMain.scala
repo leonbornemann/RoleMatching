@@ -4,7 +4,7 @@ import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.DatasetMetadata
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.AssociationGraphEdge
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{AssociationGraphEdge, DataBasedMatchCalculator}
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
@@ -65,6 +65,26 @@ object AssociationGraphEdgeExplorationMain extends App {
       val metadataView2 = loadMetadata(e.secondMatchPartner)
       printMetaInfo(e.firstMatchPartner,metadataView1,pr)
       printMetaInfo(e.secondMatchPartner,metadataView2,pr)
+      val a1 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(e.firstMatchPartner)
+      val a2 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(e.secondMatchPartner)
+      pr.println(s"#Tuples(${e.firstMatchPartner}): ${a1.nrows}")
+      pr.println(s"#Tuples(${e.secondMatchPartner}): ${a2.nrows}")
+      val unionMatch = new DataBasedMatchCalculator().calculateMatch(a1,a2,true)
+      unionMatch.tupleMapping.get.totalEvidence
+      pr.println(s"True Evidence: ${unionMatch.tupleMapping.get.totalEvidence}")
+      pr.println(s"True Change Benefit: ${unionMatch.tupleMapping.get.totalChangeBenefit}")
+      println("-----------------------------------------Matches:------------------------------------------")
+      var matchCount = 0
+      unionMatch.tupleMapping.get.matchedTuples.foreach(tm => {
+        pr.println(s"--------------------------------------------------Match $matchCount------------------------------------------------")
+        pr.println("First Relation")
+        val byTAble = tm.tupleReferences.groupBy(_.table)
+        byTAble(a1).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
+        pr.println("Second Relation")
+        byTAble(a2).foreach(tr => pr.println(tr.getDataTuple.head.getValueLineage))
+        pr.println(s"-------------------------------------------------------------------------------------------------------------------")
+        matchCount+=1
+      })
       pr.close()
     })
   }

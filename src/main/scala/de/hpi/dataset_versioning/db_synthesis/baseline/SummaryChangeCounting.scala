@@ -23,6 +23,7 @@ object SummaryChangeCounting extends App with StrictLogging{
   logger.debug(s"Running Database synthesis for ${ids.size} ids: $ids")
   var nFieldsInViewSet = 0
   var nFieldsInAssociations = 0
+  var missingBCNFTables = 0
   ids.foreach(id => {
     val tt = TemporalTable.load(id)
     assert(DBSynthesis_IOService.associationSchemataExist(subdomain,id))
@@ -38,7 +39,13 @@ object SummaryChangeCounting extends App with StrictLogging{
         projection.writeTOBCNFTemporalTableFile
       }
     })
-    val bcnfChangeCount = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(dtts.map(dtt => GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(TemporalTable.loadBCNFFromStandardBinaryFile(dtt.id))))
+    val bcnfChangeCount = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(dtts.map(dtt => {
+      if(!TemporalTable.bcnfContentTableExists(dtt.id)){
+        missingBCNFTables+=1
+        (0,0)
+      } else
+        GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(TemporalTable.loadBCNFFromStandardBinaryFile(dtt.id))
+    }))
     val associationChangeCounts = associations.map(a => {
       val association = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(a.id)
       nFieldsInAssociations += association.nrows
@@ -48,6 +55,7 @@ object SummaryChangeCounting extends App with StrictLogging{
     uidToViewChanges.put(id, ChangeStats(countChanges(tt), bcnfChangeCount, associationChangeCount))
     nFieldsInViewSet += tt.rows.size*tt.attributes.size
   })
+  logger.debug(s"number of missing bcnf tables: $missingBCNFTables")
   logger.debug(s"number of fields in view set: $nFieldsInViewSet")
   val nChangesInViewSet = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRangesAsLong(uidToViewChanges.values.map(_.nChangesInView))
   logger.debug(s"number of changes in view set, where normalization result exists: $nChangesInViewSet")

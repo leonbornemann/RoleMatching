@@ -1,14 +1,19 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 
 import java.time.LocalDate
 import scala.collection.mutable.ArrayBuffer
 
-class TupleSetIndex[A](tuples: IndexedSeq[TupleReference[A]],
+class TupleSetIndex[A](private var tuples: IndexedSeq[TupleReference[A]],
                        val parentNodesTimestamps:IndexedSeq[LocalDate],
                        val parentNodesKeys:IndexedSeq[A],
-                       val wildcardKeyValues:Set[A]) extends IterableTupleIndex[A]{
+                       val wildcardKeyValues:Set[A],
+                       val ignoreTuplesWithNoChanges:Boolean) extends IterableTupleIndex[A]{
+
+  if(ignoreTuplesWithNoChanges)
+    tuples = tuples.filter(a => a.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1 > 0)
 
   val indexableTimestamps = getRelevantTimestamps.diff(parentNodesTimestamps.toSet)
 

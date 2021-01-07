@@ -1,6 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.index
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 
@@ -9,7 +10,8 @@ import java.time.LocalDate
 import scala.collection.mutable.ArrayBuffer
 
 class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
-                           associationsWithColumnIndex: collection.Set[(TemporalDatabaseTableTrait[A],Int)]) extends StrictLogging{
+                           associationsWithColumnIndex: collection.Set[(TemporalDatabaseTableTrait[A],Int)],
+                           val skipZeroChangeTuples:Boolean=true) extends StrictLogging{
 
   //currently
   def numLeafNodes = rootNode.children.size
@@ -48,11 +50,14 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
   val rootNode = new LayeredTupleIndexNode[A](None,null,false)
   for( (table,colIndex) <- associationsWithColumnIndex){
     for (rowIndex <- 0 until table.nrows)  {
-      val allValuesAreWildcards = chosenTimestamps.forall(ts => table.fieldIsWildcardAt(rowIndex,colIndex,ts))
-      if(allValuesAreWildcards) {
-        wildCardBucket.addOne(TupleReference(table,rowIndex))
-      } else{
-        rootNode.insert(table,rowIndex,colIndex,chosenTimestamps)
+      val observedChanges = table.getDataTuple(rowIndex).head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1
+      if(observedChanges>0){
+        val allValuesAreWildcards = chosenTimestamps.forall(ts => table.fieldIsWildcardAt(rowIndex,colIndex,ts))
+        if(allValuesAreWildcards) {
+          wildCardBucket.addOne(TupleReference(table,rowIndex))
+        } else{
+          rootNode.insert(table,rowIndex,colIndex,chosenTimestamps)
+        }
       }
     }
   }

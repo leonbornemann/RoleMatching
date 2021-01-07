@@ -85,6 +85,7 @@ class GraphBasedTupleMapper[A](vertices:IndexedSeq[TupleReference[A]],edges: mut
       })
       //.map{case (v:ArrayBuffer[TupleReference[A]],totalEvidence:Int) => General_Many_To_Many_TupleMatching(v.toSeq,totalEvidence,getChangeScore(v))}
       .toIndexedSeq
+
   }
 
 }

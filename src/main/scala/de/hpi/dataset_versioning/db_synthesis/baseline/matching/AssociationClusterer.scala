@@ -127,12 +127,16 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
         maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndices.size} tables [Recurse Depth:$recurseDepth]",recurseDepth)
         maybeLog(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}s, 0-score matches: ${matchesWithZeroScore.size}, non-zero score matches: ${nonZeroScoreMatches}, match-Skips:$matchSkips",recurseDepth)
       }
+      if(potentialTupleMatches.exists(_.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1<=0)){
+        logger.debug("Really weird, we found a tuple with zero changes, when we were not supposed to")
+      }
       if(groupsWithTupleIndices.size>2){
         assert(g.chosenTimestamps.size==g.valuesAtTimestamps.size)
         val (newIndex,time) = executionTimeInSeconds(new TupleSetIndex[Int]((potentialTupleMatches).toIndexedSeq,
           g.chosenTimestamps.toIndexedSeq,
           g.valuesAtTimestamps,
-          potentialTupleMatches.head.table.wildcardValues.toSet))
+          potentialTupleMatches.head.table.wildcardValues.toSet,
+          true))
         indexTimeInSeconds +=time
         if(newIndex.indexBuildWasSuccessfull) {
           //maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Starting recursive call because size ${groupsWithTupleIndices.size} is too large [Recurse Depth:$recurseDepth]",recurseDepth)

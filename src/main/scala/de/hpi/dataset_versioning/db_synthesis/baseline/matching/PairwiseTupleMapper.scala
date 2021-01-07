@@ -31,7 +31,7 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
     val tuples = IndexedSeq(tableA,tableB)
       .map(t => (0 until t.nrows).map( r => TupleReference(t,r)))
       .flatten
-    val index = new TupleSetIndex[A](tuples,IndexedSeq(),IndexedSeq(),tableA.wildcardValues.toSet)
+    val index = new TupleSetIndex[A](tuples,IndexedSeq(),IndexedSeq(),tableA.wildcardValues.toSet,true)
     val edges = mutable.HashSet[General_1_to_1_TupleMatching[A]]()
     buildGraph(tuples,index,edges)
     val graphBasedTupleMapper = new GraphBasedTupleMapper(tuples,edges)
@@ -44,7 +44,7 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
         val tuplesInNode = (g.tuplesInNode ++ g.wildcardTuples)
         if(squareProductTooBig(tuplesInNode.size)){
           //further index this: new Index
-          val newIndexForSubNode = new TupleSetIndex[A](tuplesInNode.toIndexedSeq,index.indexedTimestamps.toIndexedSeq,g.valuesAtTimestamps,index.wildcardKeyValues)
+          val newIndexForSubNode = new TupleSetIndex[A](tuplesInNode.toIndexedSeq,index.indexedTimestamps.toIndexedSeq,g.valuesAtTimestamps,index.wildcardKeyValues,true)
           buildGraph(tuplesInNode.toIndexedSeq,newIndexForSubNode,edges)
         } else{
           val tuplesInNodeAsIndexedSeq = tuplesInNode.toIndexedSeq

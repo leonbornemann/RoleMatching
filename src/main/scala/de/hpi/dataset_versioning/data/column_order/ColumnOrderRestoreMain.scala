@@ -57,6 +57,10 @@ object ColumnOrderRestoreMain extends App {
       matchCounts(bestMatch.matchType) = matchCounts.getOrElse(bestMatch.matchType,0)+1
       //positionToAttrGroup.
     })
+    println("------------------------------------------")
+    println(csvHeader.sorted)
+    println(attributes.map(_.name).sorted)
+    println("------------------------------------------")
   }
 
   new File(csvDir).listFiles()

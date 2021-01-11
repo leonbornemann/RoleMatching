@@ -27,12 +27,9 @@ case class ChangeCube(datasetID:String,
     }
   }
 
-
   def toTemporalTable() = {
     TemporalTable.from(this)
   }
-
-
 
   def isEmpty: Boolean = allChanges.isEmpty
 

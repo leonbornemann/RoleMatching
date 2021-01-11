@@ -3,6 +3,7 @@ package de.hpi.dataset_versioning.data.change
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.DatasetInstance
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
+import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.RelationalDataset
 import de.hpi.dataset_versioning.io.IOService
 
@@ -158,6 +159,7 @@ class ChangeExporter extends StrictLogging{
           }
         }}
       finalChangeCube.toJsonFile(new File(changeFile))
+      TemporalSchema.fromTemporalTable(finalChangeCube.toTemporalTable()).writeToStandardFile()
     }
   }
 

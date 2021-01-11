@@ -63,13 +63,21 @@ object ColumnOrderRestoreMain extends App {
     .withFilter(f => !subdomainIds.isDefined || subdomainIds.get.contains(f.getName.split("\\.")(0)))
     .foreach(f => {
       val id = f.getName.split("\\.")(0)
-      val ts = TemporalSchema.load(id)
-      val attrs = ts.attributes.map(_.lastDefinedValue)
-      //val attrs = ts.attributes.flatMap(_.lineage.values.filter(_.exists).map(_.attr.get))
+      val lastVersion = IOService.getAllSimplifiedDataVersionsForTimeRange(id,IOService.STANDARD_TIME_FRAME_START,LocalDate.parse("2020-11-01"))
+        .keySet.maxBy(_.toEpochDay)
+      val simplifiedDataTable = RelationalDataset.load(id,lastVersion)
       val csvHeader = firstLine(f).get
-        .split(",")
+        .split(".")
         .toIndexedSeq
-      restoreColumnOrder(attrs,csvHeader)
+      restoreColumnOrder(simplifiedDataTable.attributes,csvHeader)
+
+//      val ts = TemporalSchema.load(id)
+//      val attrs = ts.attributes.map(_.lastDefinedValue)
+//      //val attrs = ts.attributes.flatMap(_.lineage.values.filter(_.exists).map(_.attr.get))
+//      val csvHeader = firstLine(f).get
+//        .split(",")
+//        .toIndexedSeq
+//      restoreColumnOrder(attrs,csvHeader)
     })
   matchCounts.foreach(println(_))
 

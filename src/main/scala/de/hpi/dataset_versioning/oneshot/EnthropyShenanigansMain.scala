@@ -26,18 +26,45 @@ object EnthropyShenanigansMain extends App {
 
   mergeAllAndPrint(a,toMergeWithA)
 
-  println("---------------------------------------------------------------------------------------")
   val b = "__________BBBBBBBBB"
   val toMergeWithB = IndexedSeq(
-    "BBBBBBBBBBBBBBBBBBB"
+    "BBBBBBBBBBBBBBBBBBB",
+    "_________________BB",
+    "________________BBB",
+    "_______________BBBB",
+    "______________BBBBB",
+    "AA____________BBBBB",
+    "ACAD__________BBBBB",
+    "AAAA__________BBBBB",
+    "AAAB__________BBBBB",
+    "AABB__________BBBBB",
+    "_________________BB",
+    "BB_________________",
   )
   mergeAllAndPrint(b,toMergeWithB)
+  val c = "_____ABBBB"
+  val toMergeWithC = IndexedSeq(
+    //"_____ABBBB",
+    "AB________",
+    "_____AB___",
+    "_____ABB__",
+  )
+  mergeAllAndPrint(c,toMergeWithC)
 
+  def getMergeMatch(s: String, elem: String) = {
+    val merged = mergeCompatible(s, elem)
+    MergeMatch(s, elem)
+  }
 
-  def mergeAllAndPrint(elem:String,elems:Seq[String]) = {
+  def mergeAllAndPrint(elem:String, elems:Seq[String]) = {
+    val results = elems.map(s => getMergeMatch(elem,s))
+    results.sortBy(-_.entropyReduction)
+      .foreach(_.printShort)
     elems.foreach(s => {
-      println(s"$s:  ${entropyDifferenceAfterMerge(elem,s)}")
+      val merged = mergeCompatible(elem,s)
+      val mergeMatch = getMergeMatch(s,elem)
     })
+    println("---------------------------------------------------------------------------------------")
   }
 
   def mergeCompatible(s1: String, s2: String) = {
@@ -52,12 +79,27 @@ object EnthropyShenanigansMain extends App {
   }
 
   def entropyDifferenceAfterMerge(s1:String, s2:String) = {
-    math.abs(entropy(getTransitions(s1)) -entropy(getTransitions(mergeCompatible(s1,s2))))
+    math.abs(entropyV2(s1) /*+ entropy(getTransitions(s2))*/ -entropyV2(mergeCompatible(s1,s2)))
   }
 
-  def entropy(transitions: mutable.TreeMap[(Char, Char), Int]) = {
+  def entropyV1(s:String):Double = {
+    entropyV1(getTransitions(s))
+  }
+
+  def entropyV1(transitions: mutable.TreeMap[(Char, Char), Int]):Double = {
     - transitions.values.map(count => {
-      val pXI = count / transitions.size.toDouble
+      val pXI = count / transitions.values.sum.toDouble
+      pXI * log2(pXI)
+    }).sum
+  }
+
+  def entropyV2(s:String):Double = {
+    entropyV2(getTransitions(s),s.length)
+  }
+
+  def entropyV2(transitions: mutable.TreeMap[(Char, Char), Int], lineageSize:Int):Double = {
+    - transitions.values.map(count => {
+      val pXI = count / (lineageSize-1).toDouble
       pXI * log2(pXI)
     }).sum
   }

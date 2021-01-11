@@ -57,10 +57,10 @@ object ColumnOrderRestoreMain extends App {
       matchCounts(bestMatch.matchType) = matchCounts.getOrElse(bestMatch.matchType,0)+1
       //positionToAttrGroup.
     })
-    println("------------------------------------------")
-    println(csvHeader.sorted)
-    println(attributes.map(_.name).sorted)
-    println("------------------------------------------")
+//    println("------------------------------------------")
+//    println(csvHeader.sorted)
+//    println(attributes.map(_.name).sorted)
+//    println("------------------------------------------")
   }
 
   new File(csvDir).listFiles()
@@ -71,7 +71,7 @@ object ColumnOrderRestoreMain extends App {
         .keySet.maxBy(_.toEpochDay)
       val simplifiedDataTable = RelationalDataset.load(id,lastVersion)
       val csvHeader = firstLine(f).get
-        .split(".")
+        .split(",")
         .toIndexedSeq
         .map(s => if(s.startsWith("\"")) s.substring(1,s.length-1) else s)
       restoreColumnOrder(simplifiedDataTable.attributes,csvHeader)

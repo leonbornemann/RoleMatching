@@ -23,6 +23,7 @@ import scala.reflect.io.Directory
 import scala.sys.process._
 
 object IOService extends StrictLogging{
+
   def getTemporalTableBinaryFile(id: String, dttID: Option[DecomposedTemporalTableIdentifier]) = {
     if(!dttID.isDefined)
       createParentDirs(new File(s"$TEMPORAL_VIEW_TABLE_BINARY_DIR/$id.binary"))
@@ -72,6 +73,15 @@ object IOService extends StrictLogging{
 
   def getAllSimplifiedDataVersions(id: String) = {
     val files = getStandardTimeRange
+      .map(d => (d,new File(getSimplifiedDatasetFile(DatasetInstance(id,d)))))
+      .filter(t => t._2.exists())
+      .toMap
+    files
+  }
+
+  def getAllSimplifiedDataVersionsForTimeRange(id: String, begin: LocalDate, end: LocalDate) = {
+    val files = (begin.toEpochDay to end.toEpochDay)
+      .map(day => LocalDate.ofEpochDay(day))
       .map(d => (d,new File(getSimplifiedDatasetFile(DatasetInstance(id,d)))))
       .filter(t => t._2.exists())
       .toMap

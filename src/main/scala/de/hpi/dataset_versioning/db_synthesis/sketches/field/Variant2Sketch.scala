@@ -37,7 +37,7 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
   def getIthTimestampIndexInByteArray(ithTimestamp: Int) = ithTimestamp * (Variant2Sketch.HASH_VALUE_SIZE_IN_BYTES + 1)
 
   //returns the index of the timestamp - not the index of the timestamp in the data array
-  private def findIndexOfTimestampOrLargestTimestampBefore(ts: LocalDate):Int = {
+  private def findIndexOfTimestampOrLargestTimestampBeforeOrEqual(ts: LocalDate):Int = {
     //starting with the first, every 5th byte is a timestamp
     //do binary search:
     var start = 0
@@ -63,7 +63,7 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
   def numEntries = data.size / (Variant2Sketch.HASH_VALUE_SIZE_IN_BYTES + 1)
 
   def valuesInInterval(ti: TimeInterval) :collection.Map[TimeInterval,Int] = {
-    var i = findIndexOfTimestampOrLargestTimestampBefore(ti.begin)
+    var i = findIndexOfTimestampOrLargestTimestampBeforeOrEqual(ti.begin)
     val timeIntervalsToValueMap = HashMap[TimeInterval,Int]()
     if(i== -1){
       //actually, this should never happen again
@@ -131,7 +131,7 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
     if(ts.isBefore(firstTimestamp))
       Variant2Sketch.byteArrayToInt(Variant2Sketch.ROWDELETEHASHVALUE)
     else{
-      val timestampIndex = findIndexOfTimestampOrLargestTimestampBefore(ts)
+      val timestampIndex = findIndexOfTimestampOrLargestTimestampBeforeOrEqual(ts)
       if(timestampIndex== -1){
         println("OUCH")
         println(ts)

@@ -13,6 +13,20 @@ case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnf
 }
 
 object DecomposedTemporalTableIdentifier extends JsonReadable[DecomposedTemporalTableIdentifier]{
+  def fromShortString(subdomain: String, str: String): DecomposedTemporalTableIdentifier = {
+    //a9u4-3dwb.0_0
+    val id = str.substring(0,9)
+    val secondPart = str.split("\\.")(1)
+    val hasAssociationID = secondPart.contains("_")
+    if(hasAssociationID){
+      val tokens = secondPart.split("_")
+      DecomposedTemporalTableIdentifier(subdomain,id,tokens(0).toInt,Some(tokens(1).toInt))
+    } else{
+      DecomposedTemporalTableIdentifier(subdomain,id,secondPart.toInt.toInt,None)
+    }
+
+  }
+
   def loadAllAssociationsWithChanges() = {
     val file = DBSynthesis_IOService.getAssociationsWithChangesFile()
     fromJsonObjectPerLineFile(file)

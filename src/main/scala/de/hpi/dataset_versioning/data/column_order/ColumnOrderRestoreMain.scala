@@ -2,6 +2,7 @@ package de.hpi.dataset_versioning.data.column_order
 
 import de.hpi.dataset_versioning.data.column_order.ColumnOrderRestoreMain.MatchType.MatchType
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
+import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
 import de.hpi.dataset_versioning.data.simplified.{Attribute, RelationalDataset}
 import de.hpi.dataset_versioning.db_synthesis.preparation.InteractiveOptimizationInputCompletion.subdomain
 import de.hpi.dataset_versioning.io.IOService
@@ -47,28 +48,29 @@ object ColumnOrderRestoreMain extends App {
     val Exact,Contaiment,Reverse_Containment,NoMatch = Value
   }
 
-  def restoreColumnOrder(simplifiedDataTable: RelationalDataset, csvHeader: IndexedSeq[String]) = {
+  def restoreColumnOrder(attributes: collection.IndexedSeq[Attribute], csvHeader: IndexedSeq[String]) = {
     //create mapping to csv
     val finalOrder = scala.collection.mutable.HashMap[Attribute,Int]()
-    simplifiedDataTable.attributes.foreach(a => {
+    val positionToAttrGroup = scala.collection.mutable.HashMap[Int,(Attribute,Match)]()
+    attributes.foreach(a => {
       val bestMatch = getBestPositionMatch(csvHeader, a)
       matchCounts(bestMatch.matchType) = matchCounts.getOrElse(bestMatch.matchType,0)+1
+      //positionToAttrGroup.
     })
   }
 
   new File(csvDir).listFiles()
     .withFilter(f => !subdomainIds.isDefined || subdomainIds.get.contains(f.getName.split("\\.")(0)))
     .foreach(f => {
-    val id = f.getName.split("\\.")(0)
-    val simplifiedDataSetVersions = IOService.getAllSimplifiedDataVersionsForTimeRange(id,IOService.STANDARD_TIME_FRAME_START,LocalDate.parse("2020-11-01"))
-    simplifiedDataSetVersions.foreach{case (v,file) => {
-      val simplifiedDataTable = RelationalDataset.load(id,v)
-      val csvHeader = firstLine(file).get
-        .split(".")
+      val id = f.getName.split("\\.")(0)
+      val ts = TemporalSchema.load(id)
+      val attrs = ts.attributes.map(_.lastDefinedValue)
+      //val attrs = ts.attributes.flatMap(_.lineage.values.filter(_.exists).map(_.attr.get))
+      val csvHeader = firstLine(f).get
+        .split(",")
         .toIndexedSeq
-      restoreColumnOrder(simplifiedDataTable,csvHeader)
-    }}
-  })
+      restoreColumnOrder(attrs,csvHeader)
+    })
   matchCounts.foreach(println(_))
 
   def firstLine(f: java.io.File): Option[String] = {

@@ -144,7 +144,6 @@ class OldLoadedRelationalDataset(val id:String, val version:LocalDate, val rows:
     rows.toSet == other.rows.toSet
   }
 
-
   def getProjection(newID:String, columnRenames: IndexedSeq[(String,String)]) = {
     val (myColNames,projectedColnames) = columnRenames.unzip
     assert(myColNames.toSet.subsetOf(colNameSet))

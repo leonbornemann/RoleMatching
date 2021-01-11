@@ -36,7 +36,7 @@ case class TemporalSchema(val id:String,val attributes:collection.IndexedSeq[Att
 
 
 object TemporalSchema extends JsonReadable[TemporalSchema]{
-  def fromTemporalTable(table: TemporalTable) = TemporalSchema(table.attributes)
+  def fromTemporalTable(table: TemporalTable) = TemporalSchema(table.id,table.attributes)
 
 
   def load(id:String) = {

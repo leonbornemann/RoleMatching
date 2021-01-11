@@ -69,6 +69,7 @@ object ColumnOrderRestoreMain extends App {
       val csvHeader = firstLine(f).get
         .split(".")
         .toIndexedSeq
+        .map(s => if(s.startsWith("\"")) s.substring(1,s.length-1) else s)
       restoreColumnOrder(simplifiedDataTable.attributes,csvHeader)
 
 //      val ts = TemporalSchema.load(id)

@@ -3,7 +3,7 @@ package de.hpi.dataset_versioning.oneshot
 import java.lang.AssertionError
 import scala.collection.mutable
 
-object EnthropyShenanigansMain extends App {
+object EntropyShenanigansMain extends App {
 
   val a = "____AABBC_B_B_C_DDDD"
   val toMergeWithA = IndexedSeq(
@@ -44,26 +44,18 @@ object EnthropyShenanigansMain extends App {
   mergeAllAndPrint(b,toMergeWithB)
   val c = "_____ABBBB"
   val toMergeWithC = IndexedSeq(
-    //"_____ABBBB",
+    "_____ABBBB",
+    "ABBBB_____",
     "AB________",
     "_____AB___",
     "_____ABB__",
   )
   mergeAllAndPrint(c,toMergeWithC)
 
-  def getMergeMatch(s: String, elem: String) = {
-    val merged = mergeCompatible(s, elem)
-    MergeMatch(s, elem)
-  }
-
   def mergeAllAndPrint(elem:String, elems:Seq[String]) = {
-    val results = elems.map(s => getMergeMatch(elem,s))
+    val results = elems.zipWithIndex.map{case (s,i) => MergeMatch(elem, s,s"#0",s"#${i+1}")}
     results.sortBy(-_.entropyReduction)
       .foreach(_.printShort)
-    elems.foreach(s => {
-      val merged = mergeCompatible(elem,s)
-      val mergeMatch = getMergeMatch(s,elem)
-    })
     println("---------------------------------------------------------------------------------------")
   }
 

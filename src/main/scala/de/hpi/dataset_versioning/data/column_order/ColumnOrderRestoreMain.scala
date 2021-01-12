@@ -67,9 +67,10 @@ object ColumnOrderRestoreMain extends App {
           println(exactMatches)
         }
         assert(exactMatches.size<=1)
-        if(!exactMatches.isEmpty)
+        if(!exactMatches.isEmpty) {
           finalOrder.put(exactMatches.head._1,curPos)
-        curPos +=1
+          curPos +=1
+        }
         containmentMatches.foreach(m => {
           finalOrder.put(m._1,curPos)
           curPos+=1

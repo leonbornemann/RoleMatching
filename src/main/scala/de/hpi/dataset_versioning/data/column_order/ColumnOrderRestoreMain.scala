@@ -48,10 +48,15 @@ object ColumnOrderRestoreMain extends App {
     //create mapping to csv
     val finalOrder = scala.collection.mutable.HashMap[Attribute,Int]()
     val positionToAttrGroup = scala.collection.mutable.TreeMap[Int,ArrayBuffer[(Attribute,Match)]]()
+    val wasFound = scala.collection.mutable.HashMap[Attribute,Boolean]()
     attributes.zipWithIndex.foreach{ case (a,originalIndex) => {
       val bestMatch = getBestPositionMatch(csvHeader, a,originalIndex)
       matchCounts(bestMatch.matchType) = matchCounts.getOrElse(bestMatch.matchType,0)+1
       positionToAttrGroup.getOrElseUpdate(bestMatch.indexInCSV,ArrayBuffer[(Attribute,Match)]()).addOne((a,bestMatch))
+      if(bestMatch.matchType==MatchType.NoMatch)
+        wasFound.put(a,false)
+      else
+        wasFound.put(a,true)
       //positionToAttrGroup.
     }}
     var curPos = 0
@@ -83,7 +88,7 @@ object ColumnOrderRestoreMain extends App {
       })
     assert(finalOrder.values.toIndexedSeq.sorted == (0 until attributes.size))
     assert(finalOrder.keySet == attributes.toSet)
-    finalOrder
+    (finalOrder,wasFound)
 //    println("------------------------------------------")
 //    println(csvHeader.sorted)
 //    println(attributes.map(_.name).sorted)
@@ -91,7 +96,7 @@ object ColumnOrderRestoreMain extends App {
   }
 
   val resultFile = new PrintWriter("newColumnOrder.csv")
-  resultFile.println("id,version,attributeID,oldSchemaPosition,newSchemaPosition")
+  resultFile.println("id,version,attributeID,oldSchemaPosition,newSchemaPosition,wasFoundInCSV")
   val files = new File(csvDir).listFiles()
     .filter(f => !subdomainIds.isDefined || subdomainIds.get.contains(f.getName.split("\\.")(0)))
   var processedCSVFiles = 0
@@ -106,12 +111,13 @@ object ColumnOrderRestoreMain extends App {
           .split(",")
           .toIndexedSeq
           .map(s => if(s.startsWith("\"")) s.substring(1,s.length-1) else s)
-        val finalOrder = restoreColumnOrder(simplifiedDataTable.attributes,csvHeader)
+        val (finalOrder,wasFound) = restoreColumnOrder(simplifiedDataTable.attributes,csvHeader)
         val originalOrder = simplifiedDataTable.attributes.zipWithIndex.toMap
         assert(finalOrder.keySet==originalOrder.keySet)
         finalOrder.foreach{case (a,finalPos) => {
           val originalPos = originalOrder(a)
-          resultFile.println(s"$id,$v,${a.id},$originalPos,$finalPos")
+          val attrWasFound = wasFound(a)
+          resultFile.println(s"$id,$v,${a.id},$originalPos,$finalPos,$attrWasFound")
         }}
       })
     processedCSVFiles+=1

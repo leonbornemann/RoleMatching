@@ -108,7 +108,7 @@ object ColumnOrderRestoreMain extends App {
         }}
       })
     processedCSVFiles+=1
-    if(processedCSVFiles%0==100){
+    if(processedCSVFiles%100==0){
       println(s"Finished $processedCSVFiles csv files")
     }
 

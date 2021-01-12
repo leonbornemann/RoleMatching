@@ -61,7 +61,12 @@ object ColumnOrderRestoreMain extends App {
         val exactMatches = matches.filter(_._2.matchType==MatchType.Exact)
         val containmentMatches = matches.filter(_._2.matchType==MatchType.Reverse_Containment)
         assert(exactMatches.size+containmentMatches.size == matches.size)
-        assert(exactMatches.size==1)
+        if(exactMatches.size>=1){
+          println(csvHeader)
+          println(attributes)
+          println(exactMatches)
+        }
+        assert(exactMatches.size<=1)
         finalOrder.put(exactMatches.head._1,curPos)
         curPos +=1
         containmentMatches.foreach(m => {

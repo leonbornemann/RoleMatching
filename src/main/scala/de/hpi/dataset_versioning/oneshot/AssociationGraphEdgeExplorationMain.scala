@@ -1,5 +1,7 @@
 package de.hpi.dataset_versioning.oneshot
 
+import de.hpi.dataset_versioning.data.change.ReservedChangeValues
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.DatasetMetadata
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
@@ -125,12 +127,10 @@ object AssociationGraphEdgeExplorationMain extends App {
     var curCharIndex:Int = 0
     val symbols = (65 to 90) ++ (97 to 122) ++ (192 to 214) ++ (223 to 246) ++ (256 to 328) ++ (330 to 447) ++ (452 to 591)
     val mapping = mutable.HashMap[Any,Char]()
+    mapping.put(ReservedChangeValues.NOT_EXISTANT_COL,'_')
+    mapping.put(ReservedChangeValues.NOT_EXISTANT_DATASET,'_')
     allValues.foreach(c => {
-      if(tupleReferences.head.getDataTuple.head.isWildcard(c))
-        mapping.put(c,'_')
-      else if(mapping.contains(c))
-        mapping(c)
-      else {
+      if(!mapping.contains(c)){
         mapping.put(c,symbols(curCharIndex).toChar)
         curCharIndex +=1
       }

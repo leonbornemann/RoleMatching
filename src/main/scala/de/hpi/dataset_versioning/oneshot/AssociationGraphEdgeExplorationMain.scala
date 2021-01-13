@@ -4,20 +4,23 @@ import de.hpi.dataset_versioning.data.history.DatasetVersionHistory
 import de.hpi.dataset_versioning.data.metadata.DatasetMetadata
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{AssociationGraphEdge, DataBasedMatchCalculator}
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{AssociationGraphEdge, DataBasedMatchCalculator, TupleReference}
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 import java.io.{File, PrintWriter}
+import java.time.LocalDate
+import scala.collection.mutable
 
 object AssociationGraphEdgeExplorationMain extends App {
   IOService.socrataDir = args(0)
   val resultDir = args(1)
   val edges = AssociationGraphEdge.fromJsonObjectPerLineFile(DBSynthesis_IOService.getAssociationGraphEdgeFile.getAbsolutePath)
+    .sortBy(-_.evidence)
   val sum = edges.map(_.minChangeBenefit).sum
   println(sum)
   println()
-  val edgesBetweenDifferentViewTableColumns = edges.sortBy(-_.evidence)
+  val edgesBetweenDifferentViewTableColumns = edges
     .filter(a => a.firstMatchPartner.viewID!=a.secondMatchPartner.viewID)
 
   val versionHistory = DatasetVersionHistory.loadAsMap()
@@ -91,7 +94,50 @@ object AssociationGraphEdgeExplorationMain extends App {
     })
   }
 
-  inspect(edgesBetweenDifferentViewTableColumns.take(100))
+  def translateToCharString(sequence: IndexedSeq[Any]) = {
+    var curChar:Char = 65
+    val mapping = mutable.HashMap[Any,Char]()
+    val chars = sequence.map(c => {
+      if(mapping.contains(c))
+        mapping(c)
+      else {
+        mapping.put(c,curChar)
+        curChar +=1
+        (curChar-1).toChar
+      }
+    })
+    chars.mkString
+  }
+
+  def getAsFlatString(value: TupleReference[Any]) = {
+    val lineage = value.getDataTuple.head
+    val sequence = (IOService.STANDARD_TIME_FRAME_START.toEpochDay to IOService.STANDARD_TIME_FRAME_END.toEpochDay).map(l => {
+      lineage.valueAt(LocalDate.ofEpochDay(l))
+    })
+    translateToCharString(sequence)
+  }
+
+  def serializeEdges(edges: collection.Seq[AssociationGraphEdge]) = {
+    val pr = new PrintWriter(resultDir + "/" + "edgeContentsAsStrings.csv")
+    pr.println("edge1_id,edge1_tupleIndices,edge2-id,edge2_tupleIndex,edgesValues")
+    edges.foreach( e => {
+      println(s"processing ${e}")
+      val a1 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(e.firstMatchPartner)
+      val a2 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(e.secondMatchPartner)
+      val unionMatch = new DataBasedMatchCalculator().calculateMatch(a1,a2,true)
+      val edgeValuesAsStrings = unionMatch.tupleMapping.get.matchedTuples.foreach(m => {
+        val tupleValues = m.tupleReferences.map(getAsFlatString(_))
+        val tupleIndices1 = m.tupleReferences.filter(_.table==a1).map(_.rowIndex)
+        val tupleIndices2 = m.tupleReferences.filter(_.table==a2).map(_.rowIndex)
+        pr.println(e.firstMatchPartner,tupleIndices1.mkString(";"),e.secondMatchPartner,tupleIndices2.mkString(";"),tupleValues.mkString(";"))
+      })
+      pr.flush()
+    })
+    pr.close()
+  }
+
+  serializeEdges(edges)
+  //inspect(edgesBetweenDifferentViewTableColumns.take(100))
 //  println(edgesBetweenDifferentViewTableColumns.size)
 //  println()
 //  edgesBetweenDifferentViewTableColumns

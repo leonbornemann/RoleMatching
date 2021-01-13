@@ -16,8 +16,8 @@ case class MergeMatch(first: FieldLineage, second: FieldLineage) {
 
   // DIFFERENCE:${entropyDifferenceBeweenOriginals}%1.3f
   def printShort = println(f"DIFF: $entropyDifferenceBeweenOriginals%1.3f REDUCTION:$entropyReduction%1.3f\n" +
-    f"$first\n" +
-    f"$second\n")//(${entropy(elem)}%1.3f) MERGE  $s (${entropy(s)}%1.3f) TO $merged (${entropy(merged)}%1.3f)")
+    f"${first.printWithEntropy}\n" +
+    f"${second.printWithEntropy}\n")//(${entropy(elem)}%1.3f) MERGE  $s (${entropy(s)}%1.3f) TO $merged (${entropy(merged)}%1.3f)")
 
   def entropyReduction = firstEntropy+secondEntropy-mergedEntropy
 

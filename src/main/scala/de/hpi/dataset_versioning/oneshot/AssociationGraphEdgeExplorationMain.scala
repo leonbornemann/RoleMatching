@@ -6,6 +6,7 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{AssociationGraphEdge, DataBasedMatchCalculator, TupleReference}
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 import java.io.{File, PrintWriter}
@@ -94,11 +95,13 @@ object AssociationGraphEdgeExplorationMain extends App {
     })
   }
 
-  def translateToInts(sequence: IndexedSeq[Any]) = {
-    var curChar:Int = 0
+  def translateToInts(sequence: IndexedSeq[Any],temporalFieldTrait: TemporalFieldTrait[Any]) = {
+    var curChar:Int = 1
     val mapping = mutable.HashMap[Any,Int]()
     val chars = sequence.map(c => {
-      if(mapping.contains(c))
+      if(temporalFieldTrait.isWildcard(c))
+        0
+      else if(mapping.contains(c))
         mapping(c)
       else {
         mapping.put(c,curChar.toChar)
@@ -109,19 +112,30 @@ object AssociationGraphEdgeExplorationMain extends App {
     chars
   }
 
-  def getAsFlatString(value: TupleReference[Any]) = {
+  def getAsFlatString(value: TupleReference[Any],map:collection.Map[Any, Char]) = {
     val lineage = value.getDataTuple.head
     val sequence = (IOService.STANDARD_TIME_FRAME_START.toEpochDay to IOService.STANDARD_TIME_FRAME_END.toEpochDay).map(l => {
-      lineage.valueAt(LocalDate.ofEpochDay(l))
+      map(lineage.valueAt(LocalDate.ofEpochDay(l)))
     })
-    val ints = translateToInts(sequence)
-    val start = 'A'
-    val end = 'Z'
-    ints.map(i => {
-      val second = start + i % (end-start)
-      val first = start + i / (end-start)
-      Seq(first.toChar,second.toChar).mkString
-    }).mkString
+    sequence.mkString
+  }
+
+  def getTranslationMap(tupleReferences: Seq[TupleReference[Any]]) = {
+    val allValues = tupleReferences.flatMap(tr => tr.getDataTuple.head.getValueLineage.values.toSet).toSet
+    var curCharIndex:Int = 0
+    val symbols = (65 to 90) ++ (97 to 122) ++ (192 to 214) ++ (223 to 246) ++ (256 to 328) ++ (330 to 447) ++ (452 to 591)
+    val mapping = mutable.HashMap[Any,Char]()
+    allValues.foreach(c => {
+      if(tupleReferences.head.getDataTuple.head.isWildcard(c))
+        mapping.put(c,'_')
+      else if(mapping.contains(c))
+        mapping(c)
+      else {
+        mapping.put(c,symbols(curCharIndex).toChar)
+        curCharIndex +=1
+      }
+    })
+    mapping
   }
 
   def serializeEdges(edges: collection.Seq[AssociationGraphEdge]) = {
@@ -133,7 +147,8 @@ object AssociationGraphEdgeExplorationMain extends App {
       val a2 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(e.secondMatchPartner)
       val unionMatch = new DataBasedMatchCalculator().calculateMatch(a1,a2,true)
       val edgeValuesAsStrings = unionMatch.tupleMapping.get.matchedTuples.foreach(m => {
-        val tupleValues = m.tupleReferences.map(getAsFlatString(_))
+        val map = getTranslationMap(m.tupleReferences)
+        val tupleValues = m.tupleReferences.map(getAsFlatString(_,map))
         val tupleIndices1 = m.tupleReferences.filter(_.table==a1).map(_.rowIndex)
         val tupleIndices2 = m.tupleReferences.filter(_.table==a2).map(_.rowIndex)
         pr.println(e.firstMatchPartner,tupleIndices1.mkString(";"),e.secondMatchPartner,tupleIndices2.mkString(";"),tupleValues.mkString(";"))

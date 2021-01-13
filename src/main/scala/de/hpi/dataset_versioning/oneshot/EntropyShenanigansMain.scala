@@ -8,7 +8,7 @@ object EntropyShenanigansMain extends App {
   case class FieldLineage(lineage:String, label:String) {
     def printWithEntropy = println(toString + f"($defaultEntropy%1.3f)")
 
-    def defaultEntropy = entropyV3
+    def defaultEntropy = entropyV2
 
     def mergeCompatible(other: FieldLineage) = {
       if(lineage.size != other.lineage.size) throw new AssertionError("not same size")
@@ -34,6 +34,14 @@ object EntropyShenanigansMain extends App {
 //        pXI * log2(pXI)
 //      }).sum
 //    }
+
+    def entropyV4:Double = {
+      entropyV2(getTransitions(lineage) ++ getTransitions(lineage.reverse),lineage.length)
+    }
+
+    def entropyV5 = {
+      entropyV2(getTransitions(lineage,true) ++ getTransitions(lineage.reverse,true),lineage.length)
+    }
 
     def entropyV3:Double = {
       entropyV2(getTransitions(lineage,true),lineage.length)
@@ -107,9 +115,14 @@ object EntropyShenanigansMain extends App {
   val h = "AAAABBBB"
   val i = "AACCBBCC"
 
-  Seq(d,e,f,g,h,i).zipWithIndex.map{case (s,i) => FieldLineage(s,s"#$i")}
-    .foreach(_.printWithEntropy)
 
+  val x = "ABBBB_____"
+  val y = "__BBBABBBB"
+  val z = "ABBBBABBBB"
+
+  val sequences = Seq(d,e,f,g,h,i,x,y,z).zipWithIndex.map{case (s,i) => FieldLineage(s,s"#$i")}
+    sequences.foreach(_.printWithEntropy)
+  //sequences.last.mergeCompatible(sequences(sequences.size-2)).printWithEntropy
 //  val d = "ABCD_____"
 //  val e = "ABCD_D_D_"
 //  val f = "AB__C_C_C"

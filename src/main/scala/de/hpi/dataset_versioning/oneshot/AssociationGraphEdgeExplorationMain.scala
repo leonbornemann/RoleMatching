@@ -141,12 +141,15 @@ object AssociationGraphEdgeExplorationMain extends App {
   def serializeEdges(edges: collection.Seq[AssociationGraphEdge]) = {
     val pr = new PrintWriter(resultDir + "/" + "edgeContentsAsStrings.csv")
     pr.println("edge1_id,edge1_tupleIndices,edge2-id,edge2_tupleIndex,edgesValues")
-    edges.foreach( e => {
+    edges
+      .foreach( e => {
       println(s"processing ${e}")
       val a1 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(e.firstMatchPartner)
       val a2 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(e.secondMatchPartner)
       val unionMatch = new DataBasedMatchCalculator().calculateMatch(a1,a2,true)
-      val edgeValuesAsStrings = unionMatch.tupleMapping.get.matchedTuples.foreach(m => {
+      val edgeValuesAsStrings = unionMatch.tupleMapping.get.matchedTuples
+        .filter(_.tupleReferences.size>1)
+        .foreach(m => {
         val map = getTranslationMap(m.tupleReferences)
         val tupleValues = m.tupleReferences.map(getAsFlatString(_,map))
         val tupleIndices1 = m.tupleReferences.filter(_.table==a1).map(_.rowIndex)

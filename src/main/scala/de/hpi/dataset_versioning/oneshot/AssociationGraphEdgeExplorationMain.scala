@@ -95,13 +95,13 @@ object AssociationGraphEdgeExplorationMain extends App {
   }
 
   def translateToCharString(sequence: IndexedSeq[Any]) = {
-    var curChar:Char = 65
+    var curChar:Int = 65
     val mapping = mutable.HashMap[Any,Char]()
     val chars = sequence.map(c => {
       if(mapping.contains(c))
         mapping(c)
       else {
-        mapping.put(c,curChar)
+        mapping.put(c,curChar.toChar)
         curChar +=1
         (curChar-1).toChar
       }

@@ -94,19 +94,19 @@ object AssociationGraphEdgeExplorationMain extends App {
     })
   }
 
-  def translateToCharString(sequence: IndexedSeq[Any]) = {
-    var curChar:Int = 65
-    val mapping = mutable.HashMap[Any,Char]()
+  def translateToInts(sequence: IndexedSeq[Any]) = {
+    var curChar:Int = 0
+    val mapping = mutable.HashMap[Any,Int]()
     val chars = sequence.map(c => {
       if(mapping.contains(c))
         mapping(c)
       else {
         mapping.put(c,curChar.toChar)
         curChar +=1
-        (curChar-1).toChar
+        (curChar-1)
       }
     })
-    chars.mkString
+    chars
   }
 
   def getAsFlatString(value: TupleReference[Any]) = {
@@ -114,7 +114,14 @@ object AssociationGraphEdgeExplorationMain extends App {
     val sequence = (IOService.STANDARD_TIME_FRAME_START.toEpochDay to IOService.STANDARD_TIME_FRAME_END.toEpochDay).map(l => {
       lineage.valueAt(LocalDate.ofEpochDay(l))
     })
-    translateToCharString(sequence)
+    val ints = translateToInts(sequence)
+    val start = 'A'
+    val end = 'Z'
+    ints.map(i => {
+      val second = start + i % (end-start)
+      val first = start + i / (end-start)
+      Seq(first.toChar,second.toChar).mkString
+    }).mkString
   }
 
   def serializeEdges(edges: collection.Seq[AssociationGraphEdge]) = {

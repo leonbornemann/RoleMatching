@@ -1,6 +1,10 @@
 package de.hpi.dataset_versioning.entropy
 
-case class MergeMatch(first: FieldLineage, second: FieldLineage) {
+import java.io.PrintWriter
+
+case class MergeMatch(first: FieldLineageAsCharacterString, second: FieldLineageAsCharacterString) {
+
+  val subdomain = "org.cityofchicago"
 
   val merged = first.mergeCompatible(second)
   val firstEntropy = first.defaultEntropy
@@ -18,5 +22,10 @@ case class MergeMatch(first: FieldLineage, second: FieldLineage) {
     f"${second.printWithEntropy}\n") //(${entropy(elem)}%1.3f) MERGE  $s (${entropy(s)}%1.3f) TO $merged (${entropy(merged)}%1.3f)")
 
   def entropyReduction = firstEntropy + secondEntropy - mergedEntropy
+
+  def exportActualTableMatch(targetPath:String) = {
+    val pr = new PrintWriter(targetPath)
+    new AssociationGraphExplorer().printInfoToFile(None,first.dttID(subdomain),second.dttID(subdomain),pr)
+  }
 
 }

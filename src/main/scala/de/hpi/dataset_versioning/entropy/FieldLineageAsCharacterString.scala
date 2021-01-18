@@ -1,15 +1,18 @@
 package de.hpi.dataset_versioning.entropy
 
+import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.entropy.EntropyShenanigansMain.f
 
 import scala.collection.mutable
 
-case class FieldLineage(lineage: String, label: String) {
+case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumber:Int = -1) {
+  def dttID(subdomain:String): DecomposedTemporalTableIdentifier = DecomposedTemporalTableIdentifier.fromShortString(subdomain,label)
+
   def printWithEntropy = println(toString + f"($defaultEntropy%1.3f)")
 
   def defaultEntropy = entropyV2
 
-  def mergeCompatible(other: FieldLineage) = {
+  def mergeCompatible(other: FieldLineageAsCharacterString) = {
     if (lineage.size != other.lineage.size)
       throw new AssertionError("not same size")
     val s1 = lineage
@@ -20,7 +23,7 @@ case class FieldLineage(lineage: String, label: String) {
       else if (s2(i) == '_') s1(i)
       else throw new AssertionError(s"not compatible at index ${i}")
     })
-    FieldLineage(newSequence.mkString, label + "&" + other.label)
+    FieldLineageAsCharacterString(newSequence.mkString, label + "&" + other.label)
   }
 
   //DEPRECATED:
@@ -74,6 +77,6 @@ case class FieldLineage(lineage: String, label: String) {
     transitions
   }
 
-  override def toString: String = s"$label:[" + lineage.mkString(",") + "]"
+  override def toString: String = s"$label:[" +lineage + "]"
 
 }

@@ -123,13 +123,18 @@ object AssociationGraphEdgeExplorationMain extends App {
   }
 
   def getTranslationMap(tupleReferences: Seq[TupleReference[Any]]) = {
-    val allValues = tupleReferences.flatMap(tr => tr.getDataTuple.head.getValueLineage.values.toSet).toSet
+    val allValuesSortedByFirstOccurrence = tupleReferences.flatMap(tr => tr.getDataTuple.head.getValueLineage)
+      .groupBy(_._2)
+      .map{case (k,v) => (k,v.minBy(_._1.toEpochDay)._1)}
+      .toSeq
+      .sortBy(_._2.toEpochDay)
+      .map(_._1)
     var curCharIndex:Int = 0
     val symbols = (65 to 90) ++ (97 to 122) ++ (192 to 214) ++ (223 to 246) ++ (256 to 328) ++ (330 to 447) ++ (452 to 591)
     val mapping = mutable.HashMap[Any,Char]()
     mapping.put(ReservedChangeValues.NOT_EXISTANT_COL,'_')
     mapping.put(ReservedChangeValues.NOT_EXISTANT_DATASET,'_')
-    allValues.foreach(c => {
+    allValuesSortedByFirstOccurrence.foreach(c => {
       if(!mapping.contains(c)){
         mapping.put(c,symbols(curCharIndex).toChar)
         curCharIndex +=1

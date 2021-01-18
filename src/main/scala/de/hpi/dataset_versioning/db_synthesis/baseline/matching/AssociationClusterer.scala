@@ -69,7 +69,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   }
 
   private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]) = {
-    if(IndexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
+    if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
       uncomputedEdgeCandidates.get.add(Set(firstMatchPartner.getUnionedOriginalTables.head,secondMatchPartner.getUnionedOriginalTables.head))
     } else if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner)) {
       val (curMatch,time) = executionTimeInSeconds(heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner))

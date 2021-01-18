@@ -161,7 +161,8 @@ object AssociationGraphEdgeExplorationMain extends App {
         val tupleValues = m.tupleReferences.map(getAsFlatString(_,map))
         val tupleIndices1 = m.tupleReferences.filter(_.table==a1).map(_.rowIndex)
         val tupleIndices2 = m.tupleReferences.filter(_.table==a2).map(_.rowIndex)
-        pr.println(e.firstMatchPartner,tupleIndices1.mkString(";"),e.secondMatchPartner,tupleIndices2.mkString(";"),tupleValues.mkString(";"))
+          val toPrint = s"${e.firstMatchPartner},${tupleIndices1.mkString(";")},${e.secondMatchPartner},${tupleIndices2.mkString(";")},${tupleValues.mkString(";")}"
+        pr.println(toPrint)
       })
       pr.flush()
     })

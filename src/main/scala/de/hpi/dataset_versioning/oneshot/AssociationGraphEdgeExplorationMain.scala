@@ -129,12 +129,13 @@ object AssociationGraphEdgeExplorationMain extends App {
       .toSeq
       .sortBy(_._2.toEpochDay)
       .map(_._1)
-      .filter(v => v!= ReservedChangeValues.NOT_EXISTANT_DATASET && v != ReservedChangeValues.NOT_EXISTANT_COL)
+      .filter(v => v!= ReservedChangeValues.NOT_EXISTANT_DATASET && v != ReservedChangeValues.NOT_EXISTANT_COL && ReservedChangeValues.NOT_EXISTANT_ROW != v)
     var curCharIndex:Int = 0
     val symbols = (65 to 90) ++ (97 to 122) ++ (192 to 214) ++ (223 to 246) ++ (256 to 328) ++ (330 to 447) ++ (452 to 591)
     val mapping = mutable.HashMap[Any,Char]()
     mapping.put(ReservedChangeValues.NOT_EXISTANT_COL,'_')
     mapping.put(ReservedChangeValues.NOT_EXISTANT_DATASET,'_')
+    mapping.put(ReservedChangeValues.NOT_EXISTANT_DATASET,'-')
     allValuesSortedByFirstOccurrence.foreach(c => {
       if(!mapping.contains(c)){
         mapping.put(c,symbols(curCharIndex).toChar)

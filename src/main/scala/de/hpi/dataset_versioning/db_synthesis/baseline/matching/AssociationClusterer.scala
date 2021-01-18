@@ -14,23 +14,24 @@ import java.io.PrintWriter
 import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import IndexProcessingMode._
 
 class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch],
                            heuristicMatchCalulator:DataBasedMatchCalculator,
-                           indexProcessingMode:IndexProcessingMode.Value = IndexProcessingMode.SERIALIZE_EDGE_CANDIDATE) extends StrictLogging {
+                           indexProcessingMode:IndexProcessingMode = SERIALIZE_EDGE_CANDIDATE) extends StrictLogging {
   def removeMatch(curMatch: TableUnionMatch[Int]) = ???
 
   def updateGraphAfterMatchExecution(curMatch: TableUnionMatch[Int], unionedTableSketch: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = ???
 
-  val recurseLogDepth = 1
-  logger.debug(s"Starting association clustering with ${unmatchedAssociations.size} associations --> ${gaussSum(unmatchedAssociations.size-1)} matches possible")
+  val recurseLogDepth = 0
+  logger.debug(s"Starting association clustering with mode $indexProcessingMode with ${unmatchedAssociations.size} associations --> ${gaussSum(unmatchedAssociations.size-1)} matches possible")
   val associationGraphEdgeWriter = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeFile)
   val matchTimeWriter = new PrintWriter(DBSynthesis_IOService.WORKING_DIR + "matchTimes.csv")
   matchTimeWriter.println(s"tableA,tableB,nrowsA,nrowsB,time[s]")
   var indexTimeInSeconds:Double = 0.0
   var matchTimeInSeconds:Double = 0.0
   var matchSkips = 0
-  var uncomputedEdgeCandidates = if(indexProcessingMode==IndexProcessingMode.SERIALIZE_EDGE_CANDIDATE) Some(new mutable.HashSet[Set[DecomposedTemporalTableIdentifier]]()) else None
+  var uncomputedEdgeCandidates = if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE) Some(new mutable.HashSet[Set[DecomposedTemporalTableIdentifier]]()) else None
 
   var tableGraphEdges = mutable.HashSet[AssociationGraphEdge]()
 
@@ -68,7 +69,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   }
 
   private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]) = {
-    if(IndexProcessingMode==IndexProcessingMode.SERIALIZE_EDGE_CANDIDATE){
+    if(IndexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
       uncomputedEdgeCandidates.get.add(Set(firstMatchPartner.getUnionedOriginalTables.head,secondMatchPartner.getUnionedOriginalTables.head))
     } else if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner)) {
       val (curMatch,time) = executionTimeInSeconds(heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner))
@@ -191,7 +192,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
     topLvlIndexSize = index.numLeafNodes
     logger.debug(s"starting to iterate through ${topLvlIndexSize} index leaf nodes")
     executeMatchesInIterator(it,index.wildCardBucket,0)
-    if(indexProcessingMode==IndexProcessingMode.SERIALIZE_EDGE_CANDIDATE){
+    if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
       logger.debug("Beginning serialization of edge candidates")
       val pr = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile)
       uncomputedEdgeCandidates.get.foreach(s => {

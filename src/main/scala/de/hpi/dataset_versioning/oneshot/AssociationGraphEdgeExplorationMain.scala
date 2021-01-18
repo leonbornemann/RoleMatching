@@ -135,7 +135,7 @@ object AssociationGraphEdgeExplorationMain extends App {
     val mapping = mutable.HashMap[Any,Char]()
     mapping.put(ReservedChangeValues.NOT_EXISTANT_COL,'_')
     mapping.put(ReservedChangeValues.NOT_EXISTANT_DATASET,'_')
-    mapping.put(ReservedChangeValues.NOT_EXISTANT_DATASET,'-')
+    mapping.put(ReservedChangeValues.NOT_EXISTANT_ROW,'-')
     allValuesSortedByFirstOccurrence.foreach(c => {
       if(!mapping.contains(c)){
         mapping.put(c,symbols(curCharIndex).toChar)

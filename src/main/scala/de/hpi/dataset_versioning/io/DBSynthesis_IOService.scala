@@ -9,7 +9,9 @@ import java.time.LocalDate
 import scala.reflect.io.Directory
 
 object DBSynthesis_IOService extends StrictLogging{
-  def getAssociationGraphEdgeFile = createParentDirs(new File(WOKRING_DIR + "associationGraphEdges.json"))
+  def getAssociationGraphEdgeCandidateFile = new File(WORKING_DIR + "associationGraphEdgeCandidates.json")
+
+  def getAssociationGraphEdgeFile = createParentDirs(new File(WORKING_DIR + "associationGraphEdges.json"))
 
   def getAssociationsWithChangesFile() = IOService.CUSTOM_METADATA_DIR + "associationsWithChanges.json"
 
@@ -140,7 +142,7 @@ object DBSynthesis_IOService extends StrictLogging{
   def DATABASE_ROOT_DIR = DB_SYNTHESIS_DIR + "/synthesizedDatabases/"
   def SKETCH_DIR = DB_SYNTHESIS_DIR + "/sketches/"
   def COLUMN_SKETCH_DIR = SKETCH_DIR + "/temporalColumns/"
-  def WOKRING_DIR = DB_SYNTHESIS_DIR + "/workingDir/"
+  def WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/"
 
   def dateToStr(date: LocalDate) = IOService.dateTimeFormatter.format(date)
 

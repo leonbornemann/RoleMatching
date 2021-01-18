@@ -82,8 +82,9 @@ object EntropyShenanigansMain extends App {
     .map(fls => MergeMatch(fls(0), fls(1)))
   val nonEqualMatches = mergeMatches.filter(m => m.first.lineage != m.second.lineage)
   val byDifference = nonEqualMatches.sortBy(m => -Seq(m.first.lineage.toSet.size,m.second.lineage.toSet.size).max)
-  byDifference.head.exportActualTableMatch(s"$WORKING_DIR/${byDifference.head.first.label}_MERGE_${byDifference.head.second.label}.txt")
-  byDifference.head.printShort
+  private val biggestAlphabetDifference: MergeMatch = byDifference.head
+  biggestAlphabetDifference.exportActualTableMatch(s"$WORKING_DIR/${biggestAlphabetDifference.first.label}_MERGE_${biggestAlphabetDifference.second.label}.txt")
+  biggestAlphabetDifference.printShort
   println(mergeMatches
     .map(a => (a.entropyReduction))
     .filter(_ >0)

@@ -31,6 +31,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   var indexTimeInSeconds:Double = 0.0
   var matchTimeInSeconds:Double = 0.0
   var matchSkips = 0
+  var matchesBasedOnWildcards = 0
   var uncomputedEdgeCandidates = if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE) Some(new mutable.HashSet[Set[DecomposedTemporalTableIdentifier]]()) else None
 
   var tableGraphEdges = mutable.HashSet[AssociationGraphEdge]()
@@ -82,9 +83,12 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
       if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
         if(!filterByValueSetAtTOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner)) {
           uncomputedEdgeCandidates.get.add(Set(firstMatchPartner.getUnionedOriginalTables.head, secondMatchPartner.getUnionedOriginalTables.head))
+          if(filterByValueSetAtTOverlap){
+            matchesBasedOnWildcards +=1
+          }
         } else{
-          if(matchSkips % 1000 == 0)
-            logger.debug(s"Skipped adding $matchSkips so far (${uncomputedEdgeCandidates.get.size} matches total) - skipped: ${100* matchSkips / uncomputedEdgeCandidates.get.size.toDouble}%")
+          if(matchSkips % 1000000 == 0)
+            logger.debug(s"Skipped adding $matchSkips so far due to no transition overlap (${uncomputedEdgeCandidates.get.size} matches total, of which $matchesBasedOnWildcards came from wildcard-matches)")
           matchSkips +=1
         }
       } else if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner) && (!filterByValueSetAtTOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner))) {

@@ -7,6 +7,14 @@ import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.{F
 import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
+  def nonWildcardValueTransitions: Set[(T, T)] = {
+    val vl = getValueLineage
+      .values
+      .filter(!isWildcard(_))
+      .toIndexedSeq
+    (1 until vl.size).map(i => (vl(i-1),vl(i))).toSet
+  }
+
 
   private def notWCOrEmpty(prevValue1: Option[T]): Boolean = {
     !prevValue1.isEmpty && !isWildcard(prevValue1.get)

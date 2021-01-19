@@ -39,6 +39,9 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
     .map(a => (a.asInstanceOf[TemporalDatabaseTableTrait[Int]],mutable.HashMap[TemporalDatabaseTableTrait[Int],TableUnionMatch[Int]]()))
     .toMap
   val matchesWithZeroScore = mutable.HashSet[Set[TemporalDatabaseTableTrait[Int]]]()
+  val nonWildcardValiuTransitionSets = unmatchedAssociations
+    .map(a => (a.asInstanceOf[TemporalDatabaseTableTrait[Int]], a.nonWildcardValueTransitions))
+    .toMap
   var nMatchesComputed = 0
   var processedNodes = 0
   var topLvlIndexSize = -1
@@ -58,41 +61,54 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
     existsWithScoreGreater0 || matchesWithZeroScore.contains(Set(firstMatchPartner,secondMatchPartner))
   }
 
-  def executePairwiseMatching(groupsWithTupleIndices: collection.IndexedSeq[TemporalDatabaseTableTrait[Int]]) = {
+  def executePairwiseMatching(groupsWithTupleIndices: collection.IndexedSeq[TemporalDatabaseTableTrait[Int]],filterByValueSetAtTOverlap:Boolean = false) = {
     for (i <- 0 until groupsWithTupleIndices.size) {
       for (j <- (i + 1) until groupsWithTupleIndices.size) {
         val firstMatchPartner = groupsWithTupleIndices(i)
         val secondMatchPartner = groupsWithTupleIndices(j)
-        calculateAndMatchIfNotPresent(firstMatchPartner, secondMatchPartner)
+        if(firstMatchPartner.getUnionedOriginalTables.head != secondMatchPartner.getUnionedOriginalTables.head) {
+          //can only happen due to a bug in change exporting currently
+          calculateAndMatchIfNotPresent(firstMatchPartner, secondMatchPartner,filterByValueSetAtTOverlap)
+        }
       }
     }
   }
 
-  private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]) = {
-    if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
-      uncomputedEdgeCandidates.get.add(Set(firstMatchPartner.getUnionedOriginalTables.head,secondMatchPartner.getUnionedOriginalTables.head))
-    } else if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner)) {
-      val (curMatch,time) = executionTimeInSeconds(heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner))
-      matchTimeWriter.println(s"${firstMatchPartner.getUnionedOriginalTables.head},${secondMatchPartner.getUnionedOriginalTables.head},${firstMatchPartner.nrows},${secondMatchPartner.nrows},$time")
-      matchTimeWriter.flush()
-      matchTimeInSeconds +=time
-      nMatchesComputed += 1
-      if (curMatch.evidence != 0) {
-        adjacencyList(curMatch.firstMatchPartner).put(curMatch.secondMatchPartner, curMatch)
-        adjacencyList(curMatch.secondMatchPartner).put(curMatch.firstMatchPartner, curMatch)
-        val newAssociationGraphEdge = AssociationGraphEdge(curMatch.firstMatchPartner.getUnionedOriginalTables.head, curMatch.secondMatchPartner.getUnionedOriginalTables.head, curMatch.evidence, curMatch.changeBenefit._1,curMatch.changeBenefit._2)
-        tableGraphEdges.add(newAssociationGraphEdge)
-        newAssociationGraphEdge.appendToWriter(associationGraphEdgeWriter,false,true,true)
+  def hasCommonTransition(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]): Boolean = {
+    nonWildcardValiuTransitionSets(firstMatchPartner).intersect(nonWildcardValiuTransitionSets(secondMatchPartner)).size>=1//get changeset in first and second and compare!
+  }
+
+  private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int], filterByValueSetAtTOverlap:Boolean = false) = {
+      if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
+        if(!filterByValueSetAtTOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner)) {
+          uncomputedEdgeCandidates.get.add(Set(firstMatchPartner.getUnionedOriginalTables.head, secondMatchPartner.getUnionedOriginalTables.head))
+        } else{
+          if(matchSkips % 1000 == 0)
+            logger.debug(s"Skipped adding $matchSkips so far (${uncomputedEdgeCandidates.get.size} matches total) - skipped: ${100* matchSkips / uncomputedEdgeCandidates.get.size.toDouble}%")
+          matchSkips +=1
+        }
+      } else if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner) && (!filterByValueSetAtTOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner))) {
+        val (curMatch,time) = executionTimeInSeconds(heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner))
+        matchTimeWriter.println(s"${firstMatchPartner.getUnionedOriginalTables.head},${secondMatchPartner.getUnionedOriginalTables.head},${firstMatchPartner.nrows},${secondMatchPartner.nrows},$time")
+        matchTimeWriter.flush()
+        matchTimeInSeconds +=time
+        nMatchesComputed += 1
+        if (curMatch.evidence != 0) {
+          adjacencyList(curMatch.firstMatchPartner).put(curMatch.secondMatchPartner, curMatch)
+          adjacencyList(curMatch.secondMatchPartner).put(curMatch.firstMatchPartner, curMatch)
+          val newAssociationGraphEdge = AssociationGraphEdge(curMatch.firstMatchPartner.getUnionedOriginalTables.head, curMatch.secondMatchPartner.getUnionedOriginalTables.head, curMatch.evidence, curMatch.changeBenefit._1,curMatch.changeBenefit._2)
+          tableGraphEdges.add(newAssociationGraphEdge)
+          newAssociationGraphEdge.appendToWriter(associationGraphEdgeWriter,false,true,true)
+        } else{
+          //register that we should not try this again, even though we had
+          matchesWithZeroScore.add(Set(firstMatchPartner,secondMatchPartner))
+        }
+        if(nMatchesComputed%1000==0){
+          logger.debug(s"Completed ${nMatchesComputed} match calculations out of ${gaussSum(unmatchedAssociations.size-1)} potential matches (${100*nMatchesComputed/gaussSum(unmatchedAssociations.size-1).toDouble}%)")
+        }
       } else{
-        //register that we should not try this again, even though we had
-        matchesWithZeroScore.add(Set(firstMatchPartner,secondMatchPartner))
+        matchSkips +=1
       }
-      if(nMatchesComputed%1000==0){
-        logger.debug(s"Completed ${nMatchesComputed} match calculations out of ${gaussSum(unmatchedAssociations.size-1)} potential matches (${100*nMatchesComputed/gaussSum(unmatchedAssociations.size-1).toDouble}%)")
-      }
-    } else{
-      matchSkips +=1
-    }
   }
 
   def executionTimeInSeconds[R](block: => R): (R,Double) = {
@@ -172,11 +188,11 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
       unmatchedAssociations
         .withFilter(a=> a !=wc)
         .foreach(a => {
-          calculateAndMatchIfNotPresent(wc,a)
+          calculateAndMatchIfNotPresent(wc,a,true)
         })
     })
     //calculate matches to all other wildcards
-    executePairwiseMatching(wildcardTables)
+    executePairwiseMatching(wildcardTables,true)
   }
 
   def initMatchGraph() = {
@@ -195,8 +211,14 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
     if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
       logger.debug("Beginning serialization of edge candidates")
       val pr = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile)
+      logger.debug(s"Serializing candidate edges for ${uncomputedEdgeCandidates.get.size} candidates")
+      val weirdEdges = uncomputedEdgeCandidates.get.filter(_.size != 2)
+      logger.debug(s"Found ${weirdEdges.size} weird edges:")
+      weirdEdges.foreach(s => logger.debug(s.toString()))
       uncomputedEdgeCandidates.get.foreach(s => {
         val res = s.toSeq
+        val first = res(0)
+        val second = if(res.size>1) res(1) else res(0)
         pr.println(AssociationGraphEdge(res(0),res(1),Integer.MIN_VALUE,Integer.MIN_VALUE,Integer.MIN_VALUE).toJson())
       })
       pr.close()

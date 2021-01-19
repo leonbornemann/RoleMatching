@@ -12,6 +12,10 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 trait TemporalDatabaseTableTrait[A] {
+  def nonWildcardValueTransitions:Set[(A,A)] = (0 until nrows).toSet.flatMap((i:Int) => {
+    val transitionsInTuple:Set[(A,A)] = getDataTuple(i).head.nonWildcardValueTransitions
+    transitionsInTuple
+  }:Set[(A,A)])
 
   def createNewTable(unionID: String,unionedTables: mutable.HashSet[Int], value: mutable.HashSet[DecomposedTemporalTableIdentifier], key: collection.IndexedSeq[SurrogateAttributeLineage], newNonKEyAttrLineage: AttributeLineage, newRows: ArrayBuffer[AbstractSurrogateBasedTemporalRow[A]]):TemporalDatabaseTableTrait[A]
 

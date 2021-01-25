@@ -1,16 +1,15 @@
 package de.hpi.dataset_versioning.entropy
 
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.entropy.EntropyShenanigansMain.f
 
 import scala.collection.mutable
 
 case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumber:Int = -1) {
   def dttID(subdomain:String): DecomposedTemporalTableIdentifier = DecomposedTemporalTableIdentifier.fromShortString(subdomain,label)
 
-  def printWithEntropy = println(toString + f"($defaultEntropy%1.3f)")
+  def printWithEntropy = println(toString + f" ($defaultEntropy%1.3f)")
 
-  def defaultEntropy = entropyV2
+  def defaultEntropy = entropyV7
 
   def mergeCompatible(other: FieldLineageAsCharacterString) = {
     if (lineage.size != other.lineage.size)
@@ -46,6 +45,14 @@ case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumb
     entropyV2(getTransitions(lineage, true) ++ getTransitions(lineage.reverse, true), lineage.length)
   }
 
+  def entropyV6 = {
+    entropyV2(getTransitions(lineage,false,true),lineage.length)
+  }
+
+  def entropyV7 = {
+    entropyV2(getTransitionsWildCardUnequalWildcard(lineage),lineage.length)
+  }
+
   def entropyV3: Double = {
     entropyV2(getTransitions(lineage, true), lineage.length)
   }
@@ -54,7 +61,7 @@ case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumb
     entropyV2(getTransitions(lineage), lineage.length)
   }
 
-  def entropyV2(transitions: mutable.TreeMap[(Char, Char), Int], lineageSize: Int): Double = {
+  def entropyV2(transitions: mutable.HashMap[Any, Int], lineageSize: Int): Double = {
     -transitions.values.map(count => {
       val pXI = count / (lineageSize - 1).toDouble
       pXI * log2(pXI)
@@ -63,11 +70,33 @@ case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumb
 
   def log2(a: Double) = math.log(a) / math.log(2)
 
-  def getTransitions(stringWithWildcards: String, countOnlyTrueChange: Boolean = false) = {
-    val stringWithoutWildcards = stringWithWildcards.filter(_ != '_')
-    var prev = stringWithoutWildcards(0)
-    val transitions = mutable.TreeMap[(Char, Char), Int]()
-    stringWithoutWildcards.tail.foreach(c => {
+  def getTransitionsWildCardUnequalWildcard(finalString:String) = {
+    var prev = finalString(0)
+    val transitions = mutable.HashMap[Any, Int]()
+    var curWCCount = 0
+    finalString.tail.foreach(c => {
+      val actualPrev = if(prev=='_') {
+        curWCCount+=1
+        s"WC_$curWCCount"
+      } else prev.toString
+      val actualCurrent = if(prev=='_') {
+        curWCCount+=1
+        s"WC_$curWCCount"
+      } else c.toString
+      val prevCount = transitions.getOrElseUpdate((actualPrev, actualCurrent), 0)
+      transitions((actualPrev, actualCurrent)) = prevCount + 1
+      prev = c
+    })
+    transitions
+  }
+
+  def getTransitions(stringWithWildcards: String,
+                     countOnlyTrueChange: Boolean = false,
+                     countWildcardsNormally:Boolean=false) = {
+    val finalString = if(!countWildcardsNormally) stringWithWildcards.filter(_ != '_') else stringWithWildcards
+    var prev = finalString(0)
+    val transitions = mutable.HashMap[Any, Int]()
+    finalString.tail.foreach(c => {
       if (!countOnlyTrueChange || c != prev) {
         val prevCount = transitions.getOrElseUpdate((prev, c), 0)
         transitions((prev, c)) = prevCount + 1

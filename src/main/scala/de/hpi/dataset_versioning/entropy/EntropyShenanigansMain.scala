@@ -34,25 +34,32 @@ object EntropyShenanigansMain extends App {
     "ABBBB_____",
     "AB________",
     "_____AB___",
-    "_____ABB__",
+    "_____ABB__"
   )
   mergeAllAndPrint(c, toMergeWithC)
 
-  val d = "ABCD____"
-  val e = "A_B_C_D_"
-  val f = "AABBCCDD"
-
-  val g = "AA__BB__"
-  val h = "AAAABBBB"
-  val i = "AACCBBCC"
-
-
-  val x = "ABBBB_____"
-  val y = "__BBBABBBB"
-  val z = "ABBBBABBBB"
-
-  val sequences = Seq(d, e, f, g, h, i, x, y, z).zipWithIndex.map { case (s, i) => FieldLineageAsCharacterString(s, s"#$i") }
-  sequences.foreach(_.printWithEntropy)
+  val d = "_____ABBBB_"
+  val toMergeWithD = IndexedSeq(
+    "_____ABB__Z",
+    "_____ABBBBB"
+  )
+  mergeAllAndPrint(d,toMergeWithD)
+  println()
+//  val d = "ABCD____"
+//  val e = "A_B_C_D_"
+//  val f = "AABBCCDD"
+//
+//  val g = "AA__BB__"
+//  val h = "AAAABBBB"
+//  val i = "AACCBBCC"
+//
+//
+//  val x = "ABBBB_____"
+//  val y = "__BBBABBBB"
+//  val z = "ABBBBABBBB"
+//
+//  val sequences = Seq(d, e, f, g, h, i, x, y, z).zipWithIndex.map { case (s, i) => FieldLineageAsCharacterString(s, s"#$i") }
+//  sequences.foreach(_.printWithEntropy)
   //sequences.last.mergeCompatible(sequences(sequences.size-2)).printWithEntropy
   //  val d = "ABCD_____"
   //  val e = "ABCD_D_D_"
@@ -80,9 +87,14 @@ object EntropyShenanigansMain extends App {
   private val mergeMatches: IndexedSeq[MergeMatch] = lineageMatches
     .filter(_.size == 2)
     .map(fls => MergeMatch(fls(0), fls(1)))
+  println(mergeMatches.size)
+  println(mergeMatches.filter(_.entropyReduction>0).size)
   val nonEqualMatches = mergeMatches.filter(m => m.first.lineage != m.second.lineage)
+  println(nonEqualMatches.size)
   val byDifference = nonEqualMatches.sortBy(m => -Seq(m.first.lineage.toSet.size,m.second.lineage.toSet.size).max)
   private val biggestAlphabetDifference: MergeMatch = byDifference.head
+  biggestAlphabetDifference.printShort
+  biggestAlphabetDifference.printActualTuples
   biggestAlphabetDifference.exportActualTableMatch(s"$WORKING_DIR/${biggestAlphabetDifference.first.label}_MERGE_${biggestAlphabetDifference.second.label}.txt")
   biggestAlphabetDifference.printShort
   println(mergeMatches

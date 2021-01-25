@@ -11,6 +11,7 @@ case class TimeInterval(begin:LocalDate,private val constructedEnd:Option[LocalD
   val end = if(constructedEnd.isDefined && constructedEnd.get == LocalDate.MAX) None else constructedEnd // convenience constructor, so that we can specify LocalDate.Max instead of None
 
   assert(!end.isDefined || end.get!=LocalDate.MAX)
+  assert(!begin.isAfter(endOrMax))
 
   def intersect(toMerge: TimeInterval) = {
     val newBegin = Seq(toMerge.begin,this.begin).max

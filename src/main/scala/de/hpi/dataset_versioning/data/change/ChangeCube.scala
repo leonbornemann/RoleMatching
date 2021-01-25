@@ -61,7 +61,7 @@ case class ChangeCube(datasetID:String,
     })
   }
 
-  def addChanges(changes: Seq[Change]) = {
+  def addChanges(changes: collection.Iterable[Change]) = {
     allChanges ++= changes
   }
 

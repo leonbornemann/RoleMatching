@@ -24,6 +24,18 @@ import scala.sys.process._
 
 object IOService extends StrictLogging{
 
+  def IDS_TO_FILTER = CUSTOM_METADATA_DIR + "/idsToIgnore/"
+
+  def getIdsToFilterOut() = {
+    val dir = new File(IDS_TO_FILTER)
+    dir.mkdirs()
+    dir
+      .listFiles()
+      .flatMap(f => Source.fromFile(f).getLines().toIndexedSeq)
+      .toSet
+  }
+
+
   def getTemporalTableBinaryFile(id: String, dttID: Option[DecomposedTemporalTableIdentifier]) = {
     if(!dttID.isDefined)
       createParentDirs(new File(s"$TEMPORAL_VIEW_TABLE_BINARY_DIR/$id.binary"))

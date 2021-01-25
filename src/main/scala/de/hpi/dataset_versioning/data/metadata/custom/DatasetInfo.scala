@@ -46,10 +46,12 @@ object DatasetInfo {
   }
 
   def readDatasetInfoBySubDomain = {
+    val idsToFilter = IOService.getIdsToFilterOut()
     Source.fromFile(IOService.getDatasetInfoFile)
       .getLines()
       .toSeq
       .tail
+      .filter(!idsToFilter.contains(_))
       .map(l => DatasetInfo.fromLine(l))
       .groupBy(_.subdomain)
   }

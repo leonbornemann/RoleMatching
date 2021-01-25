@@ -32,7 +32,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   var matchTimeInSeconds:Double = 0.0
   var matchSkips = 0
   var matchesBasedOnWildcards = 0
-  var uncomputedEdgeCandidates = if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE) Some(new mutable.HashSet[Set[DecomposedTemporalTableIdentifier]]()) else None
+  var edgeCandidates = if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE) Some(new mutable.HashSet[Set[DecomposedTemporalTableIdentifier]]()) else None
 
   var tableGraphEdges = mutable.HashSet[AssociationGraphEdge]()
 
@@ -40,7 +40,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
     .map(a => (a.asInstanceOf[TemporalDatabaseTableTrait[Int]],mutable.HashMap[TemporalDatabaseTableTrait[Int],TableUnionMatch[Int]]()))
     .toMap
   val matchesWithZeroScore = mutable.HashSet[Set[TemporalDatabaseTableTrait[Int]]]()
-  val nonWildcardValiuTransitionSets = unmatchedAssociations
+  val nonWildcardValueTransitionSets = unmatchedAssociations
     .map(a => (a.asInstanceOf[TemporalDatabaseTableTrait[Int]], a.nonWildcardValueTransitions))
     .toMap
   var nMatchesComputed = 0
@@ -76,19 +76,22 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   }
 
   def hasCommonTransition(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]): Boolean = {
-    nonWildcardValiuTransitionSets(firstMatchPartner).intersect(nonWildcardValiuTransitionSets(secondMatchPartner)).size>=1//get changeset in first and second and compare!
+    nonWildcardValueTransitionSets(firstMatchPartner).intersect(nonWildcardValueTransitionSets(secondMatchPartner)).size>=1//get changeset in first and second and compare!
   }
 
-  private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int], filterByValueSetAtTOverlap:Boolean = false) = {
+  private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int],
+                                            secondMatchPartner: TemporalDatabaseTableTrait[Int],
+                                            filterByValueSetAtTOverlap:Boolean = false) = {
       if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
-        if(!filterByValueSetAtTOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner)) {
-          uncomputedEdgeCandidates.get.add(Set(firstMatchPartner.getUnionedOriginalTables.head, secondMatchPartner.getUnionedOriginalTables.head))
+        val toAdd = Set(firstMatchPartner.getUnionedOriginalTables.head, secondMatchPartner.getUnionedOriginalTables.head)
+        if(!edgeCandidates.get.contains(toAdd) && (!filterByValueSetAtTOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner))) {
+          edgeCandidates.get.add(toAdd)
           if(filterByValueSetAtTOverlap){
             matchesBasedOnWildcards +=1
           }
         } else{
           if(matchSkips % 1000000 == 0)
-            logger.debug(s"Skipped adding $matchSkips so far due to no transition overlap (${uncomputedEdgeCandidates.get.size} matches total, of which $matchesBasedOnWildcards came from wildcard-matches)")
+            logger.debug(s"Skipped adding $matchSkips so far due to no transition overlap (${edgeCandidates.get.size} matches total, of which $matchesBasedOnWildcards came from wildcard-matches)")
           matchSkips +=1
         }
       } else if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner) && (!filterByValueSetAtTOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner))) {
@@ -196,6 +199,9 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
         })
     })
     //calculate matches to all other wildcards
+    if(isTopLvlCall){
+      logger.debug(s"Finished combining Wildcard-Bucket with all other Associations")
+    }
     executePairwiseMatching(wildcardTables,true)
   }
 
@@ -215,11 +221,11 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
     if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
       logger.debug("Beginning serialization of edge candidates")
       val pr = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile)
-      logger.debug(s"Serializing candidate edges for ${uncomputedEdgeCandidates.get.size} candidates")
-      val weirdEdges = uncomputedEdgeCandidates.get.filter(_.size != 2)
+      logger.debug(s"Serializing candidate edges for ${edgeCandidates.get.size} candidates")
+      val weirdEdges = edgeCandidates.get.filter(_.size != 2)
       logger.debug(s"Found ${weirdEdges.size} weird edges:")
       weirdEdges.foreach(s => logger.debug(s.toString()))
-      uncomputedEdgeCandidates.get.foreach(s => {
+      edgeCandidates.get.foreach(s => {
         val res = s.toSeq
         val first = res(0)
         val second = if(res.size>1) res(1) else res(0)

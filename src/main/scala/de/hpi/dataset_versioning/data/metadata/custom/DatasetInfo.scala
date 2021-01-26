@@ -51,8 +51,8 @@ object DatasetInfo {
       .getLines()
       .toSeq
       .tail
-      .filter(!idsToFilter.contains(_))
       .map(l => DatasetInfo.fromLine(l))
+      .filter(di => !idsToFilter.contains(di.id))
       .groupBy(_.subdomain)
   }
 }

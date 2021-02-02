@@ -11,8 +11,8 @@ import scala.collection.mutable.ArrayBuffer
 
 class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
                            associationsWithColumnIndex: collection.Set[(TemporalDatabaseTableTrait[A],Int)],
-                           val skipZeroChangeTuples:Boolean=true) extends StrictLogging{
-
+                           val skipZeroChangeTuples:Boolean=true) extends IterableTupleIndex[A] with StrictLogging{
+  assert(chosenTimestamps.size==1)
   //currently
   def numLeafNodes = rootNode.children.size
 
@@ -20,9 +20,9 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
     val file = new File("indexStats.csv")
     val pr = new PrintWriter(file)
     pr.println("NodeID,Timestamps,Node Values,#tables,#tuples,MostTuples_Rank_1,MostTuples_Rank_2,MostTuples_Rank_3,MostTuples_Rank_4,MostTuples_Rank_5")
-    val it = tupleGroupIterator
+    val it = tupleGroupIterator(true)
     var id = 0
-    logger.debug(s"Found ${wildCardBucket.size} Wildcards that need to be considered in every bucket")
+    logger.debug(s"Found ${allWildCardBuckets.map(_._2.size).sum} Wildcards that need to be considered in every bucket")
     it.foreach{case g =>
       val bytable = g.tuplesInNode.groupBy(_.table)
         .map(t => (t._1,t._2.map(_.rowIndex)))
@@ -40,10 +40,12 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
   }
 
 
-  val wildCardBucket = collection.mutable.ArrayBuffer[TupleReference[A]]()
+  val allWildCardBuckets = collection.mutable.HashMap[A,ArrayBuffer[TupleReference[A]]]()
 
-  def tupleGroupIterator :Iterator[TupleGroup[A]] = {
-    new TupleGroupIterator()
+  def tupleGroupIterator(skipWildCardBuckets: Boolean) :Iterator[TupleGroup[A]] = {
+    assert(skipWildCardBuckets)
+    if(!skipWildCardBuckets) throw new NotImplementedError()
+    new TupleGroupIterator(skipWildCardBuckets)
   }
 
   //build the index
@@ -52,25 +54,32 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
     for (rowIndex <- 0 until table.nrows)  {
       val observedChanges = table.getDataTuple(rowIndex).head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1
       if(observedChanges>0){
-        val allValuesAreWildcards = chosenTimestamps.forall(ts => table.fieldIsWildcardAt(rowIndex,colIndex,ts))
-        if(allValuesAreWildcards) {
-          wildCardBucket.addOne(TupleReference(table,rowIndex))
+        val curValue = table.fieldValueAtTimestamp(rowIndex,colIndex,chosenTimestamps.last)
+        val lastValueIsWildcard = table.wildcardValues.contains(curValue)
+        if(lastValueIsWildcard) {
+          val buffer = allWildCardBuckets.getOrElse(curValue,ArrayBuffer[TupleReference[A]]())
+          buffer.addOne(TupleReference(table,rowIndex))
         } else{
           rootNode.insert(table,rowIndex,colIndex,chosenTimestamps)
         }
       }
     }
   }
+
+  val allWildcards = allWildCardBuckets.values.toIndexedSeq.flatten
   //TODO: now the index is built, we should implement querying functions! and test the index I guess
-  class TupleGroupIterator() extends Iterator[TupleGroup[A]] {
+  class TupleGroupIterator(skipWildCardBuckets: Boolean) extends Iterator[TupleGroup[A]] {
     val treeIterator = rootNode.iterator
 
     override def hasNext: Boolean = treeIterator.hasNext
 
     override def next(): TupleGroup[A] = {
       val (keys,nextCollection) = treeIterator.next()
-      TupleGroup(chosenTimestamps,keys,nextCollection,wildCardBucket)
+      TupleGroup(chosenTimestamps,keys,nextCollection,allWildcards)
     }
   }
 
+  override def wildcardBuckets: IndexedSeq[TupleGroup[A]] = allWildCardBuckets.map{case (k,values) => {
+    TupleGroup(chosenTimestamps,IndexedSeq(k),IndexedSeq(),values)
+  }}.toIndexedSeq
 }

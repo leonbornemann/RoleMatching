@@ -65,6 +65,10 @@ class TupleSetIndex[A](private var tuples: IndexedSeq[TupleReference[A]],
       TupleGroup(indexedTimestamps,parentNodesKeys ++ Seq(key),tuples,wildcards)
     }
   }
+
+  override def wildcardBuckets: IndexedSeq[TupleGroup[A]] = wildcardKeyValues
+    .map(k => TupleGroup(indexedTimestamps,parentNodesKeys ++ Seq(k),IndexedSeq(),index.getOrElse(k,IndexedSeq())))
+    .toIndexedSeq
 }
 object TupleSetIndex{
 

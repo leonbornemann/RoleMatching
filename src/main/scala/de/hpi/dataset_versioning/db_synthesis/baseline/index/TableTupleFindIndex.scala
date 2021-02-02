@@ -63,4 +63,5 @@ class TableTupleFindIndex[A](sketchA: TemporalDatabaseTableTrait[A], sketchB: Te
     }
   }
 
+  override def wildcardBuckets: IndexedSeq[TupleGroup[A]] = ???
 }

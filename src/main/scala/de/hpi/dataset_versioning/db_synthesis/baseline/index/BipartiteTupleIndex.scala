@@ -8,18 +8,14 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 import java.lang.AssertionError
 import java.time.LocalDate
 
-class BipartiteTupleIndex(tablesLeft: IndexedSeq[TemporalDatabaseTableTrait[Int]],
-                          tablesRight: IndexedSeq[TemporalDatabaseTableTrait[Int]],
+class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
+                          tuplesRightUnfiltered: IndexedSeq[TupleReference[Int]],
                           ignoreZeroChangeTuples:Boolean = true) extends TupleIndexUtility[Int] with StrictLogging{
-  def getWildcardsLeft() = {
 
-  }
+  assert(tuplesLeftUnfiltered.toSet.intersect(tuplesRightUnfiltered.toSet).isEmpty)
 
-
-  assert(tablesLeft.toSet.intersect(tablesRight.toSet).isEmpty)
-
-  val tuplesLeft = getTuples(tablesLeft)
-  val tuplesRight = getTuples(tablesRight)
+  val tuplesLeft = getFilteredTuples(tuplesLeftUnfiltered)
+  val tuplesRight = getFilteredTuples(tuplesRightUnfiltered)
   val unusedTimestamps = getRelevantTimestamps(tuplesLeft).union(getRelevantTimestamps(tuplesRight))
   var indexFailed = true
 
@@ -81,11 +77,8 @@ class BipartiteTupleIndex(tablesLeft: IndexedSeq[TemporalDatabaseTableTrait[Int]
     wildcardsRight = wildcardValues.flatMap(wc => rightGroups(wc)).toIndexedSeq
   }
 
-  private def getTuples(tables:IndexedSeq[TemporalDatabaseTableTrait[Int]]) = {
-    tables.flatMap(t => (0 until t.nrows)
-      .withFilter(i => !ignoreZeroChangeTuples || t.getDataTuple(i).head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1>0)
-      .map(i => new TupleReference[Int](t, i))
-    )
+  private def getFilteredTuples(tuples:IndexedSeq[TupleReference[Int]]) = {
+    tuples.filter(tr => !ignoreZeroChangeTuples || tr.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1>0)
   }
 
   def getBipartiteTupleGroupIterator():Iterator[BipartiteTupleGroup[Int]] = {
@@ -95,7 +88,6 @@ class BipartiteTupleIndex(tablesLeft: IndexedSeq[TemporalDatabaseTableTrait[Int]
       BipartiteTupleGroupIterator()
     }
   }
-
 
   case class BipartiteTupleGroupIterator() extends Iterator[BipartiteTupleGroup[Int]]{
     val keys = leftGroups.keySet.union(rightGroups.keySet)

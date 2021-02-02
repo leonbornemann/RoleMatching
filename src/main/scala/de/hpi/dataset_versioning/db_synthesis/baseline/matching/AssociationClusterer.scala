@@ -6,32 +6,37 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.config.InitialMatchinStra
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.index.{MostDistinctTimestampIndexBuilder, TupleGroup, TupleSetIndex}
+import de.hpi.dataset_versioning.db_synthesis.baseline.index.{BipartiteTupleIndex, MostDistinctTimestampIndexBuilder, TupleGroup, TupleSetIndex}
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.IndexProcessingMode.IndexProcessingMode
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
-import java.io.PrintWriter
+import java.io.{FileWriter, PrintWriter}
 import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import IndexProcessingMode._
 
-class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch],
+class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch],
                            heuristicMatchCalulator:DataBasedMatchCalculator,
+                           recurseLogDepth:Int = 0,
+                           autoFlush:Boolean = false,
                            indexProcessingMode:IndexProcessingMode = SERIALIZE_EDGE_CANDIDATE) extends StrictLogging {
+
   def removeMatch(curMatch: TableUnionMatch[Int]) = ???
 
   def updateGraphAfterMatchExecution(curMatch: TableUnionMatch[Int], unionedTableSketch: SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch) = ???
 
-  val recurseLogDepth = 0
   logger.debug(s"Starting association clustering with mode $indexProcessingMode with ${unmatchedAssociations.size} associations --> ${gaussSum(unmatchedAssociations.size-1)} matches possible")
-  val associationGraphEdgeWriter = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeFile)
+  val associationGraphEdgeWriter = new PrintWriter(new FileWriter(DBSynthesis_IOService.getAssociationGraphEdgeFile),autoFlush)
   val matchTimeWriter = new PrintWriter(DBSynthesis_IOService.WORKING_DIR + "matchTimes.csv")
   matchTimeWriter.println(s"tableA,tableB,nrowsA,nrowsB,time[s]")
   var indexTimeInSeconds:Double = 0.0
   var matchTimeInSeconds:Double = 0.0
   var matchSkips = 0
   var matchesBasedOnWildcards = 0
+  var pairwiseInnerLoopExecutions = 0
+  var calculateAndMatchIfNotPresentCalls = 0
+
   var edgeCandidates = if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE) Some(new mutable.HashSet[Set[DecomposedTemporalTableIdentifier]]()) else None
 
   var tableGraphEdges = mutable.HashSet[AssociationGraphEdge]()
@@ -65,6 +70,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
   def executePairwiseMatching(groupsWithTupleIndices: collection.IndexedSeq[TemporalDatabaseTableTrait[Int]],filterByValueSetAtTOverlap:Boolean = false) = {
     for (i <- 0 until groupsWithTupleIndices.size) {
       for (j <- (i + 1) until groupsWithTupleIndices.size) {
+        pairwiseInnerLoopExecutions +=1
         val firstMatchPartner = groupsWithTupleIndices(i)
         val secondMatchPartner = groupsWithTupleIndices(j)
         if(firstMatchPartner.getUnionedOriginalTables.head != secondMatchPartner.getUnionedOriginalTables.head) {
@@ -81,12 +87,13 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
 
   private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int],
                                             secondMatchPartner: TemporalDatabaseTableTrait[Int],
-                                            filterByValueSetAtTOverlap:Boolean = false) = {
-      if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
+                                            filterByCommonTransitionOverlap:Boolean = false) = {
+    calculateAndMatchIfNotPresentCalls +=1
+    if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
         val toAdd = Set(firstMatchPartner.getUnionedOriginalTables.head, secondMatchPartner.getUnionedOriginalTables.head)
-        if(!edgeCandidates.get.contains(toAdd) && (!filterByValueSetAtTOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner))) {
+        if(!edgeCandidates.get.contains(toAdd) && (!filterByCommonTransitionOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner))) {
           edgeCandidates.get.add(toAdd)
-          if(filterByValueSetAtTOverlap){
+          if(filterByCommonTransitionOverlap){
             matchesBasedOnWildcards +=1
           }
         } else{
@@ -94,7 +101,7 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
             logger.debug(s"Skipped adding $matchSkips so far due to no transition overlap (${edgeCandidates.get.size} matches total, of which $matchesBasedOnWildcards came from wildcard-matches)")
           matchSkips +=1
         }
-      } else if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner) && (!filterByValueSetAtTOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner))) {
+      } else if (!matchWasAlreadyCalculated(firstMatchPartner, secondMatchPartner) && (!filterByCommonTransitionOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner))) {
         val (curMatch,time) = executionTimeInSeconds(heuristicMatchCalulator.calculateMatch(firstMatchPartner, secondMatchPartner))
         matchTimeWriter.println(s"${firstMatchPartner.getUnionedOriginalTables.head},${secondMatchPartner.getUnionedOriginalTables.head},${firstMatchPartner.nrows},${secondMatchPartner.nrows},$time")
         matchTimeWriter.flush()
@@ -145,6 +152,49 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
       logger.debug(str)
   }
 
+  def calculatePotentialWildcardToOtherMatches(wildcardTables: IndexedSeq[TemporalDatabaseTableTrait[Int]],
+                                               unmatchedAssociations: collection.Set[TemporalDatabaseTableTrait[Int]]) = {
+    val wcTableSet = wildcardTables.toSet
+    val (index,indexTime) = executionTimeInSeconds(new BipartiteTupleIndex(wildcardTables,unmatchedAssociations.filter(!wcTableSet.contains(_)).toIndexedSeq))
+    indexTimeInSeconds +=indexTime
+    if(index.indexFailed){
+      wildcardTables.foreach(wc => {
+        //calculate matches to all other association tables:
+        unmatchedAssociations
+          .withFilter(a=> a !=wc)
+          .foreach(a => {
+            calculateAndMatchIfNotPresent(wc,a,true)
+          })
+      })
+      //calculate matches to all other wildcards
+    } else {
+      val groupIterator = index.getBipartiteTupleGroupIterator()
+      val wildcardsLeft = index.wildcardsLeft.map(_.table).toSet
+      val wildcardsRight = index.wildcardsRight.map(_.table).toSet
+      groupIterator.foreach(g => {
+        val tablesLeft = g.tuplesLeft.map(_.table).toSet
+        val tablesRight = g.tuplesRight.map(_.table).toSet
+        if(tablesLeft.size>0){
+          matchAllInBipartitePair(tablesLeft,wildcardsRight)
+        }
+        if(tablesRight.size>0){
+          matchAllInBipartitePair(tablesRight,wildcardsLeft)
+        }
+        if(tablesLeft.size>0 && tablesRight.size>0){
+          matchAllInBipartitePair(tablesLeft,tablesRight)
+        }
+      })
+    }
+  }
+
+  private def matchAllInBipartitePair(tablesLeft: Set[TemporalDatabaseTableTrait[Int]],tablesRight:Set[TemporalDatabaseTableTrait[Int]]) = {
+    tablesLeft.foreach(tLeft => {
+      tablesRight.foreach(tRight => {
+        calculateAndMatchIfNotPresent(tLeft, tRight)
+      })
+    })
+  }
+
   def executeMatchesInIterator(it: Iterator[TupleGroup[Int]],
                                wildCardNodes: Iterable[TupleReference[Int]],
                                recurseDepth:Int):Unit = {
@@ -183,22 +233,18 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
         logger.debug(s"FInished $processedNodes top lvl nodes out of $topLvlIndexSize (${100*processedNodes/topLvlIndexSize.toDouble}%)")
       }
     }}
+    //TODO: change this from table to tuple only!
+    val wildcardTables = wildCardNodes
+      .map(_.table)
+      .toSet
+      .toIndexedSeq
+    //TODO: build double-sided index to determine matches
     if(isTopLvlCall) {
       logger.debug(s"Finished Index-Based initial matching, resulting in ${nMatchesComputed} checked matches, of which ${adjacencyList.map(_._2.size).sum / 2} have a score > 0")
       logger.debug("Begin executing Wildcard matches FOR TOP-LVL")
+      logger.debug(s"Found ${wildcardTables.size} wildcard tables")
     }
-    val wildcardTables = wildCardNodes
-      .map(_.table)
-      .toIndexedSeq
-    wildcardTables.foreach(wc => {
-      //calculate matches to all other association tables:
-      unmatchedAssociations
-        .withFilter(a=> a !=wc)
-        .foreach(a => {
-          calculateAndMatchIfNotPresent(wc,a,true)
-        })
-    })
-    //calculate matches to all other wildcards
+    calculatePotentialWildcardToOtherMatches(wildcardTables,unmatchedAssociations.toSet)
     if(isTopLvlCall){
       logger.debug(s"Finished combining Wildcard-Bucket with all other Associations")
     }
@@ -211,13 +257,14 @@ class AssociationClusterer(unmatchedAssociations: mutable.HashSet[SurrogateBased
     val (index,time) = executionTimeInSeconds(indexBuilder.buildTableIndexOnNonKeyColumns())
     indexTimeInSeconds +=time
     val it = index.tupleGroupIterator
-    //index.serializeDetailedStatistics()
     if(GLOBAL_CONFIG.SINGLE_LAYER_INDEX){
       logger.debug("We are currently using a single-layered index and the following code relies on this!")
     }
     topLvlIndexSize = index.numLeafNodes
     logger.debug(s"starting to iterate through ${topLvlIndexSize} index leaf nodes")
     executeMatchesInIterator(it,index.wildCardBucket,0)
+    logger.debug(s"Finished with $pairwiseInnerLoopExecutions num inner pairwise matching loop executions")
+    logger.debug(s"Finished with $calculateAndMatchIfNotPresentCalls num calls to calculateAndMatchIfNotPresent")
     if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE){
       logger.debug("Beginning serialization of edge candidates")
       val pr = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile)

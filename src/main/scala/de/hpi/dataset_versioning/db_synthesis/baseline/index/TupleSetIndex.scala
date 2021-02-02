@@ -15,7 +15,7 @@ class TupleSetIndex[A](private var tuples: IndexedSeq[TupleReference[A]],
   if(ignoreTuplesWithNoChanges)
     tuples = tuples.filter(a => a.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1 > 0)
 
-  val indexableTimestamps = getRelevantTimestamps.diff(parentNodesTimestamps.toSet)
+  val indexableTimestamps = getRelevantTimestamps(tuples).diff(parentNodesTimestamps.toSet)
 
   var indexTimestamp:LocalDate = null
   var index:Map[A, IndexedSeq[TupleReference[A]]] = null
@@ -36,18 +36,6 @@ class TupleSetIndex[A](private var tuples: IndexedSeq[TupleReference[A]],
   }
 
   def indexBuildWasSuccessfull = indexTimestamp!=null
-
-  def getField(tupleReference: TupleReference[A]) = tupleReference.table
-    .getDataTuple(tupleReference.rowIndex).head
-
-  private def getRelevantTimestamps = {
-    tuples
-      .map(r => {
-        val a = getField(r)
-        a.allTimestamps.toSet
-      }).flatten
-      .toSet
-  }
 
   def getBestTimestamp(relevantTimestamps: Set[LocalDate]) = {
     relevantTimestamps.map(ts => {

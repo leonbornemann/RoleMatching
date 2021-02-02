@@ -47,6 +47,26 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
       val combinationsAfterSplit = nonWildCardCombinations + wildcardsLeftSum + wildcardsRightSum
       if(combinationsAfterSplit>priorCombinations){
         logger.debug(s"This is definisoundtely a bug: $priorCombinations $combinationsAfterSplit")
+        println("Left")
+        tuplesLeft.foreach(tr => println(tr.getDataTuple.head.getValueLineage))
+        println("Right")
+        tuplesRight.foreach(tr => println(tr.getDataTuple.head.getValueLineage))
+        println()
+        println(priorCombinations)
+        println(combinationsAfterSplit)
+        println(t)
+        println("Left groups")
+        leftGroups.foreach{case (k,v) => {
+          println("----------------------")
+          println(k)
+          v.foreach(tr => println(tr.getDataTuple.head.getValueLineage))
+        }}
+        println("right Groups")
+        rightGroups.foreach{case (k,v) => {
+          println("----------------------")
+          println(k)
+          v.foreach(tr => println(tr.getDataTuple.head.getValueLineage))
+        }}
       }
       assert(combinationsAfterSplit<=priorCombinations)
       (t,combinationsAfterSplit)

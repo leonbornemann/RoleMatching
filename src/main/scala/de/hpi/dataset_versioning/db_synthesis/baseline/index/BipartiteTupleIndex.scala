@@ -66,7 +66,7 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
   var rightGroups:Map[Int, IndexedSeq[TupleReference[Int]]] = null
   var wildcardsLeft: IndexedSeq[TupleReference[Int]] = null
   var wildcardsRight: IndexedSeq[TupleReference[Int]] = null
-  if(curBestSplitTimestamp.isDefined)
+  if(curBestSplitTimestamp.isEmpty)
     indexFailed = false
   else {
     splitT = curBestSplitTimestamp.get._1

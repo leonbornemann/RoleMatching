@@ -45,36 +45,14 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
       val wildcardsLeftSum = wildcards.map(wc => leftGroups.getOrElse(wc,IndexedSeq()).size * tuplesRight.size).sum
       val wildcardsRightSum = wildcards.map(wc => rightGroups.getOrElse(wc,IndexedSeq()).size * tuplesLeft.size).sum
       val combinationsAfterSplit = nonWildCardCombinations + wildcardsLeftSum + wildcardsRightSum
-      if(combinationsAfterSplit>priorCombinations){
-        logger.debug(s"This is definisoundtely a bug: $priorCombinations $combinationsAfterSplit")
-        println("Left")
-        tuplesLeft.foreach(tr => println(tr.getDataTuple.head.getValueLineage))
-        println("Right")
-        tuplesRight.foreach(tr => println(tr.getDataTuple.head.getValueLineage))
-        println()
-        println(priorCombinations)
-        println(combinationsAfterSplit)
-        println(t)
-        println(s"wildcards : $wildcards")
-        println("Left groups")
-        leftGroups.foreach{case (k,v) => {
-          println("----------------------")
-          println(k)
-          v.foreach(tr => println(tr.getDataTuple.head.getValueLineage))
-        }}
-        println("right Groups")
-        rightGroups.foreach{case (k,v) => {
-          println("----------------------")
-          println(k)
-          v.foreach(tr => println(tr.getDataTuple.head.getValueLineage))
-        }}
-      }
-      assert(combinationsAfterSplit<=priorCombinations)
       (t,combinationsAfterSplit)
     }).toIndexedSeq
       .sortBy(_._2)
       .head
-    Some(bestTimestamp)
+    if(bestTimestamp._2>=priorCombinations)
+      None
+    else
+      Some(bestTimestamp)
   }
 
   //just a single layer for now:

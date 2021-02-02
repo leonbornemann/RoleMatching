@@ -242,26 +242,27 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
       oldIndex.wildcardBuckets.head.valuesAtTimestamps,
       IndexedSeq(),
       oldIndex.wildcardBuckets.flatMap(_.wildcardTuples))
-    val wildcardTableSet = wildCardBucket
-      .wildcardTuples
-      .map(_.table)
-      .toSet
-    val wildcardTables = wildcardTableSet.toIndexedSeq
-    //TODO: build double-sided index to determine matches
-    if(isTopLvlCall) {
-      logger.debug(s"Finished Index-Based initial matching, resulting in ${nMatchesComputed} checked matches, of which ${adjacencyList.map(_._2.size).sum / 2} have a score > 0")
-      logger.debug("Begin executing Wildcard matches FOR TOP-LVL")
-      logger.debug(s"Found ${wildcardTables.size} wildcard tables")
-    }
-    val nonWildCards = oldIndex
-      .tupleGroupIterator(true)
-      .toIndexedSeq
-      .flatMap(_.tuplesInNode.filter(tr => !wildcardTableSet.contains(tr.table)))
-    calculatePotentialWildcardToOtherMatches(wildCardBucket.wildcardTuples.toIndexedSeq,nonWildCards)
-    if(isTopLvlCall){
-      logger.debug(s"Finished combining Wildcard-Bucket with all other Associations")
-    }
     if(!wildCardBucket.wildcardTuples.isEmpty){
+      val wildcardTableSet = wildCardBucket
+        .wildcardTuples
+        .map(_.table)
+        .toSet
+      val wildcardTables = wildcardTableSet.toIndexedSeq
+      //TODO: build double-sided index to determine matches
+      if(isTopLvlCall) {
+        logger.debug(s"Finished Index-Based initial matching, resulting in ${nMatchesComputed} checked matches, of which ${adjacencyList.map(_._2.size).sum / 2} have a score > 0")
+        logger.debug("Begin executing Wildcard matches FOR TOP-LVL")
+        logger.debug(s"Found ${wildcardTables.size} wildcard tables")
+      }
+      val nonWildCards = oldIndex
+        .tupleGroupIterator(true)
+        .toIndexedSeq
+        .flatMap(_.tuplesInNode.filter(tr => !wildcardTableSet.contains(tr.table)))
+      calculatePotentialWildcardToOtherMatches(wildCardBucket.wildcardTuples.toIndexedSeq,nonWildCards)
+      if(isTopLvlCall){
+        logger.debug(s"Finished combining Wildcard-Bucket with all other Associations")
+      }
+      //WC-TO-WC matches:
       val (newIndex,time) = executionTimeInSeconds(new TupleSetIndex[Int]((wildCardBucket.wildcardTuples.toIndexedSeq),
         wildCardBucket.chosenTimestamps.toIndexedSeq,
         wildCardBucket.valuesAtTimestamps,
@@ -269,6 +270,7 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
         true))
       indexTimeInSeconds += time
       executeMatchesInIterator(newIndex,recurseDepth+1)
+
     }
   }
 

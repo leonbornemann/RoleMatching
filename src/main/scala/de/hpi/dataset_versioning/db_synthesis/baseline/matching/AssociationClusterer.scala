@@ -67,7 +67,7 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
     existsWithScoreGreater0 || matchesWithZeroScore.contains(Set(firstMatchPartner,secondMatchPartner))
   }
 
-  def executePairwiseMatching(groupsWithTupleIndices: collection.IndexedSeq[TemporalDatabaseTableTrait[Int]],filterByValueSetAtTOverlap:Boolean = false) = {
+  def executePairwiseMatching(groupsWithTupleIndices: collection.IndexedSeq[TemporalDatabaseTableTrait[Int]], filterByCommonTransitionOverlap:Boolean = false) = {
     for (i <- 0 until groupsWithTupleIndices.size) {
       for (j <- (i + 1) until groupsWithTupleIndices.size) {
         pairwiseInnerLoopExecutions +=1
@@ -75,7 +75,7 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
         val secondMatchPartner = groupsWithTupleIndices(j)
         if(firstMatchPartner.getUnionedOriginalTables.head != secondMatchPartner.getUnionedOriginalTables.head) {
           //can only happen due to a bug in change exporting currently
-          calculateAndMatchIfNotPresent(firstMatchPartner, secondMatchPartner,filterByValueSetAtTOverlap)
+          calculateAndMatchIfNotPresent(firstMatchPartner, secondMatchPartner,filterByCommonTransitionOverlap)
         }
       }
     }
@@ -226,10 +226,10 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
           executeMatchesInIterator(newIndex,recurseDepth+1)
         } else {
           maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Executing pairwise matching with ${groupsWithTupleIndices.size} because we can't refine the index anymore [Recurse Depth:$recurseDepth]",recurseDepth)
-          executePairwiseMatching(groupsWithTupleIndices.map(_._1))
+          executePairwiseMatching(groupsWithTupleIndices.map(_._1),false)
         }
       } else {
-        executePairwiseMatching(groupsWithTupleIndices.map(_._1))
+        executePairwiseMatching(groupsWithTupleIndices.map(_._1),false)
       }
       if(isTopLvlCall)
         processedNodes +=1
@@ -269,8 +269,10 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
         wildCardBucket.wildcardTuples.head.table.wildcardValues.toSet,
         true))
       indexTimeInSeconds += time
-      executeMatchesInIterator(newIndex,recurseDepth+1)
-
+      if(newIndex.indexBuildWasSuccessfull)
+        executeMatchesInIterator(newIndex,recurseDepth+1)
+      else
+        executePairwiseMatching(wildcardTableSet.toIndexedSeq,false)
     }
   }
 
@@ -294,7 +296,13 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
       val weirdEdges = edgeCandidates.get.filter(_.size != 2)
       logger.debug(s"Found ${weirdEdges.size} weird edges:")
       weirdEdges.foreach(s => logger.debug(s.toString()))
-      edgeCandidates.get.foreach(s => {
+      val byID = unmatchedAssociations.map(a => (a.getUnionedOriginalTables.head,a)).toMap
+      val filteredByCommonTransition = edgeCandidates.get.filter(e => e.size==2 && {
+        val ids = e.toSeq
+        hasCommonTransition(byID(ids(0)),byID(ids(1)))
+      })
+      logger.debug(s"Retained ${filteredByCommonTransition.size} out of ${edgeCandidates.get.size} edges after filtering by common transition existence")
+      filteredByCommonTransition.foreach(s => {
         val res = s.toSeq
         val first = res(0)
         val second = if(res.size>1) res(1) else res(0)

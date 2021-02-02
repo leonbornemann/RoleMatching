@@ -73,8 +73,8 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
     wildcardValues = tuplesLeft.head.table.wildcardValues.toSet
     leftGroups = tuplesLeft.groupBy(_.getDataTuple.head.valueAt(splitT))
     rightGroups = tuplesRight.groupBy(_.getDataTuple.head.valueAt(splitT))
-    wildcardsLeft = wildcardValues.flatMap(wc => leftGroups(wc)).toIndexedSeq
-    wildcardsRight = wildcardValues.flatMap(wc => rightGroups(wc)).toIndexedSeq
+    wildcardsLeft = wildcardValues.flatMap(wc => leftGroups.getOrElse(wc,IndexedSeq())).toIndexedSeq
+    wildcardsRight = wildcardValues.flatMap(wc => rightGroups.getOrElse(wc,IndexedSeq())).toIndexedSeq
   }
 
   private def getFilteredTuples(tuples:IndexedSeq[TupleReference[Int]]) = {

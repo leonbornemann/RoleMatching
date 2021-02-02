@@ -150,7 +150,7 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
     sb.toString()
   }
 
-  def nonZeroScoreMatches = tableGraphEdges.size
+  def nonZeroScoreMatches = if(indexProcessingMode==SERIALIZE_EDGE_CANDIDATE) edgeCandidates.get.size else tableGraphEdges.size
   def maybeLog(str: String, recurseDepth: Int) = {
     if(recurseDepth<=recurseLogDepth)
       logger.debug(str)

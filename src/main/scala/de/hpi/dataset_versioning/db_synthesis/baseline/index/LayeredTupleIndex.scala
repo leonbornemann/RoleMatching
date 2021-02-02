@@ -54,10 +54,10 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
     for (rowIndex <- 0 until table.nrows)  {
       val observedChanges = table.getDataTuple(rowIndex).head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1
       if(observedChanges>0){
-        val curValue = table.fieldValueAtTimestamp(rowIndex,colIndex,chosenTimestamps.last)
-        val lastValueIsWildcard = table.wildcardValues.contains(curValue)
+        val valueAtLastChosenTs = table.fieldValueAtTimestamp(rowIndex,colIndex,chosenTimestamps.last)
+        val lastValueIsWildcard = table.wildcardValues.contains(valueAtLastChosenTs)
         if(lastValueIsWildcard) {
-          val buffer = allWildCardBuckets.getOrElse(curValue,ArrayBuffer[TupleReference[A]]())
+          val buffer = allWildCardBuckets.getOrElseUpdate(valueAtLastChosenTs,ArrayBuffer[TupleReference[A]]())
           buffer.addOne(TupleReference(table,rowIndex))
         } else{
           rootNode.insert(table,rowIndex,colIndex,chosenTimestamps)

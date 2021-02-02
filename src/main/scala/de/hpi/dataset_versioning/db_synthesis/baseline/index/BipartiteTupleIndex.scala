@@ -17,7 +17,7 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
   val tuplesLeft = getFilteredTuples(tuplesLeftUnfiltered)
   val tuplesRight = getFilteredTuples(tuplesRightUnfiltered)
   val unusedTimestamps = getRelevantTimestamps(tuplesLeft).union(getRelevantTimestamps(tuplesRight))
-  var indexFailed = true
+  var indexFailed = false
 
   def getPriorEntropy(tuplesLeft: IndexedSeq[TupleReference[Int]], tuplesRight: IndexedSeq[TupleReference[Int]]) = {
     val pLeft = tuplesLeft.size / (tuplesLeft.size +tuplesRight.size).toDouble
@@ -66,8 +66,9 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
   var wildcardsLeft: IndexedSeq[TupleReference[Int]] = null
   var wildcardsRight: IndexedSeq[TupleReference[Int]] = null
   if(curBestSplitTimestamp.isEmpty)
-    indexFailed = false
+    indexFailed = true
   else {
+    indexFailed=false
     splitT = curBestSplitTimestamp.get._1
     wildcardValues = tuplesLeft.head.table.wildcardValues.toSet
     leftGroups = tuplesLeft.groupBy(_.getDataTuple.head.valueAt(splitT))

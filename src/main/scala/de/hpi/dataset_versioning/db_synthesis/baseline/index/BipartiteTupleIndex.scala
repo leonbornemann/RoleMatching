@@ -55,6 +55,7 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
         println(priorCombinations)
         println(combinationsAfterSplit)
         println(t)
+        println(s"wildcards : $wildcards")
         println("Left groups")
         leftGroups.foreach{case (k,v) => {
           println("----------------------")

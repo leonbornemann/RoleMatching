@@ -2,7 +2,9 @@ package de.hpi.dataset_versioning.db_synthesis.preparation
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{DataBasedMatchCalculator, FieldLineageMatchGraph}
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.db_synthesis.preparation.OptimizationInputExportMain.{logger, subdomain}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
@@ -44,6 +46,15 @@ class OptimizationInputExporter(subdomain:String) extends StrictLogging{
       val (bcnfReferenceTable, _) = tt.project(bcnf, Seq())
       bcnfReferenceTable.writeToStandardOptimizationInputFile
     })
+    //for every association: also export self-matchings:
+    byBcnf.values
+      .flatten
+      .foreach(a => {
+        val table = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(a.id)
+        val tuples = table.tupleReferences
+        val graph = new FieldLineageMatchGraph[Any](tuples)
+        InternalFieldLineageEdges(a.id,graph.edges.toIndexedSeq).writeToStandardFile()
+      })
   }
 
 }

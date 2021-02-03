@@ -13,6 +13,18 @@ case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnf
 }
 
 object DecomposedTemporalTableIdentifier extends JsonReadable[DecomposedTemporalTableIdentifier]{
+
+  def fromCompositeID(compositeID: String) = {
+    val dotLocations = compositeID
+      .zipWithIndex
+      .filter(t => t._1=='.')
+      .map(_._2)
+    val secondToLastDot = dotLocations(dotLocations.size-2)
+    val subdomain = compositeID.substring(0,secondToLastDot)
+    val shortString = compositeID.substring(secondToLastDot+1,compositeID.length)
+    fromShortString(subdomain,shortString)
+  }
+
   def fromShortString(subdomain: String, str: String): DecomposedTemporalTableIdentifier = {
     //a9u4-3dwb.0_0
     val id = str.substring(0,9)

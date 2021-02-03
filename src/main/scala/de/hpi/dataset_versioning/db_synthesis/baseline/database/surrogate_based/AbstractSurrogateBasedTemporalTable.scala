@@ -5,7 +5,7 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{Attribut
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{General_Many_To_Many_TupleMatching, TableUnionMatch}
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{General_Many_To_Many_TupleMatching, TableUnionMatch, TupleReference}
 import de.hpi.dataset_versioning.db_synthesis.sketches.BinarySerializable
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
@@ -22,6 +22,7 @@ abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBased
                                                                                                 val foreignKeys: collection.IndexedSeq[SurrogateAttributeLineage],
                                                                                                 val rows:collection.mutable.ArrayBuffer[B],
                                                                                                 val uniqueSynthTableID: Int) extends  TemporalDatabaseTableTrait[A] with BinarySerializable with StrictLogging with Serializable{
+
 
   override def getKey: collection.IndexedSeq[SurrogateAttributeLineage] = key
   override def getUniqueSynthTableID: Int = uniqueSynthTableID
@@ -42,6 +43,8 @@ abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBased
     val f = DBSynthesis_IOService.getSynthesizedTableTempFile(uniqueSynthTableID)
     writeToBinaryFile(f)
   }
+
+  def tupleReferences = (0 until nrows).map(i => TupleReference(this,i))
 
   override def getDataTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[A]] = IndexedSeq(rows(rowIndex).value)
 

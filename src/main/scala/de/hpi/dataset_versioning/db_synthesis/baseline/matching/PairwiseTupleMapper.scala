@@ -21,93 +21,16 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
   val isSurrogateBased = tableA.isSurrogateBased
   if(tableA.isSurrogateBased) assert(tableB.isSurrogateBased)
 
-  def gaussSum(n: Int) = n*n+1/2
-
-  def squareProductTooBig(n:Int): Boolean = {
-    if(gaussSum(n) > 1000) true else false
-  }
 
   def getOptimalMapping() = {
     val tuples = IndexedSeq(tableA,tableB)
       .map(t => (0 until t.nrows).map( r => TupleReference(t,r)))
       .flatten
-    val index = new TupleSetIndex[A](tuples,IndexedSeq(),IndexedSeq(),tableA.wildcardValues.toSet,true)
-    val edges = mutable.HashSet[General_1_to_1_TupleMatching[A]]()
-    buildGraph(tuples,index,edges)
-    val graphBasedTupleMapper = new GraphBasedTupleMapper(tuples,edges)
+    val fieldLineageMatchGraph:FieldLineageMatchGraph[A] = new FieldLineageMatchGraph[A](tuples)
+    val graphBasedTupleMapper = new GraphBasedTupleMapper(tuples,fieldLineageMatchGraph.edges)
     graphBasedTupleMapper.mapGreedy()
   }
 
-  def buildGraph(originalInput:IndexedSeq[TupleReference[A]], index: TupleSetIndex[A],edges:mutable.HashSet[General_1_to_1_TupleMatching[A]]):Unit = {
-    if(index.indexBuildWasSuccessfull){
-      index.tupleGroupIterator(true).foreach{case g => {
-        val tuplesInNode = (g.tuplesInNode ++ g.wildcardTuples)
-        if(squareProductTooBig(tuplesInNode.size)){
-          //further index this: new Index
-          val newIndexForSubNode = new TupleSetIndex[A](tuplesInNode.toIndexedSeq,index.indexedTimestamps.toIndexedSeq,g.valuesAtTimestamps,index.wildcardKeyValues,true)
-          buildGraph(tuplesInNode.toIndexedSeq,newIndexForSubNode,edges)
-        } else{
-          val tuplesInNodeAsIndexedSeq = tuplesInNode.toIndexedSeq
-          doPairwiseMatching(edges, tuplesInNodeAsIndexedSeq)
-        }
-      }}
-    } else {
-      logger.debug(s"WARN: executing pairwise matching between ${originalInput.size} tuples of $tableA and $tableB because further index build was unsuccessful")
-      doPairwiseMatching(edges,originalInput)
-    }
-  }
-
-  private def doPairwiseMatching(edges: mutable.HashSet[General_1_to_1_TupleMatching[A]], tuplesInNodeAsIndexedSeq: IndexedSeq[TupleReference[A]]) = {
-    //we construct a graph as an adjacency list:
-    //pairwise matching to find out the edge-weights:
-    for (i <- 0 until tuplesInNodeAsIndexedSeq.size) {
-      for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
-        val ref1 = tuplesInNodeAsIndexedSeq(i)
-        val ref2 = tuplesInNodeAsIndexedSeq(j)
-        val edge = getTupleMatchOption(ref1, ref2)
-        if (edge.isDefined)
-          edges.add(edge.get)
-      }
-    }
-  }
-
-  private def getTupleMatchOption(ref1:TupleReference[A], ref2:TupleReference[A]) = {
-    val originalTupleA = ref1.getDataTuple
-    val originalTupleB = ref2.getDataTuple
-    val mappedFieldLineages = buildTuples(ref1, ref2) // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
-    val evidence = mappedFieldLineages._1.countOverlapEvidence(mappedFieldLineages._2)
-//    val mergedTupleOptions = mergeTupleSketches(Map(mappedFieldLineages))
-//    if(evidence!= -1 && !mergedTupleOptions.head.isDefined){
-//      println()
-//    }
-    if (evidence == -1) {
-      //illegalMatch - we do nothing
-      None
-    } else {
-//      val mergedTuple = mergedTupleOptions.map(_.get)
-//      val sizeAfterMerge = countChanges(mergedTuple, mergedInsertTime) //
-//      val sizeBeforeMergeA = countChanges(originalTupleA, insertTimeA)
-//      val sizeBeforeMergeB = countChanges(originalTupleB, insertTimeB)
-//      val bestCaseChangeImprovement = sizeBeforeMergeA._1 + sizeBeforeMergeB._1 - sizeAfterMerge._1
-//      if (bestCaseChangeImprovement < 0) {
-//        //debug
-//        println(ref1)
-//        println(ref2)
-//        println(originalTupleA)
-//        println(originalTupleB)
-//        println(mergedTuple)
-//        assert(false)
-//      }
-      Some(General_1_to_1_TupleMatching(ref1,ref2, evidence))
-    }
-  }
-
-  def buildTuples(ref1: TupleReference[A], ref2: TupleReference[A]) = {
-    val lineages1 = ref1.getDataTuple
-    val lineages2 = ref2.getDataTuple
-    assert(lineages1.size==1 && lineages2.size==1)
-    (lineages1.head,lineages2.head)
-  }
 
   def mergeTupleSketches(mappedFieldLineages:collection.Map[TemporalFieldTrait[A], TemporalFieldTrait[A]]) = {
     mappedFieldLineages.map{case (a,b) => a.tryMergeWithConsistent(b)}.toSeq

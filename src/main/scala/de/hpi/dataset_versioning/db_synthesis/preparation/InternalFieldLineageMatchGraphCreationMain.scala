@@ -6,7 +6,10 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedT
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.FieldLineageMatchGraph
 import de.hpi.dataset_versioning.io.IOService
 
-object InternalFieldLineageEdgesExporter extends App {
+/***
+ * Creates edges within an association (there should be none)
+ */
+object InternalFieldLineageMatchGraphCreationMain extends App {
   IOService.socrataDir = args(0)
   val compositeID = args(1)
   val id = DecomposedTemporalTableIdentifier.fromCompositeID(compositeID)
@@ -16,6 +19,6 @@ object InternalFieldLineageEdgesExporter extends App {
   if(hasChanges) {
     val tuples = table.tupleReferences
     val graph = new FieldLineageMatchGraph[Any](tuples)
-    InternalFieldLineageEdges(id,graph.edges.toIndexedSeq).writeToStandardFile()
+    graph.toFieldLineageMergeabilityGraph.writeToStandardFile()
   }
 }

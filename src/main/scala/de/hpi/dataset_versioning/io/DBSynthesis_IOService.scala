@@ -9,8 +9,13 @@ import java.time.LocalDate
 import scala.reflect.io.Directory
 
 object DBSynthesis_IOService extends StrictLogging{
-  def getInternalFieldLineageEdgeFile(id: DecomposedTemporalTableIdentifier): File = {
-    createParentDirs(new File(OPTIMIZATION_INPUT_DIR + s"/internalFieldLineageEdges/${id.subdomain}/${id.viewID}/" + id.compositeID + ".json"))
+  def getInternalFieldLineageEdgeFile(ids: Set[DecomposedTemporalTableIdentifier]): File = {
+    val idString = ids.toIndexedSeq.map(_.compositeID).sorted.mkString(";")
+    val subdomain = ids.map(_.subdomain).toSet
+    if(subdomain.size!=1)
+      println()
+    assert(subdomain.size==1)
+    createParentDirs(new File(OPTIMIZATION_INPUT_DIR + s"/fieldLineageMergeabilityGraph/${subdomain.head}/" + idString + ".json"))
   }
 
   def getAssociationGraphEdgeCandidateFile = new File(WORKING_DIR + "associationGraphEdgeCandidates.json")

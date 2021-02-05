@@ -1,9 +1,15 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
+import de.hpi.dataset_versioning.db_synthesis.preparation.IDBasedTupleReference
 
 @SerialVersionUID(3L)
 case class TupleReference[A](table:TemporalDatabaseTableTrait[A], rowIndex:Int) extends Comparable[TupleReference[A]] with Serializable{
+  def toIDBasedTupleReference: IDBasedTupleReference = {
+    assert(table.getUnionedOriginalTables.size==1)
+    IDBasedTupleReference(table.getUnionedOriginalTables.head,rowIndex)
+  }
+
   import scala.math.Ordering.Implicits._
 
   def getDataTuple = table.getDataTuple(rowIndex)

@@ -8,9 +8,11 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 import java.lang.AssertionError
 import java.time.LocalDate
 
-class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
-                          tuplesRightUnfiltered: IndexedSeq[TupleReference[Int]],
-                          ignoreZeroChangeTuples:Boolean = true) extends TupleIndexUtility[Int] with StrictLogging{
+class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]],
+                          tuplesRightUnfiltered: IndexedSeq[TupleReference[A]],
+                          parentTimestamps:IndexedSeq[LocalDate] = IndexedSeq(),
+                          parentKeyValues:IndexedSeq[A] = IndexedSeq(),
+                          ignoreZeroChangeTuples:Boolean = true) extends TupleIndexUtility[A] with StrictLogging{
 
   assert(tuplesLeftUnfiltered.toSet.intersect(tuplesRightUnfiltered.toSet).isEmpty)
 
@@ -19,7 +21,7 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
   val unusedTimestamps = getRelevantTimestamps(tuplesLeft).union(getRelevantTimestamps(tuplesRight))
   var indexFailed = false
 
-  def getPriorEntropy(tuplesLeft: IndexedSeq[TupleReference[Int]], tuplesRight: IndexedSeq[TupleReference[Int]]) = {
+  def getPriorEntropy(tuplesLeft: IndexedSeq[TupleReference[A]], tuplesRight: IndexedSeq[TupleReference[A]]) = {
     val pLeft = tuplesLeft.size / (tuplesLeft.size +tuplesRight.size).toDouble
     val pRight = tuplesRight.size / (tuplesLeft.size + tuplesRight.size).toDouble
     -(pLeft*log2(pLeft) + pRight*log2(pRight))
@@ -27,8 +29,8 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
 
   def log2(a: Double) = math.log(a) / math.log(2)
 
-  def getBestSplitTimestamp(tuplesLeft:IndexedSeq[TupleReference[Int]],
-                            tuplesRight:IndexedSeq[TupleReference[Int]],
+  def getBestSplitTimestamp(tuplesLeft:IndexedSeq[TupleReference[A]],
+                            tuplesRight:IndexedSeq[TupleReference[A]],
                             timestampsToConsider:Set[LocalDate]) = {
     if(timestampsToConsider.size==0)
       None
@@ -60,11 +62,11 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
 
   //init index:
   var splitT:LocalDate = null
-  var wildcardValues:Set[Int] = null
-  var leftGroups:Map[Int, IndexedSeq[TupleReference[Int]]] = null
-  var rightGroups:Map[Int, IndexedSeq[TupleReference[Int]]] = null
-  var wildcardsLeft: IndexedSeq[TupleReference[Int]] = null
-  var wildcardsRight: IndexedSeq[TupleReference[Int]] = null
+  var wildcardValues:Set[A] = null
+  var leftGroups:Map[A, IndexedSeq[TupleReference[A]]] = null
+  var rightGroups:Map[A, IndexedSeq[TupleReference[A]]] = null
+  var wildcardsLeft: IndexedSeq[TupleReference[A]] = null
+  var wildcardsRight: IndexedSeq[TupleReference[A]] = null
   if(curBestSplitTimestamp.isEmpty)
     indexFailed = true
   else {
@@ -76,12 +78,13 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
     wildcardsLeft = wildcardValues.flatMap(wc => leftGroups.getOrElse(wc,IndexedSeq())).toIndexedSeq
     wildcardsRight = wildcardValues.flatMap(wc => rightGroups.getOrElse(wc,IndexedSeq())).toIndexedSeq
   }
+  val chosenTimestamps = scala.collection.mutable.ArrayBuffer(splitT) ++ parentTimestamps
 
-  private def getFilteredTuples(tuples:IndexedSeq[TupleReference[Int]]) = {
+  private def getFilteredTuples(tuples:IndexedSeq[TupleReference[A]]) = {
     tuples.filter(tr => !ignoreZeroChangeTuples || tr.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1>0)
   }
 
-  def getBipartiteTupleGroupIterator():Iterator[BipartiteTupleGroup[Int]] = {
+  def getBipartiteTupleGroupIterator():Iterator[BipartiteTupleGroup[A]] = {
     if(indexFailed)
       throw new AssertionError("No groups to iterate over")
     else {
@@ -89,20 +92,19 @@ class BipartiteTupleIndex(tuplesLeftUnfiltered: IndexedSeq[TupleReference[Int]],
     }
   }
 
-  case class BipartiteTupleGroupIterator() extends Iterator[BipartiteTupleGroup[Int]]{
+  case class BipartiteTupleGroupIterator() extends Iterator[BipartiteTupleGroup[A]]{
     val keys = leftGroups.keySet.union(rightGroups.keySet)
-    val chosenTimestamps = scala.collection.mutable.ArrayBuffer(splitT)
     val keysWithOutWCIt = keys
       .filter(!wildcardValues.contains(_))
       .iterator
 
     override def hasNext: Boolean = keysWithOutWCIt.hasNext
 
-    override def next(): BipartiteTupleGroup[Int] = {
+    override def next(): BipartiteTupleGroup[A] = {
       val k = keysWithOutWCIt.next()
       val left = leftGroups.getOrElse(k,IndexedSeq())
       val right = rightGroups.getOrElse(k,IndexedSeq())
-      BipartiteTupleGroup[Int](chosenTimestamps,IndexedSeq(k),wildcardsLeft,wildcardsRight,left,right)
+      BipartiteTupleGroup[A](chosenTimestamps,parentKeyValues ++ IndexedSeq(k),wildcardsLeft,wildcardsRight,left,right)
     }
   }
 

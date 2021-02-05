@@ -53,7 +53,7 @@ class OptimizationInputExporter(subdomain:String) extends StrictLogging{
         val table = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(a.id)
         val tuples = table.tupleReferences
         val graph = new FieldLineageMatchGraph[Any](tuples)
-        InternalFieldLineageEdges(a.id,graph.edges.toIndexedSeq).writeToStandardFile()
+        graph.toFieldLineageMergeabilityGraph.writeToStandardFile()
       })
   }
 

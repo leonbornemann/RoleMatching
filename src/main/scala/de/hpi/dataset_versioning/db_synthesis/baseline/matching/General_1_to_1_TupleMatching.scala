@@ -1,5 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 
+import de.hpi.dataset_versioning.db_synthesis.preparation.{FieldLineageGraphEdge, IDBasedTupleReference}
+
 import scala.math.Ordered.orderingToOrdered
 
 case class General_1_to_1_TupleMatching[A] private (tupleReferenceA:TupleReference[A],

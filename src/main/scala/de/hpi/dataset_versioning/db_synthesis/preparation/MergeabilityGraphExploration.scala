@@ -15,5 +15,10 @@ object MergeabilityGraphExploration extends App {
     .foreach(t => println(t))
   println("Size:---------------------------------------------------------")
   println(graph.size)
+  //connected components:
+  val asMap = graph.toMap
+  val components = asMap.keySet.flatMap(k => k.map(id => scala.collection.mutable.ArrayBuffer(id)))
+
+
 
 }

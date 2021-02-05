@@ -29,13 +29,13 @@ object FieldLineageMergeabilityGraph extends JsonReadable[FieldLineageMergeabili
     var count = 0
     val allEdges = DBSynthesis_IOService.getBipartiteMergeabilityGraphFiles(subdomain)
       .toIndexedSeq
-      .map(f => {
+      .flatMap(f => {
         val tg = fromJsonFile(f.getAbsolutePath).transformToTableGraph
-        assert(tg.size==1)
+        assert(tg.size<=1)
         count +=1
         if(count%100==0)
           logger.debug(s"Read $count files")
-        tg.head
+        tg
       })
     allEdges
   }

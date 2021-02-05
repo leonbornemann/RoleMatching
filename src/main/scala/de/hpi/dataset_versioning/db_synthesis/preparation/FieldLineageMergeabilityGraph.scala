@@ -1,5 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.preparation
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.General_1_to_1_TupleMatching
@@ -22,7 +23,22 @@ case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge
   }
 
 }
-object FieldLineageMergeabilityGraph extends JsonReadable[FieldLineageMergeabilityGraph]{
+object FieldLineageMergeabilityGraph extends JsonReadable[FieldLineageMergeabilityGraph] with StrictLogging{
+
+  def readTableGraph(subdomain:String) = {
+    var count = 0
+    val allEdges = DBSynthesis_IOService.getBipartiteMergeabilityGraphFiles(subdomain)
+      .toIndexedSeq
+      .map(f => {
+        val tg = fromJsonFile(f.getAbsolutePath).transformToTableGraph
+        assert(tg.size==1)
+        count +=1
+        if(count%100==0)
+          logger.debug(s"Read $count files")
+        tg.head
+      })
+    allEdges
+  }
 
   def readAllBipartiteGraphs(subdomain:String) = {
     val allEdges = DBSynthesis_IOService.getBipartiteMergeabilityGraphFiles(subdomain)

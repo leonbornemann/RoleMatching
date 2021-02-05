@@ -6,11 +6,14 @@ object MergeabilityGraphExploration extends App {
 
   IOService.socrataDir = args(0)
   val subdomain = args(1)
-  val graph = FieldLineageMergeabilityGraph.readAllBipartiteGraphs(subdomain)
-  val tableGraphEdges = graph.transformToTableGraph
-  tableGraphEdges
-    .toIndexedSeq
+  val graph = FieldLineageMergeabilityGraph.readTableGraph(subdomain)
     .sortBy(-_._2)
+  graph.take(500)
     .foreach(t => println(t))
+  println("Last ----------------------------------------------------------------------")
+  graph.takeRight(500)
+    .foreach(t => println(t))
+  println("Size:---------------------------------------------------------")
+  println(graph.size)
 
 }

@@ -6,7 +6,7 @@ import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilityGraphEdge]) extends JsonWritable[AssociationMergeabilityGraph]{
 
   def writeToStandardFile(subdomain:String) = {
-    DBSynthesis_IOService.getAssociationMergeabilityGraphFile(subdomain)
+    toJsonFile(DBSynthesis_IOService.getAssociationMergeabilityGraphFile(subdomain))
   }
 
 }

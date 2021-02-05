@@ -9,6 +9,11 @@ import java.time.LocalDate
 import scala.reflect.io.Directory
 
 object DBSynthesis_IOService extends StrictLogging{
+  def getAssociationMergeabilityGraphFile(subdomain: String) = {
+    val file = new File(OPTIMIZATION_INPUT_DIR + s"/associationMergeabilityGraphs/$subdomain/associationMergeabilityGraph.json")
+    createParentDirs(file)
+  }
+
   def getBipartiteMergeabilityGraphFiles(subdomain:String) = {
     new File(OPTIMIZATION_INPUT_DIR + s"/fieldLineageMergeabilityGraph/${subdomain}/").listFiles()
   }

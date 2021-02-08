@@ -25,16 +25,20 @@ object MergeabilityGraphExploration extends App {
 //  println(graph.size)
   //connected components:
   val asMap = graphRead.edges.groupBy(e => Set(e.v1,e.v2))
-  val components = asMap.keySet.flatMap(k => k.map(id => (id,scala.collection.mutable.HashSet(id))))
+  val components = scala.collection.mutable.HashMap() ++ asMap.keySet.flatMap(k => k.map(id => (id,scala.collection.mutable.HashSet(id))))
     .toMap
   assert(components.forall(t => t._1==t._2.head && t._2.size==1))
   asMap.foreach(e =>{
     assert(e._1.size==2)
     val asList= e._1.toList
-    components(asList(0)) ++= components(asList(1))
-    components(asList(1)) ++= components(asList(0))
+    val firstConnectedComponent = components(asList(0))
+    val secondConnectedComponent = components(asList(1))
+    firstConnectedComponent ++= secondConnectedComponent
+    //update pointers of all members of second component to first component
+    secondConnectedComponent.foreach(dtt => components(dtt) = firstConnectedComponent)
   })
   val byConnectedComponent = components.groupMap(_._2)(_._1)
+  //integrity check: all connected components
   byConnectedComponent.foreach{case (k,v) => {
     if(k!=v.toSet){
       println(k)

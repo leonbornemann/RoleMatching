@@ -1,7 +1,15 @@
 package de.hpi.dataset_versioning.entropy
 
+import de.hpi.dataset_versioning.data.change.ReservedChangeValues
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, AttributeState, SurrogateAttributeLineage}
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
+import de.hpi.dataset_versioning.data.simplified.Attribute
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
+import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
+import de.hpi.dataset_versioning.io.IOService
 
+import java.time.LocalDate
 import scala.collection.mutable
 
 case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumber:Int = -1) {
@@ -106,6 +114,52 @@ case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumb
     transitions
   }
 
+  def toValueLineage = {
+
+    var prev:Option[Char] = None
+    val asMap = lineage.zipWithIndex.map{case (c,i) => {
+      var res:Option[(LocalDate,Any)] = None
+      if(prev.isEmpty || prev.get != c) {
+        val value:Any = if(c=='_') ReservedChangeValues.NOT_EXISTANT_COL else c
+        res = Some((IOService.STANDARD_TIME_FRAME_START.plusDays(i),value))
+      }
+      prev = Some(c)
+      res
+    }}.filter(_.isDefined)
+      .map(_.get)
+      .toMap
+    ValueLineage(mutable.TreeMap[LocalDate,Any]() ++ asMap)
+  }
+
   override def toString: String = s"$label:[" +lineage + "]"
 
+}
+object FieldLineageAsCharacterString{
+
+  def createAttrs(fields: IndexedSeq[FieldLineageAsCharacterString], id: DecomposedTemporalTableIdentifier) = {
+    val id = GlobalSurrogateRegistry.getNextFreeSurrogateID
+    val attr = new AttributeLineage(id,mutable.TreeMap(IOService.STANDARD_TIME_FRAME_START -> AttributeState(Some(Attribute(s"A_$id",id)))))
+    val surrogateAttr = new SurrogateAttributeLineage(id,id,IOService.STANDARD_TIME_FRAME_START)
+    (attr,surrogateAttr)
+  }
+
+  def toAssociationTable(fields:IndexedSeq[FieldLineageAsCharacterString], id:DecomposedTemporalTableIdentifier) = {
+    //id:String,
+    //                                                                unionedTables:mutable.HashSet[Int],
+    //                                                                unionedOriginalTables:mutable.HashSet[DecomposedTemporalTableIdentifier],
+    //                                                                key: collection.IndexedSeq[SurrogateAttributeLineage],
+    //                                                                nonKeyAttribute:AttributeLineage,
+    //                                                                foreignKeys:collection.IndexedSeq[SurrogateAttributeLineage],
+    //                                                                val surrogateBasedTemporalRows:collection.mutable.ArrayBuffer[SurrogateBasedTemporalRow] = collection.mutable.ArrayBuffer(),
+    val rows = fields.zipWithIndex.map{case (r,i) => new SurrogateBasedTemporalRow(IndexedSeq(i),r.toValueLineage,IndexedSeq())}
+    val (attr,surrogateAttr) = createAttrs(fields,id)
+    new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id.compositeID,
+      scala.collection.mutable.HashSet(),
+      scala.collection.mutable.HashSet(id),
+      IndexedSeq(surrogateAttr),
+      attr,
+      IndexedSeq(),
+      mutable.ArrayBuffer() ++ rows
+    )
+  }
 }

@@ -40,7 +40,7 @@ object MergeabilityGraphExploration extends App {
       println(k)
       println(v.toSet)
     }
-    assert(k==v.toSet)
+    assert(k==v.toSet) //TODO: this fails!
   }}
   val connectedComponents = byConnectedComponent.keySet
   //histogram the size:

@@ -48,13 +48,15 @@ class BipartiteFieldLineageMatchGraph[A](tuplesLeft: IndexedSeq[TupleReference[A
   private def doPairwiseMatching(tuplesLeft: IndexedSeq[TupleReference[A]], tuplesRight:IndexedSeq[TupleReference[A]]) = {
     //we construct a graph as an adjacency list:
     //pairwise matching to find out the edge-weights:
-    for (i <- 0 until tuplesLeft.size) {
-      for (j <- i + 1 until tuplesRight.size) {
-        val ref1 = tuplesLeft(i)
-        val ref2 = tuplesRight(j)
-        val edge = getTupleMatchOption(ref1, ref2)
-        if (edge.isDefined)
-          edges.add(edge.get)
+    if(tuplesLeft.size>0 && tuplesRight.size>0) {
+      for (i <- 0 until tuplesLeft.size) {
+        for (j <- 0 until tuplesRight.size) {
+          val ref1 = tuplesLeft(i)
+          val ref2 = tuplesRight(j)
+          val edge = getTupleMatchOption(ref1, ref2)
+          if (edge.isDefined)
+            edges.add(edge.get)
+        }
       }
     }
   }

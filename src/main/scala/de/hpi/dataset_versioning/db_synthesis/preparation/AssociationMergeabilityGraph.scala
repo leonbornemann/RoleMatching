@@ -10,7 +10,7 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilit
 
   def toScalaGraph = {
     val asWundiedges = edges.map(e => WUnDiEdge(e.v1, e.v2)(e.summedEvidence))
-    val nodes = edges.toSet.flatMap(e => Set(e.v1,e.v2))
+    val nodes = edges.flatMap(e => Set(e.v1,e.v2)).toSet
     val graph = Graph.from(nodes,asWundiedges)
     graph
 

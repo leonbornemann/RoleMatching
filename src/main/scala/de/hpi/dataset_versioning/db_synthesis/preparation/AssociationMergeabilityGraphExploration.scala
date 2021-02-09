@@ -1,28 +1,26 @@
 package de.hpi.dataset_versioning.db_synthesis.preparation
 
-import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
+import de.hpi.dataset_versioning.io.IOService
 
-object MergeabilityGraphExploration extends App {
+class AssociationMergeabilityGraphExploration extends App {
 
   IOService.socrataDir = args(0)
   val subdomain = args(1)
-  val graph = FieldLineageMergeabilityGraph.readTableGraph(subdomain)
-    .sortBy(-_._2)
-  val associationMergeabilityGraph = AssociationMergeabilityGraph(graph.map{case (associations,summedEvidence) => {
-    assert(associations.size == 2)
-    val list = associations.toList
-    AssociationMergeabilityGraphEdge(list(0), list(1), summedEvidence)
-  }
-  })
-  associationMergeabilityGraph.writeToStandardFile(subdomain)
   val graphRead = AssociationMergeabilityGraph.readFromStandardFile(subdomain)
-//  graph.take(500)
-//    .foreach(t => println(t))
-//  println("Last ----------------------------------------------------------------------")
-//  graph.takeRight(500)
-//    .foreach(t => println(t))
-//  println("Size:---------------------------------------------------------")
-//  println(graph.size)
+  val graph = graphRead.toScalaGraph
+  println(graph.nodes.size)
+  println(graph.edges.size)
+  val traverser = graph.componentTraverser()
+  val sizes = traverser.map(c => {
+    println(c.nodes.size,c.edges.map(_.weight).sum)
+    c.nodes.size
+  })
+  sizes.groupBy(identity)
+    .map{case (k,v) => (k,v.size)}
+    .toIndexedSeq
+    .sortBy(_._1)
+    .foreach(println(_))
+  println("--------------------------------------------------------------------------------------------------")
   //connected components:
   val asMap = graphRead.edges.groupBy(e => Set(e.v1,e.v2))
   val components = scala.collection.mutable.HashMap() ++ asMap.keySet.flatMap(k => k.map(id => (id,scala.collection.mutable.HashSet(id))))
@@ -54,6 +52,4 @@ object MergeabilityGraphExploration extends App {
     .toIndexedSeq
     .sortBy(_._1)
     .foreach(t => println(s"${t._1},${t._2}"))
-
-
 }

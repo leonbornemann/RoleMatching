@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.preparation
 
 import de.hpi.dataset_versioning.io.IOService
 
-class AssociationMergeabilityGraphExploration extends App {
+object AssociationMergeabilityGraphExplorationMain extends App {
 
   IOService.socrataDir = args(0)
   val subdomain = args(1)

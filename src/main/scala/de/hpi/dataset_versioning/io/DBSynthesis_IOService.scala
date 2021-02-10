@@ -57,8 +57,16 @@ object DBSynthesis_IOService extends StrictLogging{
     createParentDirs(new File(s"$OPTIMIZATION_INPUT_Association_SKETCH_DIR/${id.viewID}/${id.compositeID}.binary"))
   }
 
+  def getOptimizationInputAssociationSketchParentDirs() = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_Association_SKETCH_DIR/")).listFiles()
+  }
+
   def getOptimizationInputAssociationFile(id: DecomposedTemporalTableIdentifier) = {
     createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/${id.viewID}/${id.compositeID}.binary"))
+  }
+
+  def getOptimizationInputAssociationParentDirs() = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/")).listFiles()
   }
 
   def associationSchemataExist(subdomain: String, id: String) = {
@@ -98,6 +106,10 @@ object DBSynthesis_IOService extends StrictLogging{
   def getBCNFTableSchemaDir(subdomain: String) = createParentDirs(new File(s"$BCNF_SCHEMA_FILE/$subdomain/"))
   def getBCNFTableSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$BCNF_SCHEMA_FILE/$subdomain/$viewID/"))
   def getAssociationSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/$viewID/"))
+  def getAssociationSchemaParentDirs(subdomain:String) = {
+    createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/")).listFiles()
+  }
+
 
   def getAssociationSchemaFile(id:DecomposedTemporalTableIdentifier) = {
     assert(id.associationID.isDefined)

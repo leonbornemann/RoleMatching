@@ -33,6 +33,12 @@ object AssociationSchema{
     ids.map(id => load(id))
   }
 
+  def loadAllAssociationsInSubdomain(subdomain:String) = {
+    val dirs = DBSynthesis_IOService.getAssociationSchemaParentDirs(subdomain)
+    val viewIds = dirs.map(_.getName)
+    viewIds.flatMap(viewID => loadAllAssociations(subdomain,viewID))
+  }
+
   def load(id:DecomposedTemporalTableIdentifier) = {
     val file = DBSynthesis_IOService.getAssociationSchemaFile(id)
     val helper = AssociationSchemaHelper.fromJsonFile(file.getAbsolutePath)

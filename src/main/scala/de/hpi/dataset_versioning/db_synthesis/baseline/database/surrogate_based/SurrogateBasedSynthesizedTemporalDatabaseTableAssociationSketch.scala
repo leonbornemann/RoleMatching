@@ -1,6 +1,7 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.getOptimizationInputAssociationSketchFile
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
@@ -8,7 +9,9 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.BinaryReadable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.{TemporalColumnSketch, TemporalColumnTrait}
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.{TemporalFieldTrait, Variant2Sketch}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService.OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR
 
+import java.io.File
 import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -37,7 +40,7 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
 
   def writeToStandardOptimizationInputFile() = {
     assert(isAssociation && unionedOriginalTables.size==1)
-    val file = DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(unionedOriginalTables.head)
+    val file = getOptimizationInputAssociationSketchFile(unionedOriginalTables.head)
     writeToBinaryFile(file)
   }
 
@@ -62,11 +65,19 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
   }
 }
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch extends BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]{
-  def getStandardOptimizationInputFile(id: DecomposedTemporalTableIdentifier) = DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(id)
 
+  def getOptimizationInputAssociationSketchFile(id: DecomposedTemporalTableIdentifier) = {
+    DBSynthesis_IOService.createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR/${id.viewID}/${id.compositeID}.binary"))
+  }
+
+  def getOptimizationInputAssociationSketchParentDirs() = {
+    DBSynthesis_IOService.createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR/")).listFiles()
+  }
+
+  def getStandardOptimizationInputFile(id: DecomposedTemporalTableIdentifier) = getOptimizationInputAssociationSketchFile(id)
 
   def loadFromStandardOptimizationInputFile(id:DecomposedTemporalTableIdentifier):SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch = {
-    val file = DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(id)
+    val file = getOptimizationInputAssociationSketchFile(id)
     loadFromFile(file)
   }
 

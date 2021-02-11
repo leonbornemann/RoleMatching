@@ -17,7 +17,7 @@ class OptimizationInputExporter(subdomain:String) extends StrictLogging{
     val bcnfTables = BCNFTableSchema.loadAllBCNFTableSchemata(subdomain, id)
     val bcnfByID = bcnfTables.map(a => ((a.id.subdomain, a.id.viewID, a.id.bcnfID), a)).toMap
     //whole tables:
-    val associations = if (DBSynthesis_IOService.associationSchemataExist(subdomain, id)) AssociationSchema.loadAllAssociations(subdomain, id) else Array[AssociationSchema]()
+    val associations = if (AssociationSchema.associationSchemataExist(subdomain, id)) AssociationSchema.loadAllAssociations(subdomain, id) else Array[AssociationSchema]()
     val allSurrogates = bcnfTables.flatMap(_.surrogateKey)
       .groupBy(_.surrogateID)
       .map { case (k, v) => (k, v.head) }

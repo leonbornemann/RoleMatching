@@ -8,7 +8,7 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
+import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 import scala.collection.mutable
@@ -26,9 +26,9 @@ object SummaryChangeCounting extends App with StrictLogging{
   var missingBCNFTables = 0
   ids.foreach(id => {
     val tt = TemporalTable.load(id)
-    assert(DBSynthesis_IOService.associationSchemataExist(subdomain,id))
+    assert(AssociationSchema.associationSchemataExist(subdomain,id))
     val associations = AssociationSchema.loadAllAssociations(subdomain, id)
-    assert(DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
+    assert(BCNFTableSchema.decomposedTemporalTablesExist(subdomain, id))
     val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
     tt.addSurrogates(dtts.flatMap(_.surrogateKey).toSet)
     dtts

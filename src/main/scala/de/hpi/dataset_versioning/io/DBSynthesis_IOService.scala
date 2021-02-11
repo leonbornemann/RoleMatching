@@ -9,30 +9,42 @@ import java.time.LocalDate
 import scala.reflect.io.Directory
 
 object DBSynthesis_IOService extends StrictLogging{
-  def getAssociationMergeabilityGraphFile(subdomain: String) = {
-    val file = new File(OPTIMIZATION_INPUT_DIR + s"/associationMergeabilityGraphs/$subdomain/associationMergeabilityGraph.json")
-    createParentDirs(file)
-  }
 
-  def getBipartiteMergeabilityGraphFiles(subdomain:String) = {
-    new File(OPTIMIZATION_INPUT_DIR + s"/fieldLineageMergeabilityGraph/${subdomain}/").listFiles()
-  }
+  def DB_SYNTHESIS_DIR = socrataDir + "/db_synthesis"
 
-  def getFieldLineageMergeabilityGraphFile(ids: Set[DecomposedTemporalTableIdentifier]): File = {
-    val idString = ids.toIndexedSeq.map(_.compositeID).sorted.mkString(";")
-    val subdomain = ids.map(_.subdomain).toSet
-    if(subdomain.size!=1)
-      println()
-    assert(subdomain.size==1)
-    createParentDirs(new File(OPTIMIZATION_INPUT_DIR + s"/fieldLineageMergeabilityGraph/${subdomain.head}/" + idString + ".json"))
-  }
+  //statistics and reporting:
+  def STATISTICS_DIR = DB_SYNTHESIS_DIR + "/statistics/"
+  def WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/"
+  //decomposition:
+  def DECOMPOSTION_DIR = DB_SYNTHESIS_DIR + "/decomposition"
+  def FDDIR = DECOMPOSTION_DIR + "/fds/"
+  def COLID_FDDIR = DECOMPOSTION_DIR + "/fds_colID/"
+  def DECOMPOSITION_EXPORT_CSV_DIR = DECOMPOSTION_DIR + "/csv/"
+  def DECOMPOSITION_RESULT_DIR = DECOMPOSTION_DIR + "/results/"
+  def DECOMPOSED_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTables/"
+  def DECOMPOSED_Temporal_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTemporalTables/"
+  def BCNF_SCHEMA_FILE = DECOMPOSTION_DIR + "/bcnfSchemata/"
+  //association schema and input
+  def ASSOCIATION_SCHEMA_DIR = DECOMPOSTION_DIR + "/associationSchemata/"
+  def OPTIMIZATION_INPUT_DIR = DB_SYNTHESIS_DIR + "/input/"
+  def OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR = OPTIMIZATION_INPUT_DIR + "/associationSketches/"
+  def OPTIMIZATION_INPUT_ASSOCIATION_DIR = OPTIMIZATION_INPUT_DIR + "/associations/"
+  def OPTIMIZATION_INPUT_BCNF_DIR = OPTIMIZATION_INPUT_DIR + "/BCNF/"
+  //database generation output
+  def DATABASE_ROOT_DIR = DB_SYNTHESIS_DIR + "/synthesizedDatabases/"
+  def SYNTHESIZED_TABLES_WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/synthesizedTables/"
+  def SYNTHESIZED_DATABASE_FINAL_DIR = DB_SYNTHESIS_DIR + "/finalSynthesizedDatabase/synthesizedTables/"
+  def SKETCH_DIR = DB_SYNTHESIS_DIR + "/sketches/"
+  def COLUMN_SKETCH_DIR = SKETCH_DIR + "/temporalColumns/"
+  //mergeability graphs:
+  def ASSOCIATIONS_MERGEABILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/associationMergeabilityGraphs/"
+  def FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/fieldLineageMergeabilityGraph/"
 
   def getAssociationGraphEdgeCandidateFile = new File(WORKING_DIR + "associationGraphEdgeCandidates.json")
 
   def getAssociationGraphEdgeFile = createParentDirs(new File(WORKING_DIR + "associationGraphEdges.json"))
 
   def getAssociationsWithChangesFile() = IOService.CUSTOM_METADATA_DIR + "associationsWithChanges.json"
-
 
   def clearDatabaseSynthesisInputDir() = new Directory(new File(OPTIMIZATION_INPUT_DIR)).deleteRecursively()
 
@@ -51,32 +63,6 @@ object DBSynthesis_IOService extends StrictLogging{
 
   def getOptimizationBCNFTemporalTableFile(id: DecomposedTemporalTableIdentifier) = {
     createParentDirs(new File(s"$OPTIMIZATION_INPUT_BCNF_DIR/contentTables/${id.viewID}/${id.compositeID}.binary"))
-  }
-
-  def getOptimizationInputAssociationSketchFile(id: DecomposedTemporalTableIdentifier) = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_Association_SKETCH_DIR/${id.viewID}/${id.compositeID}.binary"))
-  }
-
-  def getOptimizationInputAssociationSketchParentDirs() = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_Association_SKETCH_DIR/")).listFiles()
-  }
-
-  def getOptimizationInputAssociationFile(id: DecomposedTemporalTableIdentifier) = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/${id.viewID}/${id.compositeID}.binary"))
-  }
-
-  def getOptimizationInputAssociationParentDirs() = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/")).listFiles()
-  }
-
-  def associationSchemataExist(subdomain: String, id: String) = {
-    val dir = getAssociationSchemaDir(subdomain, id)
-    dir.exists() && !dir.listFiles().isEmpty
-  }
-
-  def decomposedTemporalTablesExist(subdomain:String,id: String) = {
-    val dir = getBCNFTableSchemaDir(subdomain, id)
-    dir.exists() && !dir.listFiles().isEmpty
   }
 
   //clear working directory for synthesized tables:
@@ -102,26 +88,6 @@ object DBSynthesis_IOService extends StrictLogging{
 
 
   def getStatisticsDir(subdomain: String, originalID: String) = createParentDirs(new File(s"$STATISTICS_DIR/$subdomain/$originalID/"))
-
-  def getBCNFTableSchemaDir(subdomain: String) = createParentDirs(new File(s"$BCNF_SCHEMA_FILE/$subdomain/"))
-  def getBCNFTableSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$BCNF_SCHEMA_FILE/$subdomain/$viewID/"))
-  def getAssociationSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/$viewID/"))
-  def getAssociationSchemaParentDirs(subdomain:String) = {
-    createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/")).listFiles()
-  }
-
-
-  def getAssociationSchemaFile(id:DecomposedTemporalTableIdentifier) = {
-    assert(id.associationID.isDefined)
-    val topDir = ASSOCIATION_SCHEMA_DIR
-    createParentDirs(new File(s"$topDir/${id.subdomain}/${id.viewID}/${id.compositeID}.json"))
-  }
-
-  def getBCNFTableSchemaFile(id:DecomposedTemporalTableIdentifier) = {
-    assert(id.associationID.isEmpty)
-    val topDir = BCNF_SCHEMA_FILE
-    createParentDirs(new File(s"$topDir/${id.subdomain}/${id.viewID}/${id.compositeID}.json"))
-  }
 
   def getColIDFDFile(subdomain: String, id: String, date: LocalDate) = {
     createParentDirs(new File(s"$COLID_FDDIR/$subdomain/$id/${IOService.dateTimeFormatter.format(date)}.json"))
@@ -149,30 +115,6 @@ object DBSynthesis_IOService extends StrictLogging{
     .listFiles()
     .toIndexedSeq
     .sortBy(f => LocalDate.parse(f.getName.split("\\.")(0),IOService.dateTimeFormatter).toEpochDay)
-
-  def DB_SYNTHESIS_DIR = socrataDir + "/db_synthesis"
-
-  def DECOMPOSTION_DIR = DB_SYNTHESIS_DIR + "/decomposition"
-  def STATISTICS_DIR = DB_SYNTHESIS_DIR + "/statistics/"
-
-  def FDDIR = DECOMPOSTION_DIR + "/fds/"
-  def COLID_FDDIR = DECOMPOSTION_DIR + "/fds_colID/"
-  def DECOMPOSITION_EXPORT_CSV_DIR = DECOMPOSTION_DIR + "/csv/"
-  def DECOMPOSITION_RESULT_DIR = DECOMPOSTION_DIR + "/results/"
-  def DECOMPOSED_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTables/"
-  def DECOMPOSED_Temporal_TABLE_DIR = DECOMPOSTION_DIR + "/decomposedTemporalTables/"
-  def BCNF_SCHEMA_FILE = DECOMPOSTION_DIR + "/bcnfSchemata/"
-  def ASSOCIATION_SCHEMA_DIR = DECOMPOSTION_DIR + "/associationSchemata/"
-  def OPTIMIZATION_INPUT_DIR = DB_SYNTHESIS_DIR + "/input/"
-  def OPTIMIZATION_INPUT_Association_SKETCH_DIR = OPTIMIZATION_INPUT_DIR + "/associationSketches/"
-  def OPTIMIZATION_INPUT_ASSOCIATION_DIR = OPTIMIZATION_INPUT_DIR + "/associations/"
-  def OPTIMIZATION_INPUT_BCNF_DIR = OPTIMIZATION_INPUT_DIR + "/BCNF/"
-  def SYNTHESIZED_TABLES_WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/synthesizedTables/"
-  def SYNTHESIZED_DATABASE_FINAL_DIR = DB_SYNTHESIS_DIR + "/finalSynthesizedDatabase/synthesizedTables/"
-  def DATABASE_ROOT_DIR = DB_SYNTHESIS_DIR + "/synthesizedDatabases/"
-  def SKETCH_DIR = DB_SYNTHESIS_DIR + "/sketches/"
-  def COLUMN_SKETCH_DIR = SKETCH_DIR + "/temporalColumns/"
-  def WORKING_DIR = DB_SYNTHESIS_DIR + "/workingDir/"
 
   def dateToStr(date: LocalDate) = IOService.dateTimeFormatter.format(date)
 

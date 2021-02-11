@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.getOptimizationInputAssociationFile
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
@@ -12,7 +13,9 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.BinaryReadable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService.{OPTIMIZATION_INPUT_ASSOCIATION_DIR, createParentDirs}
 
+import java.io.File
 import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -30,7 +33,7 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
 
   def writeToStandardOptimizationInputFile = {
     assert(isAssociation && unionedOriginalTables.size==1)
-    val file = DBSynthesis_IOService.getOptimizationInputAssociationFile(unionedOriginalTables.head)
+    val file = getOptimizationInputAssociationFile(unionedOriginalTables.head)
     writeToBinaryFile(file)
   }
 
@@ -80,7 +83,7 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
 
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends
   BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation] with StrictLogging{
-  def getStandardOptimizationInputFile(id: DecomposedTemporalTableIdentifier) = DBSynthesis_IOService.getOptimizationInputAssociationFile(id)
+  def getStandardOptimizationInputFile(id: DecomposedTemporalTableIdentifier) = getOptimizationInputAssociationFile(id)
 
 
   def loadFromSynthDatabaseTableFile(id: Int):SurrogateBasedSynthesizedTemporalDatabaseTableAssociation = {
@@ -88,12 +91,20 @@ object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends
   }
 
   def loadFromStandardOptimizationInputFile(id:DecomposedTemporalTableIdentifier) = {
-    val file = DBSynthesis_IOService.getOptimizationInputAssociationFile(id)
+    val file = getOptimizationInputAssociationFile(id)
     loadFromFile(file)
   }
 
   def loadAllAssociationTables(associations: IndexedSeq[AssociationSchema]) = {
     associations.map(a => loadFromStandardOptimizationInputFile(a.id))
+  }
+
+  def getOptimizationInputAssociationFile(id: DecomposedTemporalTableIdentifier) = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/${id.viewID}/${id.compositeID}.binary"))
+  }
+
+  def getOptimizationInputAssociationParentDirs() = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/")).listFiles()
   }
 
 //  def initFrom(dttToMerge: AssociationSchema, originalTemporalTable:TemporalTable) = {

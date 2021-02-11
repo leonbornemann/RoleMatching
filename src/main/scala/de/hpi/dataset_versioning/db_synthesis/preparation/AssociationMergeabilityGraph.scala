@@ -1,10 +1,14 @@
 package de.hpi.dataset_versioning.db_synthesis.preparation
 
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
+import de.hpi.dataset_versioning.db_synthesis.preparation.AssociationMergeabilityGraph.getAssociationMergeabilityGraphFile
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService.{ASSOCIATIONS_MERGEABILITY_GRAPH_DIR, OPTIMIZATION_INPUT_DIR, createParentDirs}
 import scalax.collection.GraphEdge.UnDiEdge
 import scalax.collection.edge.{WLkUnDiEdge, WUnDiEdge}
 import scalax.collection.immutable.Graph
+
+import java.io.File
 
 case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilityGraphEdge]) extends JsonWritable[AssociationMergeabilityGraph]{
 
@@ -16,16 +20,21 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilit
 
   }
 
-
   def writeToStandardFile(subdomain:String) = {
-    toJsonFile(DBSynthesis_IOService.getAssociationMergeabilityGraphFile(subdomain))
+    toJsonFile(getAssociationMergeabilityGraphFile(subdomain))
   }
 
 }
 object AssociationMergeabilityGraph extends JsonReadable[AssociationMergeabilityGraph]{
 
   def readFromStandardFile(subdomain:String) = {
-    fromJsonFile(DBSynthesis_IOService.getAssociationMergeabilityGraphFile(subdomain).getAbsolutePath)
+    fromJsonFile(getAssociationMergeabilityGraphFile(subdomain).getAbsolutePath)
+  }
+
+
+  def getAssociationMergeabilityGraphFile(subdomain: String) = {
+    val file = new File(s"$ASSOCIATIONS_MERGEABILITY_GRAPH_DIR/$subdomain/associationMergeabilityGraph.json")
+    createParentDirs(file)
   }
 
 }

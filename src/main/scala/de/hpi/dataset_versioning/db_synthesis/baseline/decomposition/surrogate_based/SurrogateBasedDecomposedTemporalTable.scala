@@ -72,7 +72,7 @@ object SurrogateBasedDecomposedTemporalTable{
 
   def filterNotFullyDecomposedTables(subdomain:String,viewIds: collection.IndexedSeq[String]) = {
     val subdomainIdsWithDTT = viewIds
-      .filter(id => DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id))
+      .filter(id => BCNFTableSchema.decomposedTemporalTablesExist(subdomain, id))
     val schemata = subdomainIdsWithDTT.map(id => TemporalSchema.load(id)).map(ts => (ts.id,ts)).toMap
     val filteredSecondStep = subdomainIdsWithDTT.filter(id => {
       val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)

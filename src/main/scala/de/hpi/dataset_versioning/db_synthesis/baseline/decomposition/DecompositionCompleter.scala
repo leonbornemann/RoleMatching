@@ -33,7 +33,7 @@ class DecompositionCompleter(subdomain:String) {
   }
 
   def completeDecomposition(id:String) = {
-    if(!DBSynthesis_IOService.associationSchemataExist(subdomain, id)){
+    if(!AssociationSchema.associationSchemataExist(subdomain, id)){
       createNewBCNF(id,TemporalSchema.load(id).attributes,0)
       println(s"found missing BCNF for $id, creating a single new one")
     } else{

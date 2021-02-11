@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
@@ -33,17 +33,17 @@ class TopDown(subdomain:String,loadFilteredAssociationsOnly:Boolean,idsToIgnore:
     ids.foreach(id => {
       var associations:Array[AssociationSchema] = null
       var tt:TemporalTable = null
-      if(DBSynthesis_IOService.associationSchemataExist(subdomain,id)) {
+      if(AssociationSchema.associationSchemataExist(subdomain,id)) {
         associations = AssociationSchema.loadAllAssociations(subdomain, id)
         allAssociations ++= associations
           .filter(a => !loadFilteredAssociationsOnly || associationsWithChanges.contains(a.id))
         //write sketches if not present:
         associations.foreach(a => {
-          if(!DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists())
+          if(SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.getOptimizationInputAssociationSketchFile(a.id).exists())
             println()
-          assert(DBSynthesis_IOService.getOptimizationInputAssociationSketchFile(a.id).exists())
+          assert(SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.getOptimizationInputAssociationSketchFile(a.id).exists())
         })
-      } else if(!DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain,id) && countChangesForAllSteps){
+      } else if(!BCNFTableSchema.decomposedTemporalTablesExist(subdomain,id) && countChangesForAllSteps){
         if(tt==null)
           tt = TemporalTable.load(id)
         extraNonDecomposedViewTableChanges.put(id,countChanges(tt))
@@ -53,13 +53,13 @@ class TopDown(subdomain:String,loadFilteredAssociationsOnly:Boolean,idsToIgnore:
           tt = TemporalTable.load(id)
         var bcnfChangeCount: Option[(Int,Int)] = None
         var associationChangeCount: Option[(Int,Int)] = None
-        if (!DBSynthesis_IOService.decomposedTemporalTablesExist(subdomain, id)) {
+        if (!BCNFTableSchema.decomposedTemporalTablesExist(subdomain, id)) {
           logger.debug(s"no decomposed Temporal tables found for $id, skipping this")
         } else {
           val dtts = SurrogateBasedDecomposedTemporalTable.loadAllDecomposedTemporalTables(subdomain,id)
           bcnfChangeCount = Some(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(dtts.map(dtt => GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(TemporalTable.loadBCNFFromStandardBinaryFile(dtt.id)))))
         }
-        if(!DBSynthesis_IOService.associationSchemataExist(subdomain, id)) {
+        if(!AssociationSchema.associationSchemataExist(subdomain, id)) {
           logger.debug(s"no decomposed Temporal associations found for $id, skipping this")
         } else{
           associationChangeCount = Some(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(associations.map(a => GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(a.id)))))

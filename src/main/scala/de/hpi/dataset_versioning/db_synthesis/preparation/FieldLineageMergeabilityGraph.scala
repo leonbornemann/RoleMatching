@@ -23,6 +23,7 @@ case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge
         val evidenceMultiSet = v.flatMap(_._2.toIndexedSeq)
           .groupBy(identity)
           .map{case (k,v) => (k,v.size)}
+          .toIndexedSeq
         val summedEvidence = v.map(_._1).sum
         AssociationMergeabilityGraphEdge(keyList(0),keyList(1),summedEvidence,evidenceMultiSet)
       }}

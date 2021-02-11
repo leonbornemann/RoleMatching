@@ -5,6 +5,6 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedT
 case class AssociationMergeabilityGraphEdge(v1: DecomposedTemporalTableIdentifier,
                                             v2: DecomposedTemporalTableIdentifier,
                                             summedEvidence: Int,
-                                            evidenceMultiSet:Map[(Any,Any),Int]) {
+                                            evidenceMultiSet:Map[ValueTransition,Int]) {
 
 }

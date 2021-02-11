@@ -13,7 +13,8 @@ import java.io.File
 case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge]) extends JsonWritable[FieldLineageMergeabilityGraph]{
 
   def transformToTableGraph = {
-    val tableGraphEdges = edges.groupMap(e => Set(e.tupleReferenceA.associationID,e.tupleReferenceB.associationID))(e => (e.evidence,e.evidenceSet.get))
+    val tableGraphEdges = edges
+      .groupMap(e => Set(e.tupleReferenceA.associationID,e.tupleReferenceB.associationID))(e => (e.evidence,e.evidenceSet.get.map{case (prev,after) => ValueTransition(prev,after)}))
       .toIndexedSeq
       .withFilter{case (_,v) =>v.map(_._1).sum>0 }
       .map{case (k,v) => {
@@ -38,9 +39,10 @@ case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge
 }
 object FieldLineageMergeabilityGraph extends JsonReadable[FieldLineageMergeabilityGraph] with StrictLogging{
 
-  def readFullFieldLineageMergeabilityGraphAndAggregateToTableGraph(subdomain:String) = {
+  def readFieldLineageMergeabilityGraphAndAggregateToTableGraph(subdomain:String, fileCountLimit:Int = Integer.MAX_VALUE) = {
     var count = 0
     val allEdges = getFieldLineageMergeabilityFiles(subdomain)
+      .take(fileCountLimit)
       .toIndexedSeq
       .flatMap(f => {
         val tg = fromJsonFile(f.getAbsolutePath).transformToTableGraph

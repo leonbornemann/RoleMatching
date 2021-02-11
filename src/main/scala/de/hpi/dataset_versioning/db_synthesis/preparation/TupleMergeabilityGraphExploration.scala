@@ -6,7 +6,7 @@ object TupleMergeabilityGraphExploration extends App {
 
   IOService.socrataDir = args(0)
   val subdomain = args(1)
-  val graph = FieldLineageMergeabilityGraph.readTableGraph(subdomain)
+  val graph = FieldLineageMergeabilityGraph.readFullFieldLineageMergeabilityGraph(subdomain)
     .sortBy(-_._2)
   val associationMergeabilityGraph = AssociationMergeabilityGraph(graph.map{case (associations,summedEvidence) => {
     assert(associations.size == 2)

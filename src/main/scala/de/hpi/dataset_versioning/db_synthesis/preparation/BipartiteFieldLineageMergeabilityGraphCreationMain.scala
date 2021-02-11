@@ -22,7 +22,7 @@ object BipartiteFieldLineageMergeabilityGraphCreationMain extends App with Stric
     val rightTableHasChanges = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(tableRight)._1 > 0
     if(leftTableHasChanges && rightTableHasChanges){
       val matchGraph = new BipartiteFieldLineageMatchGraph(tableLeft.tupleReferences,tableRight.tupleReferences)
-        .toFieldLineageMergeabilityGraph
+        .toFieldLineageMergeabilityGraph(true)
       logger.debug(s"Found ${matchGraph.edges.size} edges of which ${matchGraph.edges.filter(_.evidence>0).size} have more than 0 evidence ")
       if(matchGraph.edges.size>0)
         matchGraph.writeToStandardFile()

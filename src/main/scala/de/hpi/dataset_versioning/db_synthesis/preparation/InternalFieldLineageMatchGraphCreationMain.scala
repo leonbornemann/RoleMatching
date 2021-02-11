@@ -19,6 +19,6 @@ object InternalFieldLineageMatchGraphCreationMain extends App {
   if(hasChanges) {
     val tuples = table.tupleReferences
     val graph = new FieldLineageMatchGraph[Any](tuples)
-    graph.toFieldLineageMergeabilityGraph.writeToStandardFile()
+    graph.toFieldLineageMergeabilityGraph(true).writeToStandardFile()
   }
 }

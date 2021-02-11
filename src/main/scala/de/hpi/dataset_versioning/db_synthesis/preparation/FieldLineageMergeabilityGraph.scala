@@ -29,7 +29,7 @@ case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge
 }
 object FieldLineageMergeabilityGraph extends JsonReadable[FieldLineageMergeabilityGraph] with StrictLogging{
 
-  def readTableGraph(subdomain:String) = {
+  def readFullFieldLineageMergeabilityGraph(subdomain:String) = {
     var count = 0
     val allEdges = getFieldLineageMergeabilityFiles(subdomain)
       .toIndexedSeq

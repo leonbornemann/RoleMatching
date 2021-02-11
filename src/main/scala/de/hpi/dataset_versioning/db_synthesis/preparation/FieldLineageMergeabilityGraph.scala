@@ -13,10 +13,19 @@ import java.io.File
 case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge]) extends JsonWritable[FieldLineageMergeabilityGraph]{
 
   def transformToTableGraph = {
-    val tableGraph = edges.groupMap(e => Set(e.tupleReferenceA.associationID,e.tupleReferenceB.associationID))(e => e.evidence)
-      .withFilter(_._2.sum>0)
-      .map{case (k,v) => (k,v.sum)}
-    tableGraph
+    val tableGraphEdges = edges.groupMap(e => Set(e.tupleReferenceA.associationID,e.tupleReferenceB.associationID))(e => (e.evidence,e.evidenceSet.get))
+      .toIndexedSeq
+      .withFilter{case (_,v) =>v.map(_._1).sum>0 }
+      .map{case (k,v) => {
+        assert(k.size==2)
+        val keyList = k.toIndexedSeq
+        val evidenceMultiSet = v.flatMap(_._2.toIndexedSeq)
+          .groupBy(identity)
+          .map{case (k,v) => (k,v.size)}
+        val summedEvidence = v.map(_._1).sum
+        AssociationMergeabilityGraphEdge(keyList(0),keyList(1),summedEvidence,evidenceMultiSet)
+      }}
+    AssociationMergeabilityGraph(tableGraphEdges)
   }
 
 
@@ -29,19 +38,18 @@ case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge
 }
 object FieldLineageMergeabilityGraph extends JsonReadable[FieldLineageMergeabilityGraph] with StrictLogging{
 
-  def readFullFieldLineageMergeabilityGraph(subdomain:String) = {
+  def readFullFieldLineageMergeabilityGraphAndAggregateToTableGraph(subdomain:String) = {
     var count = 0
     val allEdges = getFieldLineageMergeabilityFiles(subdomain)
       .toIndexedSeq
       .flatMap(f => {
         val tg = fromJsonFile(f.getAbsolutePath).transformToTableGraph
-        assert(tg.size<=1)
         count +=1
         if(count%100==0)
           logger.debug(s"Read $count files")
-        tg
+        tg.edges
       })
-    allEdges
+    AssociationMergeabilityGraph(allEdges)
   }
 
   def readAllBipartiteGraphs(subdomain:String) = {

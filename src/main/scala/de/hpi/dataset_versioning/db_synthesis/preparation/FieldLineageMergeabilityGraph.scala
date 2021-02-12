@@ -14,15 +14,15 @@ case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge
 
   def transformToTableGraph = {
     val tableGraphEdges = edges
-      .groupMap(e => Set(e.tupleReferenceA.associationID,e.tupleReferenceB.associationID))(e => (e.evidence,e.evidenceSet.get.map{case (prev,after) => ValueTransition(prev,after)}))
+      .groupMap(e => Set(e.tupleReferenceA.associationID,e.tupleReferenceB.associationID))(e => (e.evidence,e.evidenceSet.get))
       .toIndexedSeq
       .withFilter{case (_,v) =>v.map(_._1).sum>0 }
       .map{case (k,v) => {
         assert(k.size==2)
         val keyList = k.toIndexedSeq
         val evidenceMultiSet = v.flatMap(_._2.toIndexedSeq)
-          .groupBy(identity)
-          .map{case (k,v) => (k,v.size)}
+          .groupMap(_._1)(_._2)
+          .map{case (k,v) => (k,v.sum)}
           .toIndexedSeq
         val summedEvidence = v.map(_._1).sum
         AssociationMergeabilityGraphEdge(keyList(0),keyList(1),summedEvidence,evidenceMultiSet)

@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.entropy
 
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
-import de.hpi.dataset_versioning.entropy.MergeMatch.log2
+import de.hpi.dataset_versioning.util.MathUtil.log2
 
 import java.io.PrintWriter
 
@@ -136,7 +136,5 @@ object MergeMatch {
     assert(!(nominatorSum<=0.99999 || nominatorSum >=1.000001))
     mutualInfo
   }
-
-  def log2(a: Double) = math.log(a) / math.log(2)
 
 }

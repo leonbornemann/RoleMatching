@@ -1,6 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.matching
 
-import de.hpi.dataset_versioning.db_synthesis.preparation.{FieldLineageGraphEdge, FieldLineageMergeabilityGraph}
+import de.hpi.dataset_versioning.db_synthesis.preparation.{FieldLineageGraphEdge, FieldLineageMergeabilityGraph, ValueTransition}
 
 import scala.collection.mutable
 
@@ -8,11 +8,11 @@ class FieldLineageGraph[A] {
 
   def toFieldLineageMergeabilityGraph(includeEvidenceSet:Boolean=false) = {
     FieldLineageMergeabilityGraph(edges.toIndexedSeq.map(e => {
-      var evidenceSet:Option[collection.Set[(Any,Any)]] = None
+      var evidenceSet:Option[collection.IndexedSeq[(ValueTransition,Int)]] = None
       if(includeEvidenceSet) {
         val tupA = e.tupleReferenceA.getDataTuple.head
         val tupB = e.tupleReferenceA.getDataTuple.head
-        evidenceSet = Some(tupA.getOverlapEvidenceSet(tupB).map(_.asInstanceOf[(Any,Any)]))
+        evidenceSet = Some(tupA.getOverlapEvidenceMultiSet(tupB).toIndexedSeq)
       }
       FieldLineageGraphEdge(e.tupleReferenceA.toIDBasedTupleReference, e.tupleReferenceB.toIDBasedTupleReference, e.evidence,evidenceSet)
     }))

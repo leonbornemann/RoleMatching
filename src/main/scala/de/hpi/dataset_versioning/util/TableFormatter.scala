@@ -3,6 +3,10 @@ package de.hpi.dataset_versioning.util
 import scala.collection.mutable.ListBuffer
 
 object TableFormatter {
+  def printTable(header: Seq[Any], table: Seq[Seq[Any]]) = {
+    println(format(Seq(header) ++ table))
+  }
+
 
   def format(table: collection.Seq[collection.Seq[Any]], fillMissing: Boolean): String = {
     if (fillMissing) {

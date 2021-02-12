@@ -3,6 +3,7 @@ package de.hpi.dataset_versioning.db_synthesis.sketches.field
 import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
 import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.{FieldChangeCounter, UpdateChangeCounter}
+import de.hpi.dataset_versioning.db_synthesis.preparation.ValueTransition
 
 import scala.collection.mutable
 
@@ -20,13 +21,13 @@ trait TemporalFieldTrait[T] {
     !prevValue1.isEmpty && !isWildcard(prevValue1.get)
   }
 
-  def getOverlapEvidenceSet(other: TemporalFieldTrait[T]) = {
+  def getOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]) = {
     val vl1 = this.getValueLineage
     val vl2 = other.getValueLineage
     val vl1Iterator = scala.collection.mutable.Queue() ++ vl1
     val vl2Iterator = scala.collection.mutable.Queue() ++ vl2
     var isCompatible = true
-    val evidenceSet = mutable.HashSet[(T,T)]()
+    val evidenceSet = mutable.HashMap[ValueTransition,Int]()
     var curValue1 = vl1Iterator.dequeue()._2
     var curValue2 = vl2Iterator.dequeue()._2
     var prevValue1:Option[T] = None
@@ -48,8 +49,9 @@ trait TemporalFieldTrait[T] {
             if (!isWildcard(curValue1) && !isWildcard(curValue2) && notWCOrEmpty(prevValue1) && notWCOrEmpty(prevValue2)) {
               assert(prevValue1.get==prevValue2.get)
               assert(curValue1 == curValue2)
-              val toAdd = (prevValue1.get, curValue1)
-              evidenceSet += toAdd
+              val toAdd = ValueTransition(prevValue1.get, curValue1)
+              val oldValue = evidenceSet.getOrElse(toAdd,0)
+              evidenceSet(toAdd) = oldValue+1
             }
             prevValue1 = Some(curValue1)
             curValue1 = vl1Iterator.dequeue()._2

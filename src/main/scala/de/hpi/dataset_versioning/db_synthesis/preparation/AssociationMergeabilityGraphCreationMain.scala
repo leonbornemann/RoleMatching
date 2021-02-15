@@ -6,8 +6,7 @@ object AssociationMergeabilityGraphCreationMain extends App {
 
   IOService.socrataDir = args(0)
   val subdomain = args(1)
-  val fileCountLimit = if(args.length==3) args(2).toInt else Integer.MAX_VALUE
-  val associationMergeabilityGraph = FieldLineageMergeabilityGraph.readFieldLineageMergeabilityGraphAndAggregateToTableGraph(subdomain,fileCountLimit)
+  val associationMergeabilityGraph = AssociationMergeabilityGraph.readFromSingleEdgeFiles(subdomain)
   associationMergeabilityGraph.writeToStandardFile(subdomain)
 
 

@@ -11,8 +11,9 @@ import java.io.File
 
 case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilityGraphEdge]) extends JsonWritable[AssociationMergeabilityGraph]{
 
-  def writeToSingleEdgeFile(filename: String) = {
-    val file = createParentDirs(new File(ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR + s"/$filename"))
+  def writeToSingleEdgeFile(filename: String, subdomain:String) = {
+    val singleEdgeDir = AssociationMergeabilityGraph.getSingleEdgeDir(subdomain)
+    val file = createParentDirs(new File(singleEdgeDir.getAbsolutePath + s"/$filename"))
     toJsonFile(file)
   }
 
@@ -81,6 +82,15 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilit
 
 }
 object AssociationMergeabilityGraph extends JsonReadable[AssociationMergeabilityGraph]{
+  def readFromSingleEdgeFiles(subdomain: String) = {
+    val edges = getSingleEdgeDir(subdomain)
+      .listFiles()
+      .flatMap(f => fromJsonFile(f.getAbsolutePath).edges)
+      .toIndexedSeq
+    AssociationMergeabilityGraph(edges)
+  }
+
+  def getSingleEdgeDir(subdomain: String) = createParentDirs(new File(ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR + s"/$subdomain/"))
 
   def readFromStandardFile(subdomain:String) = {
     fromJsonFile(getAssociationMergeabilityGraphFile(subdomain).getAbsolutePath)

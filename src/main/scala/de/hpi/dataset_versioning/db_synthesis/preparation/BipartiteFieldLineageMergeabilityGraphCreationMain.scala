@@ -33,7 +33,8 @@ object BipartiteFieldLineageMergeabilityGraphCreationMain extends App with Stric
         assert(tg.edges.size<=1)
         if(tg.edges.size>0){
           val filename = tg.edges.head.v1.compositeID + ";" + tg.edges.head.v2.compositeID + ".json"
-          tg.writeToSingleEdgeFile(filename)
+          val subdomain = tg.edges.head.v1.subdomain
+          tg.writeToSingleEdgeFile(filename,subdomain)
         }
       }
     }

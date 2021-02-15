@@ -30,9 +30,11 @@ object BipartiteFieldLineageMergeabilityGraphCreationMain extends App with Stric
         assert(graphRead.edges.toSet==matchGraph.edges.toSet)
         //aggregate to associationMatchGraph:
         val tg = matchGraph.transformToTableGraph
-        assert(tg.edges.size==1)
-        val filename = tg.edges.head.v1.compositeID + ";" + tg.edges.head.v2.compositeID + ".json"
-        tg.writeToSingleEdgeFile(filename)
+        assert(tg.edges.size<=1)
+        if(tg.edges.size>0){
+          val filename = tg.edges.head.v1.compositeID + ";" + tg.edges.head.v2.compositeID + ".json"
+          tg.writeToSingleEdgeFile(filename)
+        }
       }
     }
   }

@@ -1,5 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.preparation
 
+import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.io.IOService
 import de.hpi.dataset_versioning.util.TableFormatter
@@ -23,26 +24,41 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   printGraphInfo(graphFiltered)
 
   private def printGraphInfo(graph:AssociationMergeabilityGraph) = {
-    println(graph.toScalaGraph.edges.toIndexedSeq.map(_.weight).sum)
-    println(graph.toScalaGraph.nodes.size)
-    println(graph.toScalaGraph.edges.size)
+    println("#Vertices:" + graph.toScalaGraph.nodes.size)
+    println("#Edges:" + graph.toScalaGraph.edges.size)
+    println("Evidence Sum:" + graph.toScalaGraph.edges.toIndexedSeq.map(_.weight).sum)
   }
 
   graphFiltered.printComponentSizeHistogram()
   //extreme filter:
   println("--------------------------------------------------------------------------------------")
-  val graphExtremeFiltered = graphRead.filterGraphEdges((t,_) => t.prev != null)
-  graphExtremeFiltered.printComponentSizeHistogram()
-  printGraphInfo(graphExtremeFiltered)
+  println("Filter null")
+  println("--------------------------------------------------------------------------------------")
+  val graphWithoutNull = graphRead.filterGraphEdges((t,_) => t.prev != null && t.after!=null)
+  graphWithoutNull.printComponentSizeHistogram()
+  printGraphInfo(graphWithoutNull)
   //print evidence sums:
   println("--------------------------------------------------------------------------------------")
-  val evidenceFilteredExtreme = graphExtremeFiltered.edges.map(_.summedEvidence).sum
-  val evidenceSumFiltered = graphFiltered.edges.map(_.summedEvidence).sum
-  val evidenceSum = graphRead.edges.map(_.summedEvidence).sum
-  println(evidenceFilteredExtreme)
-  println(evidenceSumFiltered)
-  println(evidenceSum)
+  println("Filter _R")
+  println("--------------------------------------------------------------------------------------")
+  val graphWithOutRowDelete = graphRead.filterGraphEdges((t,_) => t.prev != ReservedChangeValues.NOT_EXISTANT_ROW && t.after!=ReservedChangeValues.NOT_EXISTANT_ROW)
+  graphWithOutRowDelete.printComponentSizeHistogram()
+  printGraphInfo(graphWithOutRowDelete)
+  println("--------------------------------------------------------------------------------------")
+  println("Filter null and _R")
+  println("--------------------------------------------------------------------------------------")
 
+  //fragment 1:
+  val toFilter = Set[Any](null,ReservedChangeValues.NOT_EXISTANT_ROW)
+  val sum = graphRead.edges.flatMap(e => e.evidenceMultiSet.filter(t => toFilter.contains(t._1.prev) || toFilter.contains(t._1.after))).map(_._2).sum
+  println(sum)
+  //fragment 2:
+  graphRead.edges.forall(e => e.evidenceMultiSet.map(_._2).sum == e.summedEvidence)
+
+
+  val graphWithOutNullAndRowDelete = graphRead.filterGraphEdges((t,_) => ! toFilter.contains(t.after) && !toFilter.contains(t.prev))
+  graphWithOutNullAndRowDelete.printComponentSizeHistogram()
+  printGraphInfo(graphWithOutNullAndRowDelete)
   println("--------------------------------------------------------------------------------------")
   println("IDF-Scores:")
   val idfScores = graphRead.idfScores

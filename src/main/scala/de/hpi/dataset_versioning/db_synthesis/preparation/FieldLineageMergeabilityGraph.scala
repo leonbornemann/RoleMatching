@@ -16,7 +16,15 @@ case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge
     val tableGraphEdges = edges
       .groupMap(e => Set(e.tupleReferenceA.associationID,e.tupleReferenceB.associationID))(e => (e.evidence,e.evidenceSet.get))
       .toIndexedSeq
-      .withFilter{case (_,v) =>v.map(_._1).sum>0 }
+      .withFilter{case (k,v) =>{
+        if(!v.forall(t => t._1 == t._2.map(_._2).sum)){
+          println(k)
+          val failed = v.filter(t => t._1 != t._2.map(_._2).sum)
+          failed.foreach(println(_))
+        }
+        assert(v.forall(t => t._1 == t._2.map(_._2).sum))
+        v.map(_._1).sum>0
+      }}
       .map{case (k,v) => {
         assert(k.size==2)
         val keyList = k.toIndexedSeq

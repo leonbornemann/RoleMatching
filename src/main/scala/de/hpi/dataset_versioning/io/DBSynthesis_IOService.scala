@@ -38,6 +38,7 @@ object DBSynthesis_IOService extends StrictLogging{
   def COLUMN_SKETCH_DIR = SKETCH_DIR + "/temporalColumns/"
   //mergeability graphs:
   def ASSOCIATIONS_MERGEABILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/associationMergeabilityGraphs/"
+  def ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR = ASSOCIATIONS_MERGEABILITY_GRAPH_DIR + "/singleEdgeFiles/"
   def FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/fieldLineageMergeabilityGraph/"
 
   def getAssociationGraphEdgeCandidateFile = new File(WORKING_DIR + "associationGraphEdgeCandidates.json")

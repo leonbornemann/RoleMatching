@@ -2,7 +2,7 @@ package de.hpi.dataset_versioning.db_synthesis.preparation
 
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.db_synthesis.preparation.AssociationMergeabilityGraph.getAssociationMergeabilityGraphFile
-import de.hpi.dataset_versioning.io.DBSynthesis_IOService.{ASSOCIATIONS_MERGEABILITY_GRAPH_DIR, OPTIMIZATION_INPUT_DIR, createParentDirs}
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService.{ASSOCIATIONS_MERGEABILITY_GRAPH_DIR, ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR, OPTIMIZATION_INPUT_DIR, createParentDirs}
 import de.hpi.dataset_versioning.util.{MathUtil, TableFormatter}
 import scalax.collection.edge.{WLkUnDiEdge, WUnDiEdge}
 import scalax.collection.immutable.Graph
@@ -10,6 +10,11 @@ import scalax.collection.immutable.Graph
 import java.io.File
 
 case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilityGraphEdge]) extends JsonWritable[AssociationMergeabilityGraph]{
+
+  def writeToSingleEdgeFile(filename: String) = {
+    val file = createParentDirs(new File(ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR + s"/$filename"))
+    toJsonFile(file)
+  }
 
   assert(edges.groupBy(e => Set(e.v1,e.v2)).forall(_._2.size==1))
 
@@ -21,7 +26,6 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilit
       .map(t => (t._1,t._2.toSet.size))
     transitionToEdgeCounts.map{case (t,n) => (t,MathUtil.log2(documentCount / n.toDouble))}
   }
-
 
   def getTopTransitionCounts(n: Int) = {
     val table = edges.flatMap(_.evidenceMultiSet)

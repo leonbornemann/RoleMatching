@@ -28,6 +28,11 @@ object BipartiteFieldLineageMergeabilityGraphCreationMain extends App with Stric
         matchGraph.writeToStandardFile()
         val graphRead = FieldLineageMergeabilityGraph.readFromStandardFile(Set(edge.firstMatchPartner,edge.secondMatchPartner))
         assert(graphRead.edges.toSet==matchGraph.edges.toSet)
+        //aggregate to associationMatchGraph:
+        val tg = matchGraph.transformToTableGraph
+        assert(tg.edges.size==1)
+        val filename = tg.edges.head.v1.compositeID + ";" + tg.edges.head.v2.compositeID + ".json"
+        tg.writeToSingleEdgeFile(filename)
       }
     }
   }

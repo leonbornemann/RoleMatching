@@ -14,10 +14,8 @@ import de.hpi.dataset_versioning.io.IOService
 object DirectBipartiteFieldLineageMergeabilityGraphCreationMain extends App with StrictLogging {
   IOService.socrataDir = args(0)
   val subdomain = "org.cityofchicago"
-  val id1 = DecomposedTemporalTableIdentifier.fromShortString(subdomain,"pubx-yq2d.0_17")
-  val id2 = DecomposedTemporalTableIdentifier.fromShortString(subdomain,"pubx-yq2d.0_2")
-  val matchGraphRead = FieldLineageMergeabilityGraph.readFromStandardFile(Set(id1,id2))
-  val isNotOK = matchGraphRead.edges.flatMap(_.evidenceSet.get).exists(e => e._1.prev==e._1.after)
+  val id1 = DecomposedTemporalTableIdentifier.fromShortString(subdomain,"gm9b-bwv5.0_14")
+  val id2 = DecomposedTemporalTableIdentifier.fromShortString(subdomain,"r5kz-chrr.1_6")
   val tableLeft = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id1)
   val tableRight = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id2)
   val leftTableHasChanges = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(tableLeft)._1 > 0

@@ -11,8 +11,11 @@ class FieldLineageGraph[A] {
       var evidenceSet:Option[collection.IndexedSeq[(ValueTransition,Int)]] = None
       if(includeEvidenceSet) {
         val tupA = e.tupleReferenceA.getDataTuple.head
-        val tupB = e.tupleReferenceA.getDataTuple.head
+        val tupB = e.tupleReferenceB.getDataTuple.head
         evidenceSet = Some(tupA.getOverlapEvidenceMultiSet(tupB).toIndexedSeq)
+        if(evidenceSet.get.map(_._2).sum!=e.evidence){
+          println()
+        }
       }
       FieldLineageGraphEdge(e.tupleReferenceA.toIDBasedTupleReference, e.tupleReferenceB.toIDBasedTupleReference, e.evidence,evidenceSet)
     }))
@@ -21,20 +24,14 @@ class FieldLineageGraph[A] {
   val edges = mutable.HashSet[General_1_to_1_TupleMatching[A]]()
 
   def getTupleMatchOption(ref1:TupleReference[A], ref2:TupleReference[A]) = {
-    val mappedFieldLineages = buildTuples(ref1, ref2) // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
-    val evidence = mappedFieldLineages._1.getOverlapEvidenceCount(mappedFieldLineages._2)
+    val left = ref1.getDataTuple.head
+    val right = ref2.getDataTuple.head // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
+    val evidence = left.getOverlapEvidenceCount(right)
     if (evidence == -1) {
       None
     } else {
       Some(General_1_to_1_TupleMatching(ref1,ref2, evidence))
     }
-  }
-
-  def buildTuples(ref1: TupleReference[A], ref2: TupleReference[A]) = {
-    val lineages1 = ref1.getDataTuple
-    val lineages2 = ref2.getDataTuple
-    assert(lineages1.size==1 && lineages2.size==1)
-    (lineages1.head,lineages2.head)
   }
 
 

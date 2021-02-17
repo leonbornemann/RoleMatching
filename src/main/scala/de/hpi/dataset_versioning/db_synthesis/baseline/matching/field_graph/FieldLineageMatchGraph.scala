@@ -1,10 +1,8 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.matching
+package de.hpi.dataset_versioning.db_synthesis.baseline.matching.field_graph
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.TupleSetIndex
-import de.hpi.dataset_versioning.db_synthesis.preparation.{FieldLineageGraphEdge, FieldLineageMergeabilityGraph}
-
-import scala.collection.mutable
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 
 class FieldLineageMatchGraph[A](tuples: IndexedSeq[TupleReference[A]]) extends FieldLineageGraph[A] with StrictLogging{
 

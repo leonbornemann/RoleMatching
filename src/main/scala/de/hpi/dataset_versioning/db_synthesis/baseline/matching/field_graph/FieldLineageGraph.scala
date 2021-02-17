@@ -1,6 +1,7 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.matching
+package de.hpi.dataset_versioning.db_synthesis.baseline.matching.field_graph
 
-import de.hpi.dataset_versioning.db_synthesis.preparation.{FieldLineageGraphEdge, FieldLineageMergeabilityGraph, ValueTransition}
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{General_1_to_1_TupleMatching, TupleReference, ValueTransition}
+import de.hpi.dataset_versioning.db_synthesis.graph.field_lineage.{FieldLineageGraphEdge, FieldLineageMergeabilityGraph}
 
 import scala.collection.mutable
 

@@ -125,6 +125,18 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
   }
 }
 object AbstractTemporalField{
+
+  def ENTROPY_REDUCTION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = {
+    ENTROPY_REDUCTION_SET(Set(tr1,tr2))
+  }
+
+  def ENTROPY_REDUCTION_SET[A](references: Set[TupleReference[A]]) = {
+    val merged = references.map(_.getDataTuple.head)
+      .reduce((a,b) => a.mergeWithConsistent(b)).getEntropy()
+    val prior = references.map(_.getDataTuple.head.getEntropy()).sum
+    prior - merged
+  }
+
   def mergeAll[A](refs:Seq[TupleReference[A]]):TemporalFieldTrait[A] = {
     if(refs.size==1)
       refs.head.getDataTuple.head

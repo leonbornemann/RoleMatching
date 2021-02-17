@@ -1,13 +1,29 @@
 package de.hpi.dataset_versioning.db_synthesis.sketches.field
 
+import de.hpi.dataset_versioning.data.change.ReservedChangeValues
+
 import java.time.LocalDate
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.ValueTransition
 import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.{FieldChangeCounter, UpdateChangeCounter}
-import de.hpi.dataset_versioning.db_synthesis.preparation.ValueTransition
+import de.hpi.dataset_versioning.io.IOService
+import de.hpi.dataset_versioning.util.MathUtil.log2
 
 import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
+
+  private var entropy:Option[Double] = None
+
+  def getEntropy(): Double = {
+    if(entropy.isDefined)
+      entropy.get
+    else {
+      entropy = Some(new EntropyComputer(this).entropy)
+      entropy.get
+    }
+  }
+
   def nonWildcardValueTransitions: Set[(T, T)] = {
     val vl = getValueLineage
       .values
@@ -168,5 +184,7 @@ trait TemporalFieldTrait[T] {
 
   //gets the hash values at the specified time-intervals, substituting missing values with the hash-value of ReservedChangeValues.NOT_EXISTANT_ROW
   def valuesAt(timeToExtract: TimeIntervalSequence): Map[TimeInterval, T]
+
+  def WILDCARDVALUES:Set[T]
 
 }

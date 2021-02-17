@@ -1,6 +1,6 @@
-package de.hpi.dataset_versioning.db_synthesis.preparation
+package de.hpi.dataset_versioning.db_synthesis.graph.association
 
-import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
+import de.hpi.dataset_versioning.io.IOService
 
 object AssociationMergeabilityGraphCreationMain extends App {
 

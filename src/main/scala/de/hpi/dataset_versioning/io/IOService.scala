@@ -50,6 +50,7 @@ object IOService extends StrictLogging{
   }
 
   def STANDARD_TIME_RANGE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay).map(LocalDate.ofEpochDay(_))
+  def STANDARD_TIME_RANGE_SIZE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay).size
 
 
   def getTemporalColumnFile(id: String, attrId: Int): File = {
@@ -155,6 +156,7 @@ object IOService extends StrictLogging{
   def TEMPORAL_VIEW_TABLE_BINARY_DIR = WORKING_DIR + "/temporalViewTables/"
   def TEMPORAL_DECOMPOSED_TABLE_BINARY_DIR = WORKING_DIR + "temporalDecomposedTables/"
   def TEMPORAL_COLUMN_DIR = WORKING_DIR + "/temporalColumns/"
+  def DATASET_METAINFO_DIR = createParentDirs(new File(CUSTOM_METADATA_DIR + "/datasetMetaInfo/")).getAbsolutePath
 
   def getUncompressedDiffDir(date: LocalDate) = createAndReturn(new File(DIFF_DIR_UNCOMPRESSED + date.format(dateTimeFormatter) + "_diff"))
   def getUncompressedDataDir(date: LocalDate) = createAndReturn(new File(DATA_DIR_UNCOMPRESSED + date.format(dateTimeFormatter)))

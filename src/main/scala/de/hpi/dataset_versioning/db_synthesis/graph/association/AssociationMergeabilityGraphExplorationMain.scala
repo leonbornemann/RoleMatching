@@ -1,11 +1,8 @@
-package de.hpi.dataset_versioning.db_synthesis.preparation
+package de.hpi.dataset_versioning.db_synthesis.graph.association
 
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.io.IOService
 import de.hpi.dataset_versioning.util.TableFormatter
-import scalax.collection.Graph
-import scalax.collection.edge.WLkUnDiEdge
 
 object AssociationMergeabilityGraphExplorationMain extends App {
 
@@ -16,14 +13,14 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   val graph = graphRead.toScalaGraph
   printGraphInfo(graphRead)
   println("--------------------------------------------------------")
-  graphRead.printTopTransitionCounts(20)
+  graphRead.printTopTransitionCounts(2000)
   val transitionsToFilter = graphRead.getTopTransitionCounts(2)
     .map(_._1)
     .toSet
-  val graphFiltered = graphRead.filterGraphEdges((t,_) => !transitionsToFilter.contains(t))
+  val graphFiltered = graphRead.filterGraphEdges((t, _) => !transitionsToFilter.contains(t))
   printGraphInfo(graphFiltered)
 
-  private def printGraphInfo(graph:AssociationMergeabilityGraph) = {
+  private def printGraphInfo(graph: AssociationMergeabilityGraph) = {
     println("#Vertices:" + graph.toScalaGraph.nodes.size)
     println("#Edges:" + graph.toScalaGraph.edges.size)
     println("Evidence Sum:" + graph.toScalaGraph.edges.toIndexedSeq.map(_.weight).sum)
@@ -34,14 +31,14 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   println("--------------------------------------------------------------------------------------")
   println("Filter null")
   println("--------------------------------------------------------------------------------------")
-  val graphWithoutNull = graphRead.filterGraphEdges((t,_) => t.prev != null && t.after!=null)
+  val graphWithoutNull = graphRead.filterGraphEdges((t, _) => t.prev != null && t.after != null)
   graphWithoutNull.printComponentSizeHistogram()
   printGraphInfo(graphWithoutNull)
   //print evidence sums:
   println("--------------------------------------------------------------------------------------")
   println("Filter _R")
   println("--------------------------------------------------------------------------------------")
-  val graphWithOutRowDelete = graphRead.filterGraphEdges((t,_) => t.prev != ReservedChangeValues.NOT_EXISTANT_ROW && t.after!=ReservedChangeValues.NOT_EXISTANT_ROW)
+  val graphWithOutRowDelete = graphRead.filterGraphEdges((t, _) => t.prev != ReservedChangeValues.NOT_EXISTANT_ROW && t.after != ReservedChangeValues.NOT_EXISTANT_ROW)
   graphWithOutRowDelete.printComponentSizeHistogram()
   printGraphInfo(graphWithOutRowDelete)
   println("--------------------------------------------------------------------------------------")
@@ -49,14 +46,14 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   println("--------------------------------------------------------------------------------------")
 
   //fragment 1:
-  val toFilter = Set[Any](null,ReservedChangeValues.NOT_EXISTANT_ROW)
+  val toFilter = Set[Any](null, ReservedChangeValues.NOT_EXISTANT_ROW)
   val sum = graphRead.edges.flatMap(e => e.evidenceMultiSet.filter(t => toFilter.contains(t._1.prev) || toFilter.contains(t._1.after))).map(_._2).sum
   println(sum)
   //fragment 2:
   graphRead.edges.forall(e => e.evidenceMultiSet.map(_._2).sum == e.summedEvidence)
 
 
-  val graphWithOutNullAndRowDelete = graphRead.filterGraphEdges((t,_) => ! toFilter.contains(t.after) && !toFilter.contains(t.prev))
+  val graphWithOutNullAndRowDelete = graphRead.filterGraphEdges((t, _) => !toFilter.contains(t.after) && !toFilter.contains(t.prev))
   graphWithOutNullAndRowDelete.printComponentSizeHistogram()
   printGraphInfo(graphWithOutNullAndRowDelete)
   println("--------------------------------------------------------------------------------------")
@@ -64,7 +61,7 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   val idfScores = graphRead.idfScores
     .toIndexedSeq.sortBy(_._2)
     .take(100)
-    .map(t => (Seq(t._1,f"${t._2}%.3f")))
-  val header = Seq("Transition","IDF-Score")
-  TableFormatter.printTable(header,idfScores)
+    .map(t => (Seq(t._1, f"${t._2}%.3f")))
+  val header = Seq("Transition", "IDF-Score")
+  TableFormatter.printTable(header, idfScores)
 }

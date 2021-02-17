@@ -1,9 +1,9 @@
-package de.hpi.dataset_versioning.db_synthesis.baseline.matching
+package de.hpi.dataset_versioning.db_synthesis.baseline.matching.field_graph
 
-import de.hpi.dataset_versioning.db_synthesis.baseline.index.{BipartiteTupleGroup, BipartiteTupleIndex, TupleSetIndex}
+import de.hpi.dataset_versioning.db_synthesis.baseline.index.BipartiteTupleIndex
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 
 import java.time.LocalDate
-import scala.collection.mutable
 
 class BipartiteFieldLineageMatchGraph[A](tuplesLeft: IndexedSeq[TupleReference[A]],tuplesRight: IndexedSeq[TupleReference[A]]) extends FieldLineageGraph[A]{
 

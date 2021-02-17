@@ -68,6 +68,8 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
   override def numValues: Int = lineage.size
 
   override def allTimestamps: Iterable[LocalDate] = lineage.keySet
+
+  override def WILDCARDVALUES: Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_COL)
 }
 object ValueLineage{
 

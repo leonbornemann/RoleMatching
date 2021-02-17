@@ -1,10 +1,10 @@
-package de.hpi.dataset_versioning.db_synthesis.preparation
+package de.hpi.dataset_versioning.db_synthesis.graph.association
 
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
-import de.hpi.dataset_versioning.db_synthesis.preparation.AssociationMergeabilityGraph.getAssociationMergeabilityGraphFile
-import de.hpi.dataset_versioning.io.DBSynthesis_IOService.{ASSOCIATIONS_MERGEABILITY_GRAPH_DIR, ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR, OPTIMIZATION_INPUT_DIR, createParentDirs}
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.ValueTransition
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService.{ASSOCIATIONS_MERGEABILITY_GRAPH_DIR, ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR, createParentDirs}
 import de.hpi.dataset_versioning.util.{MathUtil, TableFormatter}
-import scalax.collection.edge.{WLkUnDiEdge, WUnDiEdge}
+import scalax.collection.edge.WLkUnDiEdge
 import scalax.collection.immutable.Graph
 
 import java.io.File
@@ -77,7 +77,7 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilit
   }
 
   def writeToStandardFile(subdomain:String) = {
-    toJsonFile(getAssociationMergeabilityGraphFile(subdomain))
+    toJsonFile(AssociationMergeabilityGraph.getAssociationMergeabilityGraphFile(subdomain))
   }
 
 }

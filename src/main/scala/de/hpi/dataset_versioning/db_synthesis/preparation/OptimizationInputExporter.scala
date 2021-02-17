@@ -4,7 +4,8 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.surrogate_based.SurrogateBasedDecomposedTemporalTable
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{DataBasedMatchCalculator, FieldLineageMatchGraph}
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.DataBasedMatchCalculator
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.field_graph.FieldLineageMatchGraph
 import de.hpi.dataset_versioning.db_synthesis.database.table.{AssociationSchema, BCNFTableSchema}
 import de.hpi.dataset_versioning.db_synthesis.preparation.OptimizationInputExportMain.{logger, subdomain}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService

@@ -1,8 +1,12 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.config
 
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.UpdateChangeCounter
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.{AbstractTemporalField, TemporalFieldTrait}
 
 object GLOBAL_CONFIG {
+  def OPTIMIZATION_TARGET_FUNCTION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = AbstractTemporalField.ENTROPY_REDUCTION(tr1,tr2)
+
   val SINGLE_LAYER_INDEX: Boolean = true
 
 

@@ -150,6 +150,8 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
   override def isWildcard(a: Int): Boolean = a==WILDCARD
 
   override def numValues: Int = numEntries
+
+  override def WILDCARDVALUES: Set[Int] = Set(WILDCARD)
 }
 
 object Variant2Sketch {

@@ -87,7 +87,7 @@ case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumb
         curWCCount+=1
         s"WC_$curWCCount"
       } else prev.toString
-      val actualCurrent = if(prev=='_') {
+      val actualCurrent = if(c=='_') {
         curWCCount+=1
         s"WC_$curWCCount"
       } else c.toString

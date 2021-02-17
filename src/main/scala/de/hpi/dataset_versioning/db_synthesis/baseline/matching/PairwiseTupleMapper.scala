@@ -6,6 +6,7 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.TemporalDatabaseTableTrait
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.TupleSetIndex
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.field_graph.FieldLineageMatchGraph
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
 import java.time.LocalDate

@@ -1,6 +1,6 @@
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.index.BipartiteTupleIndex
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.BipartiteFieldLineageMatchGraph
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.field_graph.BipartiteFieldLineageMatchGraph
 import de.hpi.dataset_versioning.entropy.FieldLineageAsCharacterString
 
 object MergeabilityGraphCreationTest extends App {

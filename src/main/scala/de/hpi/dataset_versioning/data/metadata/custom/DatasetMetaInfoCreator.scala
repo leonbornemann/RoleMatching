@@ -34,7 +34,7 @@ class DatasetMetaInfoCreator(subdomain:String) extends StrictLogging{
         val association = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(as.id)
         val cardinality = association.nrows
         val tuples = association.tupleReferences.map(_.getDataTuple.head.getValueLineage)
-        assert(tuples == tuples.toSet)
+        assert(tuples.size == tuples.toSet.size)
         AssociationMetaInfo(as.id,as.attributeLineage.lastName,as.attributeLineage.attrId,cardinality)
       })
       DatasetMetaInfo(id,name,description,ami)

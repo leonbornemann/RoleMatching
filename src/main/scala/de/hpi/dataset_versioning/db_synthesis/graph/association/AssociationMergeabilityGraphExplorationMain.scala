@@ -10,7 +10,7 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   val subdomain = args(1)
   val graphRead = AssociationMergeabilityGraph.readFromStandardFile(subdomain)
   graphRead.printComponentSizeHistogram()
-  //graphRead.detailedComponentPrint()
+  graphRead.detailedComponentPrint()
   val graph = graphRead.toScalaGraph
   printGraphInfo(graphRead)
   println("--------------------------------------------------------")

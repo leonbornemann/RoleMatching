@@ -32,8 +32,11 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilit
       val byViewID = ids.groupBy(_.viewID)
       println("VERTICES: ")
       byViewID.foreach{case (v,aids) => {
-        val colString = "[" + aids.map(dttID => metadata(v).associationInfoByID(dttID).colName).mkString(" ; ") + "]"
-        println(s"${v}( ${metadata(v).name} ): $colString")
+        val colString = "[" + aids.map(dttID => {
+          val info = metadata(v).associationInfoByID(dttID)
+          info.colName + s"<${info.cardinality}>"
+        }).mkString(" ; ") + "]"
+        println(s"${v}( ${metadata(v).name}): $colString")
       }}
       val edgeObjects = componentEdges.map(_.label.asInstanceOf[AssociationMergeabilityGraphEdge])
       val evidences = edgeObjects.toIndexedSeq.flatMap(_.evidenceMultiSet.toIndexedSeq)

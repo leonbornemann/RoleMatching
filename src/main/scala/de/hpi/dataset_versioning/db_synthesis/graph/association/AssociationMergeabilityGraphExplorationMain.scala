@@ -10,10 +10,11 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   val subdomain = args(1)
   val graphRead = AssociationMergeabilityGraph.readFromStandardFile(subdomain)
   graphRead.printComponentSizeHistogram()
+  //graphRead.detailedComponentPrint()
   val graph = graphRead.toScalaGraph
   printGraphInfo(graphRead)
   println("--------------------------------------------------------")
-  graphRead.printTopTransitionCounts(2000)
+  //graphRead.printTopTransitionCounts(2000)
   val transitionsToFilter = graphRead.getTopTransitionCounts(2)
     .map(_._1)
     .toSet
@@ -39,6 +40,9 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   println("Filter _R")
   println("--------------------------------------------------------------------------------------")
   val graphWithOutRowDelete = graphRead.filterGraphEdges((t, _) => t.prev != ReservedChangeValues.NOT_EXISTANT_ROW && t.after != ReservedChangeValues.NOT_EXISTANT_ROW)
+  println()
+  println()
+  graphWithOutRowDelete.detailedComponentPrint()
   graphWithOutRowDelete.printComponentSizeHistogram()
   printGraphInfo(graphWithOutRowDelete)
   println("--------------------------------------------------------------------------------------")
@@ -54,7 +58,8 @@ object AssociationMergeabilityGraphExplorationMain extends App {
 
 
   val graphWithOutNullAndRowDelete = graphRead.filterGraphEdges((t, _) => !toFilter.contains(t.after) && !toFilter.contains(t.prev))
-  graphWithOutNullAndRowDelete.printComponentSizeHistogram()
+  graphWithOutNullAndRowDelete.detailedComponentPrint()
+  //graphWithOutNullAndRowDelete.printComponentSizeHistogram()
   printGraphInfo(graphWithOutNullAndRowDelete)
   println("--------------------------------------------------------------------------------------")
   println("IDF-Scores:")

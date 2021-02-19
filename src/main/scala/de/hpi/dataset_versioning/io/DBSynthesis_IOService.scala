@@ -40,6 +40,8 @@ object DBSynthesis_IOService extends StrictLogging{
   def ASSOCIATIONS_MERGEABILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/associationMergeabilityGraphs/"
   def ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR = ASSOCIATIONS_MERGEABILITY_GRAPH_DIR + "/singleEdgeFiles/"
   def FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/fieldLineageMergeabilityGraph/"
+  def CONNECTED_COMPONENT_DIR(subdomain:String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR + s"/connectedComponents/$subdomain")).getAbsolutePath
+  def FIELD_MERGE_RESULT_DIR = OPTIMIZATION_INPUT_DIR + "/mergedTuples/"
 
   def getAssociationGraphEdgeCandidateFile = new File(WORKING_DIR + "associationGraphEdgeCandidates.json")
 

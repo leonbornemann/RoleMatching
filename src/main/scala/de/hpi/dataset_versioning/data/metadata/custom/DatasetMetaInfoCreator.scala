@@ -1,13 +1,15 @@
 package de.hpi.dataset_versioning.data.metadata.custom
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.metadata.custom.schemaHistory.TemporalSchema
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
 import de.hpi.dataset_versioning.io.IOService
 
 import java.time.LocalDate
 
-class DatasetMetaInfoCreator(subdomain:String) {
+class DatasetMetaInfoCreator(subdomain:String) extends StrictLogging{
 
   val associationSchemata = AssociationSchema.loadAllAssociationsInSubdomain(subdomain)
   val byID = associationSchemata.groupBy(a => (a.id.viewID))
@@ -24,10 +26,17 @@ class DatasetMetaInfoCreator(subdomain:String) {
 
   def create() = {
     byID.keySet.foreach(id => {
+      logger.debug(s"Starting $id")
       val ts = TemporalSchema.load(id)
       val metadataTimestamps = IOService.getAllSimplifiedDataVersions(id).keySet
       val (name,description) = tryLoadMetadata(id,metadataTimestamps)
-      val ami = byID(id).map(as => AssociationMetaInfo(as.id,as.attributeLineage.lastName,as.attributeLineage.attrId))
+      val ami = byID(id).map(as => {
+        val association = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(as.id)
+        val cardinality = association.nrows
+        val tuples = association.tupleReferences.map(_.getDataTuple.head.getValueLineage)
+        assert(tuples == tuples.toSet)
+        AssociationMetaInfo(as.id,as.attributeLineage.lastName,as.attributeLineage.attrId,cardinality)
+      })
       DatasetMetaInfo(id,name,description,ami)
         .writeToStandardFile()
     })

@@ -9,6 +9,8 @@ import de.hpi.dataset_versioning.io.IOService.DATASET_METAINFO_DIR
 import java.io.File
 
 case class DatasetMetaInfo(id:String,name:String,description:String,associationInfo:IndexedSeq[AssociationMetaInfo]) extends JsonWritable[DatasetMetaInfo] {
+  def associationInfoByID = associationInfo.map(a => (a.id,a)).toMap
+
 
   def writeToStandardFile() = toJsonFile(DatasetMetaInfo.getStandardFile(id))
 

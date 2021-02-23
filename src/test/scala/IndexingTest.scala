@@ -4,7 +4,7 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch, SurrogateBasedTemporalRowSketch}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{AssociationClusterer, DataBasedMatchCalculator}
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{AssociationEdgeCandidateFinder, DataBasedMatchCalculator}
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
 import de.hpi.dataset_versioning.io.IOService
 
@@ -45,7 +45,7 @@ object IndexingTest extends App {
       rows)
   }}
   associations.foreach(r => println(r.rows.head.valueSketch.getValueLineage))
-  val clusterer = new AssociationClusterer(associations.toSet,new DataBasedMatchCalculator(),8,true)
+  val clusterer = new AssociationEdgeCandidateFinder(associations.toSet,new DataBasedMatchCalculator(),8,true)
 
   private def getValueLineage(s: String) = {
     val a = s.zipWithIndex.map { case (char, index) => (IOService.STANDARD_TIME_FRAME_START.plusDays(index), getValue(char)) }

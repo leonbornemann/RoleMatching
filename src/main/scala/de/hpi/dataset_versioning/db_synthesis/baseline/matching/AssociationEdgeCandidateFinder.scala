@@ -16,11 +16,19 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import IndexProcessingMode._
 
-class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch],
-                           heuristicMatchCalulator:DataBasedMatchCalculator,
-                           recurseLogDepth:Int = 0,
-                           autoFlush:Boolean = false,
-                           indexProcessingMode:IndexProcessingMode = SERIALIZE_EDGE_CANDIDATE) extends StrictLogging {
+/***
+ * Lazily in
+ * @param unmatchedAssociations
+ * @param heuristicMatchCalulator
+ * @param recurseLogDepth
+ * @param autoFlush
+ * @param indexProcessingMode
+ */
+class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch],
+                                     heuristicMatchCalulator:DataBasedMatchCalculator,
+                                     recurseLogDepth:Int = 0,
+                                     autoFlush:Boolean = false,
+                                     indexProcessingMode:IndexProcessingMode = SERIALIZE_EDGE_CANDIDATE) extends StrictLogging {
 
   def removeMatch(curMatch: TableUnionMatch[Int]) = ???
 
@@ -52,14 +60,14 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
   var processedNodes = 0
   var topLvlIndexSize = -1
   initMatchGraph()
-  associationGraphEdgeWriter.close()
-  matchTimeWriter.close()
-  //create sorted list
-  val sortedMatches = adjacencyList
-    .flatMap{case (t,adjacent) => adjacent.map(_._2)}
-    .toSet
-    .toIndexedSeq
-    .sortBy( (m:TableUnionMatch[Int]) => m.evidence)(Ordering[Int].reverse)
+//  associationGraphEdgeWriter.close()
+//  matchTimeWriter.close()
+//  //create sorted list
+//  val sortedMatches = adjacencyList
+//    .flatMap{case (t,adjacent) => adjacent.map(_._2)}
+//    .toSet
+//    .toIndexedSeq
+//    .sortBy( (m:TableUnionMatch[Int]) => m.evidence)(Ordering[Int].reverse)
 
   def matchWasAlreadyCalculated(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]) = {
     val existsWithScoreGreater0 = adjacencyList(firstMatchPartner).contains(secondMatchPartner)
@@ -309,8 +317,7 @@ class AssociationClusterer(unmatchedAssociations: collection.Set[SurrogateBasedS
         pr.println(AssociationGraphEdge(res(0),res(1),Integer.MIN_VALUE,Integer.MIN_VALUE,Integer.MIN_VALUE).toJson())
       })
       pr.close()
-      logger.debug("Finished serialization of edge candidates - terminating now with AssertionError as there is no need to continue")
-      assert(false)
+      logger.debug("Finished serialization of edge candidates")
     }
   }
 

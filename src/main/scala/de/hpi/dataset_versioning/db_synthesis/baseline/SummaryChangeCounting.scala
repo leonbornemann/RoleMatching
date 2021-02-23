@@ -3,7 +3,6 @@ package de.hpi.dataset_versioning.db_synthesis.baseline
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.metadata.custom.DatasetInfo
-import de.hpi.dataset_versioning.db_synthesis.baseline.TopDownMain.args
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier

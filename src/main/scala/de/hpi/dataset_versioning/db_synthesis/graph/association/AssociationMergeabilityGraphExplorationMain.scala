@@ -10,7 +10,7 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   val subdomain = args(1)
   val graphRead = AssociationMergeabilityGraph.readFromStandardFile(subdomain)
   graphRead.printComponentSizeHistogram()
-  graphRead.detailedComponentPrint()
+  //graphRead.detailedComponentPrint()
   val graph = graphRead.toScalaGraph
   printGraphInfo(graphRead)
   println("--------------------------------------------------------")
@@ -59,7 +59,7 @@ object AssociationMergeabilityGraphExplorationMain extends App {
 
   val graphWithOutNullAndRowDelete = graphRead.filterGraphEdges((t, _) => !toFilter.contains(t.after) && !toFilter.contains(t.prev))
   graphWithOutNullAndRowDelete.detailedComponentPrint()
-  //graphWithOutNullAndRowDelete.printComponentSizeHistogram()
+  graphWithOutNullAndRowDelete.printComponentSizeHistogram()
   printGraphInfo(graphWithOutNullAndRowDelete)
   println("--------------------------------------------------------------------------------------")
   println("IDF-Scores:")

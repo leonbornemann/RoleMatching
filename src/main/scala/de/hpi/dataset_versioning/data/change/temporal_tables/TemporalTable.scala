@@ -3,7 +3,7 @@ package de.hpi.dataset_versioning.data.change.temporal_tables
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, AttributeState, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.TimeInterval
-import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.{EntityFieldLineage, FieldLineageReference, TemporalRow, ValueLineage}
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.{EntityFieldLineage, TemporalRow, ValueLineage}
 import de.hpi.dataset_versioning.data.change.{ChangeCube, ReservedChangeValues}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
@@ -229,31 +229,6 @@ class TemporalTable(val id:String,
 
   def allFields = rows.flatMap(_.fields)
 
-  def allValuesNEAt(ts: LocalDate): Boolean = {
-      allFields.forall(vl => vl.valueAt(ts)==ReservedChangeValues.NOT_EXISTANT_ROW)
-  }
-
-  def activeTimeIntervals = {
-    var curBegin = timestampsWithChanges(0)
-    var curEnd:LocalDate = null
-    var activeTimeIntervals = mutable.ArrayBuffer[TimeInterval]()
-    for(ts <- timestampsWithChanges.tail){
-      if(curEnd == null && allValuesNEAt(ts)){
-        assert(curBegin!=null)
-        activeTimeIntervals.append(TimeInterval(curBegin,Some(ts)))
-        curBegin=null
-        curEnd=null
-      } else if(curBegin==null){
-        assert(!allValuesNEAt(ts))
-        curBegin = ts
-      }
-    }
-    //add last time period
-    if(curBegin!=null)
-      activeTimeIntervals += TimeInterval(curBegin,None)
-    activeTimeIntervals
-  }
-
   def buildIndexByChangeTimestamp = {
     val index:Map[LocalDate,mutable.HashSet[(Int,Int)]] = timestampsWithChanges
       .map(t => (t,mutable.HashSet[(Int,Int)]()))
@@ -265,10 +240,6 @@ class TemporalTable(val id:String,
       }
     }
     index
-  }
-
-  def getFieldLineageReferences = {
-    (0 until rows.size).flatMap(i => (0 until attributes.size).map(j => FieldLineageReference(this,i,j)))
   }
 
 }

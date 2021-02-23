@@ -63,16 +63,14 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
 
   override def nonWildCardValues: Iterable[Any] = getValueLineage.values.filter(!isWildcard(_))
 
-  override def isRowDelete(a: Any): Boolean = a==ReservedChangeValues.NOT_EXISTANT_ROW
-
   override def numValues: Int = lineage.size
 
   override def allTimestamps: Iterable[LocalDate] = lineage.keySet
 
-  override def WILDCARDVALUES: Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_COL)
+  override def WILDCARDVALUES: Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_ROW)
 }
 object ValueLineage{
 
-  def isWildcard(value: Any) = value == ReservedChangeValues.NOT_EXISTANT_DATASET || value == ReservedChangeValues.NOT_EXISTANT_COL
+  def isWildcard(value: Any) = value == ReservedChangeValues.NOT_EXISTANT_DATASET || value == ReservedChangeValues.NOT_EXISTANT_COL || value == ReservedChangeValues.NOT_EXISTANT_ROW
 
 }

@@ -74,7 +74,7 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
         newRows.map(_.asInstanceOf[SurrogateBasedTemporalRow]))
   }
 
-  override def wildcardValues = Seq(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_DATASET)
+  override def wildcardValues = rows.head.valueLineage.WILDCARDVALUES.toSeq
 
   override def buildNewRow(pk: Int, res: TemporalFieldTrait[Any]): AbstractSurrogateBasedTemporalRow[Any] = {
     new SurrogateBasedTemporalRow(IndexedSeq(pk),res.asInstanceOf[ValueLineage],IndexedSeq())

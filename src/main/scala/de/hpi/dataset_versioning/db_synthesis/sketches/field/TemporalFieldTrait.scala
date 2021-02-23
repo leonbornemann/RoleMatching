@@ -154,8 +154,6 @@ trait TemporalFieldTrait[T] {
 
   def numValues:Int
 
-  def isRowDelete(a: T) :Boolean
-
   def isWildcard(a: T) :Boolean
 
   def countChanges(changeCounter:FieldChangeCounter):(Int,Int)

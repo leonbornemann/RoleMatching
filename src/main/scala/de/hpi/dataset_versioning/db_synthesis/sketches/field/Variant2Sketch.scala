@@ -145,8 +145,6 @@ class Variant2Sketch(data:Array[Byte]) extends FieldLineageSketch with StrictLog
 
   override def nonWildCardValues: Iterable[Int] = getValueLineage.values.filter(_ != WILDCARD)
 
-  override def isRowDelete(a: Int): Boolean = a==ROWDELETEHASHVALUE
-
   override def isWildcard(a: Int): Boolean = a==WILDCARD
 
   override def numValues: Int = numEntries
@@ -198,7 +196,7 @@ object Variant2Sketch {
   }
 
   def HASH_FUNCTION_STANDARD(v:Any):Array[Byte] = {
-    if(v==ReservedChangeValues.NOT_EXISTANT_COL || v == ReservedChangeValues.NOT_EXISTANT_DATASET)
+    if(v==ReservedChangeValues.NOT_EXISTANT_COL || v == ReservedChangeValues.NOT_EXISTANT_DATASET || v == ReservedChangeValues.NOT_EXISTANT_ROW)
       intToByteArray(WILDCARD)
     else {
       var hash = if (v == null) "null".hashCode else v.hashCode()

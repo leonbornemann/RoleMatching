@@ -14,7 +14,7 @@ class MostDistinctTimestampIndexBuilder[A](unmatchedAssociations: collection.Set
 
   assert(unmatchedAssociations.forall(_.isAssociation))
 
-  val indexSize = Math.min(GLOBAL_CONFIG.INDEX_DEPTH,IOService.STANDARD_TIME_RANGE.size)
+  val indexSize = 1
 
   def buildTableIndexOnNonKeyColumns() = {
     val attributesOnWhichToIndex = unmatchedAssociations.flatMap(ua => ua.dataAttributeLineages.map(al => (ua,al)))

@@ -218,7 +218,7 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
         maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Processing group ${g.valuesAtTimestamps} with ${groupsWithTupleIndices.size} tables [Recurse Depth:$recurseDepth]",recurseDepth)
         maybeLog(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}s, 0-score matches: ${matchesWithZeroScore.size}, non-zero score matches: ${nonZeroScoreMatches}, match-Skips:$matchSkips",recurseDepth)
       }
-      if(potentialTupleMatches.exists(_.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1<=0)){
+      if(potentialTupleMatches.exists(_.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1<=0)){
         logger.debug("Really weird, we found a tuple with zero changes, when we were not supposed to")
       }
       if(groupsWithTupleIndices.size>2){
@@ -289,9 +289,6 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
     val indexBuilder = new MostDistinctTimestampIndexBuilder[Int](unmatchedAssociations.map(_.asInstanceOf[TemporalDatabaseTableTrait[Int]]))
     val (index,time) = executionTimeInSeconds(indexBuilder.buildTableIndexOnNonKeyColumns())
     indexTimeInSeconds +=time
-    if(GLOBAL_CONFIG.SINGLE_LAYER_INDEX){
-      logger.debug("We are currently using a single-layered index and the following code relies on this!")
-    }
     topLvlIndexSize = index.numLeafNodes
     logger.debug(s"starting to iterate through ${topLvlIndexSize} index leaf nodes")
     executeMatchesInIterator(index,0)

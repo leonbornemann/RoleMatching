@@ -4,7 +4,6 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval,
 
 object TimeIntervalSequenceTest extends App {
 
-
   def buildIntervalSequence(value: IndexedSeq[(Int, Int)]) = {
     val sortedTimeIntervals = value.map{case (s,e) => TimeInterval(LocalDate.ofEpochDay(s),if(e==Integer.MAX_VALUE) None else Some(LocalDate.ofEpochDay(e)))}
     TimeIntervalSequence(sortedTimeIntervals)

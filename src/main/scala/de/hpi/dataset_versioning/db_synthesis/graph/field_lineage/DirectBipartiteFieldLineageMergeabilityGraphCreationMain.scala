@@ -17,8 +17,8 @@ object DirectBipartiteFieldLineageMergeabilityGraphCreationMain extends App with
   val id2 = DecomposedTemporalTableIdentifier.fromShortString(subdomain, "r5kz-chrr.1_6")
   val tableLeft = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id1)
   val tableRight = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id2)
-  val leftTableHasChanges = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(tableLeft)._1 > 0
-  val rightTableHasChanges = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(tableRight)._1 > 0
+  val leftTableHasChanges = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(tableLeft)._1 > 0
+  val rightTableHasChanges = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(tableRight)._1 > 0
   if (leftTableHasChanges && rightTableHasChanges) {
     val matchGraph = new BipartiteFieldLineageMatchGraph(tableLeft.tupleReferences, tableRight.tupleReferences)
       .toFieldLineageMergeabilityGraph(true)

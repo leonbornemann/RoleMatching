@@ -13,7 +13,7 @@ class TupleSetIndex[A](private var tuples: IndexedSeq[TupleReference[A]],
                        val ignoreTuplesWithNoChanges:Boolean) extends IterableTupleIndex[A]{
 
   if(ignoreTuplesWithNoChanges)
-    tuples = tuples.filter(a => a.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1 > 0)
+    tuples = tuples.filter(a => a.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1 > 0)
 
   val indexableTimestamps = getRelevantTimestamps(tuples).diff(parentNodesTimestamps.toSet)
 

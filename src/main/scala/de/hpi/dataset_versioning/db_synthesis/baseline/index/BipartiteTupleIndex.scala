@@ -81,7 +81,7 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
   val chosenTimestamps = scala.collection.mutable.ArrayBuffer(splitT) ++ parentTimestamps
 
   private def getFilteredTuples(tuples:IndexedSeq[TupleReference[A]]) = {
-    tuples.filter(tr => !ignoreZeroChangeTuples || tr.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)._1>0)
+    tuples.filter(tr => !ignoreZeroChangeTuples || tr.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1>0)
   }
 
   def getBipartiteTupleGroupIterator():Iterator[BipartiteTupleGroup[A]] = {

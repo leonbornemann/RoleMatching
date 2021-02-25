@@ -38,27 +38,27 @@ object SummaryChangeCounting extends App with StrictLogging{
         projection.writeTOBCNFTemporalTableFile
       }
     })
-    val bcnfChangeCount = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(dtts.map(dtt => {
+    val bcnfChangeCount = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.sumChangeRanges(dtts.map(dtt => {
       if(!TemporalTable.bcnfContentTableExists(dtt.id)){
         missingBCNFTables+=1
         (0,0)
       } else
-        GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(TemporalTable.loadBCNFFromStandardBinaryFile(dtt.id))
+        GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(TemporalTable.loadBCNFFromStandardBinaryFile(dtt.id))
     }))
     val associationChangeCounts = associations.map(a => {
       val association = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(a.id)
       nFieldsInAssociations += association.nrows
-      GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(association)
+      GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(association)
     })
-    val associationChangeCount = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(associationChangeCounts)
+    val associationChangeCount = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.sumChangeRanges(associationChangeCounts)
     uidToViewChanges.put(id, ChangeStats(countChanges(tt), bcnfChangeCount, associationChangeCount))
     nFieldsInViewSet += tt.rows.size*tt.attributes.size
   })
   logger.debug(s"number of missing bcnf tables: $missingBCNFTables")
   logger.debug(s"number of fields in view set: $nFieldsInViewSet")
-  val nChangesInViewSet = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRangesAsLong(uidToViewChanges.values.map(_.nChangesInView))
+  val nChangesInViewSet = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.sumChangeRangesAsLong(uidToViewChanges.values.map(_.nChangesInView))
   logger.debug(s"number of changes in view set, where normalization result exists: $nChangesInViewSet")
-  val nChangesInBCNFTables = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRangesAsLong(uidToViewChanges.values.map(_.nChangesInBCNFTables))
+  val nChangesInBCNFTables = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.sumChangeRangesAsLong(uidToViewChanges.values.map(_.nChangesInBCNFTables))
   logger.debug(s"number of changes in BCNF tables: $nChangesInBCNFTables")
   //      logger.debug(s"total number of changes in this step: ${nChangesInBCNFTables+extraNonDecomposedViewTableChanges.values.sum}")
   //      val nChangesInAssociations = uidToViewChanges.values.filter(_.nChangesInAssociationTables.isDefined).map(_.nChangesInAssociationTables.get).reduce(_ + _)
@@ -66,12 +66,12 @@ object SummaryChangeCounting extends App with StrictLogging{
   //      logger.debug(s"extra changes for BCNF tables with no associations: ${uidToViewChanges.filter(cs => cs._2.nChangesInAssociationTables.isEmpty && cs._2.nChangesInBCNFTables.isDefined)
   //      .map(_._2.nChangesInBCNFTables.get).sum}")
   //logger.debug(s"total number of changes in this step: ${nChangesInAssociations+numberOfChangesInTablesWithNoDTTORAssociation}")
-  val nChangesInAssociations =GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(
+  val nChangesInAssociations =GLOBAL_CONFIG.CHANGE_COUNT_METHOD.sumChangeRanges(
     uidToViewChanges.values.map(_.nChangesInAssociationTables))
   logger.debug(s"number of fields in association set: $nFieldsInAssociations")
   logger.debug(s"number of changes in Associations: $nChangesInAssociations")
 
-  def countChanges(table: TemporalTable) = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(table)
+  def countChanges(table: TemporalTable) = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(table)
 
   case class ChangeStats(nChangesInView:(Int,Int),nChangesInBCNFTables:(Int,Int),nChangesInAssociationTables:(Int,Int))
 

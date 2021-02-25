@@ -53,7 +53,7 @@ class PairwiseTupleMapper[A](tableA: TemporalDatabaseTableTrait[A], tableB: Temp
 
   def countChanges(tuple: collection.Seq[TemporalFieldTrait[A]],insertTime:LocalDate) = {
     if(isSurrogateBased){
-      GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countFieldChangesSimple(tuple)
+      GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countFieldChangesSimple(tuple)
     } else {
       ???
       //tuple.map(_.countChanges(insertTime, GLOBAL_CONFIG.CHANGE_COUNT_METHOD)).sum

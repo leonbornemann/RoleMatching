@@ -15,7 +15,7 @@ object InternalFieldLineageMatchGraphCreationMain extends App {
   val id = DecomposedTemporalTableIdentifier.fromCompositeID(compositeID)
   assert(id.associationID.isDefined)
   val table = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)
-  val hasChanges = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(table)._1 > 0
+  val hasChanges = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(table)._1 > 0
   if (hasChanges) {
     val tuples = table.tupleReferences
     val graph = new FieldLineageMatchGraph[Any](tuples)

@@ -14,39 +14,32 @@ class UpdateChangeCounter() extends FieldChangeCounter{
 
   def countChangesForValueLineage[A](vl: mutable.TreeMap[LocalDate, A],isWildcard : (A => Boolean)):(Int,Int) = {
     val it = vl.valuesIterator
-    var prevprev:Option[A] = None
+    var prevNonWildcard:Option[A] = None
     var prev:Option[A] = None
     var cur:Option[A] = None
     var curMinChangeCount = 0
     var curMaxChangeCount = 0
-    var hadFirstNonWildcardInsert = false
     var hadFirstElem = false
     while(it.hasNext){
       val newElem = Some(it.next())
       //update pointers
-      prevprev = prev
       prev = cur
       cur = newElem
       //min change count:
       if(!isWildcard(newElem.get)){
-        if(!hadFirstNonWildcardInsert){
-          //do not count first insert
-          hadFirstNonWildcardInsert = true
-        } else{
-          //we count this, only if prev was not WC and prevprev the same as this (avoids Wildcard to element Ping-Pong)
-          assert(prev.isDefined)
-          if(isWildcard(prev.get) && prevprev.isDefined && prevprev.get == cur.get){
-            //skip this
-          } else{
-            curMinChangeCount+=1
-          }
+        //we count this, only if prev was not WC and prevprev the same as this (avoids Wildcard to element Ping-Pong)
+        if(!prevNonWildcard.isDefined){
+          //skip
+        } else if(prevNonWildcard.get!=newElem.get) {
+          curMinChangeCount+=1
         }
+        prevNonWildcard = newElem
       }
       //max change count:
       if(!hadFirstElem){
         hadFirstElem = true
       } else {
-        if(cur.get!=prev.get || isWildcard(cur.get) || isWildcard(prev.get)){
+        if(cur.get!=prev.get || isWildcard(cur.get)){
           curMaxChangeCount +=1
         }
       }

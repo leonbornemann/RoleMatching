@@ -12,7 +12,7 @@ class AssociationGraphEdgeCandidateGenerator(subdomain: String) extends StrictLo
   val associationsWithChanges = AssociationSchema.loadAllAssociationsInSubdomain(subdomain)
     .map(as => {
       val table = SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.loadFromStandardOptimizationInputFile(as.id)
-      val hasChanges = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(table)._1 > 0
+      val hasChanges = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(table)._1 > 0
       if(hasChanges) Some(table) else None
     })
     .filter(_.isDefined)

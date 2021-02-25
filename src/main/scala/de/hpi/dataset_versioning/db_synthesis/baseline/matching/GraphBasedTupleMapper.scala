@@ -54,10 +54,10 @@ class GraphBasedTupleMapper[A](vertices:IndexedSeq[TupleReference[A]],edges: mut
 
   def getChangeScore(clique: ArrayBuffer[TupleReference[A]]): (Int,Int) = {
     if(clique.size==1)
-      clique.head.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)
+      clique.head.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
     else {
-      val afterMerge = AbstractTemporalField.mergeAll(clique.toSeq).countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)
-      val beforeMerge = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(clique.map(tr => tr.getDataTuple.head.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)))
+      val afterMerge = AbstractTemporalField.mergeAll(clique.toSeq).countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
+      val beforeMerge = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.sumChangeRanges(clique.map(tr => tr.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)))
       if(beforeMerge._1<=afterMerge._1){
         clique.foreach(println(_))
         println(afterMerge)

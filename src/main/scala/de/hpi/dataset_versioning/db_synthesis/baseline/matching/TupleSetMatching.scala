@@ -19,9 +19,9 @@ class TupleSetMatching[A](val tableA: TemporalDatabaseTableTrait[A],
   def totalEvidence = matchedTuples.map(_.evidence).sum
 
   def totalChangeBenefit = {
-    val before = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(tableA) +
-      GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(tableB)
-    val after = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(matchedTuples.map(_.changeRange))
+    val before = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(tableA) +
+      GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(tableB)
+    val after = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.sumChangeRanges(matchedTuples.map(_.changeRange))
     before-after
   }
 

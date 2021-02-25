@@ -48,7 +48,7 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
   logger.debug("Initial change counts:")
   logger.debug(s"Associations: ${curChangeCount}")
 
-  def sumChangeRange(values: Iterable[(Int, Int)]) = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(values)
+  def sumChangeRange(values: Iterable[(Int, Int)]) = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.sumChangeRanges(values)
 
   logger.debug(s"Undecomposed View tables: ${sumChangeRange(extraNonDecomposedViewTableChanges.values)}")
   logger.debug(s"Total (without associations): ${sumChangeRange(extraNonDecomposedViewTableChanges.values)}")
@@ -64,7 +64,7 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
   logger.debug("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 
 
-  def standardChangeCount(synthTable: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation) = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(synthTable)
+  def standardChangeCount(synthTable: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation) = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(synthTable)
 
   def writeToStandardFiles() = {
     var nChangesInUnionedAssociations:(Int,Int) = (0,0)
@@ -86,7 +86,7 @@ class SynthesizedTemporalDatabase(associations: IndexedSeq[AssociationSchema],
       })
     logger.debug(s"Final Database has $nChangesInUnionedAssociations number of changes in associations")
     logger.debug(s"During synthesis we recorded the number of changes in associations to be $curChangeCount")
-    logger.debug(s"Total number of changes in final database: ${nChangesInUnionedAssociations +GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.sumChangeRanges(extraNonDecomposedViewTableChanges.values)}")
+    logger.debug(s"Total number of changes in final database: ${nChangesInUnionedAssociations +GLOBAL_CONFIG.CHANGE_COUNT_METHOD.sumChangeRanges(extraNonDecomposedViewTableChanges.values)}")
     if(curChangeCount!=nChangesInUnionedAssociations)
       logger.debug(s"Warning: change counts do not match: $curChangeCount vs $nChangesInUnionedAssociations")
     //assert(curChangeCount==nChangesInUnionedAssociations)

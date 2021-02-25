@@ -72,9 +72,9 @@ object ScriptMain2 extends App {
   val tuple2 = getTuple(id,bcnfID,assocaitionID,rowIndex)
   val a = tuple1.head.getOverlapEvidenceCount(tuple2.head)
   val res = tuple1.head.tryMergeWithConsistent(tuple2.head)
-  val cc1 = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countFieldChangesSimple(tuple1)
-  val cc2 = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countFieldChangesSimple(tuple2)
-  val ccRes = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countFieldChangesSimple(IndexedSeq(res.get))
+  val cc1 = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countFieldChangesSimple(tuple1)
+  val cc2 = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countFieldChangesSimple(tuple2)
+  val ccRes = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countFieldChangesSimple(IndexedSeq(res.get))
   println()
 
   def printTupleSketch = {

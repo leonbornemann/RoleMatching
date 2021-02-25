@@ -78,9 +78,9 @@ case class MergeMatch(first: FieldLineageAsCharacterString, second: FieldLineage
     printShort
     println(tuple1.lineage)
     println(tuple2.lineage)
-    val a = tuple1.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)
-    val b = tuple2.countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)
-    val c = tuple1.mergeWithConsistent(tuple2).countChanges(GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD)
+    val a = tuple1.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
+    val b = tuple2.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
+    val c = tuple1.mergeWithConsistent(tuple2).countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)
     val evidence = tuple1.getOverlapEvidenceCount(tuple2)
     println()
   }

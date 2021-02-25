@@ -17,8 +17,8 @@ object BipartiteFieldLineageMergeabilityGraphCreationMain extends App with Stric
     logger.debug(s"Discovering mergeability for $edge")
     val tableLeft = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(edge.firstMatchPartner)
     val tableRight = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(edge.secondMatchPartner)
-    val leftTableHasChanges = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(tableLeft)._1 > 0
-    val rightTableHasChanges = GLOBAL_CONFIG.NEW_CHANGE_COUNT_METHOD.countChanges(tableRight)._1 > 0
+    val leftTableHasChanges = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(tableLeft)._1 > 0
+    val rightTableHasChanges = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(tableRight)._1 > 0
     if (leftTableHasChanges && rightTableHasChanges) {
       val matchGraph = new BipartiteFieldLineageMatchGraph(tableLeft.tupleReferences, tableRight.tupleReferences)
         .toFieldLineageMergeabilityGraph(true)

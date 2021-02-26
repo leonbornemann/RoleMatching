@@ -39,126 +39,114 @@ trait TemporalFieldTrait[T] {
     !prevValue1.isEmpty && !isWildcard(prevValue1.get)
   }
 
-  private def getNonWCInterleavedOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]) = {
+  private def getNonWCInterleavedOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]):Option[mutable.HashMap[ValueTransition,Int]] = {
+    val res = this.tryMergeWithConsistent(other)
+    if(!res.isDefined){
+      return None
+    }
     val vl1 = this.getValueLineage
     val vl2 = other.getValueLineage
     val vl1Iterator = scala.collection.mutable.Queue() ++ vl1
     val vl2Iterator = scala.collection.mutable.Queue() ++ vl2
-    var isCompatible = true
     val evidenceSet = mutable.HashMap[ValueTransition,Int]()
     var curValue1 = vl1Iterator.dequeue()._2
     var curValue2 = vl2Iterator.dequeue()._2
     var prevValue1:Option[T] = None
     var prevValue2:Option[T] = None
-    while((!vl1Iterator.isEmpty || !vl2Iterator.isEmpty) && isCompatible){
-      if(!isWildcard(curValue1) && !isWildcard(curValue2) && curValue1!=curValue2){
-        isCompatible=false
+    while((!vl1Iterator.isEmpty || !vl2Iterator.isEmpty)){
+      assert(isWildcard(curValue1) || isWildcard(curValue2) || curValue1==curValue2)
+      if(vl1Iterator.isEmpty){
+        prevValue2 = Some(curValue2)
+        curValue2 = vl2Iterator.dequeue()._2
+      } else if(vl2Iterator.isEmpty){
+        prevValue1 = Some(curValue1)
+        curValue1 = vl1Iterator.dequeue()._2
       } else {
-        if(vl1Iterator.isEmpty){
+        val ts1 = vl1Iterator.head._1
+        val ts2 = vl2Iterator.head._1
+        if (ts1 == ts2) {
+          prevValue1 = Some(curValue1)
+          curValue1 = vl1Iterator.dequeue()._2
           prevValue2 = Some(curValue2)
           curValue2 = vl2Iterator.dequeue()._2
-        } else if(vl2Iterator.isEmpty){
+          if (!isWildcard(curValue1) && !isWildcard(curValue2) && notWCOrEmpty(prevValue1) && notWCOrEmpty(prevValue2)) {
+            assert(prevValue1.get==prevValue2.get)
+            assert(curValue1 == curValue2)
+            val toAdd = ValueTransition(prevValue1.get, curValue1)
+            val oldValue = evidenceSet.getOrElse(toAdd,0)
+            evidenceSet(toAdd) = oldValue+1
+          }
+        } else if (ts1.isBefore(ts2)){
           prevValue1 = Some(curValue1)
           curValue1 = vl1Iterator.dequeue()._2
         } else {
-          val ts1 = vl1Iterator.head._1
-          val ts2 = vl2Iterator.head._1
-          if (ts1 == ts2) {
-            prevValue1 = Some(curValue1)
-            curValue1 = vl1Iterator.dequeue()._2
-            prevValue2 = Some(curValue2)
-            curValue2 = vl2Iterator.dequeue()._2
-            if (!isWildcard(curValue1) && !isWildcard(curValue2) && notWCOrEmpty(prevValue1) && notWCOrEmpty(prevValue2)) {
-              assert(prevValue1.get==prevValue2.get)
-              assert(curValue1 == curValue2)
-              val toAdd = ValueTransition(prevValue1.get, curValue1)
-              val oldValue = evidenceSet.getOrElse(toAdd,0)
-              evidenceSet(toAdd) = oldValue+1
-            }
-          } else if (ts1.isBefore(ts2)){
-            prevValue1 = Some(curValue1)
-            curValue1 = vl1Iterator.dequeue()._2
-          } else {
-            assert(ts2.isBefore(ts1))
-            prevValue2 = Some(curValue2)
-            curValue2 = vl2Iterator.dequeue()._2
-          }
+          assert(ts2.isBefore(ts1))
+          prevValue2 = Some(curValue2)
+          curValue2 = vl2Iterator.dequeue()._2
         }
       }
+
     }
-    if(!isWildcard(curValue1) && !isWildcard(curValue2) && curValue1!=curValue2){
-      isCompatible=false
-    }
-    if(!isCompatible)
-      None
-    else {
-      Some(evidenceSet)
-    }
+    Some(evidenceSet)
   }
 
-  private def getWCInterleavedOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]) = {
+  private def getWCInterleavedOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]):Option[mutable.HashMap[ValueTransition,Int]] = {
+    val res = this.tryMergeWithConsistent(other)
+    if(!res.isDefined){
+      return None
+    }
     val vl1 = this.getValueLineage
     val vl2 = other.getValueLineage
     val vl1Iterator = scala.collection.mutable.Queue() ++ vl1
     val vl2Iterator = scala.collection.mutable.Queue() ++ vl2
-    var isCompatible = true
     val evidenceSet = mutable.HashMap[ValueTransition,Int]()
     var curValue1 = vl1Iterator.dequeue()._2
     var curValue2 = vl2Iterator.dequeue()._2
     var prevNonWCValue1:Option[T] = None
     var prevNonWCValue2:Option[T] = None
-    while((!vl1Iterator.isEmpty || !vl2Iterator.isEmpty) && isCompatible){
-      if(!isWildcard(curValue1) && !isWildcard(curValue2) && curValue1!=curValue2){
-        isCompatible=false
+    while((!vl1Iterator.isEmpty || !vl2Iterator.isEmpty)){
+      assert(isWildcard(curValue1) || isWildcard(curValue2) || curValue1==curValue2)
+      if(vl1Iterator.isEmpty){
+        if(!isWildcard(curValue2))
+          prevNonWCValue2 = Some(curValue2)
+        curValue2 = vl2Iterator.dequeue()._2
+      } else if(vl2Iterator.isEmpty){
+        if(!isWildcard(curValue1))
+          prevNonWCValue1 = Some(curValue1)
+        curValue1 = vl1Iterator.dequeue()._2
       } else {
-        if(vl1Iterator.isEmpty){
+        val ts1 = vl1Iterator.head._1
+        val ts2 = vl2Iterator.head._1
+        if (ts1 == ts2) {
+          if(!isWildcard(curValue1))
+            prevNonWCValue1 = Some(curValue1)
+          curValue1 = vl1Iterator.dequeue()._2
           if(!isWildcard(curValue2))
             prevNonWCValue2 = Some(curValue2)
           curValue2 = vl2Iterator.dequeue()._2
-        } else if(vl2Iterator.isEmpty){
+          if (!isWildcard(curValue1) && !isWildcard(curValue2) &&
+            prevNonWCValue1.isDefined && prevNonWCValue2.isDefined &&
+            prevNonWCValue1.get==prevNonWCValue2.get &&
+            curValue1!=prevNonWCValue1.get
+          ) {
+            val toAdd = ValueTransition(prevNonWCValue1.get, curValue1)
+            val oldValue = evidenceSet.getOrElse(toAdd,0)
+            evidenceSet(toAdd) = oldValue+1
+          }
+        } else if (ts1.isBefore(ts2)){
           if(!isWildcard(curValue1))
             prevNonWCValue1 = Some(curValue1)
           curValue1 = vl1Iterator.dequeue()._2
         } else {
-          val ts1 = vl1Iterator.head._1
-          val ts2 = vl2Iterator.head._1
-          if (ts1 == ts2) {
-            if(!isWildcard(curValue1))
-              prevNonWCValue1 = Some(curValue1)
-            curValue1 = vl1Iterator.dequeue()._2
-            if(!isWildcard(curValue2))
-              prevNonWCValue2 = Some(curValue2)
-            curValue2 = vl2Iterator.dequeue()._2
-            if (!isWildcard(curValue1) && !isWildcard(curValue2) && prevNonWCValue1.isDefined && prevNonWCValue2.isDefined) {
-              assert(prevNonWCValue1.get==prevNonWCValue2.get)
-              assert(curValue1 == curValue2)
-              if(curValue1!=prevNonWCValue1.get){
-                val toAdd = ValueTransition(prevNonWCValue1.get, curValue1)
-                val oldValue = evidenceSet.getOrElse(toAdd,0)
-                evidenceSet(toAdd) = oldValue+1
-              }
-            }
-          } else if (ts1.isBefore(ts2)){
-            if(!isWildcard(curValue1))
-              prevNonWCValue1 = Some(curValue1)
-            curValue1 = vl1Iterator.dequeue()._2
-          } else {
-            assert(ts2.isBefore(ts1))
-            if(!isWildcard(curValue2))
-              prevNonWCValue2 = Some(curValue2)
-            curValue2 = vl2Iterator.dequeue()._2
-          }
+          assert(ts2.isBefore(ts1))
+          if(!isWildcard(curValue2))
+            prevNonWCValue2 = Some(curValue2)
+          curValue2 = vl2Iterator.dequeue()._2
         }
       }
+
     }
-    if(!isWildcard(curValue1) && !isWildcard(curValue2) && curValue1!=curValue2){
-      isCompatible=false
-    }
-    if(!isCompatible)
-      None
-    else {
-      Some(evidenceSet)
-    }
+    Some(evidenceSet)
   }
 
   //=GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS

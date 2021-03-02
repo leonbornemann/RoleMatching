@@ -15,6 +15,7 @@ import java.time.LocalDate
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import IndexProcessingMode._
+import de.hpi.dataset_versioning.util.RuntimeMeasurementUtil.executionTimeInSeconds
 
 /***
  * Lazily in
@@ -136,15 +137,6 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
         matchSkips +=1
       }
   }
-
-  def executionTimeInSeconds[R](block: => R): (R,Double) = {
-    val t0 = System.nanoTime()
-    val result = block    // call-by-name
-    val t1 = System.nanoTime()
-    val resultTime = (t1-t0)/1000000000.0
-    (result,resultTime)
-  }
-
 
   def gaussSum(n: Int) = n*(n+1) / 2
 

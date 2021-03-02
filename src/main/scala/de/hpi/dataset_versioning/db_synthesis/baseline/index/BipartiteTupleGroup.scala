@@ -11,5 +11,11 @@ case class BipartiteTupleGroup[A](chosenTimestamps:ArrayBuffer[LocalDate],
                                   wildcardTuplesRight:IndexedSeq[TupleReference[A]],
                                   tuplesLeft:IndexedSeq[TupleReference[A]],
                                   tuplesRight:IndexedSeq[TupleReference[A]]) {
+  def totalComputationsIfPairwise = {
+    tuplesLeft.size * tuplesRight.size +
+      wildcardTuplesLeft.size*tuplesRight.size +
+      wildcardTuplesRight.size*tuplesLeft.size +
+      wildcardTuplesLeft.size * wildcardTuplesRight.size
+  }
 
 }

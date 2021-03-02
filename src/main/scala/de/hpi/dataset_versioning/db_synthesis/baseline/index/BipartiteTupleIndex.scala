@@ -10,8 +10,8 @@ import java.time.LocalDate
 
 class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]],
                           tuplesRightUnfiltered: IndexedSeq[TupleReference[A]],
-                          parentTimestamps:IndexedSeq[LocalDate] = IndexedSeq(),
-                          parentKeyValues:IndexedSeq[A] = IndexedSeq(),
+                          val parentTimestamps:IndexedSeq[LocalDate] = IndexedSeq(),
+                          val parentKeyValues:IndexedSeq[A] = IndexedSeq(),
                           ignoreZeroChangeTuples:Boolean = true) extends TupleIndexUtility[A] with StrictLogging{
 
   assert(tuplesLeftUnfiltered.toSet.intersect(tuplesRightUnfiltered.toSet).isEmpty)
@@ -78,7 +78,7 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
     wildcardsLeft = wildcardValues.flatMap(wc => leftGroups.getOrElse(wc,IndexedSeq())).toIndexedSeq
     wildcardsRight = wildcardValues.flatMap(wc => rightGroups.getOrElse(wc,IndexedSeq())).toIndexedSeq
   }
-  val chosenTimestamps = scala.collection.mutable.ArrayBuffer(splitT) ++ parentTimestamps
+  val chosenTimestamps = scala.collection.mutable.ArrayBuffer() ++ parentTimestamps ++ Seq(splitT)
 
   private def getFilteredTuples(tuples:IndexedSeq[TupleReference[A]]) = {
     tuples.filter(tr => !ignoreZeroChangeTuples || tr.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1>0)

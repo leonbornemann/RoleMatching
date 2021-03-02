@@ -61,6 +61,9 @@ object EvidenceCountingTest extends App {
     valueLineage1 = fromSeq("a__________ccccccccaaaaaaa")
     valueLineage2 = fromSeq("a______________cccca_____a")
     assert(valueLineage1.getOverlapEvidenceCount(valueLineage2)==1)
+    valueLineage1 = fromSeq("ab_________ccccccb_______a")
+    valueLineage2 = fromSeq("a__________cccc____b_____a")
+    assert(valueLineage1.getOverlapEvidenceCount(valueLineage2)==1)
   }
   GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS = false
   for(_ <- 0 until 100){
@@ -87,6 +90,9 @@ object EvidenceCountingTest extends App {
     valueLineage1 = fromSeq("a__________ccccccccaaaaaaa")
     valueLineage2 = fromSeq("a______________cccca_____a")
     assert(valueLineage1.getOverlapEvidenceCount(valueLineage2)==1)
+    valueLineage1 = fromSeq("ab_________ccccccb_______a")
+    valueLineage2 = fromSeq("a__________cccc____b_____a")
+    assert(valueLineage1.getOverlapEvidenceCount(valueLineage2)==0)
     //first pair:
     //val vl1 = fromSeq()
   }

@@ -23,6 +23,8 @@ object BipartiteFieldLineageMergeabilityGraphCreationMain extends App with Stric
       val matchGraph = new BipartiteFieldLineageMatchGraph(tableLeft.tupleReferences, tableRight.tupleReferences)
         .toFieldLineageMergeabilityGraph(true)
       logger.debug(s"Found ${matchGraph.edges.size} edges of which ${matchGraph.edges.filter(_.evidence > 0).size} have more than 0 evidence ")
+      logger.debug("----------------------------------------------------------------------------------------------------------------------------------------------")
+      logger.debug("----------------------------------------------------------------------------------------------------------------------------------------------")
       if (matchGraph.edges.size > 0) {
         matchGraph.writeToStandardFile()
         val graphRead = FieldLineageMergeabilityGraph.readFromStandardFile(Set(edge.firstMatchPartner, edge.secondMatchPartner))

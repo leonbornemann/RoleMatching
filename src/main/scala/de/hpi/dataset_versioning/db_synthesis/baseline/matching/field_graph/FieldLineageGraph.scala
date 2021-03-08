@@ -1,5 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.baseline.matching.field_graph
 
+import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{General_1_to_1_TupleMatching, TupleReference, ValueTransition}
 import de.hpi.dataset_versioning.db_synthesis.graph.field_lineage.{FieldLineageGraphEdge, FieldLineageMergeabilityGraph}
 
@@ -14,6 +15,8 @@ class FieldLineageGraph[A] {
         val tupA = e.tupleReferenceA.getDataTuple.head
         val tupB = e.tupleReferenceB.getDataTuple.head
         evidenceSet = Some(tupA.getOverlapEvidenceMultiSet(tupB).toIndexedSeq)
+        if(evidenceSet.exists(e => e.head._1.prev==ReservedChangeValues.NOT_EXISTANT_ROW || e.head._1.after==ReservedChangeValues.NOT_EXISTANT_ROW))
+          println()
         if(evidenceSet.get.map(_._2).sum!=e.evidence){
           println()
         }

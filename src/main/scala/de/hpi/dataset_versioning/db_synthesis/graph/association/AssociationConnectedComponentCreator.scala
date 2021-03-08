@@ -18,7 +18,7 @@ class AssociationConnectedComponentCreator(subdomain: String) {
       .componentTraverser()
       .foreach(c => {
         val nodes = Set() ++ c.nodes.map(_.value)
-        val pr = new PrintWriter(DBSynthesis_IOService.CONNECTED_COMPONENT_DIR(subdomain) + s"/$connectedComponentCounter.txt")
+        val pr = new PrintWriter(DBSynthesis_IOService.CONNECTED_COMPONENT_FILE(subdomain,connectedComponentCounter))
         nodes.foreach(id => pr.println(id.compositeID))
         pr.close()
         connectedComponentCounter+=1

@@ -17,6 +17,9 @@ class EntropyComputer[T](field: TemporalFieldTrait[T]) {
 
   def entropy: Double = {
     buildTransitionsWildCardUnequalWildcard(vl)
+    if(transitions.map(_._2).sum != IOService.STANDARD_TIME_RANGE_SIZE-1){
+      println() //OFF by exactly 1
+    }
     assert(transitions.map(_._2).sum == IOService.STANDARD_TIME_RANGE_SIZE-1)
     entropy(transitions,IOService.STANDARD_TIME_RANGE_SIZE)
   }
@@ -26,9 +29,9 @@ class EntropyComputer[T](field: TemporalFieldTrait[T]) {
   def buildTransitionsWildCardUnequalWildcard(vl:IndexedSeq[(LocalDate,T)]) = {
     for(i<-0 until vl.size){
       val (curArrival,curValue) = vl(i)
-      val (nextArrival,nextValue) = if(i+1 != vl.size) vl(i+1) else (IOService.STANDARD_TIME_FRAME_END,None)
+      val (nextArrival,nextValue) = if(i+1 != vl.size) vl(i+1) else (IOService.STANDARD_TIME_FRAME_END.plusDays(1),None) //we add plus one so the difference works
       assert(!nextArrival.isBefore(curArrival))
-      val sameValueTransitionCount =  curArrival.toEpochDay - nextArrival.toEpochDay -1
+      val sameValueTransitionCount =  nextArrival.toEpochDay - curArrival.toEpochDay -1
       handleTransition(curValue,curValue,sameValueTransitionCount.toInt)
       if(i+1 != vl.size) {
         handleTransition(curValue, nextValue, 1)

@@ -131,9 +131,9 @@ object AbstractTemporalField{
   }
 
   def ENTROPY_REDUCTION_SET[A](references: Set[TupleReference[A]]) = {
-    val merged = references.map(_.getDataTuple.head)
+    val merged = references.toIndexedSeq.map(_.getDataTuple.head)
       .reduce((a,b) => a.mergeWithConsistent(b)).getEntropy()
-    val prior = references.map(_.getDataTuple.head.getEntropy()).sum
+    val prior = references.toIndexedSeq.map(_.getDataTuple.head.getEntropy()).sum
     prior - merged
   }
 

@@ -153,7 +153,6 @@ trait TemporalFieldTrait[T] {
   def getOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]):collection.Map[ValueTransition,Int] = getOverlapEvidenceMultiSet(other,GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS)
   def getOverlapEvidenceCount(other: TemporalFieldTrait[T]):Int = getOverlapEvidenceCount(other,GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS)
 
-
   def getOverlapEvidenceMultiSet(other: TemporalFieldTrait[T],allowInterleavedWildcards:Boolean) = {
     if(!allowInterleavedWildcards) {
       val res = getNonWCInterleavedOverlapEvidenceMultiSet(other)

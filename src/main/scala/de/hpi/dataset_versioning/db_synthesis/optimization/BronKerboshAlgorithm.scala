@@ -32,11 +32,24 @@ class BronKerboshAlgorithm(g:GraphBase[TupleReference[Any], WLkUnDiEdge]) {
     }
   }
 
+  /***
+   * uses degeneracy sorting
+   * @param P
+   */
+  def bronKerboshTopLevel(P: Set[BronKerboshAlgorithm.this.g.NodeT]):Unit = {
+    var x = Set[BronKerboshAlgorithm.this.g.NodeT]()
+    var p = P
+    P.toIndexedSeq
+      .sortBy(_.neighbors.size)
+      .foreach(v => {
+        bronKerbosh(Set(v),P.intersect(v.neighbors),x.intersect(v.neighbors))
+        p = p.removedAll(Seq(v))
+        x = x ++ Set(v)
+      })
+  }
+
   def run() = {
-    val R = Set[BronKerboshAlgorithm.this.g.NodeT]()
-    val X = Set[BronKerboshAlgorithm.this.g.NodeT]()
-    val P = Set() ++ g.nodes
-    bronKerbosh(R,X,P)
+    bronKerboshTopLevel(Set() ++ g.nodes)
     maxCliques
   }
 }

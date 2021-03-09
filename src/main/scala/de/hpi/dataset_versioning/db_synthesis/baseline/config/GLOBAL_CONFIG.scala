@@ -8,7 +8,7 @@ object GLOBAL_CONFIG {
 
   def OPTIMIZATION_TARGET_FUNCTION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = AbstractTemporalField.ENTROPY_REDUCTION(tr1,tr2)
 
-  var ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS = true
+  var ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS = false
 
   //val CHANGE_COUNT_METHOD = new DatasetInsertIgnoreFieldChangeCounter()
   val CHANGE_COUNT_METHOD = new UpdateChangeCounter()

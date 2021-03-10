@@ -15,11 +15,7 @@ class FieldLineageGraph[A] {
         val tupA = e.tupleReferenceA.getDataTuple.head
         val tupB = e.tupleReferenceB.getDataTuple.head
         evidenceSet = Some(tupA.getOverlapEvidenceMultiSet(tupB).toIndexedSeq)
-        if(evidenceSet.exists(e => e.head._1.prev==ReservedChangeValues.NOT_EXISTANT_ROW || e.head._1.after==ReservedChangeValues.NOT_EXISTANT_ROW))
-          println()
-        if(evidenceSet.get.map(_._2).sum!=e.evidence){
-          println()
-        }
+        assert(evidenceSet.get.map(_._2).sum==e.evidence)
       }
       FieldLineageGraphEdge(e.tupleReferenceA.toIDBasedTupleReference, e.tupleReferenceB.toIDBasedTupleReference, e.evidence,evidenceSet)
     }))

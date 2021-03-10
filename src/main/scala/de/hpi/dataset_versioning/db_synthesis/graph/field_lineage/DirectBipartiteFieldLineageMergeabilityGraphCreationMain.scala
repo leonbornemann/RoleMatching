@@ -13,8 +13,8 @@ import de.hpi.dataset_versioning.io.IOService
 object DirectBipartiteFieldLineageMergeabilityGraphCreationMain extends App with StrictLogging {
   IOService.socrataDir = args(0)
   val subdomain = "org.cityofchicago"
-  val id1 = DecomposedTemporalTableIdentifier.fromShortString(subdomain, "gm9b-bwv5.0_14")
-  val id2 = DecomposedTemporalTableIdentifier.fromShortString(subdomain, "r5kz-chrr.1_6")
+  val id1 = DecomposedTemporalTableIdentifier.fromShortString(subdomain, "wrvz-psew.0_125")
+  val id2 = DecomposedTemporalTableIdentifier.fromShortString(subdomain, "ijzp-q8t2.0_21")
   val tableLeft = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id1)
   val tableRight = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id2)
   val leftTableHasChanges = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(tableLeft)._1 > 0

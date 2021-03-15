@@ -29,7 +29,9 @@ class GreedyEdgeWeightOptimizer(subdomain: String, connectedComponentListFile: F
       val optimizer = new GreedyEdgeWeightOptimizerForComponent(subGraph)
       val componentMerges = optimizer.mergeGreedily()
       assert(componentMerges.toIndexedSeq.flatMap(_.clique).size==subGraph.nodes.size)
-      componentMerges.foreach(_.appendToWriter(pr,false,true))
+      componentMerges.foreach(tm => {
+        tm.appendToWriter(pr,false,true)
+      })
     })
     pr.close()
   }

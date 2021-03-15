@@ -5,11 +5,12 @@ import de.hpi.dataset_versioning.db_synthesis.baseline.matching.ValueTransition
 import de.hpi.dataset_versioning.io.IOService
 import de.hpi.dataset_versioning.util.MathUtil.log2
 
+import java.lang.AssertionError
 import java.time.LocalDate
 import scala.collection.mutable
 
 class EntropyComputer[T](field: TemporalFieldTrait[T]) {
-
+  throw new AssertionError("There is still an unresolved bug in entropy calculation that sometimes leads to NaN - for example for TupleReference(3c9v-pnva.3_2(SK30, _location_longitude),538)")
 
   val WILDCARD = field.WILDCARDVALUES.toIndexedSeq.sortBy(_.toString)
   val transitions = mutable.HashMap[ValueTransition, Int]()

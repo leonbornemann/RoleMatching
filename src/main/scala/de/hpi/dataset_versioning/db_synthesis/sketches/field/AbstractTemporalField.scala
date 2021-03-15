@@ -5,6 +5,7 @@ import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval,
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
 import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.FieldChangeCounter
+import de.hpi.dataset_versioning.db_synthesis.sketches.field.AbstractTemporalField.MUTUAL_INFORMATION
 
 import scala.collection.mutable
 
@@ -126,6 +127,11 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
 }
 object AbstractTemporalField{
 
+  def MUTUAL_INFORMATION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = {
+    tr1.getDataTuple.head.mutualInformation(tr2.getDataTuple.head)
+  }
+
+
   def ENTROPY_REDUCTION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = {
     ENTROPY_REDUCTION_SET(Set(tr1,tr2))
   }
@@ -134,6 +140,8 @@ object AbstractTemporalField{
     val merged = references.toIndexedSeq.map(_.getDataTuple.head)
       .reduce((a,b) => a.mergeWithConsistent(b)).getEntropy()
     val prior = references.toIndexedSeq.map(_.getDataTuple.head.getEntropy()).sum
+    if(prior.isNaN || merged.isNaN)
+      println()
     prior - merged
   }
 

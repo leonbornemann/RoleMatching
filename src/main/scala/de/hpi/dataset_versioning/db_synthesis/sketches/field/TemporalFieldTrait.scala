@@ -26,6 +26,8 @@ trait TemporalFieldTrait[T] {
     }
   }
 
+  def mutualInformation(other: TemporalFieldTrait[T]): Double = new MutualInformationComputer(this,other).mutualInfo()
+
   def nonWildcardValueTransitions: Set[(T, T)] = {
     val vl = getValueLineage
       .values

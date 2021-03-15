@@ -2,13 +2,12 @@ package de.hpi.dataset_versioning.entropy
 
 import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
+import de.hpi.dataset_versioning.io.IOService
 import de.hpi.dataset_versioning.util.MathUtil.log2
 
 import java.io.PrintWriter
 
 case class MergeMatch(first: FieldLineageAsCharacterString, second: FieldLineageAsCharacterString) {
-
-  val subdomain = "org.cityofchicago"
 
   val merged = first.mergeCompatible(second)
   val firstEntropy = first.defaultEntropy
@@ -67,12 +66,12 @@ case class MergeMatch(first: FieldLineageAsCharacterString, second: FieldLineage
 
   def exportActualTableMatch(targetPath:String) = {
     val pr = new PrintWriter(targetPath)
-    new AssociationGraphExplorer().printInfoToFile(None,first.dttID(subdomain),second.dttID(subdomain),pr)
+    new AssociationGraphExplorer().printInfoToFile(None,first.dttID(IOService.subdomain),second.dttID(IOService.subdomain),pr)
   }
 
   def printActualTuples = {
-    val t1 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(first.dttID(subdomain))
-    val t2 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(second.dttID(subdomain))
+    val t1 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(first.dttID(IOService.subdomain))
+    val t2 = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(second.dttID(IOService.subdomain))
     val tuple1 = t1.rows(first.rowNumber).valueLineage
     val tuple2 = t2.rows(second.rowNumber).valueLineage
     printShort

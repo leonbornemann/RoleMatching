@@ -15,19 +15,9 @@ import java.time.temporal.TemporalField
 import scala.collection.mutable
 import scala.io.Source
 
-class MaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFile: File) extends StrictLogging {
+class GreedyMaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFile: File) extends ConnectedComponentMergeOptimizer(subdomain,connectedComponentListFile) with StrictLogging {
 
-  val inputTables = Source.fromFile(connectedComponentListFile)
-    .getLines()
-    .toIndexedSeq
-    .map(stringID => {
-      val id = DecomposedTemporalTableIdentifier.fromCompositeID(stringID)
-      val table = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)
-      (id,table)
-    }).toMap
-
-  val fieldLineageMergeabilityGraph = FieldLineageMergeabilityGraph.loadSubGraph(inputTables.keySet,subdomain)
-  val inputGraph = fieldLineageMergeabilityGraph.transformToOptimizationGraph(inputTables)
+  val methodName = "GreedyMaxCliqueBasedOptimizer"
 
   def runGreedy(vertexSet:Set[TupleReference[Any]], cliquesWithScore: Map[Set[TupleReference[Any]], Double]) = {
     val coveredVertices = mutable.HashSet[TupleReference[Any]]()
@@ -57,7 +47,7 @@ class MaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFile: Fil
   def run() = {
     logger.debug(s"Starting Clique Partitioning Optimization for $connectedComponentListFile")
     val traverser = inputGraph.componentTraverser()
-    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(connectedComponentListFile.getName))
+    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(connectedComponentListFile.getName,methodName))
     var totalScore = 0.0
     var tupleReductionCount = 0
     val cliqueSizeHistogram = mutable.HashMap[Int,Int]()
@@ -94,16 +84,5 @@ class MaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFile: Fil
       .toIndexedSeq
       .sortBy(_._1)
       .foreach(t => println(s"${t._1},${t._2}"))
-  }
-
-  private def componentToGraph(e: inputGraph.Component) = {
-    val vertices = e.nodes.map(_.value).toSet
-    val edges = e.edges.map(e => {
-      val nodes = e.toIndexedSeq.map(_.value)
-      assert(nodes.size == 2)
-      WLkUnDiEdge(nodes(0), nodes(1))(e.weight, e.label)
-    })
-    val subGraph = Graph.from(vertices, edges)
-    subGraph
   }
 }

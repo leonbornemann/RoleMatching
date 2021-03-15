@@ -133,6 +133,7 @@ object IOService extends StrictLogging{
   }
 
   var socrataDir:String = null
+  var subdomain = null
   val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   val STANDARD_TIME_FRAME_START = LocalDate.parse("2019-11-01", IOService.dateTimeFormatter)
   val STANDARD_TIME_FRAME_END = LocalDate.parse("2020-04-30", IOService.dateTimeFormatter)

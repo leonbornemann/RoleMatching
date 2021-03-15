@@ -92,7 +92,7 @@ object EntropyShenanigansMain extends App {
     ("____ABBBBB","____AB____"))
 
   def printMEtricTableFromMergeMAtches(mergeMatches: IndexedSeq[MergeMatch],useFLIdentifiers: Boolean = false) = {
-    val header = Seq("#","FL1","FL2","FL_Merged","MI (WC!=WC)","E-Reduction")
+    val header = Seq("#","FL1","FL2","FL_Merged","MI (WC!=WC)","MI (WC=WC)","E-Reduction")
     val rows = mergeMatches.zipWithIndex.map{case (mergeMatch,i) => {
       getRowString(i, mergeMatch,useFLIdentifiers)
     }}
@@ -112,7 +112,7 @@ object EntropyShenanigansMain extends App {
 
   def getRowString(i: Int, mergeMatch: MergeMatch,useFLIdentifiers:Boolean=false) = {
     val id = if(useFLIdentifiers) s"${mergeMatch.first.label} ⊔ ${mergeMatch.second.label}" else i+startPairNumber
-    f"$id, ${mergeMatch.first.lineage} , ${mergeMatch.second.lineage} , ${mergeMatch.merged.lineage} ,${mergeMatch.mutualInformationWCNOTEQUALWC}%1.3f,${mergeMatch.entropyReduction}%1.3f".split(",").toIndexedSeq
+    f"$id, ${mergeMatch.first.lineage} , ${mergeMatch.second.lineage} , ${mergeMatch.merged.lineage} ,${mergeMatch.mutualInformationWCNOTEQUALWC}%1.3f,${mergeMatch.mutualInformationWCEQUALTOWC}%1.3f,${mergeMatch.entropyReduction}%1.3f".split(",").toIndexedSeq
   }
 
   var startPairNumber = 0
@@ -155,6 +155,12 @@ object EntropyShenanigansMain extends App {
     ("___BBBCCCD","________CD")
   )
 
+  val checkIfBadResult = IndexedSeq(
+    ("AAAAAAAAA_________ABCDEFGHI","_________AAAAAAAAAABCDEFGHI"),
+    ("AAAAAAAAA_________ABCDEFGHI","AAAAAAAAAB________AB_______"),
+    ("AAAAAAAAA_________ABCDEFGHI","_________BAAAAAAAAAB_______"),
+  )
+
   val mergeMatches = matchingsToRank.zipWithIndex.map{case ((fl1,fl2),i) => {
     MergeMatch(FieldLineageAsCharacterString(fl1,s"#0"),FieldLineageAsCharacterString(fl2,s"#$i"))
   }}
@@ -166,6 +172,10 @@ object EntropyShenanigansMain extends App {
   val byMutualInfo = mergeMatches.sortBy(-_.mutualInformationWCNOTEQUALWC)
   println("byMutualInfo")
   printMEtricTableFromMergeMAtches(byMutualInfo,true)
+  println()
+
+  println("New Experiment")
+  printMEtricTable(checkIfBadResult)
   println()
 //  testSingleMutualInfo()
 //  val c  = "_____ABBBB"

@@ -14,8 +14,6 @@ object AssociationMergeabilityGraphExplorationMain extends App {
   printGraphInfo(graphRead)
   println("--------------------------------------------------------")
   graphRead.printTopTransitionCounts(2000)
-  printGraphInfo(graphRead)
-  graphRead.printComponentSizeHistogram()
 
   private def printGraphInfo(graph: AssociationMergeabilityGraph) = {
     println("#Vertices:" + graph.toScalaGraph.nodes.size)

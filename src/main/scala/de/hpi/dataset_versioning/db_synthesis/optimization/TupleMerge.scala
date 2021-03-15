@@ -12,7 +12,11 @@ case class TupleMerge(clique:Set[IDBasedTupleReference],score:Double) extends Js
 
 object TupleMerge extends JsonReadable[TupleMerge] {
 
-  def getStandardJsonObjectPerLineFile(componentFileName: String) = {
-    createParentDirs(new File(FIELD_MERGE_RESULT_DIR + "/" + componentFileName + ".json"))
+  def getStandardObjectPerLineFiles = {
+    createParentDirs(new File(FIELD_MERGE_RESULT_DIR)).listFiles()
+  }
+
+  def getStandardJsonObjectPerLineFile(componentFileName: String, methodName:String) = {
+    createParentDirs(new File(FIELD_MERGE_RESULT_DIR + s"/$methodName/" + componentFileName + ".json"))
   }
 }

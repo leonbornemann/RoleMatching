@@ -10,7 +10,7 @@ object MaxCliqueBasedOptimizationMain extends App {
   val subdomain = args(1)
   val connectedComponentFile = args(2)
   //TODO: load connected components:
-  val optimizer = new MaxCliqueBasedOptimizer(subdomain,new File(connectedComponentFile))
+  val optimizer = new GreedyMaxCliqueBasedOptimizer(subdomain,new File(connectedComponentFile))
   optimizer.run()
 
 }

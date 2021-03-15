@@ -23,7 +23,7 @@ case class FieldLineageMergeabilityGraph(edges: IndexedSeq[FieldLineageGraphEdge
       val edgeScore = GLOBAL_CONFIG.OPTIMIZATION_TARGET_FUNCTION(tr1,tr2)
       newVertices.add(tr1)
       newVertices.add(tr2)
-      WLkUnDiEdge(tr1,tr2)(edgeScore,edgeScore)
+      WLkUnDiEdge(tr1,tr2)(edgeScore,e)
     })
     val graph = Graph.from(newVertices,newEdges)
     graph

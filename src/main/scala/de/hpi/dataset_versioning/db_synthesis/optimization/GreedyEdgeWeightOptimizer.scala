@@ -22,6 +22,7 @@ class GreedyEdgeWeightOptimizer(subdomain: String, connectedComponentListFile: F
     logger.debug(s"Input Graph has ${inputGraph.nodes.size} vertices and ${inputGraph.edges.size} edges and ${inputGraph.componentTraverser().size} connected components")
     val traverser = inputGraph.componentTraverser()
     val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(connectedComponentListFile.getName,methodName))
+    var numNonTrivialComponents = 0
     traverser.foreach(e => {
       val subGraph: Graph[TupleReference[Any], WLkUnDiEdge] = componentToGraph(e)
       logger.debug(s"Handling Component with Vertices: ${subGraph.nodes.map(_.value)}")
@@ -32,8 +33,12 @@ class GreedyEdgeWeightOptimizer(subdomain: String, connectedComponentListFile: F
       componentMerges.foreach(tm => {
         tm.appendToWriter(pr,false,true)
       })
+      if(subGraph.edges.size>subGraph.nodes.size-1){
+        numNonTrivialComponents +=1
+      }
     })
     pr.close()
+    logger.debug(s"Found $numNonTrivialComponents nonTrivialComponents")
   }
 
 

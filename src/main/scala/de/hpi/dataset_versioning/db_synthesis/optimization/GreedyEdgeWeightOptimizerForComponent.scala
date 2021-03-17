@@ -31,6 +31,9 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[TupleReference[A
     if(curV1Clique==curV2Clique){
       //do nothing
     } else {
+      if(!curV1Clique.intersect(curV2Clique).isEmpty){
+        println()
+      }
       assert(curV1Clique.intersect(curV2Clique).isEmpty)
       var isClique = true
       var newScore = 0.0
@@ -56,8 +59,9 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[TupleReference[A
         //executeMerge
         val mergedClique = curV1Clique.union(curV2Clique)
         val newMerge = TupleMerge(mergedClique,merges(v1).score + merges(v2).score + newScore)
-        merges(v1) = newMerge
-        merges(v2) = newMerge
+        mergedClique.foreach(v => {
+          merges(v) = newMerge
+        })
       }
     }
   }

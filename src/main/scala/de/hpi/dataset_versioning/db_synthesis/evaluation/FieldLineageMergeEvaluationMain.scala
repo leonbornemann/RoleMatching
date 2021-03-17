@@ -3,13 +3,13 @@ package de.hpi.dataset_versioning.db_synthesis.evaluation
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.ChangeCube
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
-import de.hpi.dataset_versioning.db_synthesis.optimization.TupleMerge
+import de.hpi.dataset_versioning.db_synthesis.optimization.{GreedyEdgeWeightOptimizer, TupleMerge}
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.io.IOService
 
 object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   IOService.socrataDir = args(0)
-  val files = TupleMerge.getStandardObjectPerLineFiles
+  val files = TupleMerge.getStandardObjectPerLineFiles(GreedyEdgeWeightOptimizer.methodName)
   var totalNumCorrect = 0
   var totalNumIncorrect = 0
   var totalNumCorrectIntersting = 0

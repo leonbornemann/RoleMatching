@@ -14,14 +14,13 @@ import scala.io.Source
 
 class GreedyEdgeWeightOptimizer(subdomain: String, connectedComponentListFile: File) extends ConnectedComponentMergeOptimizer(subdomain,connectedComponentListFile) with StrictLogging{
 
-  val methodName = "GreedyEdgeWeightOptimizerMain"
   var chosenmerges = scala.collection.mutable.HashSet[TupleMerge]()
 
   def run() = {
     logger.debug(s"Starting Clique Partitioning Optimization for $connectedComponentListFile")
     logger.debug(s"Input Graph has ${inputGraph.nodes.size} vertices and ${inputGraph.edges.size} edges and ${inputGraph.componentTraverser().size} connected components")
     val traverser = inputGraph.componentTraverser()
-    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(connectedComponentListFile.getName,methodName))
+    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(connectedComponentListFile.getName,GreedyEdgeWeightOptimizer.methodName))
     var numNonTrivialComponents = 0
     traverser.foreach(e => {
       val subGraph: Graph[TupleReference[Any], WLkUnDiEdge] = componentToGraph(e)
@@ -40,7 +39,9 @@ class GreedyEdgeWeightOptimizer(subdomain: String, connectedComponentListFile: F
     pr.close()
     logger.debug(s"Found $numNonTrivialComponents nonTrivialComponents")
   }
+}
 
-
+object GreedyEdgeWeightOptimizer{
+  val methodName = "GreedyEdgeWeightOptimizerMain"
 }
 

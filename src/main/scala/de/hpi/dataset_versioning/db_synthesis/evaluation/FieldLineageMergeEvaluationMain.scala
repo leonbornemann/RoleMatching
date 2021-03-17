@@ -12,6 +12,8 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   val files = TupleMerge.getStandardObjectPerLineFiles
   var totalNumCorrect = 0
   var totalNumIncorrect = 0
+  var totalNumCorrectIntersting = 0
+  var totalNumIncorrectInteresting = 0
   for(file <- files){
     val merges = TupleMerge.fromJsonObjectPerLineFile(file.getAbsolutePath)
     val tables = merges.flatMap(_.clique.map(_.associationID).toSet).toSet
@@ -24,6 +26,8 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
     val cube = new FieldLineageFromChangeCubes(ChangeCube.loadAllChanges(viewIDs.toIndexedSeq))
     var numCorrect = 0
     var numIncorrect = 0
+    var numInterestingAndCorrect = 0
+    var numInterestingAndInCorrect = 0
     mergesAsTupleReferences.foreach{case (tm,clique) => {
       val toCheck = clique.map(vertex => {
         val tableID = vertex.toIDBasedTupleReference.associationID.viewID
@@ -37,12 +41,19 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
         if(res.isDefined)
           res = res.get.tryMergeWithConsistent(toCheck(i))
       })
+      val interesting = toCheck.exists(_.lineage.lastKey.isAfter(IOService.STANDARD_TIME_FRAME_END))
       if(res.isDefined) numCorrect +=1 else numIncorrect +=1
+      if(res.isDefined && interesting) numInterestingAndCorrect += 1
+      if(res.isDefined && !interesting) numInterestingAndInCorrect += 1
     }}
-    logger.debug(s"Found $numCorrect and $numIncorrect in this file (accuracy: ${numCorrect / (numIncorrect+numCorrect).toDouble})")
+    logger.debug(s"Found $numCorrect correct and $numIncorrect incorrect merges in this file (accuracy: ${numCorrect / (numIncorrect+numCorrect).toDouble})")
+    logger.debug(s"Found ${numInterestingAndCorrect + numInterestingAndInCorrect} merges that are interesting to evaluate (${(numInterestingAndCorrect+numInterestingAndInCorrect) / (numCorrect + numIncorrect).toDouble}))")
+    logger.debug(s"Found $numInterestingAndCorrect correct and interesting and $numInterestingAndInCorrect incorrect and interesting in this file (accuracy: ${numInterestingAndCorrect / (numInterestingAndInCorrect+numInterestingAndCorrect).toDouble})")
     totalNumCorrect += numCorrect
     totalNumIncorrect += numIncorrect
+    totalNumCorrectIntersting += numInterestingAndCorrect
+    totalNumIncorrectInteresting += numInterestingAndInCorrect
   }
-  logger.debug(s"Found $totalNumCorrect and $totalNumIncorrect in total (accuracy: ${totalNumCorrect / (totalNumIncorrect+totalNumCorrect).toDouble})")
-
+  logger.debug(s"Found $totalNumCorrect correct and $totalNumIncorrect incorrect merges in total (accuracy: ${totalNumCorrect / (totalNumIncorrect+totalNumCorrect).toDouble})")
+  logger.debug(s"Found $totalNumCorrectIntersting correct and interesting and $totalNumIncorrectInteresting incorrect and interesting in total (accuracy: ${totalNumCorrectIntersting / (totalNumCorrectIntersting+totalNumIncorrectInteresting).toDouble})")
 }

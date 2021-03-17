@@ -15,6 +15,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   var totalNumCorrectIntersting = 0
   var totalNumIncorrectInteresting = 0
   for(file <- files){
+    logger.debug(s"Processing ${file.getAbsolutePath}")
     val merges = TupleMerge.fromJsonObjectPerLineFile(file.getAbsolutePath)
     val tables = merges.flatMap(_.clique.map(_.associationID).toSet).toSet
     val byAssociationID = tables
@@ -23,7 +24,8 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
     val mergesAsTupleReferences = merges
       .map(tm => (tm,tm.clique.map(idbtr => idbtr.toTupleReference(byAssociationID(idbtr.associationID)))))
     val viewIDs = byAssociationID.keySet.map(_.viewID)
-    val cube = new FieldLineageFromChangeCubes(ChangeCube.loadAllChanges(viewIDs.toIndexedSeq))
+    logger.debug(s"Loading changes for $viewIDs")
+    val cube = new FieldLineageIndex(ChangeCube.loadAllChanges(viewIDs.toIndexedSeq))
     var numCorrect = 0
     var numIncorrect = 0
     var numInterestingAndCorrect = 0

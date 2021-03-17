@@ -6,7 +6,7 @@ import de.hpi.dataset_versioning.data.change.{Change, ChangeCube}
 import java.time.LocalDate
 import scala.collection.mutable.ArrayBuffer
 
-class FieldLineageFromChangeCubes(value: ArrayBuffer[ChangeCube]) {
+class FieldLineageIndex(value: ArrayBuffer[ChangeCube]) {
 
   def getFieldLineage(tableID: String, attrID: Int, entityID: Int) = {
     index(tableID)((entityID,attrID))

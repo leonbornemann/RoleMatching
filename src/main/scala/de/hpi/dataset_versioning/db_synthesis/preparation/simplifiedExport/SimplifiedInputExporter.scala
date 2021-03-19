@@ -79,6 +79,7 @@ class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLoggi
             vl
         new SurrogateBasedTemporalRow(IndexedSeq(surrogateKey), finalVL, IndexedSeq())
       }}
+      .filter(!_.valueLineage.lineage.isEmpty)
     val association = new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(dttID.compositeID,
       mutable.HashSet(),
       mutable.HashSet(dttID),

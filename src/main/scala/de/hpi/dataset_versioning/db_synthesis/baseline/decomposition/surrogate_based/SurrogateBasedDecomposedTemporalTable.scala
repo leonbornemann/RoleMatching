@@ -38,7 +38,7 @@ class SurrogateBasedDecomposedTemporalTable(val id: DecomposedTemporalTableIdent
     val associationTableIds = scala.collection.mutable.HashSet() ++ ((0 until attributes.size)
       .map(i => DecomposedTemporalTableIdentifier(id.subdomain,id.viewID,id.bcnfID,Some(i))))
     val associations = attributes.zip(associationTableIds).map{case (rhs,associationTableID) => new AssociationSchema(associationTableID,
-      new SurrogateAttributeLineage(GlobalSurrogateRegistry.getNextFreeSurrogateID,rhs.attrId,rhs.lineage.firstKey),
+      new SurrogateAttributeLineage(GlobalSurrogateRegistry.getNextFreeSurrogateID,rhs.attrId),
       rhs)}
     val newReferenceBasedBCNFTable = BCNFTableSchema(id,
     surrogateKey,

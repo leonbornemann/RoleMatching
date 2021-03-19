@@ -168,7 +168,7 @@ class TemporalTableDecomposer(subdomain: String, id: String,versionHistory:Datas
     val (surrogateID, original) = naturalKeyIDToSurrogateID(pk.attrId)
     val newName = original.lastName + s"_SURROGATE_ID[$surrogateID]"
     val newAttributeState = new AttributeState(Some(Attribute(original.lastName + s"_SURROGATE_ID[$surrogateID]", surrogateID, None, None))) //this will always be position 0 now
-    new SurrogateAttributeLineage(surrogateID, original.attrId,original.lineage.firstKey)
+    new SurrogateAttributeLineage(surrogateID, original.attrId)
   }
 
   def createDecomposedTemporalTables() = {

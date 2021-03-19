@@ -12,6 +12,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 trait TemporalDatabaseTableTrait[A] {
+  def getRow(rowIndex: Int) :AbstractSurrogateBasedTemporalRow[A] = ???
+
   def nonWildcardValueTransitions:Set[(A,A)] = (0 until nrows).toSet.flatMap((i:Int) => {
     val transitionsInTuple:Set[(A,A)] = getDataTuple(i).head.nonWildcardValueTransitions
     transitionsInTuple

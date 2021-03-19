@@ -4,7 +4,7 @@ import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
 
 @SerialVersionUID(3L)
-case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnfID:Int,associationID:Option[Int]) extends Serializable with JsonWritable[DecomposedTemporalTableIdentifier]{
+case class DecomposedTemporalTableIdentifier(subdomain:String,viewID:String,bcnfID:Int,associationID:Option[Int],originalAttrID:Option[Int]=None) extends Serializable with JsonWritable[DecomposedTemporalTableIdentifier]{
 
   override def toString: String = viewID + "." + bcnfID + (if(associationID.isDefined) "_" + associationID.get.toString else "")
 

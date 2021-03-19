@@ -33,7 +33,7 @@ object IndexingTest extends App {
     val attrID = i
     val attrState = new AttributeState(Some(Attribute(s"attr$i",attrID,None,None)))
     val attrLineage = new AttributeLineage(attrID,mutable.TreeMap(IOService.STANDARD_TIME_FRAME_START ->attrState ))
-    val key = IndexedSeq(new SurrogateAttributeLineage(i,attrID,IOService.STANDARD_TIME_FRAME_START))
+    val key = IndexedSeq(new SurrogateAttributeLineage(i,attrID))
     val valueSketch = getValueLineage(s)
     val rows = mutable.ArrayBuffer(new SurrogateBasedTemporalRowSketch(IndexedSeq(0),valueSketch,IndexedSeq()))
     new SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id,

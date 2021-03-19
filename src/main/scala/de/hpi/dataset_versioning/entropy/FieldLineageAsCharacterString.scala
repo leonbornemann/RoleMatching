@@ -139,7 +139,7 @@ object FieldLineageAsCharacterString{
   def createAttrs(fields: IndexedSeq[FieldLineageAsCharacterString], id: DecomposedTemporalTableIdentifier) = {
     val id = GlobalSurrogateRegistry.getNextFreeSurrogateID
     val attr = new AttributeLineage(id,mutable.TreeMap(IOService.STANDARD_TIME_FRAME_START -> AttributeState(Some(Attribute(s"A_$id",id)))))
-    val surrogateAttr = new SurrogateAttributeLineage(id,id,IOService.STANDARD_TIME_FRAME_START)
+    val surrogateAttr = new SurrogateAttributeLineage(id,id)
     (attr,surrogateAttr)
   }
 

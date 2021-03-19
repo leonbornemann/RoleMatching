@@ -2,14 +2,22 @@ package de.hpi.dataset_versioning.db_synthesis.evaluation
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.ChangeCube
+import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.optimization.{GreedyEdgeWeightOptimizer, TupleMerge}
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.io.IOService
 
+import java.io.File
+
 object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   IOService.socrataDir = args(0)
-  val files = TupleMerge.getStandardObjectPerLineFiles(GreedyEdgeWeightOptimizer.methodName)
+  private val methodName = GreedyEdgeWeightOptimizer.methodName
+  val files:Seq[File] =
+    if(args.length>1)
+      Seq(TupleMerge.getStandardJsonObjectPerLineFile(args(1),methodName))
+    else
+      TupleMerge.getStandardObjectPerLineFiles(methodName)
   var totalNumCorrect = 0
   var totalNumIncorrect = 0
   var totalNumCorrectIntersting = 0
@@ -25,7 +33,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
       .map(tm => (tm,tm.clique.map(idbtr => idbtr.toTupleReference(byAssociationID(idbtr.associationID)))))
     val viewIDs = byAssociationID.keySet.map(_.viewID)
     logger.debug(s"Loading changes for $viewIDs")
-    val cube = new FieldLineageIndex(ChangeCube.loadAllChanges(viewIDs.toIndexedSeq))
+    val cube = new FieldLineageIndex(viewIDs.map(id => TemporalTable.load(id)))
     var numCorrect = 0
     var numIncorrect = 0
     var numInterestingAndCorrect = 0
@@ -34,7 +42,9 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
       val toCheck = clique.map(vertex => {
         val tableID = vertex.toIDBasedTupleReference.associationID.viewID
         val attrID = vertex.table.getNonKeyAttribute.attrId
-        val entityID = vertex.rowIndex
+        val surrogateKey = vertex.table.getRow(vertex.rowIndex).keys.head
+        //TODO: we need to look up that surrogate key in the bcnf reference table
+        val entityID:Int = ???
         cube.getFieldLineage(tableID,attrID,entityID)
       }).toIndexedSeq
       //do a simple does it still work check?

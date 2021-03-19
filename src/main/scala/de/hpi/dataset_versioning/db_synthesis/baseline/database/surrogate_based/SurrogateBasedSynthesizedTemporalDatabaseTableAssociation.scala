@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.getOptimizationInputAssociationFile
+import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.{getFullTimeRangeFile, getOptimizationInputAssociationFile}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.{SynthesizedDatabaseTableRegistry, TemporalDatabaseTableTrait}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TupleReference
@@ -13,7 +13,7 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.BinaryReadable
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.io.DBSynthesis_IOService
-import de.hpi.dataset_versioning.io.DBSynthesis_IOService.{OPTIMIZATION_INPUT_ASSOCIATION_DIR, createParentDirs}
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService.{OPTIMIZATION_INPUT_ASSOCIATION_DIR, OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_DIR, createParentDirs}
 
 import java.io.File
 import java.time.LocalDate
@@ -30,6 +30,12 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
                                                                 val surrogateBasedTemporalRows:collection.mutable.ArrayBuffer[SurrogateBasedTemporalRow] = collection.mutable.ArrayBuffer(),
                                                                 uniqueSynthTableID:Int = SynthesizedDatabaseTableRegistry.getNextID())
   extends AbstractSurrogateBasedTemporalTable[Any,SurrogateBasedTemporalRow](id,unionedTables,unionedOriginalTables,key,nonKeyAttribute,foreignKeys,surrogateBasedTemporalRows,uniqueSynthTableID) with Serializable{
+  def writeToFullTimeRangeFile() = {
+    assert(isAssociation && unionedOriginalTables.size==1)
+    val file = getFullTimeRangeFile(unionedOriginalTables.head)
+    writeToBinaryFile(file)
+  }
+
 
   def writeToStandardOptimizationInputFile = {
     assert(isAssociation && unionedOriginalTables.size==1)
@@ -101,6 +107,10 @@ object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends
 
   def getOptimizationInputAssociationFile(id: DecomposedTemporalTableIdentifier) = {
     createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/${id.viewID}/${id.compositeID}.binary"))
+  }
+
+  def getFullTimeRangeFile(id:DecomposedTemporalTableIdentifier) = {
+    createParentDirs(new File(s"$OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_DIR/${id.viewID}/${id.compositeID}.binary"))
   }
 
   def getOptimizationInputAssociationParentDirs() = {

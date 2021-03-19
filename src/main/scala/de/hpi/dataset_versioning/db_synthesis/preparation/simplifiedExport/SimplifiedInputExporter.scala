@@ -1,5 +1,6 @@
 package de.hpi.dataset_versioning.db_synthesis.preparation.simplifiedExport
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
@@ -11,11 +12,12 @@ import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable
 
-class SimplifiedInputExporter(subdomain: String, id: String) {
+class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLogging{
 
   var numAssociationsWithChangesAfterStandardTimeEnd = 0
 
   def exportAll() = {
+    logger.debug(s"processing $id")
     val tt = TemporalTable.load(id)
     tt.attributes.zipWithIndex.foreach{case (al,i) => {
       val attrID = tt.attributes(i).attrId
@@ -37,13 +39,15 @@ class SimplifiedInputExporter(subdomain: String, id: String) {
           curSurrogateCounter +=1
         }
       })
-      val association: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation = buildAssociation(al, dttID, surrogateKeyAttribute, vlToSurrogateKey)
+      val associationFullTimeRange: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation = buildAssociation(al, dttID, surrogateKeyAttribute, vlToSurrogateKey)
+      val associationLimitedTimeRange = buildAssociation(al,dttID,surrogateKeyAttribute,vlToSurrogateKey,true)
       if(vlToSurrogateKey.keySet.map(_.lineage.keySet).flatten.exists(_.isAfter(IOService.STANDARD_TIME_FRAME_END))){
         numAssociationsWithChangesAfterStandardTimeEnd +=1
       }
       writeAssociationSchemaFile(al, dttID, surrogateKeyAttribute)
-      association.writeToStandardOptimizationInputFile
-      association.toSketch.writeToStandardOptimizationInputFile()
+      associationLimitedTimeRange.writeToStandardOptimizationInputFile
+      associationLimitedTimeRange.toSketch.writeToStandardOptimizationInputFile()
+      associationFullTimeRange.writeToFullTimeRangeFile()
       writeFactTable(dttID, vlToSurrogateKey, entityIDToSurrogateKey)
     }}
     val allTImstamps = tt.rows.flatMap(r =>
@@ -60,11 +64,18 @@ class SimplifiedInputExporter(subdomain: String, id: String) {
     schema.writeToStandardFile()
   }
 
-  private def buildAssociation(al: AttributeLineage, dttID: DecomposedTemporalTableIdentifier, surrogateKeyAttribute: SurrogateAttributeLineage, vlToSurrogateKey: mutable.HashMap[ValueLineage, Int]) = {
+  private def buildAssociation(al: AttributeLineage,
+                               dttID: DecomposedTemporalTableIdentifier,
+                               surrogateKeyAttribute: SurrogateAttributeLineage,
+                               vlToSurrogateKey: mutable.HashMap[ValueLineage, Int],
+                               shortenToStandardTimeRange:Boolean=false) = {
     val newRows = collection.mutable.ArrayBuffer() ++ vlToSurrogateKey
       .toIndexedSeq
       .sortBy(_._2)
-      .map { case (vl, surrogateKey) => new SurrogateBasedTemporalRow(IndexedSeq(surrogateKey), vl, IndexedSeq()) }
+      .map { case (vl, surrogateKey) => {
+        val finalVL = if(shortenToStandardTimeRange) ValueLineage(vl.lineage.filter(_._1.isAfter(IOService.STANDARD_TIME_FRAME_END))) else vl
+        new SurrogateBasedTemporalRow(IndexedSeq(surrogateKey), finalVL, IndexedSeq())
+      }}
     val association = new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(dttID.compositeID,
       mutable.HashSet(),
       mutable.HashSet(dttID),

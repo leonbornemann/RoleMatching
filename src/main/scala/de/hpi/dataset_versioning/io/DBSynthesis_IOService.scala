@@ -30,6 +30,7 @@ object DBSynthesis_IOService extends StrictLogging{
   def OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR = OPTIMIZATION_INPUT_DIR + "/associationSketches/"
   def OPTIMIZATION_INPUT_ASSOCIATION_DIR = OPTIMIZATION_INPUT_DIR + "/associations/"
   def OPTIMIZATION_INPUT_BCNF_DIR = OPTIMIZATION_INPUT_DIR + "/BCNF/"
+  def OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_DIR = OPTIMIZATION_INPUT_DIR + "/FullTimeRangeAssociations/"
   def OPTIMIZATION_INPUT_FACTLOOKUP_DIR(viewID:String) = OPTIMIZATION_INPUT_DIR + s"/factLookupTables/$viewID/"
   //database generation output
   def DATABASE_ROOT_DIR = DB_SYNTHESIS_DIR + "/synthesizedDatabases/"

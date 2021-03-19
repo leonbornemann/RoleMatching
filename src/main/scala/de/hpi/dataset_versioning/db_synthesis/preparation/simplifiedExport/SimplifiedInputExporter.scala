@@ -51,6 +51,7 @@ class SimplifiedInputExporter(subdomain: String, id: String) {
     val ttContainsEvaluationChanges = allTImstamps.exists(_.isAfter(IOService.STANDARD_TIME_FRAME_END))
     if(ttContainsEvaluationChanges && numAssociationsWithChangesAfterStandardTimeEnd ==0){
       println(s"changes after standard time are not kept in associations in $id")
+      assert(false)
     }
   }
 

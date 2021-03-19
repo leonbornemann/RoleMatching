@@ -15,15 +15,16 @@ import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
 
-  private var entropy:Option[Double] = None
+  //private var entropy:Option[Double] = None
 
   def getEntropy(): Double = {
-    if(entropy.isDefined)
-      entropy.get
-    else {
-      entropy = Some(new EntropyComputer(this).entropy)
-      entropy.get
-    }
+    new EntropyComputer(this).entropy
+//    if(entropy.isDefined)
+//      entropy.get
+//    else {
+//      entropy = Some(new EntropyComputer(this).entropy)
+//      entropy.get
+//    }
   }
 
   def mutualInformation(other: TemporalFieldTrait[T]): Double = new MutualInformationComputer(this,other).mutualInfo()

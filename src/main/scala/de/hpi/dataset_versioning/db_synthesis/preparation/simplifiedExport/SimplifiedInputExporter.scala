@@ -1,16 +1,19 @@
 package de.hpi.dataset_versioning.db_synthesis.preparation.simplifiedExport
 
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
-import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.SurrogateAttributeLineage
+import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
 import de.hpi.dataset_versioning.db_synthesis.database.table.AssociationSchema
+import de.hpi.dataset_versioning.io.IOService
 
 import scala.collection.mutable
 
 class SimplifiedInputExporter(subdomain: String, id: String) {
+
+  var numAssociationsWithChangesAfterStandardTimeEnd = 0
 
   def exportAll() = {
     val tt = TemporalTable.load(id)
@@ -34,34 +37,54 @@ class SimplifiedInputExporter(subdomain: String, id: String) {
           curSurrogateCounter +=1
         }
       })
-      val newRows = collection.mutable.ArrayBuffer() ++ vlToSurrogateKey
-        .toIndexedSeq
-        .sortBy(_._2)
-        .map{case (vl,surrogateKey) => new SurrogateBasedTemporalRow(IndexedSeq(surrogateKey),vl,IndexedSeq())}
-      val association = new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(dttID.compositeID,
-        mutable.HashSet(),
-        mutable.HashSet(dttID),
-        IndexedSeq(surrogateKeyAttribute),
-        al,
-        IndexedSeq(),
-        newRows
-      )
-      assert(false) //TODO: shorten the data first (timestamp-wise)?
-      val schema = new AssociationSchema(dttID,surrogateKeyAttribute,al)
-      schema.writeToStandardFile()
+      val association: SurrogateBasedSynthesizedTemporalDatabaseTableAssociation = buildAssociation(al, dttID, surrogateKeyAttribute, vlToSurrogateKey)
+      if(vlToSurrogateKey.keySet.map(_.lineage.keySet).flatten.exists(_.isAfter(IOService.STANDARD_TIME_FRAME_END))){
+        numAssociationsWithChangesAfterStandardTimeEnd +=1
+      }
+      writeAssociationSchemaFile(al, dttID, surrogateKeyAttribute)
       association.writeToStandardOptimizationInputFile
       association.toSketch.writeToStandardOptimizationInputFile()
-      val surrogateKeyToVL = vlToSurrogateKey
-        .map(t => (t._2,t._1))
-        .toIndexedSeq
-      val factTableRows = entityIDToSurrogateKey
-        .map{case (e,sk) => {
-          FactTableRow(e,sk)
-        }}.toIndexedSeq
-      val factLookupTable = new FactLookupTable(dttID,factTableRows,surrogateKeyToVL)
-      factLookupTable.writeToStandardFile()
-
+      writeFactTable(dttID, vlToSurrogateKey, entityIDToSurrogateKey)
     }}
+    val allTImstamps = tt.rows.flatMap(r =>
+      r.fields.flatMap(_.lineage.keySet).toSet).toSet
+    val ttContainsEvaluationChanges = allTImstamps.exists(_.isAfter(IOService.STANDARD_TIME_FRAME_END))
+    if(ttContainsEvaluationChanges && numAssociationsWithChangesAfterStandardTimeEnd ==0){
+      println(s"changes after standard time are not kept in associations in $id")
+    }
   }
 
+  private def writeAssociationSchemaFile(al: AttributeLineage, dttID: DecomposedTemporalTableIdentifier, surrogateKeyAttribute: SurrogateAttributeLineage) = {
+    val schema = new AssociationSchema(dttID, surrogateKeyAttribute, al)
+    schema.writeToStandardFile()
+  }
+
+  private def buildAssociation(al: AttributeLineage, dttID: DecomposedTemporalTableIdentifier, surrogateKeyAttribute: SurrogateAttributeLineage, vlToSurrogateKey: mutable.HashMap[ValueLineage, Int]) = {
+    val newRows = collection.mutable.ArrayBuffer() ++ vlToSurrogateKey
+      .toIndexedSeq
+      .sortBy(_._2)
+      .map { case (vl, surrogateKey) => new SurrogateBasedTemporalRow(IndexedSeq(surrogateKey), vl, IndexedSeq()) }
+    val association = new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(dttID.compositeID,
+      mutable.HashSet(),
+      mutable.HashSet(dttID),
+      IndexedSeq(surrogateKeyAttribute),
+      al,
+      IndexedSeq(),
+      newRows
+    )
+    association
+  }
+
+  private def writeFactTable(dttID: DecomposedTemporalTableIdentifier, vlToSurrogateKey: mutable.HashMap[ValueLineage, Int], entityIDToSurrogateKey: mutable.HashMap[Long, Int]) = {
+    val surrogateKeyToVL = vlToSurrogateKey
+      .map(t => (t._2, t._1))
+      .toIndexedSeq
+    val factTableRows = entityIDToSurrogateKey
+      .map { case (e, sk) => {
+        FactTableRow(e, sk)
+      }
+      }.toIndexedSeq
+    val factLookupTable = new FactLookupTable(dttID, factTableRows, surrogateKeyToVL)
+    factLookupTable.writeToStandardFile()
+  }
 }

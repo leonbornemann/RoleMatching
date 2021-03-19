@@ -73,7 +73,10 @@ class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLoggi
       .toIndexedSeq
       .sortBy(_._2)
       .map { case (vl, surrogateKey) => {
-        val finalVL = if(shortenToStandardTimeRange) ValueLineage(vl.lineage.filter(_._1.isAfter(IOService.STANDARD_TIME_FRAME_END))) else vl
+        val finalVL = if(shortenToStandardTimeRange)
+            ValueLineage(vl.lineage.filter(!_._1.isAfter(IOService.STANDARD_TIME_FRAME_END)))
+          else
+            vl
         new SurrogateBasedTemporalRow(IndexedSeq(surrogateKey), finalVL, IndexedSeq())
       }}
     val association = new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(dttID.compositeID,

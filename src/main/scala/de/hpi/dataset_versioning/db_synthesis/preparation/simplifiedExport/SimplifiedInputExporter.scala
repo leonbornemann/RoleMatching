@@ -21,7 +21,7 @@ class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLoggi
     val tt = TemporalTable.load(id)
     tt.attributes.zipWithIndex.foreach{case (al,i) => {
       val attrID = tt.attributes(i).attrId
-      val dttID = DecomposedTemporalTableIdentifier(subdomain, id, 0, Some(i),Some(attrID))
+      val dttID = DecomposedTemporalTableIdentifier(subdomain, id, 0, Some(i))
       val surrogateID = GlobalSurrogateRegistry.getNextFreeSurrogateID
       val surrogateKeyAttribute = SurrogateAttributeLineage(surrogateID, i)
       //create dictionary from entity ids to surrogate key in association:

@@ -9,6 +9,17 @@ import java.io.File
 
 case class FactLookupTable(id: DecomposedTemporalTableIdentifier, factTableRows: IndexedSeq[FactTableRow], surrogateKeyToVL: IndexedSeq[(Int, ValueLineage)]) extends JsonWritable[FactLookupTable] {
 
+//  private val bySurrogateKey = factTableRows
+//    .map(r => (r.surrogateKey,r))
+//    .toMap
+//  assert(bySurrogateKey.size == factTableRows.size)
+  private val surrogateKEyToVLMap = surrogateKeyToVL.toMap
+
+  def getCorrespondingValueLineage(surrogateKey: Int) = {
+    surrogateKEyToVLMap(surrogateKey)
+  }
+
+
   def writeToStandardFile() = {
     val file = FactLookupTable.getStandardFile(id)
     toJsonFile(file)

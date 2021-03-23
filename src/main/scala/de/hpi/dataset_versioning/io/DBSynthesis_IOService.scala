@@ -9,7 +9,6 @@ import java.time.LocalDate
 import scala.reflect.io.Directory
 
 object DBSynthesis_IOService extends StrictLogging{
-
   def DB_SYNTHESIS_DIR = socrataDir + "/db_synthesis"
 
   //statistics and reporting:
@@ -44,8 +43,8 @@ object DBSynthesis_IOService extends StrictLogging{
   def FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/fieldLineageMergeabilityGraph/"
   def CONNECTED_COMPONENT_DIR(subdomain:String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR + s"/connectedComponents/$subdomain")).getAbsolutePath
   def CONNECTED_COMPONENT_FILE(subdomain:String,filecounter:Int) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR + s"/connectedComponents/$subdomain/$filecounter.txt")).getAbsolutePath
-
   def FIELD_MERGE_RESULT_DIR = OPTIMIZATION_INPUT_DIR + "/mergedTuples/"
+  def EVALUATION_RESULT_DIR(methodName: String) = createParentDirs(new File(DB_SYNTHESIS_DIR + s"/evaluationResults/$methodName")).getAbsolutePath
 
   def getAssociationGraphEdgeCandidateFile = new File(WORKING_DIR + "associationGraphEdgeCandidates.json")
 

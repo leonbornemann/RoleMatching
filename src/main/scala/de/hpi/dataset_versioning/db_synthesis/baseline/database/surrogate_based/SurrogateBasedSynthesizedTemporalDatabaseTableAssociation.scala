@@ -30,6 +30,8 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
                                                                 val surrogateBasedTemporalRows:collection.mutable.ArrayBuffer[SurrogateBasedTemporalRow] = collection.mutable.ArrayBuffer(),
                                                                 uniqueSynthTableID:Int = SynthesizedDatabaseTableRegistry.getNextID())
   extends AbstractSurrogateBasedTemporalTable[Any,SurrogateBasedTemporalRow](id,unionedTables,unionedOriginalTables,key,nonKeyAttribute,foreignKeys,surrogateBasedTemporalRows,uniqueSynthTableID) with Serializable{
+
+
   def writeToFullTimeRangeFile() = {
     assert(isAssociation && unionedOriginalTables.size==1)
     val file = getFullTimeRangeFile(unionedOriginalTables.head)
@@ -85,6 +87,8 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
   override def buildNewRow(pk: Int, res: TemporalFieldTrait[Any]): AbstractSurrogateBasedTemporalRow[Any] = {
     new SurrogateBasedTemporalRow(IndexedSeq(pk),res.asInstanceOf[ValueLineage],IndexedSeq())
   }
+
+  override def getRow(rowIndex: Int): AbstractSurrogateBasedTemporalRow[Any] = rows(rowIndex)
 }
 
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends

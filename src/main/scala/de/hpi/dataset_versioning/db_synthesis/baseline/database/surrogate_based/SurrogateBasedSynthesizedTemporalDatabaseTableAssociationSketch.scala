@@ -63,6 +63,8 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
   override def buildNewRow(pk: Int, res: TemporalFieldTrait[Int]): AbstractSurrogateBasedTemporalRow[Int] = {
       new SurrogateBasedTemporalRowSketch(IndexedSeq(pk),res.asInstanceOf[Variant2Sketch],IndexedSeq())
   }
+
+  override def getRow(rowIndex: Int): AbstractSurrogateBasedTemporalRow[Int] = rows(rowIndex)
 }
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch extends BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]{
 

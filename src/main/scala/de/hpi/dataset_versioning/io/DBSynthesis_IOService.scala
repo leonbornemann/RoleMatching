@@ -46,6 +46,7 @@ object DBSynthesis_IOService extends StrictLogging{
   def FIELD_MERGE_RESULT_DIR = OPTIMIZATION_INPUT_DIR + "/mergedTuples/"
   def EVALUATION_RESULT_DIR(methodName: String) = createParentDirs(new File(DB_SYNTHESIS_DIR + s"/evaluationResults/$methodName")).getAbsolutePath
 
+
   def getAssociationGraphEdgeCandidateFile = new File(WORKING_DIR + "associationGraphEdgeCandidates.json")
 
   def getAssociationGraphEdgeFile = createParentDirs(new File(WORKING_DIR + "associationGraphEdges.json"))

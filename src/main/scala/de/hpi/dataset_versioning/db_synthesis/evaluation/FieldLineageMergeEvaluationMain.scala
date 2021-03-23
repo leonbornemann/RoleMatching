@@ -9,7 +9,7 @@ import de.hpi.dataset_versioning.db_synthesis.preparation.simplifiedExport.FactL
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 import de.hpi.dataset_versioning.io.IOService
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
 object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   IOService.socrataDir = args(0)
@@ -36,6 +36,8 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   logger.debug("Loaded associations")
   val mergesAsTupleReferences = merges
     .map(tm => (tm,tm.clique.map(idbtr => idbtr.toTupleReference(byAssociationID(idbtr.associationID)))))
+  val validMerges = collection.mutable.ArrayBuffer[TupleMerge]()
+  val invalidMerges = collection.mutable.ArrayBuffer[TupleMerge]()
   mergesAsTupleReferences.foreach{case (tm,clique) => {
     val toCheck = clique.map(vertex => {
       val surrogateKey = vertex.table.getRow(vertex.rowIndex).keys.head
@@ -43,17 +45,18 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
       val vl = factLookupTables(vertex.toIDBasedTupleReference.associationID).getCorrespondingValueLineage(surrogateKey)
       vl
     }).toIndexedSeq
-    //do a simple does it still work check?
-    var res = Option(toCheck.head)
-    (1 until toCheck.size).foreach(i => {
-      if(res.isDefined)
-        res = res.get.tryMergeWithConsistent(toCheck(i))
-    })
-    evalResult.updateCount(res)
+    val isValid = evalResult.checkValidityAndUpdateCount(toCheck)
+    if(isValid) validMerges += tm else invalidMerges +=tm
     }
     logger.debug("Finished processing ")
   }
   logger.debug(s"Found final result $evalResult")
   evalResult.printStats()
   evalResult.writeToStandardFile(methodName)
+  val prCorrect = new PrintWriter(TupleMerge.getCorrectMergeFile(methodName))
+  validMerges.foreach(m => m.appendToWriter(prCorrect))
+  prCorrect.close()
+  val prIncorrect = new PrintWriter(TupleMerge.getIncorrectMergeFile(methodName))
+  invalidMerges.foreach(m => m.appendToWriter(prIncorrect))
+  prIncorrect.close()
 }

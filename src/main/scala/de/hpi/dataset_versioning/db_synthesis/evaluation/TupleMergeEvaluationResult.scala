@@ -29,12 +29,23 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
   }
 
 
-  def updateCount(res: Option[ValueLineage]) = {
-    val interesting = res.exists(_.lineage.lastKey.isAfter(IOService.STANDARD_TIME_FRAME_END))
-    if(res.isDefined && interesting) correctWithChange +=1
-    else if(res.isDefined && !interesting) correctNoChange+=1
-    else if(!res.isDefined && interesting) incorrectWithChange += 1
-    else if(!res.isDefined && !interesting) incorrectNoChange += 1
+  def checkValidityAndUpdateCount(toCheck:IndexedSeq[ValueLineage]) = {
+    var res = Option(toCheck.head)
+    (1 until toCheck.size).foreach(i => {
+      if(res.isDefined)
+        res = res.get.tryMergeWithConsistent(toCheck(i))
+    })
+    val interesting = toCheck.exists(_.lineage.lastKey.isAfter(IOService.STANDARD_TIME_FRAME_END))
+    if(res.isDefined && interesting)
+      correctWithChange +=1
+    else if(res.isDefined && !interesting)
+      correctNoChange+=1
+    else if(!res.isDefined && interesting)
+      incorrectWithChange += 1
+    else if(!res.isDefined && !interesting) {
+      incorrectNoChange += 1
+    }
+    res.isDefined
   }
 }
 object TupleMergeEvaluationResult extends JsonReadable[TupleMergeEvaluationResult]{

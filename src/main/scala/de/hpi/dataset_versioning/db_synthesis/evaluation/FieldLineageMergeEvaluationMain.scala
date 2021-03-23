@@ -19,7 +19,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
       Seq(TupleMerge.getStandardJsonObjectPerLineFile(args(1),methodName))
     else
       TupleMerge.getStandardObjectPerLineFiles(methodName)
-  val evalResul = TupleMergeEvaluationResult()
+  val evalResult = TupleMergeEvaluationResult()
   val merges = files.flatMap(f => TupleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath))
   logger.debug("Loaded merges")
   val tables = merges.flatMap(_.clique.map(_.associationID).toSet).toSet
@@ -46,10 +46,11 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
       if(res.isDefined)
         res = res.get.tryMergeWithConsistent(toCheck(i))
     })
-    evalResul.updateCount(res)
+    evalResult.updateCount(res)
     }
     logger.debug("Finished processing ")
   }
-  logger.debug(s"Found final result $evalResul")
-  evalResul.writeToStandardFile(methodName)
+  logger.debug(s"Found final result $evalResult")
+  evalResult.printStats()
+  evalResult.writeToStandardFile(methodName)
 }

@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.{JsonReadable, JsonWritable}
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
 import de.hpi.dataset_versioning.db_synthesis.evaluation.TupleMergeEvaluationResult.getStandardFile
+import de.hpi.dataset_versioning.io.DBSynthesis_IOService.createParentDirs
 import de.hpi.dataset_versioning.io.{DBSynthesis_IOService, IOService}
 
 import java.io.File
@@ -50,6 +51,6 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
 }
 object TupleMergeEvaluationResult extends JsonReadable[TupleMergeEvaluationResult]{
   def getStandardFile(methodName:String) = {
-    new File(DBSynthesis_IOService.EVALUATION_RESULT_DIR(methodName) + "/tupleMergeEvaluationResult.json")
+    createParentDirs(new File(DBSynthesis_IOService.EVALUATION_RESULT_DIR(methodName) + "/tupleMergeEvaluationResult.json"))
   }
 }

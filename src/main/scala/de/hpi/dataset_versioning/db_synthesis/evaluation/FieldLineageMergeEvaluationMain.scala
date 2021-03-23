@@ -20,7 +20,10 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
     else
       TupleMerge.getStandardObjectPerLineFiles(methodName)
   val evalResult = TupleMergeEvaluationResult()
-  val merges = files.flatMap(f => TupleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath))
+  val merges = files.flatMap(f => {
+    logger.debug(s"Reading merge file $f")
+    TupleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath)
+  })
   logger.debug("Loaded merges")
   val tables = merges.flatMap(_.clique.map(_.associationID).toSet).toSet
   val factLookupTables = tables

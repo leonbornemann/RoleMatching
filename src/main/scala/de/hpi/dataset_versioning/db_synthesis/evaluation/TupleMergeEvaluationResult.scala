@@ -50,6 +50,8 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
   }
 }
 object TupleMergeEvaluationResult extends JsonReadable[TupleMergeEvaluationResult]{
+  def loadFromStandardFile(methodName:String) = fromJsonFile(getStandardFile(methodName).getAbsolutePath)
+
   def getStandardFile(methodName:String) = {
     createParentDirs(new File(DBSynthesis_IOService.EVALUATION_RESULT_DIR(methodName) + "/tupleMergeEvaluationResult.json"))
   }

@@ -71,6 +71,8 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
 }
 object ValueLineage{
 
+  def fromSerializationHelper(valueLineageWithHashMap: ValueLineageWithHashMap) = ValueLineage(mutable.TreeMap[LocalDate,Any]() ++ valueLineageWithHashMap.lineage)
+
   def isWildcard(value: Any) = value == ReservedChangeValues.NOT_EXISTANT_DATASET || value == ReservedChangeValues.NOT_EXISTANT_COL || value == ReservedChangeValues.NOT_EXISTANT_ROW
 
 }

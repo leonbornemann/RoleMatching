@@ -100,7 +100,7 @@ class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLoggi
         FactTableRow(e, sk)
       }
       }.toIndexedSeq
-    val factLookupTable = new FactLookupTable(dttID, factTableRows, surrogateKeyToVL)
+    val factLookupTable = new FactLookupTable(dttID, factTableRows, surrogateKeyToVL.map(t => (t._1,t._2.toSerializationHelper)))
     factLookupTable.writeToStandardFile()
   }
 }

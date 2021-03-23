@@ -54,9 +54,9 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   evalResult.printStats()
   evalResult.writeToStandardFile(methodName)
   val prCorrect = new PrintWriter(TupleMerge.getCorrectMergeFile(methodName))
-  validMerges.foreach(m => m.appendToWriter(prCorrect))
+  validMerges.foreach(m => m.appendToWriter(prCorrect,false,true))
   prCorrect.close()
   val prIncorrect = new PrintWriter(TupleMerge.getIncorrectMergeFile(methodName))
-  invalidMerges.foreach(m => m.appendToWriter(prIncorrect))
+  invalidMerges.foreach(m => m.appendToWriter(prIncorrect,false, true))
   prIncorrect.close()
 }

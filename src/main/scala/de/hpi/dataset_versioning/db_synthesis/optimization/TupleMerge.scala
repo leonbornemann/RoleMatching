@@ -11,6 +11,10 @@ case class TupleMerge(clique:Set[IDBasedTupleReference],score:Double) extends Js
 }
 
 object TupleMerge extends JsonReadable[TupleMerge] {
+  def loadIncorrectMerges(methodName: String) = fromJsonObjectPerLineFile(getIncorrectMergeFile(methodName).getAbsolutePath)
+
+  def loadCorrectMerges(methodName: String) = fromJsonObjectPerLineFile(getCorrectMergeFile(methodName).getAbsolutePath)
+
 
   def getCorrectMergeFile(methodName: String) = createParentDirs(new File(EVALUATION_RESULT_DIR(methodName) + "/correctMerges.json"))
   def getIncorrectMergeFile(methodName: String) = createParentDirs(new File(EVALUATION_RESULT_DIR(methodName) + "/incorrectMerges.json"))

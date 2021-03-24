@@ -137,11 +137,16 @@ object AbstractTemporalField{
   }
 
   def ENTROPY_REDUCTION_SET[A](references: Set[TupleReference[A]]) = {
-    val merged = references.toIndexedSeq.map(_.getDataTuple.head)
+    val asFields = references.map(_.getDataTuple.head)
+    ENTROPY_REDUCTION_SET_FIELD(asFields)
+  }
+
+  def ENTROPY_REDUCTION_SET_FIELD[A](fields:Set[TemporalFieldTrait[A]]) = {
+    val merged = fields.toIndexedSeq
       .reduce((a,b) => a.mergeWithConsistent(b)).getEntropy()
-    val prior = references.toIndexedSeq.map(_.getDataTuple.head.getEntropy()).sum
+    val prior = fields.toIndexedSeq.map(_.getEntropy()).sum
     if(prior.isNaN || merged.isNaN)
-      println()
+      println("What? - we found NaN")
     prior - merged
   }
 
@@ -151,7 +156,7 @@ object AbstractTemporalField{
     else {
       val toMerge = refs.tail.map(tr => tr.getDataTuple)
       assert(toMerge.head.size == 1)
-      var res = toMerge.head.head
+      var res = refs.head.getDataTuple.head
       (1 until toMerge.size).foreach(i => {
         res = res.mergeWithConsistent(toMerge(i).head)
       })

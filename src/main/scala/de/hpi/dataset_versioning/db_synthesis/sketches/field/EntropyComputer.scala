@@ -10,7 +10,7 @@ import java.time.LocalDate
 import scala.collection.mutable
 
 class EntropyComputer[T](field: TemporalFieldTrait[T]) {
-  throw new AssertionError("There is still an unresolved bug in entropy calculation that sometimes leads to NaN - for example for TupleReference(3c9v-pnva.3_2(SK30, _location_longitude),538)")
+  //throw new AssertionError("There is still an unresolved bug in entropy calculation that sometimes leads to NaN - for example for TupleReference(3c9v-pnva.3_2(SK30, _location_longitude),538)")
 
   val WILDCARD = field.WILDCARDVALUES.toIndexedSeq.sortBy(_.toString)
   val transitions = mutable.HashMap[ValueTransition, Int]()
@@ -33,7 +33,8 @@ class EntropyComputer[T](field: TemporalFieldTrait[T]) {
       val (nextArrival,nextValue) = if(i+1 != vl.size) vl(i+1) else (IOService.STANDARD_TIME_FRAME_END.plusDays(1),None) //we add plus one so the difference works
       assert(!nextArrival.isBefore(curArrival))
       val sameValueTransitionCount =  nextArrival.toEpochDay - curArrival.toEpochDay -1
-      handleTransition(curValue,curValue,sameValueTransitionCount.toInt)
+      if(sameValueTransitionCount>0)
+        handleTransition(curValue,curValue,sameValueTransitionCount.toInt)
       if(i+1 != vl.size) {
         handleTransition(curValue, nextValue, 1)
       }
@@ -78,9 +79,10 @@ class EntropyComputer[T](field: TemporalFieldTrait[T]) {
   }
 
   private def entropy(transitions: mutable.HashMap[ValueTransition, Int], lineageSize: Int): Double = {
-    -transitions.values.map(count => {
+    val entropy = -transitions.values.map(count => {
       val pXI = count / (lineageSize - 1).toDouble
       pXI * log2(pXI)
     }).sum
+    entropy
   }
 }

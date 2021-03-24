@@ -15,7 +15,7 @@ object TupleMergeCliqueSizeHistogramMain extends App {
   val eval = TupleMergeEvaluationResult.loadFromStandardFile(GreedyEdgeWeightOptimizer.methodName)
   eval.printStats()
   private val allMerges = mergesCorrect ++ mergesIncorrect
-  val histAll = Histogram(allMerges.map(_.clique.size))
+  val histAll = Histogram(allMerges.map(_.clique.size),true)
   val histCorrect = Histogram(mergesCorrect.map(_.clique.size),true)
   val histIncorrect = Histogram(mergesIncorrect.map(_.clique.size),true)
   println("correct")

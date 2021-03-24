@@ -1,7 +1,9 @@
 package de.hpi.dataset_versioning.entropy
 
+import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.optimization.TupleMerge
 import de.hpi.dataset_versioning.io.IOService
-import de.hpi.dataset_versioning.util.TableFormatter
+import de.hpi.dataset_versioning.util.{MathUtil, TableFormatter}
 
 import java.io.File
 import scala.collection.mutable
@@ -177,6 +179,44 @@ object EntropyShenanigansMain extends App {
   println("New Experiment")
   printMEtricTable(checkIfBadResult)
   println()
+
+  val newLineages = IndexedSeq(
+    "a_aba__a__a_",
+    "a_abab_ab_a_",
+    "a_aba_ca_ca_",
+    "_dab_______d"
+  )
+  IOService.STANDARD_TIME_FRAME_END = IOService.STANDARD_TIME_FRAME_START.plusDays(newLineages(0).length-1)
+  val maxClique = newLineages.zip('A' until ('A' + newLineages.size).toChar).map(t => FieldLineageAsCharacterString(t._1,t._2.toChar.toString))
+  maxClique.foreach(println)
+  val powerset = MathUtil
+    .powerset(maxClique.toList)
+    .filter(!_.isEmpty)
+  val withAverageEvidence = powerset.map(clique =>
+    (clique,ValueLineageClique(clique.toIndexedSeq.map(_.toValueLineage)).averageEvidenceToMergedResultScore))
+  val withAverageMI = powerset.map(clique =>
+    (clique,ValueLineageClique(clique.toIndexedSeq.map(_.toValueLineage)).averageMutualInformation))
+  val withEntropyReduction = powerset.map(clique =>
+    (clique,ValueLineageClique(clique.toIndexedSeq.map(_.toValueLineage)).entropyReduction))
+
+  printCliqueMergeTable(withAverageEvidence,"averageEvidence")
+  println()
+  printCliqueMergeTable(withEntropyReduction,"entropyReduction")
+  println()
+  printCliqueMergeTable(withAverageMI,"averageMutualInfo")
+
+  def printCliqueMergeTable(withScores: List[(List[FieldLineageAsCharacterString], Double)],scoreName:String) = {
+    val header = Seq("#","Clique","Merge-Result",s"$scoreName")
+    val rows = withScores
+      .sortBy(-_._2)
+      .zipWithIndex
+      .map{case (mergeMatch,i) => {
+        Seq(s"$i", mergeMatch._1.map(_.label).sorted.mkString,s"${FieldLineageAsCharacterString.mergeAll(mergeMatch._1)}", f"${mergeMatch._2}%.5f")
+      }}
+    val rowsWithHEader:Seq[Seq[Any]] = Seq(header) ++ rows
+    val res = TableFormatter.format(rowsWithHEader)
+    println(res)
+  }
 //  testSingleMutualInfo()
 //  val c  = "_____ABBBB"
 //  val c1 = "_____ABBBB"

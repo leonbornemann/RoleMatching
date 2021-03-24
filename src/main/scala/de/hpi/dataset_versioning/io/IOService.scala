@@ -136,7 +136,7 @@ object IOService extends StrictLogging{
   var subdomain = null
   val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   val STANDARD_TIME_FRAME_START = LocalDate.parse("2019-11-01", IOService.dateTimeFormatter)
-  val STANDARD_TIME_FRAME_END = LocalDate.parse("2020-04-30", IOService.dateTimeFormatter)
+  var STANDARD_TIME_FRAME_END = LocalDate.parse("2020-04-30", IOService.dateTimeFormatter)
   val cachedMetadata = mutable.Map[LocalDate,mutable.Map[String,DatasetMetadata]]()
   val datasetCache = mutable.Map[DatasetInstance,OldLoadedRelationalDataset]()
 

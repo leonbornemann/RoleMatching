@@ -31,11 +31,7 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
 
 
   def checkValidityAndUpdateCount(toCheck:IndexedSeq[ValueLineage]) = {
-    var res = Option(toCheck.head)
-    (1 until toCheck.size).foreach(i => {
-      if(res.isDefined)
-        res = res.get.tryMergeWithConsistent(toCheck(i))
-    })
+    val res = ValueLineage.tryMergeAll(toCheck)
     val interesting = toCheck.exists(_.lineage.lastKey.isAfter(IOService.STANDARD_TIME_FRAME_END))
     if(res.isDefined && interesting)
       correctWithChange +=1

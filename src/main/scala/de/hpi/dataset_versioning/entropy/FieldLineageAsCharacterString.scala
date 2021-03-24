@@ -7,12 +7,13 @@ import de.hpi.dataset_versioning.data.simplified.Attribute
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.{SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
 import de.hpi.dataset_versioning.db_synthesis.database.GlobalSurrogateRegistry
+import de.hpi.dataset_versioning.entropy.EntropyShenanigansMain.maxClique
 import de.hpi.dataset_versioning.io.IOService
 
 import java.time.LocalDate
 import scala.collection.mutable
 
-case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumber:Int = -1) {
+case class FieldLineageAsCharacterString(lineage: String, var label: String, rowNumber:Int = -1) {
   def dttID(subdomain:String): DecomposedTemporalTableIdentifier = DecomposedTemporalTableIdentifier.fromShortString(subdomain,label)
 
   def printWithEntropy = println(toString + f" ($defaultEntropy%1.3f)")
@@ -135,6 +136,12 @@ case class FieldLineageAsCharacterString(lineage: String, label: String, rowNumb
 
 }
 object FieldLineageAsCharacterString{
+  def mergeAll(values: Seq[FieldLineageAsCharacterString]) = {
+    var totalRes = values(0)
+    values.tail.foreach(v => totalRes = totalRes.mergeCompatible(v))
+    FieldLineageAsCharacterString(totalRes.lineage,"M")
+  }
+
 
   def createAttrs(fields: IndexedSeq[FieldLineageAsCharacterString], id: DecomposedTemporalTableIdentifier) = {
     val id = GlobalSurrogateRegistry.getNextFreeSurrogateID

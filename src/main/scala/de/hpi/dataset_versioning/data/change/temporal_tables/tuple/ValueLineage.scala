@@ -3,12 +3,15 @@ package de.hpi.dataset_versioning.data.change.temporal_tables.tuple
 import de.hpi.dataset_versioning.data.change.ReservedChangeValues
 import de.hpi.dataset_versioning.data.change.temporal_tables.time.TimeInterval
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.{AbstractTemporalField, TemporalFieldTrait}
+import de.hpi.dataset_versioning.io.IOService
 
 import java.time.LocalDate
 import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends AbstractTemporalField[Any] with Serializable{
+  def keepOnlyStandardTimeRange = ValueLineage(lineage.filter(!_._1.isAfter(IOService.STANDARD_TIME_FRAME_END)))
+
 
   private def serialVersionUID = 42L
 
@@ -28,7 +31,6 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
       }
     }
   }
-
 
   override def toString: String = "[" + lineage.values.mkString("|") + "]"
 
@@ -70,6 +72,16 @@ case class ValueLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap
   override def WILDCARDVALUES: Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_ROW)
 }
 object ValueLineage{
+
+  def tryMergeAll(toMerge: IndexedSeq[ValueLineage]) = {
+    var res = Option(toMerge.head)
+    (1 until toMerge.size).foreach(i => {
+      if(res.isDefined)
+        res = res.get.tryMergeWithConsistent(toMerge(i))
+    })
+    res
+  }
+
 
   def fromSerializationHelper(valueLineageWithHashMap: ValueLineageWithHashMap) = ValueLineage(mutable.TreeMap[LocalDate,Any]() ++ valueLineageWithHashMap.lineage)
 

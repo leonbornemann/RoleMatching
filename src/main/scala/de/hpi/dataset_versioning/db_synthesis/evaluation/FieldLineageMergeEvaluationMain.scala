@@ -69,7 +69,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
         }
       }
       //statFile.println("isValid,numNonEqualAtT,numEqualAtT,numOverlappingTransitions,MI,entropyReduction")
-      val entropyReduction = AbstractTemporalField.ENTROPY_REDUCTION_SET_FIELD(Set(vl1, vl2))
+      val entropyReduction = AbstractTemporalField.ENTROPY_REDUCTION_SET_FIELD(Set[TemporalFieldTrait[Any]](vl1, vl2))
       val mutualInformation = vl1.mutualInformation(vl2)
       val evidence = vl1.getOverlapEvidenceCount(vl2)
       statFile.println(s"$isValid,$numUnEqual,$numEqual,$evidence,$mutualInformation,$entropyReduction")

@@ -77,7 +77,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
       val mutualInformation = vl1.mutualInformation(vl2)
       val evidence = vl1.getOverlapEvidenceCount(vl2)
       val newScore = GLOBAL_CONFIG
-      statFile.println(s"$isValid,$numUnEqual,$numEqual,$evidence,$mutualInformation,$entropyReduction")
+      statFile.println(s"$isValid,$numUnEqual,$numEqual,$evidence,$mutualInformation,$entropyReduction,$newScore")
     }
     if(isValid) validMerges += tm else invalidMerges +=tm
     }

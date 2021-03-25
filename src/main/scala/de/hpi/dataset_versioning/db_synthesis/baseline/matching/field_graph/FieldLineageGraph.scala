@@ -10,14 +10,17 @@ class FieldLineageGraph[A] {
 
   def toFieldLineageMergeabilityGraph(includeEvidenceSet:Boolean=false) = {
     FieldLineageMergeabilityGraph(edges.toIndexedSeq.map(e => {
-      var evidenceSet:Option[collection.IndexedSeq[(ValueTransition,Int)]] = None
+      var evidenceSet:Option[collection.IndexedSeq[(ValueTransition[Any],Int)]] = None
       if(includeEvidenceSet) {
         val tupA = e.tupleReferenceA.getDataTuple.head
         val tupB = e.tupleReferenceB.getDataTuple.head
-        evidenceSet = Some(tupA.getOverlapEvidenceMultiSet(tupB).toIndexedSeq)
+        evidenceSet = Some(tupA.getOverlapEvidenceMultiSet(tupB).toIndexedSeq.map(t => (t._1.asInstanceOf[ValueTransition[Any]],t._2)))
         assert(evidenceSet.get.map(_._2).sum==e.evidence)
       }
-      FieldLineageGraphEdge(e.tupleReferenceA.toIDBasedTupleReference, e.tupleReferenceB.toIDBasedTupleReference, e.evidence,evidenceSet)
+      FieldLineageGraphEdge(e.tupleReferenceA.toIDBasedTupleReference,
+        e.tupleReferenceB.toIDBasedTupleReference,
+        e.evidence,
+        evidenceSet)
     }))
   }
 

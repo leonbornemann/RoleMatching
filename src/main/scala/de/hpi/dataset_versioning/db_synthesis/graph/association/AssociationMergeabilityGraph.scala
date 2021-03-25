@@ -63,7 +63,7 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilit
   }
 
 
-  private def getTop5(map: Map[ValueTransition, Int]) = {
+  private def getTop5(map: Map[ValueTransition[Any], Int]) = {
     map.toIndexedSeq
       .sortBy(-_._2)
       .take(5)
@@ -98,7 +98,7 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationMergeabilit
   }
 
 
-  def filterGraphEdges(p : ((ValueTransition,Int) => Boolean)) = {
+  def filterGraphEdges(p : ((ValueTransition[Any],Int) => Boolean)) = {
     //TODO: recompute summedEvidence here:
     val edgesNew = edges
       .map(e => {

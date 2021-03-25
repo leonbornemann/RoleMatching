@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.dataset_versioning.data.change.ChangeCube
 import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
 import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
+import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.dataset_versioning.db_synthesis.optimization.{GreedyEdgeWeightOptimizer, TupleMerge}
 import de.hpi.dataset_versioning.db_synthesis.preparation.simplifiedExport.FactLookupTable
@@ -44,7 +45,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   val validMerges = collection.mutable.ArrayBuffer[TupleMerge]()
   val invalidMerges = collection.mutable.ArrayBuffer[TupleMerge]()
   val statFile = new PrintWriter("stats.csv")
-  statFile.println("isValid,numNonEqualAtT,numEqualAtT,numOverlappingTransitions,MI,entropyReduction")
+  statFile.println("isValid,numNonEqualAtT,numEqualAtT,numOverlappingTransitions,MI,entropyReduction,newScore")
   var statFileEntries = 0
   mergesAsTupleReferences.foreach{case (tm,clique) => {
     val toCheck = clique
@@ -75,6 +76,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
       val entropyReduction = AbstractTemporalField.ENTROPY_REDUCTION_SET_FIELD(Set[TemporalFieldTrait[Any]](vl1, vl2))
       val mutualInformation = vl1.mutualInformation(vl2)
       val evidence = vl1.getOverlapEvidenceCount(vl2)
+      val newScore = GLOBAL_CONFIG
       statFile.println(s"$isValid,$numUnEqual,$numEqual,$evidence,$mutualInformation,$entropyReduction")
     }
     if(isValid) validMerges += tm else invalidMerges +=tm

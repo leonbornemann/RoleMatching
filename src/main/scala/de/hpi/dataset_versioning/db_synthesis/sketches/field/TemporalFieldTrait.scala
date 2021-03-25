@@ -15,6 +15,11 @@ import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
 
+  def newScore(other: TemporalFieldTrait[T]) = {
+    new UltimateChangeScoreComputer(this,other).score()
+  }
+
+
   //private var entropy:Option[Double] = None
 
   def getEntropy(): Double = {
@@ -29,12 +34,34 @@ trait TemporalFieldTrait[T] {
 
   def mutualInformation(other: TemporalFieldTrait[T]): Double = new MutualInformationComputer(this,other).mutualInfo()
 
-  def nonWildcardValueTransitions: Set[(T, T)] = {
-    val vl = getValueLineage
-      .values
-      .filter(!isWildcard(_))
-      .toIndexedSeq
-    (1 until vl.size).map(i => (vl(i-1),vl(i))).toSet
+  def valueTransitions(includeSameValueTransitions:Boolean=false): Set[ValueTransition[T]] = {
+    if(!includeSameValueTransitions){
+      val vl = getValueLineage
+        .values
+        //.filter(!isWildcard(_))
+        .toIndexedSeq
+      (1 until vl.size).map(i => ValueTransition[T](vl(i-1),vl(i))).toSet
+    } else {
+      val vl = getValueLineage.toIndexedSeq
+      val transitions = (1 until vl.size)
+        .flatMap(i => {
+          val prev = vl(i-1)
+          val cur = vl(i)
+          //handle prev to prev
+          val res = scala.collection.mutable.ArrayBuffer[ValueTransition[T]]()
+          if(cur._1.toEpochDay - prev._1.toEpochDay>1){
+            //add Prev to Prev
+            res += ValueTransition(prev._2,prev._2)
+          }
+          res += ValueTransition(prev._2,cur._2)
+          //handle last:
+          if(i == vl.size-1 && cur._1.isBefore(IOService.STANDARD_TIME_FRAME_END)){
+            res += ValueTransition(cur._2,cur._2)
+          }
+          res
+        })
+      transitions.toSet
+    }
   }
 
 
@@ -42,7 +69,7 @@ trait TemporalFieldTrait[T] {
     !prevValue1.isEmpty && !isWildcard(prevValue1.get)
   }
 
-  private def getNonWCInterleavedOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]):Option[mutable.HashMap[ValueTransition,Int]] = {
+  private def getNonWCInterleavedOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]):Option[mutable.HashMap[ValueTransition[T],Int]] = {
     val res = this.tryMergeWithConsistent(other)
     if(!res.isDefined){
       return None
@@ -51,7 +78,7 @@ trait TemporalFieldTrait[T] {
     val vl2 = other.getValueLineage
     val vl1Iterator = scala.collection.mutable.Queue() ++ vl1
     val vl2Iterator = scala.collection.mutable.Queue() ++ vl2
-    val evidenceSet = mutable.HashMap[ValueTransition,Int]()
+    val evidenceSet = mutable.HashMap[ValueTransition[T],Int]()
     var curValue1 = vl1Iterator.dequeue()._2
     var curValue2 = vl2Iterator.dequeue()._2
     var prevValue1:Option[T] = None
@@ -93,7 +120,7 @@ trait TemporalFieldTrait[T] {
     Some(evidenceSet)
   }
 
-  private def getWCInterleavedOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]):Option[mutable.HashMap[ValueTransition,Int]] = {
+  private def getWCInterleavedOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]):Option[mutable.HashMap[ValueTransition[T],Int]] = {
     val res = this.tryMergeWithConsistent(other)
     if(!res.isDefined){
       return None
@@ -102,7 +129,7 @@ trait TemporalFieldTrait[T] {
     val vl2 = other.getValueLineage
     val vl1Iterator = scala.collection.mutable.Queue() ++ vl1
     val vl2Iterator = scala.collection.mutable.Queue() ++ vl2
-    val evidenceSet = mutable.HashMap[ValueTransition,Int]()
+    val evidenceSet = mutable.HashMap[ValueTransition[T],Int]()
     var curValue1 = vl1Iterator.dequeue()._2
     var curValue2 = vl2Iterator.dequeue()._2
     var prevNonWCValue1:Option[T] = None
@@ -153,7 +180,7 @@ trait TemporalFieldTrait[T] {
   }
 
   //=GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS
-  def getOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]):collection.Map[ValueTransition,Int] = getOverlapEvidenceMultiSet(other,GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS)
+  def getOverlapEvidenceMultiSet(other: TemporalFieldTrait[T]):collection.Map[ValueTransition[T],Int] = getOverlapEvidenceMultiSet(other,GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS)
   def getOverlapEvidenceCount(other: TemporalFieldTrait[T]):Int = getOverlapEvidenceCount(other,GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS)
 
   def getOverlapEvidenceMultiSet(other: TemporalFieldTrait[T],allowInterleavedWildcards:Boolean) = {

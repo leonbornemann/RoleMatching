@@ -131,6 +131,10 @@ object AbstractTemporalField{
     tr1.getDataTuple.head.mutualInformation(tr2.getDataTuple.head)
   }
 
+  def IMPROVED_SCORE[A](tr1: TupleReference[A], tr2: TupleReference[A]) = {
+    tr1.getDataTuple.head.newScore(tr2.getDataTuple.head)
+  }
+
 
   def ENTROPY_REDUCTION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = {
     ENTROPY_REDUCTION_SET(Set(tr1,tr2))

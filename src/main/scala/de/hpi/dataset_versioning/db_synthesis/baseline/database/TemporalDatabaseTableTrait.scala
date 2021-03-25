@@ -3,7 +3,7 @@ package de.hpi.dataset_versioning.db_synthesis.baseline.database
 import de.hpi.dataset_versioning.data.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.dataset_versioning.db_synthesis.baseline.database.surrogate_based.AbstractSurrogateBasedTemporalRow
 import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.TableUnionMatch
+import de.hpi.dataset_versioning.db_synthesis.baseline.matching.{TableUnionMatch, ValueTransition}
 import de.hpi.dataset_versioning.db_synthesis.sketches.column.TemporalColumnTrait
 import de.hpi.dataset_versioning.db_synthesis.sketches.field.TemporalFieldTrait
 
@@ -14,10 +14,10 @@ import scala.collection.mutable.ArrayBuffer
 trait TemporalDatabaseTableTrait[A] {
   def getRow(rowIndex: Int) :AbstractSurrogateBasedTemporalRow[A]
 
-  def nonWildcardValueTransitions:Set[(A,A)] = (0 until nrows).toSet.flatMap((i:Int) => {
-    val transitionsInTuple:Set[(A,A)] = getDataTuple(i).head.nonWildcardValueTransitions
+  def nonWildcardValueTransitions = (0 until nrows).toSet.flatMap((i:Int) => {
+    val transitionsInTuple:Set[ValueTransition[A]] = getDataTuple(i).head.valueTransitions()
     transitionsInTuple
-  }:Set[(A,A)])
+  })
 
   def createNewTable(unionID: String,unionedTables: mutable.HashSet[Int], value: mutable.HashSet[DecomposedTemporalTableIdentifier], key: collection.IndexedSeq[SurrogateAttributeLineage], newNonKEyAttrLineage: AttributeLineage, newRows: ArrayBuffer[AbstractSurrogateBasedTemporalRow[A]]):TemporalDatabaseTableTrait[A]
 

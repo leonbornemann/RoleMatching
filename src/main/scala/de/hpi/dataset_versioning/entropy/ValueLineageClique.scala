@@ -5,6 +5,17 @@ import de.hpi.dataset_versioning.db_synthesis.sketches.field.{AbstractTemporalFi
 
 case class ValueLineageClique(clique: IndexedSeq[ValueLineage]) {
 
+  def averageNewScore = {
+    if(clique.size==1){
+      0
+    } else {
+      clique.map(v => {
+        v.newScore(merge)
+      }).sum / clique.size.toDouble
+    }
+  }
+
+
   def averageMutualInformation = {
     if(clique.size==1){
       0

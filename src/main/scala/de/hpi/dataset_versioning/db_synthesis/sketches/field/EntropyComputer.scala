@@ -13,7 +13,7 @@ class EntropyComputer[T](field: TemporalFieldTrait[T]) {
   //throw new AssertionError("There is still an unresolved bug in entropy calculation that sometimes leads to NaN - for example for TupleReference(3c9v-pnva.3_2(SK30, _location_longitude),538)")
 
   val WILDCARD = field.WILDCARDVALUES.toIndexedSeq.sortBy(_.toString)
-  val transitions = mutable.HashMap[ValueTransition, Int]()
+  val transitions = mutable.HashMap[ValueTransition[Any], Int]()
   var curWCCount = 0
 
   def entropy: Double = {
@@ -78,7 +78,7 @@ class EntropyComputer[T](field: TemporalFieldTrait[T]) {
     transitions(transition) = existingCount + toAdd
   }
 
-  private def entropy(transitions: mutable.HashMap[ValueTransition, Int], lineageSize: Int): Double = {
+  private def entropy(transitions: mutable.HashMap[ValueTransition[Any], Int], lineageSize: Int): Double = {
     val entropy = -transitions.values.map(count => {
       val pXI = count / (lineageSize - 1).toDouble
       pXI * log2(pXI)

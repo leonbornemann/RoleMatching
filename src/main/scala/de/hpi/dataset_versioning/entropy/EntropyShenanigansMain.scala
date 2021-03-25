@@ -198,12 +198,16 @@ object EntropyShenanigansMain extends App {
     (clique,ValueLineageClique(clique.toIndexedSeq.map(_.toValueLineage)).averageMutualInformation))
   val withEntropyReduction = powerset.map(clique =>
     (clique,ValueLineageClique(clique.toIndexedSeq.map(_.toValueLineage)).entropyReduction))
+  val withNewScore = powerset.map(clique =>
+    (clique,ValueLineageClique(clique.toIndexedSeq.map(_.toValueLineage)).averageNewScore))
 
   printCliqueMergeTable(withAverageEvidence,"averageEvidence")
   println()
   printCliqueMergeTable(withEntropyReduction,"entropyReduction")
   println()
   printCliqueMergeTable(withAverageMI,"averageMutualInfo")
+  println()
+  printCliqueMergeTable(withNewScore,"newScore")
 
   def printCliqueMergeTable(withScores: List[(List[FieldLineageAsCharacterString], Double)],scoreName:String) = {
     val header = Seq("#","Clique","Merge-Result",s"$scoreName")

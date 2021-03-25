@@ -47,12 +47,14 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   statFile.println("isValid,numNonEqualAtT,numEqualAtT,numOverlappingTransitions,MI,entropyReduction")
   var statFileEntries = 0
   mergesAsTupleReferences.foreach{case (tm,clique) => {
-    val toCheck = clique.map(vertex => {
+    val toCheck = clique
+      .toIndexedSeq
+      .map(vertex => {
       val surrogateKey = vertex.table.getRow(vertex.rowIndex).keys.head
       //TODO: we need to look up that surrogate key in the bcnf reference table
       val vl = factLookupTables(vertex.toIDBasedTupleReference.associationID).getCorrespondingValueLineage(surrogateKey)
       vl
-    }).toIndexedSeq
+    })
     val isValid = evalResult.checkValidityAndUpdateCount(toCheck)
     if(toCheck.size==2){
       val vl1 = toCheck(0).keepOnlyStandardTimeRange

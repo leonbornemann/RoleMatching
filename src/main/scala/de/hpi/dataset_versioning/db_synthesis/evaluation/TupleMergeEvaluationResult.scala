@@ -13,8 +13,10 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
                                       var incorrectNoChange: Int=0,
                                       var correctWithChange: Int=0,
                                       var incorrectWithChange: Int=0) extends JsonWritable[TupleMergeEvaluationResult] with StrictLogging{
+  def total: Int = correctNoChange+incorrectNoChange+correctWithChange+incorrectWithChange
 
-  def accuracyAll = (correctNoChange + correctWithChange) / (correctNoChange+incorrectNoChange+correctWithChange+incorrectWithChange).toDouble
+
+  def accuracyAll = (correctNoChange + correctWithChange) / total.toDouble
 
   def accuracyWithChange: Any = correctWithChange / (correctWithChange + incorrectWithChange).toDouble
 

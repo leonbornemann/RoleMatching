@@ -45,6 +45,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   val invalidMerges = collection.mutable.ArrayBuffer[TupleMerge]()
   val statFile = new PrintWriter("stats.csv")
   statFile.println("isValid,numNonEqualAtT,numEqualAtT,numOverlappingTransitions,MI,entropyReduction")
+  var statFileEntries = 0
   mergesAsTupleReferences.foreach{case (tm,clique) => {
     val toCheck = clique.map(vertex => {
       val surrogateKey = vertex.table.getRow(vertex.rowIndex).keys.head
@@ -61,14 +62,14 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
       for(date <- IOService.STANDARD_TIME_RANGE){
         val valueA = vl1.valueAt(date)
         val valueB = vl1.valueAt(date)
-        if(!ValueLineage.isWildcard(valueA) && !ValueLineage.isWildcard(valueB) || valueA==valueB){
+        if(!ValueLineage.isWildcard(valueA) && !ValueLineage.isWildcard(valueB)){
           assert(valueA == valueB)
           numEqual+=1
         } else{
           numUnEqual+=1
         }
       }
-      //statFile.println("isValid,numNonEqualAtT,numEqualAtT,numOverlappingTransitions,MI,entropyReduction")
+      statFileEntries+=1
       val entropyReduction = AbstractTemporalField.ENTROPY_REDUCTION_SET_FIELD(Set[TemporalFieldTrait[Any]](vl1, vl2))
       val mutualInformation = vl1.mutualInformation(vl2)
       val evidence = vl1.getOverlapEvidenceCount(vl2)
@@ -82,6 +83,12 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   logger.debug(s"Found final result $evalResult")
   evalResult.printStats()
   evalResult.writeToStandardFile(methodName)
+  if(evalResult.total!=merges.size){
+    println(s"WHat? ${evalResult.total} and ${merges.size}")
+  }
+  if(merges.filter(_.clique.size==2).size!=statFileEntries){
+    println(s"??? ${merges.filter(_.clique.size==2).size} and $statFileEntries")
+  }
   val prCorrect = new PrintWriter(TupleMerge.getCorrectMergeFile(methodName))
   validMerges.foreach(m => m.appendToWriter(prCorrect,false,true))
   prCorrect.close()

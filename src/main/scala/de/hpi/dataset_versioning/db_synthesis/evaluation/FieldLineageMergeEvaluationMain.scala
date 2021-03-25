@@ -76,7 +76,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
       val entropyReduction = AbstractTemporalField.ENTROPY_REDUCTION_SET_FIELD(Set[TemporalFieldTrait[Any]](vl1, vl2))
       val mutualInformation = vl1.mutualInformation(vl2)
       val evidence = vl1.getOverlapEvidenceCount(vl2)
-      val newScore = GLOBAL_CONFIG
+      val newScore = vl1.newScore(vl2)
       statFile.println(s"$isValid,$numUnEqual,$numEqual,$evidence,$mutualInformation,$entropyReduction,$newScore")
     }
     if(isValid) validMerges += tm else invalidMerges +=tm

@@ -17,12 +17,11 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
       .size
   }
 
-
   assert(tuplesLeftUnfiltered.toSet.intersect(tuplesRightUnfiltered.toSet).isEmpty)
 
   val tuplesLeft = getFilteredTuples(tuplesLeftUnfiltered)
   val tuplesRight = getFilteredTuples(tuplesRightUnfiltered)
-  val unusedTimestamps = getRelevantTimestamps(tuplesLeft).union(getRelevantTimestamps(tuplesRight))
+  val unusedTimestamps = getRelevantTimestamps(tuplesLeft).union(getRelevantTimestamps(tuplesRight)).diff(parentTimestamps.toSet)
   var indexFailed = false
 
   def getPriorEntropy(tuplesLeft: IndexedSeq[TupleReference[A]], tuplesRight: IndexedSeq[TupleReference[A]]) = {
@@ -39,7 +38,7 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
     if(timestampsToConsider.size==0)
       None
     val priorCombinations = tuplesLeft.size * tuplesRight.size
-    val bestTimestamp = timestampsToConsider.map(t => {
+    val bestTimestampCandidates = timestampsToConsider.map(t => {
       val leftGroups = tuplesLeft.groupBy(_.getDataTuple.head.valueAt(t))
       val rightGroups = tuplesRight.groupBy(_.getDataTuple.head.valueAt(t))
       val wildcards = tuplesLeft.head.table.wildcardValues.toSet
@@ -53,6 +52,11 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
       val combinationsAfterSplit = nonWildCardCombinations + wildcardsLeftSum + wildcardsRightSum
       (t,combinationsAfterSplit)
     }).toIndexedSeq
+    if(bestTimestampCandidates.size==0){
+      println(parentTimestamps)
+      println(parentKeyValues)
+    }
+    val bestTimestamp = bestTimestampCandidates
       .sortBy(_._2)
       .head
     if(bestTimestamp._2>=priorCombinations)

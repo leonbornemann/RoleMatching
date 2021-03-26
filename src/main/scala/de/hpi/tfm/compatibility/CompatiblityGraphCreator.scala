@@ -110,10 +110,12 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
           logger.debug(s"FInished $processedTopLvlBipartiteNodes top lvl bipartite nodes out of $topLvlBipartiteIndexSize (${100*processedTopLvlBipartiteNodes/topLvlBipartiteIndexSize.toDouble}%)")
         }
       })
-      bipartiteMatchGraphConstruction(wildcardsLeft,
-        wildcardsRight,
-        index.getBipartiteTupleGroupIterator().next().chosenTimestamps.toIndexedSeq,
-        index.parentKeyValues ++ IndexedSeq(index.wildcardValues.head),recurseDepth+1)
+      if(wildcardsLeft.size>0 && wildcardsRight.size>0) {
+        bipartiteMatchGraphConstruction(wildcardsLeft,
+          wildcardsRight,
+          index.getBipartiteTupleGroupIterator().next().chosenTimestamps.toIndexedSeq,
+          index.parentKeyValues ++ IndexedSeq(index.wildcardValues.head),recurseDepth+1)
+      }
     }
   }
 
@@ -164,11 +166,13 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
         .tupleGroupIterator(true)
         .toIndexedSeq
         .flatMap(_.tuplesInNode)
-      bipartiteMatchGraphConstruction(wcTuples,
-        nonWildCards,
-        oldIndex.tupleGroupIterator(true).next().chosenTimestamps.toIndexedSeq,
-        oldIndex.getParentKeyValues ++ IndexedSeq(wcTuples.head.table.wildcardValues.head),
-        recurseDepth)
+      if(nonWildCards.size>0 && wcTuples.size>0) {
+        bipartiteMatchGraphConstruction(wcTuples,
+          nonWildCards,
+          oldIndex.tupleGroupIterator(true).next().chosenTimestamps.toIndexedSeq,
+          oldIndex.getParentKeyValues ++ IndexedSeq(wcTuples.head.table.wildcardValues.head),
+          recurseDepth)
+      }
       if(isTopLvlCall){
         logger.debug(s"Finished Bipartite matching")
       }

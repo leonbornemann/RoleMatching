@@ -14,6 +14,7 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
                            associationsWithColumnIndex: collection.Set[(TemporalDatabaseTableTrait[A],Int)],
                            val skipZeroChangeTuples:Boolean=true) extends IterableTupleIndex[A] with StrictLogging{
   assert(chosenTimestamps.size==1)
+  assert(skipZeroChangeTuples)
   //currently
   def numLeafNodes = rootNode.children.size
 
@@ -83,4 +84,6 @@ class LayeredTupleIndex[A](val chosenTimestamps: ArrayBuffer[LocalDate],
   override def wildcardBuckets: IndexedSeq[TupleGroup[A]] = allWildCardBuckets.map{case (k,values) => {
     TupleGroup(chosenTimestamps,IndexedSeq(k),IndexedSeq(),values)
   }}.toIndexedSeq
+
+  override def getParentKeyValues = IndexedSeq()
 }

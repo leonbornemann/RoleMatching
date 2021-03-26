@@ -21,7 +21,10 @@ class AssociationGraphEdgeCandidateGenerator(subdomain: String) extends StrictLo
 
   def serializeAllCandidates() = {
     new AssociationEdgeCandidateFinder(associationsWithChanges)
+  }
 
+  def serializeAllCandidatesNew() = {
+    new CompatiblityGraphCreator(associationsWithChanges,subdomain)
   }
 
 }

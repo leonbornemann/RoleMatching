@@ -41,6 +41,7 @@ object DBSynthesis_IOService extends StrictLogging{
   def ASSOCIATIONS_MERGEABILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/associationMergeabilityGraphs/"
   def ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR = ASSOCIATIONS_MERGEABILITY_GRAPH_DIR + "/singleEdgeFiles/"
   def FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/fieldLineageMergeabilityGraph/"
+  def COMPATIBILITY_GRAPH_DIR = OPTIMIZATION_INPUT_DIR + "/compatibilityGraphs/"
   def CONNECTED_COMPONENT_DIR(subdomain:String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR + s"/connectedComponents/$subdomain")).getAbsolutePath
   def CONNECTED_COMPONENT_FILE(subdomain:String,filecounter:Int) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR + s"/connectedComponents/$subdomain/$filecounter.txt")).getAbsolutePath
   def FIELD_MERGE_RESULT_DIR = OPTIMIZATION_INPUT_DIR + "/mergedTuples/"

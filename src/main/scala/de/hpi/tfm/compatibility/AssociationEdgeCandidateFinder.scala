@@ -67,7 +67,8 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
     existsWithScoreGreater0 || matchesWithZeroScore.contains(Set(firstMatchPartner,secondMatchPartner))
   }
 
-  def executePairwiseMatching(groupsWithTupleIndices: collection.IndexedSeq[TemporalDatabaseTableTrait[Int]], filterByCommonTransitionOverlap:Boolean = false) = {
+  def executePairwiseMatching(groupsWithTupleIndices: collection.IndexedSeq[TemporalDatabaseTableTrait[Int]],
+                              filterByCommonTransitionOverlap:Boolean = false) = {
     for (i <- 0 until groupsWithTupleIndices.size) {
       for (j <- (i + 1) until groupsWithTupleIndices.size) {
         pairwiseInnerLoopExecutions +=1

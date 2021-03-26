@@ -11,6 +11,12 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
                           val parentTimestamps:IndexedSeq[LocalDate] = IndexedSeq(),
                           val parentKeyValues:IndexedSeq[A] = IndexedSeq(),
                           ignoreZeroChangeTuples:Boolean = true) extends TupleIndexUtility[A] with StrictLogging{
+  def numLeafNodes: Int = {
+    leftGroups.keySet.union(rightGroups.keySet)
+      .filter(!wildcardValues.contains(_))
+      .size
+  }
+
 
   assert(tuplesLeftUnfiltered.toSet.intersect(tuplesRightUnfiltered.toSet).isEmpty)
 

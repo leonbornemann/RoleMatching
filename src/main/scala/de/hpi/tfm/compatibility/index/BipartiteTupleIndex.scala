@@ -37,32 +37,34 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
                             timestampsToConsider:Set[LocalDate]) = {
     if(timestampsToConsider.size==0)
       None
-    val priorCombinations = tuplesLeft.size * tuplesRight.size
-    val bestTimestampCandidates = timestampsToConsider.map(t => {
-      val leftGroups = tuplesLeft.groupBy(_.getDataTuple.head.valueAt(t))
-      val rightGroups = tuplesRight.groupBy(_.getDataTuple.head.valueAt(t))
-      val wildcards = tuplesLeft.head.table.wildcardValues.toSet
-      val nonWildCardCombinations = leftGroups
-        .withFilter(t => !wildcards.contains(t._1))
-        .map{case (k,tuples) => tuples.size*rightGroups.getOrElse(k,IndexedSeq()).size}
-        .sum
-      //wildcards left:
-      val wildcardsLeftSum = wildcards.map(wc => leftGroups.getOrElse(wc,IndexedSeq()).size * tuplesRight.size).sum
-      val wildcardsRightSum = wildcards.map(wc => rightGroups.getOrElse(wc,IndexedSeq()).size * tuplesLeft.size).sum
-      val combinationsAfterSplit = nonWildCardCombinations + wildcardsLeftSum + wildcardsRightSum
-      (t,combinationsAfterSplit)
-    }).toIndexedSeq
-    if(bestTimestampCandidates.size==0){
-      println(parentTimestamps)
-      println(parentKeyValues)
+    else {
+      val priorCombinations = tuplesLeft.size * tuplesRight.size
+      val bestTimestampCandidates = timestampsToConsider.map(t => {
+        val leftGroups = tuplesLeft.groupBy(_.getDataTuple.head.valueAt(t))
+        val rightGroups = tuplesRight.groupBy(_.getDataTuple.head.valueAt(t))
+        val wildcards = tuplesLeft.head.table.wildcardValues.toSet
+        val nonWildCardCombinations = leftGroups
+          .withFilter(t => !wildcards.contains(t._1))
+          .map{case (k,tuples) => tuples.size*rightGroups.getOrElse(k,IndexedSeq()).size}
+          .sum
+        //wildcards left:
+        val wildcardsLeftSum = wildcards.map(wc => leftGroups.getOrElse(wc,IndexedSeq()).size * tuplesRight.size).sum
+        val wildcardsRightSum = wildcards.map(wc => rightGroups.getOrElse(wc,IndexedSeq()).size * tuplesLeft.size).sum
+        val combinationsAfterSplit = nonWildCardCombinations + wildcardsLeftSum + wildcardsRightSum
+        (t,combinationsAfterSplit)
+      }).toIndexedSeq
+      if(bestTimestampCandidates.size==0){
+        println(parentTimestamps)
+        println(parentKeyValues)
+      }
+      val bestTimestamp = bestTimestampCandidates
+        .sortBy(_._2)
+        .head
+      if(bestTimestamp._2>=priorCombinations)
+        None
+      else
+        Some(bestTimestamp)
     }
-    val bestTimestamp = bestTimestampCandidates
-      .sortBy(_._2)
-      .head
-    if(bestTimestamp._2>=priorCombinations)
-      None
-    else
-      Some(bestTimestamp)
   }
 
   //just a single layer for now:

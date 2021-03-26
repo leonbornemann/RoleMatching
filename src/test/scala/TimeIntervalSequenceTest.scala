@@ -1,6 +1,6 @@
-import java.time.LocalDate
+import de.hpi.tfm.data.socrata.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
 
-import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
+import java.time.LocalDate
 
 object TimeIntervalSequenceTest extends App {
 

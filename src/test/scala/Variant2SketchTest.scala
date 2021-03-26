@@ -1,12 +1,10 @@
+import de.hpi.tfm.data.socrata.change.ReservedChangeValues
+import de.hpi.tfm.data.socrata.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
+import de.hpi.tfm.data.tfmp_input.table.sketch.FactLineageSketch
+import de.hpi.tfm.io.IOService
+
 import java.time.LocalDate
-
-import Variant2SketchTest.toDate
-import de.hpi.dataset_versioning.data.change.ReservedChangeValues
-import de.hpi.dataset_versioning.data.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
-import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.sketches.field.Variant2Sketch
-import de.hpi.dataset_versioning.io.IOService
-
 import scala.collection.mutable
 
 object Variant2SketchTest extends App {
@@ -15,7 +13,7 @@ object Variant2SketchTest extends App {
    LocalDate.ofEpochDay(IOService.STANDARD_TIME_FRAME_START.toEpochDay + i)
   }
 
-  def toHashAsInt(v: Any) = Variant2Sketch.byteArrayToInt(Variant2Sketch.HASH_FUNCTION_STANDARD(v))
+  def toHashAsInt(v: Any) = FactLineageSketch.byteArrayToInt(FactLineageSketch.HASH_FUNCTION_STANDARD(v))
 
   hashValuesAtIntervalTest
   mergeWithConsistentTest
@@ -34,8 +32,8 @@ object Variant2SketchTest extends App {
       toDate(5) -> "C",
       toDate(10) -> "D"
     )
-    var a = Variant2Sketch.fromValueLineage(ValueLineage(valuesA))
-    var b = Variant2Sketch.fromValueLineage(ValueLineage(valuesB))
+    var a = FactLineageSketch.fromValueLineage(FactLineage(valuesA))
+    var b = FactLineageSketch.fromValueLineage(FactLineage(valuesB))
     var res = a.mergeWithConsistent(b)
     var resSwapped = b.mergeWithConsistent(a)
     assert(res == resSwapped && res==b)
@@ -57,11 +55,11 @@ object Variant2SketchTest extends App {
       toDate(7) -> "C",
       toDate(15) -> "D"
     )
-    a = Variant2Sketch.fromValueLineage(ValueLineage(valuesA))
-    b = Variant2Sketch.fromValueLineage(ValueLineage(valuesB))
+    a = FactLineageSketch.fromValueLineage(FactLineage(valuesA))
+    b = FactLineageSketch.fromValueLineage(FactLineage(valuesB))
     res = a.mergeWithConsistent(b)
     resSwapped = b.mergeWithConsistent(a)
-    assert(res == resSwapped && res==Variant2Sketch.fromValueLineage(ValueLineage(expectedRes)))
+    assert(res == resSwapped && res==FactLineageSketch.fromValueLineage(FactLineage(expectedRes)))
     //third test case:
     valuesA = mutable.TreeMap[LocalDate,Any](toDate(0) -> ReservedChangeValues.NOT_EXISTANT_DATASET,
       toDate(10) -> "C",
@@ -76,11 +74,11 @@ object Variant2SketchTest extends App {
       toDate(10) -> "C",
       toDate(11) -> "D"
     )
-    a = Variant2Sketch.fromValueLineage(ValueLineage(valuesA))
-    b = Variant2Sketch.fromValueLineage(ValueLineage(valuesB))
+    a = FactLineageSketch.fromValueLineage(FactLineage(valuesA))
+    b = FactLineageSketch.fromValueLineage(FactLineage(valuesB))
     res = a.mergeWithConsistent(b)
     resSwapped = b.mergeWithConsistent(a)
-    assert(res == resSwapped && res==Variant2Sketch.fromValueLineage(ValueLineage(expectedRes)))
+    assert(res == resSwapped && res==FactLineageSketch.fromValueLineage(FactLineage(expectedRes)))
   }
 
   private def hashValuesAtIntervalTest = {
@@ -89,8 +87,8 @@ object Variant2SketchTest extends App {
       toDate(15) -> ReservedChangeValues.NOT_EXISTANT_ROW,
       toDate(20) -> "thirdElem",
     )
-    val fieldLineage = ValueLineage(values)
-    val sketch = Variant2Sketch.fromValueLineage(fieldLineage)
+    val fieldLineage = FactLineage(values)
+    val sketch = FactLineageSketch.fromValueLineage(fieldLineage)
     assert(sketch.numEntries == 4)
     val fieldLineageHashed: mutable.TreeMap[LocalDate, Int] = fieldLineage.lineage.map { case (k, v) => (k, toHashAsInt(v)) }
     assert(sketch.getValueLineage == fieldLineageHashed)

@@ -1,7 +1,7 @@
-import de.hpi.dataset_versioning.data.change.temporal_tables.TemporalTable
-import de.hpi.dataset_versioning.data.change.{ChangeExportMain, ChangeExporter}
-import de.hpi.dataset_versioning.data.history.{DatasetVersionHistory, VersionHistoryConstruction}
-import de.hpi.dataset_versioning.io.IOService
+import de.hpi.tfm.data.socrata.change.ChangeExporter
+import de.hpi.tfm.data.socrata.change.temporal_tables.TemporalTable
+import de.hpi.tfm.data.socrata.history.VersionHistoryConstruction
+import de.hpi.tfm.io.IOService
 
 object AttributeLineageTest extends App {
 

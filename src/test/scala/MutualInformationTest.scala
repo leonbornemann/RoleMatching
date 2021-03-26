@@ -1,9 +1,8 @@
-import EvidenceCountingTest.fromSeq
-import de.hpi.dataset_versioning.data.change.ReservedChangeValues
-import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.sketches.field.MutualInformationComputer
-import de.hpi.dataset_versioning.entropy.{FieldLineageAsCharacterString, MergeMatch}
-import de.hpi.dataset_versioning.io.IOService
+import de.hpi.tfm.data.socrata.change.ReservedChangeValues
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
+import de.hpi.tfm.fact_merging.metrics.MutualInformationComputer
+import de.hpi.tfm.io.IOService
+import de.hpi.tfm.score_exploration.{FieldLineageAsCharacterString, MergeMatch}
 
 import java.time.LocalDate
 import scala.collection.mutable
@@ -22,7 +21,7 @@ object MutualInformationTest extends App {
       }})
       .filter(_.isDefined)
       .map(_.get)
-    ValueLineage(res)
+    FactLineage(res)
   }
 
   //choose wildcards randomly:

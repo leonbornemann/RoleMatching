@@ -1,7 +1,6 @@
-import de.hpi.dataset_versioning.data.change.ReservedChangeValues
-import de.hpi.dataset_versioning.data.change.temporal_tables.tuple.ValueLineage
-import de.hpi.dataset_versioning.db_synthesis.baseline.config.GLOBAL_CONFIG
-import de.hpi.dataset_versioning.db_synthesis.change_counting.surrogate_based.UpdateChangeCounter
+import de.hpi.tfm.data.socrata.change.ReservedChangeValues
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
+import de.hpi.tfm.fact_merging.config.{GLOBAL_CONFIG, UpdateChangeCounter}
 
 import java.time.LocalDate
 import scala.collection.mutable
@@ -9,7 +8,7 @@ import scala.util.Random
 
 object EvidenceCountingTest extends App {
 
-  val counter = new UpdateChangeCounter
+  val counter = new UpdateChangeCounter()
 
   def fromSeq(str: String) = {
     val values = str.map(c => if(c=='_') rWC() else c.toString)
@@ -22,7 +21,7 @@ object EvidenceCountingTest extends App {
       }})
       .filter(_.isDefined)
       .map(_.get)
-    ValueLineage(res)
+    FactLineage(res)
   }
 
   //choose wildcards randomly:

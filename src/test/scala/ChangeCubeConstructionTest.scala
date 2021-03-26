@@ -1,7 +1,7 @@
-import java.time.LocalDate
+import de.hpi.tfm.data.socrata.change.{ChangeCube, ChangeExporter, ReservedChangeValues}
+import de.hpi.tfm.io.IOService
 
-import de.hpi.dataset_versioning.data.change.{ChangeCube, ChangeExporter, ReservedChangeValues}
-import de.hpi.dataset_versioning.io.IOService
+import java.time.LocalDate
 
 object ChangeCubeConstructionTest extends App {
 

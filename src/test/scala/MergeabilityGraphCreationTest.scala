@@ -1,7 +1,6 @@
-import de.hpi.dataset_versioning.db_synthesis.baseline.decomposition.DecomposedTemporalTableIdentifier
-import de.hpi.dataset_versioning.db_synthesis.baseline.index.BipartiteTupleIndex
-import de.hpi.dataset_versioning.db_synthesis.baseline.matching.field_graph.BipartiteFieldLineageMatchGraph
-import de.hpi.dataset_versioning.entropy.FieldLineageAsCharacterString
+import de.hpi.tfm.compatibility.graph.fact.bipartite.BipartiteFactMatchCreator
+import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
+import de.hpi.tfm.score_exploration.FieldLineageAsCharacterString
 
 object MergeabilityGraphCreationTest extends App {
 
@@ -24,11 +23,11 @@ object MergeabilityGraphCreationTest extends App {
     FieldLineageAsCharacterString(_1,"label")
   }
 
-  val idLeft = DecomposedTemporalTableIdentifier("subdomain","left",0,Some(0))
-  val idRight = DecomposedTemporalTableIdentifier("subdomain","right",0,Some(0))
+  val idLeft = AssociationIdentifier("subdomain","left",0,Some(0))
+  val idRight = AssociationIdentifier("subdomain","right",0,Some(0))
   val left = FieldLineageAsCharacterString.toAssociationTable(IndexedSeq(toFieldLineageAsCharacterString(matchingsToRank.head._1)),idLeft)
   val right = FieldLineageAsCharacterString.toAssociationTable(matchingsToRank.map(t => toFieldLineageAsCharacterString(t._2)),idRight)
-  val mg = new BipartiteFieldLineageMatchGraph(left.tupleReferences,right.tupleReferences)
-  assert(mg.edges.size==12)
-  assert(mg.edges.map(_.tupleReferenceB.rowIndex).toIndexedSeq.sorted == (0 until matchingsToRank.size))
+  val mg = new BipartiteFactMatchCreator(left.tupleReferences,right.tupleReferences)
+  assert(mg.facts.size==12)
+  assert(mg.facts.map(_.tupleReferenceB.rowIndex).toIndexedSeq.sorted == (0 until matchingsToRank.size))
 }

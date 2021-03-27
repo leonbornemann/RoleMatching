@@ -93,6 +93,8 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
       checkAllBipartiteMatches(left,right)
     }
     val isTopLevelCall = recurseDepth == 0
+    if(isTopLevelCall)
+      logger.debug(s"Found ${left.size} tuples on left and ${right.size} tuples on right --> ${left.size.toLong * right.size.toLong} combinations possible")
     val (index,indexTime) = executionTimeInSeconds(new BipartiteTupleIndex(left,right,parentTimestamps,parentKeyValues))
     bipartiteIndexTimeInSeconds +=indexTime
     if(index.indexFailed){

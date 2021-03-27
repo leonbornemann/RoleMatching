@@ -23,7 +23,9 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
   logger.debug(s"Starting compatiblity graph creation with ${unmatchedAssociations.size} associations containing $numFacts facts --> ${gaussSum(numFacts-1)} matches possible")
   val edgeCandidateFileWriter = new PrintWriter(FactMergeabilityGraphEdge.getEdgeCandidateJsonPerLineFile(datasetName))
   var indexTimeInSeconds:Double = 0.0
+  var bipartiteIndexTimeInSeconds:Double = 0.0
   var matchTimeInSeconds:Double = 0.0
+  var bipartiteMatchTimeInSeconds:Double = 0.0
   var pairwiseInnerLoopExecutions = 0
 
   var nMatchesComputed = 0
@@ -33,9 +35,12 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
   var topLvlBipartiteIndexSize = -1
   initMatchGraph()
 
-  def serializeCandidate(f1: TupleReference[Int], f2: TupleReference[Int]) = {
+  def serializeCandidate(f1: TupleReference[Int], f2: TupleReference[Int],isBipartite:Boolean) = {
     val (mergeIsValid,execTime) = executionTimeInSeconds(f1.getDataTuple.head.tryMergeWithConsistent(f2.getDataTuple.head).isDefined)
-    matchTimeInSeconds += execTime
+    if(!isBipartite)
+      matchTimeInSeconds += execTime
+    else
+      bipartiteMatchTimeInSeconds +=execTime
     if(mergeIsValid){
       FactMergeabilityGraphEdge(f1.toIDBasedTupleReference,f2.toIDBasedTupleReference, -1)
         .appendToWriter(edgeCandidateFileWriter,false,true)
@@ -47,7 +52,7 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
     for (i <- 0 until facts.size) {
       for (j <- (i + 1) until facts.size) {
         pairwiseInnerLoopExecutions += 1
-        serializeCandidate(facts(i), facts(j))
+        serializeCandidate(facts(i), facts(j),false)
       }
     }
   }
@@ -69,21 +74,29 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
       logger.debug(str)
   }
 
+  def checkAllBipartiteMatches(left: IndexedSeq[TupleReference[Int]], right: IndexedSeq[TupleReference[Int]]) = {
+    left.foreach(a => {
+      //calculate matches to all other association tables:
+      right.foreach(b => {
+        pairwiseInnerLoopExecutions += 1
+        serializeCandidate(a, b,true)
+      })
+    })
+  }
+
   def bipartiteMatchGraphConstruction(left:IndexedSeq[TupleReference[Int]],
                                       right:IndexedSeq[TupleReference[Int]],
                                       parentTimestamps:IndexedSeq[LocalDate],
                                       parentKeyValues:IndexedSeq[Int],
                                       recurseDepth:Int):Unit = {
+    if(left.size*right.size<50){
+      checkAllBipartiteMatches(left,right)
+    }
     val isTopLevelCall = recurseDepth == 0
     val (index,indexTime) = executionTimeInSeconds(new BipartiteTupleIndex(left,right,parentTimestamps,parentKeyValues))
-    indexTimeInSeconds +=indexTime
+    bipartiteIndexTimeInSeconds +=indexTime
     if(index.indexFailed){
-      left.foreach(a => {
-        //calculate matches to all other association tables:
-        right.foreach(b => {
-          serializeCandidate(a, b)
-        })
-      })
+      checkAllBipartiteMatches(left,right)
     } else {
       if(isTopLevelCall){
         topLvlBipartiteIndexSize = index.numLeafNodes
@@ -93,8 +106,7 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
       val wildcardsRight = index.wildcardsRight
       groupIterator.foreach(g => {
         maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)} Processing Bipartite group ${g.valuesAtTimestamps} with ${g.tuplesLeft.size} facts on left and ${g.tuplesRight.size} facts on right [Recurse Depth:$recurseDepth]",recurseDepth)
-        maybeLog(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}",recurseDepth)
-        if(isTopLevelCall)
+        maybeLog(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}   Bipartite Index Time:${f"$bipartiteIndexTimeInSeconds%1.3f"}s, Bipartite Match time:${f"$bipartiteMatchTimeInSeconds%1.3f"}",recurseDepth)
         if(g.tuplesLeft.size>0 && wildcardsRight.size>0){
           bipartiteMatchGraphConstruction(g.tuplesLeft,wildcardsRight,g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps,recurseDepth+1)
         }
@@ -119,63 +131,13 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
     }
   }
 
-  def executeMatchesInIterator(oldIndex:IterableTupleIndex[Int],
-                               recurseDepth:Int):Unit = {
-    val isTopLvlCall = recurseDepth==0
-    val it = oldIndex.tupleGroupIterator(true)
-    it.foreach{case g => {
-      val potentialTupleMatches = g.tuplesInNode
-      if(potentialTupleMatches.size>1) {
-        maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Processing group ${g.valuesAtTimestamps} with ${potentialTupleMatches.size} facts [Recurse Depth:$recurseDepth]",recurseDepth)
-        maybeLog(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}",recurseDepth)
-      }
-      if(potentialTupleMatches.size>2){
-        assert(g.chosenTimestamps.size==g.valuesAtTimestamps.size)
-        val (newIndex,time) = executionTimeInSeconds(new TupleSetIndex[Int]((potentialTupleMatches).toIndexedSeq,
-          g.chosenTimestamps.toIndexedSeq,
-          g.valuesAtTimestamps,
-          potentialTupleMatches.head.table.wildcardValues.toSet,
-          true))
-        indexTimeInSeconds +=time
-        if(newIndex.indexBuildWasSuccessfull) {
-          //maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Starting recursive call because size ${groupsWithTupleIndices.size} is too large [Recurse Depth:$recurseDepth]",recurseDepth)
-          executeMatchesInIterator(newIndex,recurseDepth+1)
-        } else {
-          maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Executing pairwise matching with ${potentialTupleMatches.size} because we can't refine the index anymore [Recurse Depth:$recurseDepth]",recurseDepth)
-          executePairwiseMatching(potentialTupleMatches.toIndexedSeq,false)
-        }
-      } else {
-        executePairwiseMatching(potentialTupleMatches.toIndexedSeq,false)
-      }
-      if(isTopLvlCall)
-        processedTopLvlNodes +=1
-      if(isTopLvlCall && processedTopLvlNodes % 1000==0){
-        logger.debug(s"FInished $processedTopLvlNodes top lvl nodes out of $topLvlIndexSize (${100*processedTopLvlNodes/topLvlIndexSize.toDouble}%)")
-      }
-    }}
+  def runIndexBasedMatching(oldIndex:IterableTupleIndex[Int],
+                            recurseDepth:Int):Unit = {
     //aggregate to single WC-Bucket:
     val wcTuples = oldIndex.wildcardBuckets.flatMap(_.wildcardTuples)
     if(!wcTuples.isEmpty){
       //TODO: build double-sided index to determine matches
-      if(isTopLvlCall) {
-        logger.debug(s"Finished Index-Based initial matching, resulting in ${nMatchesComputed} found edges")
-        logger.debug("Begin executing Wildcard matches FOR TOP-LVL")
-        logger.debug(s"Found ${wcTuples.size} wildcard facts")
-      }
-      val nonWildCards = oldIndex
-        .tupleGroupIterator(true)
-        .toIndexedSeq
-        .flatMap(_.tuplesInNode)
-      if(nonWildCards.size>0 && wcTuples.size>0) {
-        bipartiteMatchGraphConstruction(wcTuples,
-          nonWildCards,
-          oldIndex.tupleGroupIterator(true).next().chosenTimestamps.toIndexedSeq,
-          oldIndex.getParentKeyValues ++ IndexedSeq(wcTuples.head.table.wildcardValues.head),
-          recurseDepth)
-      }
-      if(isTopLvlCall){
-        logger.debug(s"Finished Bipartite matching")
-      }
+      bipartiteCompatiblityGraphCreation(oldIndex, recurseDepth, wcTuples)
       //WC-TO-WC matches:
       val (newIndex,time) = executionTimeInSeconds(new TupleSetIndex[Int]((wcTuples),
         oldIndex.wildcardBuckets.head.chosenTimestamps.toIndexedSeq,
@@ -184,9 +146,69 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
         true))
       indexTimeInSeconds += time
       if(newIndex.indexBuildWasSuccessfull)
-        executeMatchesInIterator(newIndex,recurseDepth+1)
+        runIndexBasedMatching(newIndex,recurseDepth+1)
       else
         executePairwiseMatching(wcTuples,false)
+    }
+    compatibilityGraphConstruction(oldIndex,recurseDepth)
+  }
+
+  private def bipartiteCompatiblityGraphCreation(oldIndex: IterableTupleIndex[Int], recurseDepth: Int, wcTuples: IndexedSeq[TupleReference[Int]]) = {
+    val isTopLvlCall = recurseDepth==0
+    if (isTopLvlCall) {
+      logger.debug(s"Finished Index-Based initial matching, resulting in ${nMatchesComputed} found edges")
+      logger.debug("Begin executing Wildcard matches FOR TOP-LVL")
+      logger.debug(s"Found ${wcTuples.size} wildcard facts")
+    }
+    val nonWildCards = oldIndex
+      .tupleGroupIterator(true)
+      .toIndexedSeq
+      .flatMap(_.tuplesInNode)
+    if (nonWildCards.size > 0 && wcTuples.size > 0) {
+      bipartiteMatchGraphConstruction(wcTuples,
+        nonWildCards,
+        oldIndex.tupleGroupIterator(true).next().chosenTimestamps.toIndexedSeq,
+        oldIndex.getParentKeyValues ++ IndexedSeq(wcTuples.head.table.wildcardValues.head),
+        recurseDepth)
+    }
+    if (isTopLvlCall) {
+      logger.debug(s"Finished Bipartite matching")
+    }
+  }
+
+  private def compatibilityGraphConstruction(oldIndex: IterableTupleIndex[Int],recurseDepth:Int) = {
+    val isTopLvlCall = recurseDepth==0
+    val it = oldIndex.tupleGroupIterator(true)
+    it.foreach { case g => {
+      val potentialTupleMatches = g.tuplesInNode
+      if (potentialTupleMatches.size > 1) {
+        maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Processing group ${g.valuesAtTimestamps} with ${potentialTupleMatches.size} facts [Recurse Depth:$recurseDepth]", recurseDepth)
+        maybeLog(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}", recurseDepth)
+      }
+      if (potentialTupleMatches.size > 2) {
+        assert(g.chosenTimestamps.size == g.valuesAtTimestamps.size)
+        val (newIndex, time) = executionTimeInSeconds(new TupleSetIndex[Int]((potentialTupleMatches).toIndexedSeq,
+          g.chosenTimestamps.toIndexedSeq,
+          g.valuesAtTimestamps,
+          potentialTupleMatches.head.table.wildcardValues.toSet,
+          true))
+        indexTimeInSeconds += time
+        if (newIndex.indexBuildWasSuccessfull) {
+          //maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Starting recursive call because size ${groupsWithTupleIndices.size} is too large [Recurse Depth:$recurseDepth]",recurseDepth)
+          runIndexBasedMatching(newIndex, recurseDepth + 1)
+        } else {
+          maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Executing pairwise matching with ${potentialTupleMatches.size} because we can't refine the index anymore [Recurse Depth:$recurseDepth]", recurseDepth)
+          executePairwiseMatching(potentialTupleMatches.toIndexedSeq, false)
+        }
+      } else {
+        executePairwiseMatching(potentialTupleMatches.toIndexedSeq, false)
+      }
+      if (isTopLvlCall)
+        processedTopLvlNodes += 1
+      if (isTopLvlCall && processedTopLvlNodes % 1000 == 0) {
+        logger.debug(s"FInished $processedTopLvlNodes top lvl nodes out of $topLvlIndexSize (${100 * processedTopLvlNodes / topLvlIndexSize.toDouble}%)")
+      }
+    }
     }
   }
 
@@ -197,7 +219,7 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
     indexTimeInSeconds +=time
     topLvlIndexSize = index.numLeafNodes
     logger.debug(s"starting to iterate through ${topLvlIndexSize} index leaf nodes")
-    executeMatchesInIterator(index,0)
+    runIndexBasedMatching(index,0)
     edgeCandidateFileWriter.close()
     logger.debug(s"Finished with $pairwiseInnerLoopExecutions num inner pairwise matching loop executions")
   }

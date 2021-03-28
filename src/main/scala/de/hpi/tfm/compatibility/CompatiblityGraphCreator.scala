@@ -106,14 +106,18 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
       val groupIterator = index.getBipartiteTupleGroupIterator()
       val wildcardsLeft = index.wildcardsLeft
       val wildcardsRight = index.wildcardsRight
+      val allTuplesRight = scala.collection.mutable.ArrayBuffer[TupleReference[Int]]()
+      val allTuplesLeft = scala.collection.mutable.ArrayBuffer[TupleReference[Int]]()
       groupIterator.foreach(g => {
         maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)} Processing Bipartite group ${g.valuesAtTimestamps} with ${g.tuplesLeft.size} facts on left and ${g.tuplesRight.size} facts on right [Recurse Depth:$recurseDepth]",recurseDepth)
         maybeLog(s"Index Time:${f"$indexTimeInSeconds%1.3f"}s, Match time:${f"$matchTimeInSeconds%1.3f"}   Bipartite Index Time:${f"$bipartiteIndexTimeInSeconds%1.3f"}s, Bipartite Match time:${f"$bipartiteMatchTimeInSeconds%1.3f"}",recurseDepth)
         if(g.tuplesLeft.size>0 && wildcardsRight.size>0){
-          bipartiteMatchGraphConstruction(g.tuplesLeft,wildcardsRight,g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps,recurseDepth+1)
+          allTuplesLeft ++= g.tuplesLeft
+          //bipartiteMatchGraphConstruction(g.tuplesLeft,wildcardsRight,g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps,recurseDepth+1)
         }
         if(g.tuplesRight.size>0 && wildcardsLeft.size>0){
-          bipartiteMatchGraphConstruction(wildcardsLeft,g.tuplesRight,g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps,recurseDepth+1)
+          allTuplesRight ++= g.tuplesRight
+          //bipartiteMatchGraphConstruction(wildcardsLeft,g.tuplesRight,g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps,recurseDepth+1)
         }
         if(g.tuplesLeft.size>0 && g.tuplesRight.size>0){
           bipartiteMatchGraphConstruction(g.tuplesLeft,g.tuplesRight,g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps,recurseDepth+1)
@@ -129,6 +133,20 @@ class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBa
           wildcardsRight,
           index.getBipartiteTupleGroupIterator().next().chosenTimestamps.toIndexedSeq,
           index.parentKeyValues ++ IndexedSeq(index.wildcardValues.head),recurseDepth+1)
+      }
+      if(allTuplesLeft.size>0 && wildcardsRight.size>0){
+        bipartiteMatchGraphConstruction(allTuplesLeft.toIndexedSeq,
+          wildcardsRight,
+          index.getBipartiteTupleGroupIterator().next().chosenTimestamps.toIndexedSeq,
+          index.parentKeyValues ++ IndexedSeq(index.wildcardValues.head),
+          recurseDepth+1)
+      }
+      if(allTuplesRight.size>0 && wildcardsLeft.size>0){
+        bipartiteMatchGraphConstruction(wildcardsLeft,
+          allTuplesRight.toIndexedSeq,
+          index.getBipartiteTupleGroupIterator().next().chosenTimestamps.toIndexedSeq,
+          index.parentKeyValues ++ IndexedSeq(index.wildcardValues.head),
+          recurseDepth+1)
       }
     }
   }

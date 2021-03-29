@@ -5,18 +5,16 @@ import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraph, TupleReferenc
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.factLookup.FactLookupTable
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation}
-import de.hpi.tfm.evaluation.FieldLineageMergeEvaluationMain.{factLookupTables, tables}
-import de.hpi.tfm.evaluation.OldFactLineageStatistics.subdomain
 import de.hpi.tfm.io.IOService
 
 class OldFactLineageStatisticGatherer(subdomain:String) extends StrictLogging{
 
   val connectedComponentFiles = FactMergeabilityGraph.getAllConnectedComponentFiles(subdomain)
   val associations = AssociationIdentifier.loadAllAssociationsWithChanges()
-  val factLookupTables = tables
+  val factLookupTables = associations
     .map(id => (id,FactLookupTable.readFromStandardFile(id)))
     .toMap
-  val byAssociationID = tables
+  val byAssociationID = associations
     .map(id => (id,SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)))
     .toMap
   //all

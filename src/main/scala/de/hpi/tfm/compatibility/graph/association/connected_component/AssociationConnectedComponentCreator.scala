@@ -24,5 +24,4 @@ class AssociationConnectedComponentCreator(subdomain: String) {
         connectedComponentCounter+=1
       })
   }
-
 }

@@ -5,12 +5,14 @@ import de.hpi.tfm.compatibility.graph.association.{AssociationGraphEdge, Associa
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.TemporalDatabaseTableTrait
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
-import de.hpi.tfm.io.DBSynthesis_IOService.{FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR, createParentDirs}
+import de.hpi.tfm.io.DBSynthesis_IOService.{CONNECTED_COMPONENT_DIR, FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR, createParentDirs}
 import scalax.collection.Graph
 import scalax.collection.edge.WLkUnDiEdge
 
 import java.io.File
+import scala.io.Source
 
 case class FactMergeabilityGraph(edges: IndexedSeq[FactMergeabilityGraphEdge]) extends JsonWritable[FactMergeabilityGraph]{
 
@@ -71,6 +73,23 @@ case class FactMergeabilityGraph(edges: IndexedSeq[FactMergeabilityGraphEdge]) e
 
 }
 object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with StrictLogging{
+
+  def loadComponent(componentFile: File,subdomain:String) = {
+    val inputTables = Source.fromFile(componentFile)
+      .getLines()
+      .toIndexedSeq
+      .map(stringID => {
+        val id = AssociationIdentifier.fromCompositeID(stringID)
+        val table = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)
+        (id,table)
+      }).toMap
+    val fieldLineageMergeabilityGraph = FactMergeabilityGraph.loadSubGraph(inputTables.keySet,subdomain)
+    fieldLineageMergeabilityGraph
+  }
+
+  def getAllConnectedComponentFiles(subdomain:String) = {
+    new File(CONNECTED_COMPONENT_DIR(subdomain)).listFiles()
+  }
 
   def idsFromFilename(f: File) = {
     val tokens = f.getName.split(";")

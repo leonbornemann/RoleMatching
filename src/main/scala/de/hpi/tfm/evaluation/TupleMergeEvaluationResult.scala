@@ -46,6 +46,8 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
     }
     res.isDefined
   }
+
+
 }
 object TupleMergeEvaluationResult extends JsonReadable[TupleMergeEvaluationResult]{
   def loadFromStandardFile(methodName:String) = fromJsonFile(getStandardFile(methodName).getAbsolutePath)

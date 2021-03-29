@@ -32,7 +32,7 @@ object FactLookupTable extends JsonReadable[FactLookupTable] {
   def readFromStandardFile(id:AssociationIdentifier) = fromJsonFile(getStandardFile(id).getAbsolutePath)
 
   def getStandardFile(id: AssociationIdentifier) = {
-    val dir = DBSynthesis_IOService.OPTIMIZATION_INPUT_FACTLOOKUP_DIR(id.viewID)
+    val dir = DBSynthesis_IOService.OPTIMIZATION_INPUT_FACTLOOKUP_DIR(id.viewID,id.subdomain)
     val file = DBSynthesis_IOService.createParentDirs(new File(dir + s"/${id.compositeID}.json"))
     file
   }

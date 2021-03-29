@@ -12,11 +12,12 @@ import java.io.{File, PrintWriter}
 object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   IOService.socrataDir = args(0)
   private val methodName = GreedyEdgeWeightOptimizer.methodName
+  private val subdomain = args(1)
   val files:Seq[File] =
     if(args.length>1)
-      Seq(TupleMerge.getStandardJsonObjectPerLineFile(args(1),methodName))
+      Seq(TupleMerge.getStandardJsonObjectPerLineFile(subdomain,methodName,args(2)))
     else
-      TupleMerge.getStandardObjectPerLineFiles(methodName)
+      TupleMerge.getStandardObjectPerLineFiles(subdomain,methodName)
   val evalResult = TupleMergeEvaluationResult()
   val merges = files
     .flatMap(f => {
@@ -83,17 +84,17 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
   statFile.close()
   logger.debug(s"Found final result $evalResult")
   evalResult.printStats()
-  evalResult.writeToStandardFile(methodName)
+  evalResult.writeToStandardFile(subdomain,methodName)
   if(evalResult.total!=merges.size){
     println(s"WHat? ${evalResult.total} and ${merges.size}")
   }
   if(merges.filter(_.clique.size==2).size!=statFileEntries){
     println(s"??? ${merges.filter(_.clique.size==2).size} and $statFileEntries")
   }
-  val prCorrect = new PrintWriter(TupleMerge.getCorrectMergeFile(methodName))
+  val prCorrect = new PrintWriter(TupleMerge.getCorrectMergeFile(subdomain, methodName))
   validMerges.foreach(m => m.appendToWriter(prCorrect,false,true))
   prCorrect.close()
-  val prIncorrect = new PrintWriter(TupleMerge.getIncorrectMergeFile(methodName))
+  val prIncorrect = new PrintWriter(TupleMerge.getIncorrectMergeFile(subdomain,methodName))
   invalidMerges.foreach(m => m.appendToWriter(prIncorrect,false, true))
   prIncorrect.close()
 }

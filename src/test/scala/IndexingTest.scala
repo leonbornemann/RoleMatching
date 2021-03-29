@@ -43,7 +43,7 @@ object IndexingTest extends App {
       rows)
   }}
   associations.foreach(r => println(r.rows.head.valueSketch.getValueLineage))
-  val clusterer = new AssociationEdgeCandidateFinder(associations.toSet,8,true)
+  val clusterer = new AssociationEdgeCandidateFinder(associations.toSet,subdomain,8,true)
 
   private def getValueLineage(s: String) = {
     val a = s.zipWithIndex.map { case (char, index) => (IOService.STANDARD_TIME_FRAME_START.plusDays(index), getValue(char)) }

@@ -85,11 +85,6 @@ object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends
   BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation] with StrictLogging{
   def getStandardOptimizationInputFile(id: AssociationIdentifier) = getOptimizationInputAssociationFile(id)
 
-
-  def loadFromSynthDatabaseTableFile(id: Int):SurrogateBasedSynthesizedTemporalDatabaseTableAssociation = {
-    loadFromFile(DBSynthesis_IOService.getSynthesizedTableTempFile(id))
-  }
-
   def loadFromStandardOptimizationInputFile(id:AssociationIdentifier) = {
     val file = getOptimizationInputAssociationFile(id)
     loadFromFile(file)
@@ -100,15 +95,15 @@ object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends
   }
 
   def getOptimizationInputAssociationFile(id: AssociationIdentifier) = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/${id.viewID}/${id.compositeID}.binary"))
+    createParentDirs(new File(s"${OPTIMIZATION_INPUT_ASSOCIATION_DIR(id.subdomain)}/${id.viewID}/${id.compositeID}.binary"))
   }
 
   def getFullTimeRangeFile(id:AssociationIdentifier) = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_DIR/${id.viewID}/${id.compositeID}.binary"))
+    createParentDirs(new File(s"${OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_DIR(id.subdomain)}/${id.viewID}/${id.compositeID}.binary"))
   }
 
-  def getOptimizationInputAssociationParentDirs() = {
-    createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_DIR/")).listFiles()
+  def getOptimizationInputAssociationParentDirs(subdomain:String) = {
+    createParentDirs(new File(s"${OPTIMIZATION_INPUT_ASSOCIATION_DIR(subdomain)}/")).listFiles()
   }
 
 //  def initFrom(dttToMerge: AssociationSchema, originalTemporalTable:TemporalTable) = {

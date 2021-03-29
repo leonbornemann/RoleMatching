@@ -143,7 +143,7 @@ object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with St
   }
 
   def getFieldLineageMergeabilityFiles(subdomain:String) = {
-    new File(FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR + s"/${subdomain}/").listFiles()
+    new File(FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR(subdomain)).listFiles()
   }
 
   def getFieldLineageMergeabilityGraphFile(ids: Set[AssociationIdentifier]): File = {
@@ -152,7 +152,7 @@ object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with St
     if(subdomain.size!=1)
       println()
     assert(subdomain.size==1)
-    createParentDirs(new File(FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR + s"/${subdomain.head}/" + idString + ".json"))
+    createParentDirs(new File(FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR(subdomain.head) + s"/" + idString + ".json"))
   }
 
 }

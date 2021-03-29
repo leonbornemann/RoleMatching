@@ -62,11 +62,11 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch extends BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]{
 
   def getOptimizationInputAssociationSketchFile(id: AssociationIdentifier) = {
-    DBSynthesis_IOService.createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR/${id.viewID}/${id.compositeID}.binary"))
+    DBSynthesis_IOService.createParentDirs(new File(s"${OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR(id.subdomain)}/${id.viewID}/${id.compositeID}.binary"))
   }
 
-  def getOptimizationInputAssociationSketchParentDirs() = {
-    DBSynthesis_IOService.createParentDirs(new File(s"$OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR/")).listFiles()
+  def getOptimizationInputAssociationSketchParentDirs(subdomain:String) = {
+    DBSynthesis_IOService.createParentDirs(new File(s"${OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR(subdomain)}/")).listFiles()
   }
 
   def getStandardOptimizationInputFile(id: AssociationIdentifier) = getOptimizationInputAssociationSketchFile(id)

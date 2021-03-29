@@ -69,11 +69,7 @@ object IOService extends StrictLogging{
 
   def getCSVFile(id: String) = new File(socrataDir + s"/csv/$id.csv?")
 
-
   def getChangeFile(id: String) = CHANGE_DIR + s"/$id.json"
-
-  def getSimplifiedCSVExportFile(instance: DatasetInstance,subdomain:String) = DBSynthesis_IOService.getDecompositionCSVExportFile(instance,subdomain)
-
 
   def getStandardTimeRange = {
     val res = mutable.ArrayBuffer[LocalDate]()

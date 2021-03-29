@@ -36,11 +36,6 @@ abstract class AbstractSurrogateBasedTemporalTable[A,B <: AbstractSurrogateBased
       .map(_._1))
     .minBy(_.toEpochDay)
 
-  def writeToStandardTemporaryFile() = {
-    val f = DBSynthesis_IOService.getSynthesizedTableTempFile(uniqueSynthTableID)
-    writeToBinaryFile(f)
-  }
-
   def tupleReferences = (0 until nrows).map(i => fact.TupleReference(this,i))
 
   override def getDataTuple(rowIndex: Int): collection.IndexedSeq[TemporalFieldTrait[A]] = IndexedSeq(rows(rowIndex).value)

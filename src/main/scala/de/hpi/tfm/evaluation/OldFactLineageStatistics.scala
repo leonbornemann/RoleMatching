@@ -12,6 +12,4 @@ object OldFactLineageStatistics extends App {
   val subdomain = args(1)
   val statisicsgatherer = new OldFactLineageStatisticGatherer(subdomain)
   statisicsgatherer.gather()
-
-
 }

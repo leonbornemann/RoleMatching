@@ -11,20 +11,20 @@ case class TupleMerge(clique:Set[IDBasedTupleReference],score:Double) extends Js
 }
 
 object TupleMerge extends JsonReadable[TupleMerge] {
-  def loadIncorrectMerges(methodName: String) = fromJsonObjectPerLineFile(getIncorrectMergeFile(methodName).getAbsolutePath)
+  def loadIncorrectMerges(subdomain:String,methodName: String) = fromJsonObjectPerLineFile(getIncorrectMergeFile(subdomain,methodName).getAbsolutePath)
 
-  def loadCorrectMerges(methodName: String) = fromJsonObjectPerLineFile(getCorrectMergeFile(methodName).getAbsolutePath)
-
-
-  def getCorrectMergeFile(methodName: String) = createParentDirs(new File(EVALUATION_RESULT_DIR(methodName) + "/correctMerges.json"))
-  def getIncorrectMergeFile(methodName: String) = createParentDirs(new File(EVALUATION_RESULT_DIR(methodName) + "/incorrectMerges.json"))
+  def loadCorrectMerges(subdomain:String,methodName: String) = fromJsonObjectPerLineFile(getCorrectMergeFile(subdomain,methodName).getAbsolutePath)
 
 
-  def getStandardObjectPerLineFiles(methodName:String) = {
-    createParentDirs(new File(FIELD_MERGE_RESULT_DIR + s"/$methodName/")).listFiles()
+  def getCorrectMergeFile(subdomain:String,methodName: String) = createParentDirs(new File(EVALUATION_RESULT_DIR(subdomain,methodName) + "/correctMerges.json"))
+  def getIncorrectMergeFile(subdomain:String,methodName: String) = createParentDirs(new File(EVALUATION_RESULT_DIR(subdomain,methodName) + "/incorrectMerges.json"))
+
+
+  def getStandardObjectPerLineFiles(subdomain:String,methodName:String) = {
+    createParentDirs(new File(FIELD_MERGE_RESULT_DIR(subdomain,methodName))).listFiles()
   }
 
-  def getStandardJsonObjectPerLineFile(componentFileName: String, methodName:String) = {
-    createParentDirs(new File(FIELD_MERGE_RESULT_DIR + s"/$methodName/" + componentFileName + ".json"))
+  def getStandardJsonObjectPerLineFile(subdomain:String,methodName:String,componentFileName: String) = {
+    createParentDirs(new File(FIELD_MERGE_RESULT_DIR(subdomain,methodName) + componentFileName + ".json"))
   }
 }

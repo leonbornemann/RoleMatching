@@ -6,13 +6,13 @@ import de.hpi.tfm.io.IOService
 object TupleMergeCliqueSizeHistogramMain extends App {
   IOService.socrataDir = args(0)
   val subdomain = args(1)
-  val mergesCorrect = TupleMerge.loadCorrectMerges(GreedyEdgeWeightOptimizer.methodName)
+  val mergesCorrect = TupleMerge.loadCorrectMerges(subdomain,GreedyEdgeWeightOptimizer.methodName)
     .filter(_.clique.size>1)
-  val mergesIncorrect = TupleMerge.loadIncorrectMerges(GreedyEdgeWeightOptimizer.methodName)
+  val mergesIncorrect = TupleMerge.loadIncorrectMerges(subdomain,GreedyEdgeWeightOptimizer.methodName)
     .filter(_.clique.size>1)
   println(mergesCorrect.size)
   println(mergesIncorrect.size)
-  val eval = TupleMergeEvaluationResult.loadFromStandardFile(GreedyEdgeWeightOptimizer.methodName)
+  val eval = TupleMergeEvaluationResult.loadFromStandardFile(subdomain,GreedyEdgeWeightOptimizer.methodName)
   eval.printStats()
   private val allMerges = mergesCorrect ++ mergesIncorrect
   val histAll = Histogram(allMerges.map(_.clique.size),true)

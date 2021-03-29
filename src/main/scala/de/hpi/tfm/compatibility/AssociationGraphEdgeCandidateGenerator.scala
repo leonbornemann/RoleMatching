@@ -20,7 +20,7 @@ class AssociationGraphEdgeCandidateGenerator(subdomain: String) extends StrictLo
   logger.debug(s"Initialized AssociationGraphEdgeCandidateGenerator with ${associationsWithChanges.size} associations containing changes")
 
   def serializeAllCandidates() = {
-    new AssociationEdgeCandidateFinder(associationsWithChanges)
+    new AssociationEdgeCandidateFinder(associationsWithChanges,subdomain)
   }
 
   def serializeAllCandidatesNew() = {

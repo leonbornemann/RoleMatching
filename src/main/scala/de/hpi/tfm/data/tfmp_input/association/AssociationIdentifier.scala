@@ -40,12 +40,6 @@ object AssociationIdentifier extends JsonReadable[AssociationIdentifier]{
     } else{
       AssociationIdentifier(subdomain,id,secondPart.toInt.toInt,None)
     }
-
-  }
-
-  def loadAllAssociationsWithChanges() = {
-    val file = DBSynthesis_IOService.getAssociationsWithChangesFile()
-    fromJsonObjectPerLineFile(file)
   }
 
   def fromFilename(fileName: String) = {

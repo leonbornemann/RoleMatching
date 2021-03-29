@@ -47,15 +47,16 @@ object AssociationSchema{
     helper.AssociationSchema
   }
 
-  def getAssociationSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/$viewID/"))
+  def getAssociationSchemaDir(subdomain: String, viewID: String) = createParentDirs(new File(s"${ASSOCIATION_SCHEMA_DIR(subdomain)}/$viewID/"))
   def getAssociationSchemaParentDirs(subdomain:String) = {
-    createParentDirs(new File(s"$ASSOCIATION_SCHEMA_DIR/$subdomain/")).listFiles()
+    println(new File(ASSOCIATION_SCHEMA_DIR(subdomain)).getAbsolutePath)
+    createParentDirs(new File(ASSOCIATION_SCHEMA_DIR(subdomain))).listFiles()
   }
 
   def getAssociationSchemaFile(id:AssociationIdentifier) = {
     assert(id.associationID.isDefined)
-    val topDir = ASSOCIATION_SCHEMA_DIR
-    createParentDirs(new File(s"$topDir/${id.subdomain}/${id.viewID}/${id.compositeID}.json"))
+    val topDir = ASSOCIATION_SCHEMA_DIR(id.subdomain)
+    createParentDirs(new File(s"$topDir/${id.viewID}/${id.compositeID}.json"))
   }
 
   def associationSchemataExist(subdomain: String, id: String) = {

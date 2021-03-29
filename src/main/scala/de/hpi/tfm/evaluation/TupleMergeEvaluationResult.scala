@@ -27,8 +27,8 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
   }
 
 
-  def writeToStandardFile(methodName: String) = {
-    toJsonFile(getStandardFile(methodName))
+  def writeToStandardFile(subdomain:String,methodName: String) = {
+    toJsonFile(getStandardFile(subdomain,methodName))
   }
 
 
@@ -50,9 +50,9 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
 
 }
 object TupleMergeEvaluationResult extends JsonReadable[TupleMergeEvaluationResult]{
-  def loadFromStandardFile(methodName:String) = fromJsonFile(getStandardFile(methodName).getAbsolutePath)
+  def loadFromStandardFile(subdomain:String,methodName:String) = fromJsonFile(getStandardFile(subdomain,methodName).getAbsolutePath)
 
-  def getStandardFile(methodName:String) = {
-    createParentDirs(new File(DBSynthesis_IOService.EVALUATION_RESULT_DIR(methodName) + "/tupleMergeEvaluationResult.json"))
+  def getStandardFile(subdomain:String,methodName:String) = {
+    createParentDirs(new File(DBSynthesis_IOService.EVALUATION_RESULT_DIR(subdomain,methodName) + "/tupleMergeEvaluationResult.json"))
   }
 }

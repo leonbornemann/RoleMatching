@@ -41,7 +41,7 @@ class GreedyMaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFil
   def run() = {
     logger.debug(s"Starting Clique Partitioning Optimization for $connectedComponentListFile")
     val traverser = inputGraph.componentTraverser()
-    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(connectedComponentListFile.getName,methodName))
+    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(subdomain,methodName,connectedComponentListFile.getName))
     var totalScore = 0.0
     var tupleReductionCount = 0
     val cliqueSizeHistogram = mutable.HashMap[Int,Int]()

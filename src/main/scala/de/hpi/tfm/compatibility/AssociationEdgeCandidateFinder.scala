@@ -23,13 +23,11 @@ import scala.collection.mutable
  * @param indexProcessingMode
  */
 class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch],
+                                     subdomain:String,
                                      recurseLogDepth:Int = 0,
                                      autoFlush:Boolean = false) extends StrictLogging {
 
   logger.debug(s"Starting association clustering with ${unmatchedAssociations.size} associations --> ${gaussSum(unmatchedAssociations.size-1)} matches possible")
-  val associationGraphEdgeWriter = new PrintWriter(new FileWriter(DBSynthesis_IOService.getAssociationGraphEdgeFile),autoFlush)
-  val matchTimeWriter = new PrintWriter(DBSynthesis_IOService.WORKING_DIR + "matchTimes.csv")
-  matchTimeWriter.println(s"tableA,tableB,nrowsA,nrowsB,time[s]")
   var indexTimeInSeconds:Double = 0.0
   var matchTimeInSeconds:Double = 0.0
   var matchSkips = 0
@@ -52,14 +50,6 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
   var processedNodes = 0
   var topLvlIndexSize = -1
   initMatchGraph()
-//  associationGraphEdgeWriter.close()
-//  matchTimeWriter.close()
-//  //create sorted list
-//  val sortedMatches = adjacencyList
-//    .flatMap{case (t,adjacent) => adjacent.map(_._2)}
-//    .toSet
-//    .toIndexedSeq
-//    .sortBy( (m:TableUnionMatch[Int]) => m.evidence)(Ordering[Int].reverse)
 
   def matchWasAlreadyCalculated(firstMatchPartner: TemporalDatabaseTableTrait[Int], secondMatchPartner: TemporalDatabaseTableTrait[Int]) = {
     val existsWithScoreGreater0 = adjacencyList(firstMatchPartner).contains(secondMatchPartner)
@@ -254,7 +244,7 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
     logger.debug(s"Finished with $calculateAndMatchIfNotPresentCalls num calls to calculateAndMatchIfNotPresent")
     logger.debug("Beginning serialization of edge candidates")
     logger.debug(s"Serializing candidate edges for ${edgeCandidates.get.size} candidates")
-    val pr = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile)
+    val pr = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile(subdomain))
     val weirdEdges = edgeCandidates.get.filter(_.size != 2)
     logger.debug(s"Found ${weirdEdges.size} weird edges:")
     weirdEdges.foreach(s => logger.debug(s.toString()))

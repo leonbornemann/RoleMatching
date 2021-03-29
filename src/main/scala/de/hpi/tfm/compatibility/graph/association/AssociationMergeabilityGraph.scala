@@ -154,7 +154,7 @@ object AssociationMergeabilityGraph extends JsonReadable[AssociationMergeability
     AssociationMergeabilityGraph(edges)
   }
 
-  def getSingleEdgeDir(subdomain: String) = createParentDirs(new File(ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR + s"/$subdomain/"))
+  def getSingleEdgeDir(subdomain: String) = createParentDirs(new File(ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR(subdomain)))
 
   def readFromStandardFile(subdomain:String) = {
     fromJsonFile(getAssociationMergeabilityGraphFile(subdomain).getAbsolutePath)
@@ -162,7 +162,7 @@ object AssociationMergeabilityGraph extends JsonReadable[AssociationMergeability
 
 
   def getAssociationMergeabilityGraphFile(subdomain: String) = {
-    val file = new File(s"$ASSOCIATIONS_MERGEABILITY_GRAPH_DIR/$subdomain/associationMergeabilityGraph.json")
+    val file = new File(s"${ASSOCIATIONS_MERGEABILITY_GRAPH_DIR(subdomain)}/associationMergeabilityGraph.json")
     createParentDirs(file)
   }
 

@@ -20,7 +20,7 @@ case class FactMergeabilityGraphEdge(tupleReferenceA: IDBasedTupleReference,
 
 object FactMergeabilityGraphEdge extends JsonReadable[FactMergeabilityGraphEdge]{
 
-  def getEdgeCandidateJsonPerLineFile(datasetName:String) = {
-    DBSynthesis_IOService.createParentDirs(new File(DBSynthesis_IOService.COMPATIBILITY_GRAPH_DIR + s"/$datasetName.json"))
+  def getEdgeCandidateJsonPerLineFile(subdomain:String) = {
+    DBSynthesis_IOService.createParentDirs(new File(DBSynthesis_IOService.COMPATIBILITY_GRAPH_DIR(subdomain) + s"/$subdomain.json"))
   }
 }

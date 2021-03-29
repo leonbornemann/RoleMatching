@@ -12,7 +12,6 @@ import de.hpi.tfm.io.IOService
 class OldFactLineageStatisticGatherer(subdomain:String) extends StrictLogging{
 
   val connectedComponentFiles = FactMergeabilityGraph.getAllConnectedComponentFiles(subdomain)
-  var totalEdgeCount:Long = 0
   val associations = AssociationIdentifier.loadAllAssociationsWithChanges()
   val factLookupTables = tables
     .map(id => (id,FactLookupTable.readFromStandardFile(id)))
@@ -26,6 +25,7 @@ class OldFactLineageStatisticGatherer(subdomain:String) extends StrictLogging{
   val validEvidenceCountHistogram = scala.collection.mutable.HashMap[Int,Int]()
   //valid and interesting
   val validAndInterestingEvidenceCountHistogram = scala.collection.mutable.HashMap[Int,Int]()
+  logger.debug("Finished consructor")
 
 
   def getValidityAndInterestingness(tr1: TupleReference[Any], tr2: TupleReference[Any]): (Boolean,Boolean) = {
@@ -42,8 +42,14 @@ class OldFactLineageStatisticGatherer(subdomain:String) extends StrictLogging{
   }
 
   def gather() = {
+    val totalfileCount = connectedComponentFiles.size
+    var fileCount = 0
     connectedComponentFiles.foreach(f => {
+      fileCount +=1
+      logger.debug(s"Processing ${f} ($fileCount / $totalfileCount)")
       val g = FactMergeabilityGraph.loadComponent(f,subdomain)
+      val totalEdgeCount = g.edges.size
+      var processedEdges = 0
       g.edges.foreach(e => {
         val tr1 = e.tupleReferenceA.toTupleReference(byAssociationID(e.tupleReferenceA.associationID))
         val tr2 = e.tupleReferenceB.toTupleReference(byAssociationID(e.tupleReferenceB.associationID))
@@ -58,6 +64,10 @@ class OldFactLineageStatisticGatherer(subdomain:String) extends StrictLogging{
         if(isValid && isInteresting){
           val prev = validAndInterestingEvidenceCountHistogram.getOrElse(evidenceCount,0)
           validAndInterestingEvidenceCountHistogram(evidenceCount) = prev+1
+        }
+        processedEdges +=1
+        if(processedEdges % 10000==0){
+          logger.debug(s"Processed $processedEdges / $totalEdgeCount (${100*processedEdges / totalEdgeCount.toDouble}%)")
         }
       })
     })

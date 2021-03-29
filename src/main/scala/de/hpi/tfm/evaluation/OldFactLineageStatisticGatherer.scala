@@ -2,20 +2,28 @@ package de.hpi.tfm.evaluation
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraph, TupleReference}
-import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
+import de.hpi.tfm.data.tfmp_input.association.{AssociationIdentifier, AssociationSchema}
 import de.hpi.tfm.data.tfmp_input.factLookup.FactLookupTable
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation}
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
 class OldFactLineageStatisticGatherer(subdomain:String) extends StrictLogging{
 
   val connectedComponentFiles = FactMergeabilityGraph.getAllConnectedComponentFiles(subdomain)
-  val associations = AssociationIdentifier.loadAllAssociationsWithChanges()
-  val factLookupTables = associations
-    .map(id => (id,FactLookupTable.readFromStandardFile(id)))
-    .toMap
+  val associations = AssociationSchema.loadAllAssociationsInSubdomain(subdomain)
+    .map(_.id)
   val byAssociationID = associations
-    .map(id => (id,SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)))
+    .flatMap(id => {
+      val a = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)
+      if(GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(a)._1>0)
+        Seq((id,a))
+      else
+        Seq()
+    })
+    .toMap
+  val factLookupTables = byAssociationID.keySet
+    .map(id => (id,FactLookupTable.readFromStandardFile(id)))
     .toMap
   //all
   val evidenceCountHistogram = scala.collection.mutable.HashMap[Int,Int]()

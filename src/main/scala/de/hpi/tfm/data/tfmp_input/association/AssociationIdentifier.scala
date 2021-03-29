@@ -14,6 +14,10 @@ case class AssociationIdentifier(subdomain:String, viewID:String, bcnfID:Int, as
 
 object AssociationIdentifier extends JsonReadable[AssociationIdentifier]{
 
+  def loadAll() = {
+
+  }
+
   def fromCompositeID(compositeID: String) = {
     val dotLocations = compositeID
       .zipWithIndex

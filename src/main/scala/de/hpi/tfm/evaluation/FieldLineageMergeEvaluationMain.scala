@@ -32,6 +32,7 @@ object FieldLineageMergeEvaluationMain extends App with StrictLogging{
     .map(id => (id,FactLookupTable.readFromStandardFile(id)))
     .toMap
   logger.debug("Loaded fact lookup tables")
+  logger.debug(s"Input Fact count: ${factLookupTables.map(_._2.surrogateKeyToVL.size).sum}")
   val byAssociationID = tables
     .map(id => (id,SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)))
     .toMap

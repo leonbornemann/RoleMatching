@@ -11,6 +11,7 @@ object OldFactLineageStatistics extends App {
   IOService.socrataDir = args(0)
   val subdomain = args(1)
   val statisicsgatherer = new OldFactLineageStatisticGatherer(subdomain)
+  statisicsgatherer.gather()
 
 
 }

@@ -36,6 +36,8 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]], tu
 
   def buildGraph(originalInputLeft:IndexedSeq[TupleReference[A]], originalInputRight:IndexedSeq[TupleReference[A]], index: BipartiteTupleIndex[A]):Unit = {
     if(!index.indexFailed){
+      val allTuplesLeft = scala.collection.mutable.ArrayBuffer[TupleReference[A]]()
+      val allTuplesRight = scala.collection.mutable.ArrayBuffer[TupleReference[A]]()
       index.getBipartiteTupleGroupIterator().foreach{case g => {
         val tuplesLeft = g.tuplesLeft
         val tuplesRight = g.tuplesRight
@@ -44,11 +46,13 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]], tu
         assert(g.tuplesLeft.toSet.intersect(wildcardTuplesLeft.toSet).isEmpty && g.tuplesRight.toSet.intersect(wildCardTuplesRight.toSet).isEmpty)
         buildGraphRecursively(g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps, tuplesLeft, tuplesRight)
         //TODO: process Wildcards to others:
-        buildGraphRecursively(g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps,wildcardTuplesLeft,g.tuplesRight)
-        buildGraphRecursively(g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps,g.tuplesLeft,wildCardTuplesRight)
+        allTuplesLeft ++= tuplesLeft
+        allTuplesRight ++= tuplesRight
         //Wildcards to Wildcards:
       }}
       buildGraphRecursively(index.parentTimestamps,index.parentKeyValues,index.wildcardsLeft,index.wildcardsRight)
+      buildGraphRecursively(index.parentTimestamps,index.parentKeyValues,index.wildcardsLeft,allTuplesRight.toIndexedSeq)
+      buildGraphRecursively(index.parentTimestamps,index.parentKeyValues,allTuplesLeft.toIndexedSeq,index.wildcardsRight)
     } else {
       val (_,time) = executionTimeInSeconds(doPairwiseMatching(originalInputLeft,originalInputRight))
       totalMatchExecutionTime += time

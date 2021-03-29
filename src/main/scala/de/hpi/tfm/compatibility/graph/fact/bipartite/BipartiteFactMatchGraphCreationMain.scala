@@ -13,6 +13,7 @@ import de.hpi.tfm.io.IOService
 object BipartiteFactMatchGraphCreationMain extends App with StrictLogging {
   IOService.socrataDir = args(0)
   val edges = AssociationGraphEdgeCandidate.fromJsonObjectPerLineFile(args(1))
+  val minEvidence = args(2).toInt
   for (edge <- edges) {
     logger.debug(s"Discovering mergeability for $edge")
     val tableLeft = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(edge.firstMatchPartner)
@@ -20,8 +21,11 @@ object BipartiteFactMatchGraphCreationMain extends App with StrictLogging {
     val leftTableHasChanges = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(tableLeft)._1 > 0
     val rightTableHasChanges = GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(tableRight)._1 > 0
     if (leftTableHasChanges && rightTableHasChanges) {
-      val matchGraph = new BipartiteFactMatchCreator(tableLeft.tupleReferences, tableRight.tupleReferences)
+      val matchGraphEdges = new BipartiteFactMatchCreator(tableLeft.tupleReferences, tableRight.tupleReferences)
         .toFieldLineageMergeabilityGraph(true)
+        .edges
+        .filter(_.evidence>=minEvidence)
+      val matchGraph = FactMergeabilityGraph(matchGraphEdges)
       logger.debug(s"Found ${matchGraph.edges.size} edges of which ${matchGraph.edges.filter(_.evidence > 0).size} have more than 0 evidence ")
       logger.debug("----------------------------------------------------------------------------------------------------------------------------------------------")
       logger.debug("----------------------------------------------------------------------------------------------------------------------------------------------")

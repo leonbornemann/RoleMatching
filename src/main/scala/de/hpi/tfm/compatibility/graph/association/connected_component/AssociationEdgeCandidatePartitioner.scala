@@ -27,15 +27,16 @@ object AssociationEdgeCandidatePartitioner extends App {
   adjacencyList.foreach{case (key,edges) => {
     val unseenEdges = edges.diff(representedEdges)
       .toIndexedSeq
+    assert(unseenEdges.forall(e => !representedEdges.contains(e)))
     val partitions = (0 until (unseenEdges.size / maxPartitionSize.toDouble).ceil.toInt)
-      .map(i => unseenEdges.slice(i,(i+1)*maxPartitionSize))
-    representedEdges ++= partitions.flatten
+      .map(i => unseenEdges.slice(i*maxPartitionSize,(i+1)*maxPartitionSize))
     partitions.foreach(p => {
       val file = DBSynthesis_IOService.getAssociationGraphEdgeCandidatePartitionFile(subdomain,curPartitionNum)
       val pr = new PrintWriter(file)
       p.foreach(e => {
         totalSerializedEdges +=1
         e.appendToWriter(pr,false,true)
+        representedEdges += e
       })
       pr.close()
       curPartitionNum +=1

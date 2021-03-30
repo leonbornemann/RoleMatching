@@ -13,6 +13,10 @@ object AssociationEdgeCandidatePartitioner extends App with StrictLogging{
   val candidateFile = DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile(subdomain)
   val edges = AssociationGraphEdgeCandidate.fromJsonObjectPerLineFile(candidateFile.getAbsolutePath)
   assert(edges.toSet.size==edges.size)
+  val a = edges.map(e => Set(e.firstMatchPartner,e.secondMatchPartner))
+    .toSet
+  println(a.size)
+  println(edges.size)
   val byFirst = edges.groupBy(_.firstMatchPartner)
     .map(t => (t._1,t._2.toSet))
   val bySecond = edges.groupBy(_.secondMatchPartner)

@@ -43,8 +43,8 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
   def fromTimestampToValue[V<:TemporalFieldTrait[A]](asTree: mutable.TreeMap[LocalDate, A]):V
 
   override def tryMergeWithConsistent[V <: TemporalFieldTrait[A]](other: V): Option[V] = {
-    val myLineage = this.toIntervalRepresentation.toBuffer
-    val otherLineage = other.toIntervalRepresentation.toBuffer
+    val myLineage = scala.collection.mutable.ArrayBuffer() ++ this.toIntervalRepresentation
+    val otherLineage = scala.collection.mutable.ArrayBuffer() ++ other.toIntervalRepresentation.toBuffer
     if(myLineage.isEmpty){
       return if(otherLineage.isEmpty) Some(fromValueLineage[V](FactLineage())) else None
     } else if(otherLineage.isEmpty){

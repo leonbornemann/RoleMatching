@@ -41,6 +41,8 @@ object DBSynthesis_IOService extends StrictLogging{
   def EVALUATION_RESULT_DIR(subdomain:String,methodName: String) = createParentDirs(new File(EVALUATION_DIR(subdomain) + s"/$methodName/")).getAbsolutePath
 
   def getAssociationGraphEdgeCandidateFile(subdomain:String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + "/associationMergeabilityGraphCandidates/associationGraphEdgeCandidates.json"))
+  def getAssociationGraphEdgeCandidatePartitionDir(subdomain: String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + "/associationMergeabilityGraphCandidates/partitions/"))
+  def getAssociationGraphEdgeCandidatePartitionFile(subdomain: String, curPartitionNum: Int) = createParentDirs(new File(getAssociationGraphEdgeCandidatePartitionDir(subdomain).getAbsolutePath + s"/$curPartitionNum.json"))
 
   def getOptimizationBCNFReferenceTableInputFile(id: AssociationIdentifier) = {
     createParentDirs(new File(s"${OPTIMIZATION_INPUT_BCNF_DIR(id.subdomain)}/referenceTables/${id.viewID}/${id.compositeID}.json"))

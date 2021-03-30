@@ -39,12 +39,16 @@ object AssociationEdgeCandidatePartitioner extends App with StrictLogging{
   }}
   if(curPartition.size>1)
     clearAndSerializePartition
-  if(totalSerializedEdges != edges.size){
+  if(totalSerializedEdges != edges.toSet.size){
+    println("What?")
+    representedEdges.diff(edges.toSet)
+      .foreach(println)
+    println(totalSerializedEdges == representedEdges.size)
     println(totalSerializedEdges)
-    println(edges.size)
-    assert(false)
+    println(edges.toSet.size)
+    //assert(false)
   }
-  if(representedEdges.toSet == edges.toSet){
+  if(representedEdges.toSet != edges.toSet){
     println("oh oh")
     println(representedEdges.toSet.size)
     println(edges.toSet.size)

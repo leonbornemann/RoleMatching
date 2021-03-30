@@ -66,6 +66,11 @@ object AssociationEdgeCandidatePartitioner extends App with StrictLogging{
     curPartition.foreach(e => {
       totalSerializedEdges += 1
       e.appendToWriter(pr, false, true)
+      if(representedEdges.contains(e)){
+        println("Alaaaaarm!")
+        println(e.toJson())
+        println("Alaaaarm ende")
+      }
       representedEdges += e
     })
     pr.close()

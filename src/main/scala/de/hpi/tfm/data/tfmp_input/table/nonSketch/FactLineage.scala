@@ -46,7 +46,7 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
 
   override def getCompatibleValue(a: Any, b: Any): Any = if(a==b) a else if(isWildcard(a)) b else a
 
-  override def valuesInInterval(ti: TimeInterval): IterableOnce[(TimeInterval, Any)] = {
+  def valuesInInterval(ti: TimeInterval): IterableOnce[(TimeInterval, Any)] = {
     var toReturn = toIntervalRepresentation
       .withFilter{case (curTi,v) => !curTi.endOrMax.isBefore(ti.begin) && !curTi.begin.isAfter(ti.endOrMax)}
       .map{case (curTi,v) =>

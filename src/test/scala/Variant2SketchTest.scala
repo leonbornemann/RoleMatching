@@ -92,44 +92,6 @@ object Variant2SketchTest extends App {
     assert(sketch.numEntries == 4)
     val fieldLineageHashed: mutable.TreeMap[LocalDate, Int] = fieldLineage.lineage.map { case (k, v) => (k, toHashAsInt(v)) }
     assert(sketch.getValueLineage == fieldLineageHashed)
-    var res = sketch.valuesInInterval(TimeInterval(toDate(2), Some(toDate(2))))
-    var expectedRes = Map(TimeInterval(toDate(2), Some(toDate(2))) -> toHashAsInt("firstElem"))
-    assert(res == expectedRes)
-    var interval: TimeInterval = TimeInterval(toDate(2), Some(toDate(4)))
-    res = sketch.valuesInInterval(interval)
-    expectedRes = Map(interval -> toHashAsInt("firstElem"))
-    assert(res == expectedRes)
-    interval = TimeInterval(toDate(14), Some(toDate(15)))
-    res = sketch.valuesInInterval(interval)
-    expectedRes = Map(TimeInterval(toDate(14), Some(toDate(14))) -> toHashAsInt("secondElem"),
-      TimeInterval(toDate(15), Some(toDate(15))) -> toHashAsInt(ReservedChangeValues.NOT_EXISTANT_ROW))
-    assert(res == expectedRes)
-    interval = TimeInterval(toDate(13), Some(toDate(16)))
-    res = sketch.valuesInInterval(interval)
-    expectedRes = Map(TimeInterval(toDate(13), Some(toDate(14))) -> toHashAsInt("secondElem"),
-      TimeInterval(toDate(15), Some(toDate(16))) -> toHashAsInt(ReservedChangeValues.NOT_EXISTANT_ROW))
-    assert(res == expectedRes)
-    interval = TimeInterval(toDate(0), Some(toDate(7)))
-    res = sketch.valuesInInterval(interval)
-    expectedRes = Map(TimeInterval(toDate(0), Some(toDate(0))) -> toHashAsInt(ReservedChangeValues.NOT_EXISTANT_ROW),
-      TimeInterval(toDate(1), Some(toDate(4))) -> toHashAsInt("firstElem"),
-      TimeInterval(toDate(5), Some(toDate(7))) -> toHashAsInt("secondElem"))
-    assert(res == expectedRes)
-    interval = TimeInterval(toDate(30), Some(toDate(40)))
-    res = sketch.valuesInInterval(interval)
-    expectedRes = Map(TimeInterval(toDate(30), Some(toDate(40))) -> toHashAsInt("thirdElem"))
-    assert(res == expectedRes)
-    //multiple time intervals:
-    val is = new TimeIntervalSequence(IndexedSeq(TimeInterval(toDate(0), Some(toDate(7))),
-      TimeInterval(toDate(10), Some(toDate(12))),
-      TimeInterval(toDate(30), Some(toDate(40)))))
-    val resIs = sketch.valuesAt(is)
-    expectedRes = Map(
-      TimeInterval(toDate(0), Some(toDate(0))) -> toHashAsInt(ReservedChangeValues.NOT_EXISTANT_ROW),
-      TimeInterval(toDate(1), Some(toDate(5))) -> toHashAsInt("firstElem"),
-      TimeInterval(toDate(5), Some(toDate(7))) -> toHashAsInt("secondElem"),
-      TimeInterval(toDate(10), Some(toDate(12))) -> toHashAsInt("secondElem"),
-      TimeInterval(toDate(30), Some(toDate(40))) -> toHashAsInt("thirdElem"))
   }
 
 }

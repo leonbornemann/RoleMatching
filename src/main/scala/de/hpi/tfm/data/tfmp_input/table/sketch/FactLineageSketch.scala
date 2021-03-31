@@ -16,6 +16,8 @@ import scala.collection.mutable.HashMap
 @SerialVersionUID(3L)
 class FactLineageSketch(val factLineage: FactLineage) extends FieldLineageSketch with StrictLogging{
 
+  assert(factLineage.lineage.forall(_._2.isInstanceOf[Int]))
+
   override def toString: String = factLineage.toString
 
   override def hashCode(): Int = factLineage.lineage.hashCode()
@@ -30,12 +32,6 @@ class FactLineageSketch(val factLineage: FactLineage) extends FieldLineageSketch
   override def getVariantName: String = FactLineageSketch.getVariantName
 
   def numEntries = factLineage.lineage.size
-
-  def valuesInInterval(ti: TimeInterval) :collection.Map[TimeInterval,Int] = {
-    factLineage.valuesInInterval(ti).iterator.toIndexedSeq
-      .map(t => (t._1,t._2.asInstanceOf[Int]))
-      .toMap
-  }
 
   def getValueLineage = {
     factLineage.lineage.map(t => (t._1,t._2.asInstanceOf[Int]))

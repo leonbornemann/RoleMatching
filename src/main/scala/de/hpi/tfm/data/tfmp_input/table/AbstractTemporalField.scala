@@ -114,15 +114,6 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
     fromTimestampToValue(this.getValueLineage ++ y.getValueLineage)
   }
 
-  def valuesInInterval(ti: TimeInterval): IterableOnce[(TimeInterval,A)]
-
-  //gets the hash values at the specified time-intervals, substituting missing values with the hash-value of ReservedChangeValues.NOT_EXISTANT_ROW
-  override def valuesAt(timeToExtract: TimeIntervalSequence): Map[TimeInterval, A] = {
-    val a = timeToExtract.sortedTimeIntervals.flatMap(ti => {
-      valuesInInterval(ti)
-    }).toMap
-    a
-  }
 }
 object AbstractTemporalField{
 

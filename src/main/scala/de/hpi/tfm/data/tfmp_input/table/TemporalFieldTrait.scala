@@ -239,9 +239,6 @@ trait TemporalFieldTrait[T] {
 
   def toIntervalRepresentation: mutable.TreeMap[TimeInterval, T]
 
-  //gets the hash values at the specified time-intervals, substituting missing values with the hash-value of ReservedChangeValues.NOT_EXISTANT_ROW
-  def valuesAt(timeToExtract: TimeIntervalSequence): Map[TimeInterval, T]
-
   def WILDCARDVALUES: Set[T]
 
 }

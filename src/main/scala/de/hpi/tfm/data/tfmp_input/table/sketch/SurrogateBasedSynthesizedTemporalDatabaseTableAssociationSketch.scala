@@ -3,7 +3,7 @@ package de.hpi.tfm.data.tfmp_input.table.sketch
 import de.hpi.tfm.data.socrata.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.tfm.data.tfmp_input.association.{AssociationIdentifier, AssociationSchema}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.tfm.data.tfmp_input.table.sketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.getOptimizationInputAssociationSketchFile
+import de.hpi.tfm.data.tfmp_input.table.sketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.{getFullTimeRangeFile, getOptimizationInputAssociationSketchFile}
 import de.hpi.tfm.data.tfmp_input.table.{AbstractSurrogateBasedTemporalRow, AbstractSurrogateBasedTemporalTable, TemporalDatabaseTableTrait, TemporalFieldTrait}
 import de.hpi.tfm.data.tfmp_input.{BinaryReadable, SynthesizedDatabaseTableRegistry}
 import de.hpi.tfm.io.DBSynthesis_IOService
@@ -25,7 +25,8 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
   extends AbstractSurrogateBasedTemporalTable[Int,SurrogateBasedTemporalRowSketch](id,unionedOriginalTables,key,nonKeyAttribute,foreignKeys,surrogateBasedTemporalRowSketches,uniqueSynthTableID) {
 
   def writeToFullTimeRangeFile() = {
-
+    val file = getFullTimeRangeFile(unionedOriginalTables.head)
+    writeToBinaryFile(file)
   }
 
   def projectToTimeRange(timeRangeStart: LocalDate, timeRangeEnd: LocalDate) = {

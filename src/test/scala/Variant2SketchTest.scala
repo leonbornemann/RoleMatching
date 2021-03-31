@@ -13,7 +13,7 @@ object Variant2SketchTest extends App {
    LocalDate.ofEpochDay(IOService.STANDARD_TIME_FRAME_START.toEpochDay + i)
   }
 
-  def toHashAsInt(v: Any) = FactLineageSketch.byteArrayToInt(FactLineageSketch.HASH_FUNCTION_STANDARD(v))
+  def toHashAsInt(v: Any) = FactLineageSketch.HASH_FUNCTION_STANDARD(v)
 
   hashValuesAtIntervalTest
   mergeWithConsistentTest

@@ -10,6 +10,4 @@ trait FieldLineageSketch extends AbstractTemporalField[Int] with Serializable {
 
   def getVariantName: String
 
-  def getBytes: Array[Byte]
-
 }

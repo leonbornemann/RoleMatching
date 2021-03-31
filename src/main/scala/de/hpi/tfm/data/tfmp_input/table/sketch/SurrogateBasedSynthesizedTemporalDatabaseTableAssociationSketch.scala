@@ -33,7 +33,7 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
     val newRows = rows.map(r => {
       val oldSketch = r.valueSketch
       val tsToValue = oldSketch.getValueLineage.filter{case (k,v) => !k.isBefore(timeRangeStart) && !k.isAfter(timeRangeEnd)}
-      val newSketch = oldSketch.fromTimestampToValue(tsToValue)
+      val newSketch = FactLineageSketch.fromTimestampToHash(tsToValue)
       buildNewRow(r.keys.head,newSketch).asInstanceOf[SurrogateBasedTemporalRowSketch]
     })
     new SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id,unionedOriginalTables,key,nonKeyAttribute,foreignKeys,newRows)

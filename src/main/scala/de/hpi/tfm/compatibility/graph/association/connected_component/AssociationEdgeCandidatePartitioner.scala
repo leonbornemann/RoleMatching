@@ -1,16 +1,22 @@
 package de.hpi.tfm.compatibility.graph.association.connected_component
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.association.AssociationGraphEdgeCandidate
 import de.hpi.tfm.io.{DBSynthesis_IOService, IOService}
 
 import java.io.PrintWriter
+import java.time.LocalDate
 
 object AssociationEdgeCandidatePartitioner extends App with StrictLogging{
   IOService.socrataDir = args(0)
   val subdomain = args(1)
-  val maxPartitionSize = 20
-  val candidateFile = DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile(subdomain)
+  val minEvidence = args(2).toInt
+  val timeRangeStart = LocalDate.parse(args(3))
+  val timeRangeEnd = LocalDate.parse(args(4))
+  val maxPartitionSize = 30
+  val graphConfig = GraphConfig(minEvidence,timeRangeStart,timeRangeEnd)
+  val candidateFile = DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile(subdomain,graphConfig)
   val edges = AssociationGraphEdgeCandidate.fromJsonObjectPerLineFile(candidateFile.getAbsolutePath)
   assert(edges.toSet.size==edges.size)
   val a = edges.map(e => Set(e.firstMatchPartner,e.secondMatchPartner))
@@ -26,7 +32,7 @@ object AssociationEdgeCandidatePartitioner extends App with StrictLogging{
   assert(adjacencyList.values.toSet.flatten.size==edges.size)
   var edgeLists = scala.collection.mutable.ArrayBuffer[IndexedSeq[AssociationGraphEdgeCandidate]]()
   val representedEdges = scala.collection.mutable.HashSet[AssociationGraphEdgeCandidate]()
-  val dir = DBSynthesis_IOService.getAssociationGraphEdgeCandidatePartitionDir(subdomain)
+  val dir = DBSynthesis_IOService.getAssociationGraphEdgeCandidatePartitionDir(subdomain,graphConfig)
   var curPartitionNum = 0
   var totalSerializedEdges = 0
   val curPartition = collection.mutable.ArrayBuffer[AssociationGraphEdgeCandidate]()
@@ -61,7 +67,7 @@ object AssociationEdgeCandidatePartitioner extends App with StrictLogging{
 
 
   private def clearAndSerializePartition = {
-    val file = DBSynthesis_IOService.getAssociationGraphEdgeCandidatePartitionFile(subdomain, curPartitionNum)
+    val file = DBSynthesis_IOService.getAssociationGraphEdgeCandidatePartitionFile(subdomain,graphConfig, curPartitionNum)
     val pr = new PrintWriter(file)
     curPartition.foreach(e => {
       totalSerializedEdges += 1

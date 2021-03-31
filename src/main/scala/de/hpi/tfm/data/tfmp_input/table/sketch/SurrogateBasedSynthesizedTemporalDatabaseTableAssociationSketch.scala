@@ -2,11 +2,12 @@ package de.hpi.tfm.data.tfmp_input.table.sketch
 
 import de.hpi.tfm.data.socrata.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.tfm.data.tfmp_input.association.{AssociationIdentifier, AssociationSchema}
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.data.tfmp_input.table.sketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.getOptimizationInputAssociationSketchFile
 import de.hpi.tfm.data.tfmp_input.table.{AbstractSurrogateBasedTemporalRow, AbstractSurrogateBasedTemporalTable, TemporalDatabaseTableTrait, TemporalFieldTrait}
 import de.hpi.tfm.data.tfmp_input.{BinaryReadable, SynthesizedDatabaseTableRegistry}
 import de.hpi.tfm.io.DBSynthesis_IOService
-import de.hpi.tfm.io.DBSynthesis_IOService.OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR
+import de.hpi.tfm.io.DBSynthesis_IOService.{OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR, OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_DIR, OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_SKETCH_DIR, createParentDirs}
 
 import java.io.File
 import java.time.LocalDate
@@ -22,6 +23,20 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
                                                                       val surrogateBasedTemporalRowSketches:collection.mutable.ArrayBuffer[SurrogateBasedTemporalRowSketch] = collection.mutable.ArrayBuffer(),
                                                                       uniqueSynthTableID:Int = SynthesizedDatabaseTableRegistry.getNextID())
   extends AbstractSurrogateBasedTemporalTable[Int,SurrogateBasedTemporalRowSketch](id,unionedOriginalTables,key,nonKeyAttribute,foreignKeys,surrogateBasedTemporalRowSketches,uniqueSynthTableID) {
+
+  def writeToFullTimeRangeFile() = {
+
+  }
+
+  def projectToTimeRange(timeRangeStart: LocalDate, timeRangeEnd: LocalDate) = {
+    val newRows = rows.map(r => {
+      val oldSketch = r.valueSketch
+      val tsToValue = oldSketch.getValueLineage.filter{case (k,v) => !k.isBefore(timeRangeStart) && !k.isAfter(timeRangeEnd)}
+      val newSketch = oldSketch.fromTimestampToValue(tsToValue)
+      buildNewRow(r.keys.head,newSketch).asInstanceOf[SurrogateBasedTemporalRowSketch]
+    })
+    new SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id,unionedOriginalTables,key,nonKeyAttribute,foreignKeys,newRows)
+  }
 
   override def fieldIsWildcardAt(rowIndex: Int, colIndex: Int, ts: LocalDate): Boolean = {
     assert(colIndex==0)
@@ -60,6 +75,16 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch(id:String,
   override def getRow(rowIndex: Int): AbstractSurrogateBasedTemporalRow[Int] = rows(rowIndex)
 }
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch extends BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch]{
+
+  def getFullTimeRangeFile(id:AssociationIdentifier) = {
+    createParentDirs(new File(s"${OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_SKETCH_DIR(id.subdomain)}/${id.viewID}/${id.compositeID}.binary"))
+  }
+
+  def loadFromFullTimeAssociationSketch(id: AssociationIdentifier) = {
+    val file = getFullTimeRangeFile(id)
+    loadFromFile(file)
+  }
+
 
   def getOptimizationInputAssociationSketchFile(id: AssociationIdentifier) = {
     DBSynthesis_IOService.createParentDirs(new File(s"${OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR(id.subdomain)}/${id.viewID}/${id.compositeID}.binary"))

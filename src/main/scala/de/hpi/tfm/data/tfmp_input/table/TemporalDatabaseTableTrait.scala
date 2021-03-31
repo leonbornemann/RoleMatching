@@ -9,6 +9,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 trait TemporalDatabaseTableTrait[A] {
+
   def getRow(rowIndex: Int): AbstractSurrogateBasedTemporalRow[A]
 
   def nonWildcardValueTransitions = (0 until nrows).toSet.flatMap((i: Int) => {

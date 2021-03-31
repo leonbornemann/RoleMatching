@@ -6,6 +6,7 @@ import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.compatibility.index._
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.TemporalDatabaseTableTrait
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.tfm.data.tfmp_input.table.sketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.DBSynthesis_IOService
@@ -23,11 +24,13 @@ import scala.collection.mutable
  * @param indexProcessingMode
  */
 class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch],
+                                     graphConfig: GraphConfig,
                                      subdomain:String,
                                      recurseLogDepth:Int = 0,
                                      autoFlush:Boolean = false) extends StrictLogging {
-
+  logger.debug(s"Starting with graphConfig $graphConfig")
   logger.debug(s"Starting association clustering with ${unmatchedAssociations.size} associations --> ${gaussSum(unmatchedAssociations.size-1)} matches possible")
+  val filterByTransitionOverlap = graphConfig.minEvidence>0
   var indexTimeInSeconds:Double = 0.0
   var matchTimeInSeconds:Double = 0.0
   var matchSkips = 0
@@ -43,9 +46,9 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
     .map(a => (a.asInstanceOf[TemporalDatabaseTableTrait[Int]],mutable.HashMap[TemporalDatabaseTableTrait[Int],AssociationMatch[Int]]()))
     .toMap
   val matchesWithZeroScore = mutable.HashSet[Set[TemporalDatabaseTableTrait[Int]]]()
-  val nonWildcardValueTransitionSets = unmatchedAssociations
+  val nonWildcardValueTransitionSets: Map[TemporalDatabaseTableTrait[Int], Set[ValueTransition[Int]]] = if(filterByTransitionOverlap) unmatchedAssociations
     .map(a => (a.asInstanceOf[TemporalDatabaseTableTrait[Int]], a.nonWildcardValueTransitions))
-    .toMap
+    .toMap else Map()
   var nMatchesComputed = 0
   var processedNodes = 0
   var topLvlIndexSize = -1
@@ -57,8 +60,7 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
     existsWithScoreGreater0 || matchesWithZeroScore.contains(Set(firstMatchPartner,secondMatchPartner))
   }
 
-  def executePairwiseMatching(groupsWithTupleIndices: collection.IndexedSeq[TemporalDatabaseTableTrait[Int]],
-                              filterByCommonTransitionOverlap:Boolean = false) = {
+  def executePairwiseMatching(groupsWithTupleIndices: collection.IndexedSeq[TemporalDatabaseTableTrait[Int]]) = {
     for (i <- 0 until groupsWithTupleIndices.size) {
       for (j <- (i + 1) until groupsWithTupleIndices.size) {
         pairwiseInnerLoopExecutions +=1
@@ -66,7 +68,7 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
         val secondMatchPartner = groupsWithTupleIndices(j)
         if(firstMatchPartner.getUnionedOriginalTables.head != secondMatchPartner.getUnionedOriginalTables.head) {
           //can only happen due to a bug in change exporting currently
-          calculateAndMatchIfNotPresent(firstMatchPartner, secondMatchPartner,filterByCommonTransitionOverlap)
+          calculateAndMatchIfNotPresent(firstMatchPartner, secondMatchPartner)
         }
       }
     }
@@ -77,21 +79,10 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
   }
 
   private def calculateAndMatchIfNotPresent(firstMatchPartner: TemporalDatabaseTableTrait[Int],
-                                            secondMatchPartner: TemporalDatabaseTableTrait[Int],
-                                            filterByCommonTransitionOverlap:Boolean = false) = {
+                                            secondMatchPartner: TemporalDatabaseTableTrait[Int]) = {
     calculateAndMatchIfNotPresentCalls +=1
     val toAdd = Set(firstMatchPartner.getUnionedOriginalTables.head, secondMatchPartner.getUnionedOriginalTables.head)
-    if(!edgeCandidates.get.contains(toAdd) && (!filterByCommonTransitionOverlap || hasCommonTransition(firstMatchPartner,secondMatchPartner))) {
-      edgeCandidates.get.add(toAdd)
-      if(filterByCommonTransitionOverlap){
-        matchesBasedOnWildcards +=1
-      }
-    } else{
-      if(matchSkips % 1000000 == 0)
-        logger.debug(s"Skipped adding $matchSkips so far due to no transition overlap (${edgeCandidates.get.size} matches total, of which $matchesBasedOnWildcards came from wildcard-matches)")
-      matchSkips +=1
-    }
-
+    edgeCandidates.get.add(toAdd)
   }
 
   def gaussSum(n: Int) = n*(n+1) / 2
@@ -124,7 +115,7 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
         //calculate matches to all other association tables:
         tablesToMatch
           .foreach(a => {
-            calculateAndMatchIfNotPresent(wc,a,true)
+            calculateAndMatchIfNotPresent(wc,a)
           })
       })
     } else {
@@ -182,10 +173,10 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
           executeMatchesInIterator(newIndex,recurseDepth+1)
         } else {
           maybeLog(s"${logRecursionWhitespacePrefix(recurseDepth)}Executing pairwise matching with ${groupsWithTupleIndices.size} because we can't refine the index anymore [Recurse Depth:$recurseDepth]",recurseDepth)
-          executePairwiseMatching(groupsWithTupleIndices.map(_._1),false)
+          executePairwiseMatching(groupsWithTupleIndices.map(_._1))
         }
       } else {
-        executePairwiseMatching(groupsWithTupleIndices.map(_._1),false)
+        executePairwiseMatching(groupsWithTupleIndices.map(_._1))
       }
       if(isTopLvlCall)
         processedNodes +=1
@@ -228,7 +219,7 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
       if(newIndex.indexBuildWasSuccessfull)
         executeMatchesInIterator(newIndex,recurseDepth+1)
       else
-        executePairwiseMatching(wildcardTableSet.toIndexedSeq,false)
+        executePairwiseMatching(wildcardTableSet.toIndexedSeq)
     }
   }
 
@@ -244,20 +235,18 @@ class AssociationEdgeCandidateFinder(unmatchedAssociations: collection.Set[Surro
     logger.debug(s"Finished with $calculateAndMatchIfNotPresentCalls num calls to calculateAndMatchIfNotPresent")
     logger.debug("Beginning serialization of edge candidates")
     logger.debug(s"Serializing candidate edges for ${edgeCandidates.get.size} candidates")
-    val pr = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile(subdomain))
+    val pr = new PrintWriter(DBSynthesis_IOService.getAssociationGraphEdgeCandidateFile(subdomain,graphConfig))
     val weirdEdges = edgeCandidates.get.filter(_.size != 2)
     logger.debug(s"Found ${weirdEdges.size} weird edges:")
     weirdEdges.foreach(s => logger.debug(s.toString()))
     val byID = unmatchedAssociations.map(a => (a.getUnionedOriginalTables.head,a)).toMap
-    val filteredByCommonTransition = edgeCandidates.get.filter(e => e.size==2 && {
+    val filteredByCommonTransition = if(filterByTransitionOverlap) edgeCandidates.get.filter(e => e.size==2 && {
       val ids = e.toSeq
       hasCommonTransition(byID(ids(0)),byID(ids(1)))
-    })
+    }) else edgeCandidates.get
     logger.debug(s"Retained ${filteredByCommonTransition.size} out of ${edgeCandidates.get.size} edges after filtering by common transition existence")
     filteredByCommonTransition.foreach(s => {
       val res = s.toSeq
-      val first = res(0)
-      val second = if(res.size>1) res(1) else res(0)
       pr.println(AssociationGraphEdgeCandidate(res(0),res(1),Integer.MIN_VALUE,Integer.MIN_VALUE,Integer.MIN_VALUE).toJson())
     })
     pr.close()

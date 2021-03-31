@@ -4,8 +4,8 @@ import de.hpi.tfm.compatibility.AssociationGraphEdgeCandidateGenerationMain.subd
 import de.hpi.tfm.io.IOService
 
 object NewCompatibilityGraphCreationMain extends App {
-  IOService.socrataDir = args(0)
-  val subdomain = args(1)
-  new AssociationGraphEdgeCandidateGenerator(subdomain)
-    .serializeAllCandidatesNew()
+//  IOService.socrataDir = args(0)
+//  val subdomain = args(1)
+//  new AssociationGraphEdgeCandidateGenerator(subdomain)
+//    .serializeAllCandidatesNew()
 }

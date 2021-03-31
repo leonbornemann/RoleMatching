@@ -47,6 +47,7 @@ class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLoggi
       associationLimitedTimeRange.writeToStandardOptimizationInputFile
       associationLimitedTimeRange.toSketch.writeToStandardOptimizationInputFile()
       associationFullTimeRange.writeToFullTimeRangeFile()
+      associationFullTimeRange.toSketch.writeToFullTimeRangeFile()
       writeFactTable(dttID, vlToSurrogateKey, entityIDToSurrogateKey)
     }}
     val allTImstamps = tt.rows.flatMap(r =>

@@ -1,6 +1,7 @@
 package de.hpi.tfm.io
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.socrata.DatasetInstance
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 
@@ -26,6 +27,7 @@ object DBSynthesis_IOService extends StrictLogging{
   def OPTIMIZATION_INPUT_ASSOCIATION_DIR(subdomain:String) = OPTIMIZATION_INPUT_DIR(subdomain) + "/associations/"
   def OPTIMIZATION_INPUT_BCNF_DIR(subdomain:String) = OPTIMIZATION_INPUT_DIR(subdomain) + "/BCNF/"
   def OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_DIR(subdomain:String) = OPTIMIZATION_INPUT_DIR(subdomain) + "/FullTimeRangeAssociations/"
+  def OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_SKETCH_DIR(subdomain: String) = OPTIMIZATION_INPUT_DIR(subdomain) + "/FullTimeRangeAssociationSketches/"
   def OPTIMIZATION_INPUT_FACTLOOKUP_DIR(viewID:String,subdomain:String) = OPTIMIZATION_INPUT_DIR(subdomain) + s"/factLookupTables/$viewID/"
   //mergeability graphs:
   def ASSOCIATIONS_MERGEABILITY_GRAPH_DIR(subdomain:String) = OPTIMIZATION_INPUT_DIR(subdomain) + s"/associationMergeabilityGraphs/"
@@ -40,9 +42,12 @@ object DBSynthesis_IOService extends StrictLogging{
   def EVALUATION_DIR(subdomain:String) = createParentDirs(new File(DB_SYNTHESIS_DIR + s"/evaluationResults/$subdomain/")).getAbsolutePath
   def EVALUATION_RESULT_DIR(subdomain:String,methodName: String) = createParentDirs(new File(EVALUATION_DIR(subdomain) + s"/$methodName/")).getAbsolutePath
 
-  def getAssociationGraphEdgeCandidateFile(subdomain:String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + "/associationMergeabilityGraphCandidates/associationGraphEdgeCandidates.json"))
-  def getAssociationGraphEdgeCandidatePartitionDir(subdomain: String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + "/associationMergeabilityGraphCandidates/partitions/"))
-  def getAssociationGraphEdgeCandidatePartitionFile(subdomain: String, curPartitionNum: Int) = createParentDirs(new File(getAssociationGraphEdgeCandidatePartitionDir(subdomain).getAbsolutePath + s"/$curPartitionNum.json"))
+  def getAssociationGraphEdgeCandidateFile(subdomain:String,graphConfig:GraphConfig) =
+    createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + s"/associationMergeabilityGraphCandidates/${graphConfig.minEvidence}_${dateToStr(graphConfig.timeRangeStart)}_${dateToStr(graphConfig.timeRangeEnd)}.json"))
+  def getAssociationGraphEdgeCandidatePartitionDir(subdomain: String,graphConfig: GraphConfig) =
+    createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + s"/associationMergeabilityGraphCandidates/partitions/${graphConfig.minEvidence}_${dateToStr(graphConfig.timeRangeStart)}_${dateToStr(graphConfig.timeRangeEnd)}/"))
+  def getAssociationGraphEdgeCandidatePartitionFile(subdomain: String,graphConfig: GraphConfig, curPartitionNum: Int) =
+    createParentDirs(new File(getAssociationGraphEdgeCandidatePartitionDir(subdomain,graphConfig).getAbsolutePath + s"/$curPartitionNum.json"))
 
   def getOptimizationBCNFReferenceTableInputFile(id: AssociationIdentifier) = {
     createParentDirs(new File(s"${OPTIMIZATION_INPUT_BCNF_DIR(id.subdomain)}/referenceTables/${id.viewID}/${id.compositeID}.json"))

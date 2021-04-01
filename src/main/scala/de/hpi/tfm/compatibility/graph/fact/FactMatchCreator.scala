@@ -1,10 +1,13 @@
 package de.hpi.tfm.compatibility.graph.fact
 
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 
 import scala.collection.mutable
 
 trait FactMatchCreator[A] {
+
+  def getGraphConfig: GraphConfig
 
   def toFieldLineageMergeabilityGraph(includeEvidenceSet:Boolean=false) = {
     FactMergeabilityGraph(facts.toIndexedSeq.map(e => {
@@ -19,7 +22,7 @@ trait FactMatchCreator[A] {
         e.tupleReferenceB.toIDBasedTupleReference,
         e.evidence,
         evidenceSet)
-    }))
+    }),getGraphConfig)
   }
 
   val facts = mutable.HashSet[FactMatch[A]]()

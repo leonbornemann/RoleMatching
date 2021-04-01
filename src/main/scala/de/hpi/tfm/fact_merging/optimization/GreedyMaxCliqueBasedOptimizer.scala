@@ -1,6 +1,7 @@
 package de.hpi.tfm.fact_merging.optimization
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.data.tfmp_input.table.AbstractTemporalField
 import scalax.collection.Graph
@@ -9,7 +10,7 @@ import scalax.collection.edge.WLkUnDiEdge
 import java.io.{File, PrintWriter}
 import scala.collection.mutable
 
-class GreedyMaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFile: File) extends ConnectedComponentMergeOptimizer(subdomain,connectedComponentListFile) with StrictLogging {
+class GreedyMaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFile: File,graphConfig:GraphConfig) extends ConnectedComponentMergeOptimizer(subdomain,connectedComponentListFile,graphConfig) with StrictLogging {
 
   val methodName = "GreedyMaxCliqueBasedOptimizer"
 

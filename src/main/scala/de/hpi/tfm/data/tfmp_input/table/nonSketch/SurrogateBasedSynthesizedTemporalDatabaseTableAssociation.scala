@@ -25,6 +25,15 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
                                                                 uniqueSynthTableID:Int = SynthesizedDatabaseTableRegistry.getNextID())
   extends AbstractSurrogateBasedTemporalTable[Any,SurrogateBasedTemporalRow](id,unionedOriginalTables,key,nonKeyAttribute,foreignKeys,surrogateBasedTemporalRows,uniqueSynthTableID) with Serializable{
 
+  def projectToTimeRange(timeRangeStart: LocalDate, timeRangeEnd: LocalDate): SurrogateBasedSynthesizedTemporalDatabaseTableAssociation = {
+    val newRows = rows.map(r => {
+      val tsToValue = r.valueLineage.lineage.filter{case (k,v) => !k.isBefore(timeRangeStart) && !k.isAfter(timeRangeEnd)}
+      val newFL = FactLineage(tsToValue)
+      buildNewRow(r.keys.head,newFL).asInstanceOf[SurrogateBasedTemporalRow]
+    })
+    new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id,unionedOriginalTables,key,nonKeyAttribute,foreignKeys,newRows)
+  }
+
 
   def writeToFullTimeRangeFile() = {
     assert(isAssociation && unionedOriginalTables.size==1)
@@ -83,6 +92,12 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
 
 object SurrogateBasedSynthesizedTemporalDatabaseTableAssociation extends
   BinaryReadable[SurrogateBasedSynthesizedTemporalDatabaseTableAssociation] with StrictLogging{
+
+  def loadFomFullTimeRangeFile(id: AssociationIdentifier): SurrogateBasedSynthesizedTemporalDatabaseTableAssociation = {
+    val file = getFullTimeRangeFile(id)
+    loadFromFile(file)
+  }
+
   def getStandardOptimizationInputFile(id: AssociationIdentifier) = getOptimizationInputAssociationFile(id)
 
   def loadFromStandardOptimizationInputFile(id:AssociationIdentifier) = {

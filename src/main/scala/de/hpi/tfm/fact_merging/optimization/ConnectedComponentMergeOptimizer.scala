@@ -1,5 +1,6 @@
 package de.hpi.tfm.fact_merging.optimization
 
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.FactMergeabilityGraph
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
@@ -9,7 +10,7 @@ import scalax.collection.edge.WLkUnDiEdge
 import java.io.File
 import scala.io.Source
 
-class ConnectedComponentMergeOptimizer(subdomain: String, connectedComponentListFile: File) {
+class ConnectedComponentMergeOptimizer(subdomain: String, connectedComponentListFile: File,graphConfig: GraphConfig) {
 
   val inputTables = Source.fromFile(connectedComponentListFile)
     .getLines()
@@ -20,7 +21,7 @@ class ConnectedComponentMergeOptimizer(subdomain: String, connectedComponentList
       (id,table)
     }).toMap
 
-  val fieldLineageMergeabilityGraph = FactMergeabilityGraph.loadSubGraph(inputTables.keySet,subdomain)
+  val fieldLineageMergeabilityGraph = FactMergeabilityGraph.loadSubGraph(inputTables.keySet,subdomain,graphConfig)
   val inputGraph = fieldLineageMergeabilityGraph.transformToOptimizationGraph(inputTables)
 
 

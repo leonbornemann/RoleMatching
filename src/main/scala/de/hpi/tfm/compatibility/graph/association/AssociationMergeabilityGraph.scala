@@ -1,5 +1,6 @@
 package de.hpi.tfm.compatibility.graph.association
 
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.socrata.metadata.custom.DatasetMetaInfo
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
@@ -11,7 +12,7 @@ import scalax.collection.immutable.Graph
 
 import java.io.File
 
-case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationGraphEdge]) extends JsonWritable[AssociationMergeabilityGraph]{
+case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationGraphEdge],graphConfig:GraphConfig) extends JsonWritable[AssociationMergeabilityGraph]{
 
   def detailedComponentPrint() = {
     val subdomain = edges.head.v1.subdomain
@@ -70,8 +71,8 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationGraphEdge])
       .map(t => (t._1.toShortString, t._2))
   }
 
-  def writeToSingleEdgeFile(filename: String, subdomain:String) = {
-    val singleEdgeDir = AssociationMergeabilityGraph.getSingleEdgeDir(subdomain)
+  def writeToSingleEdgeFile(filename: String, subdomain:String,graphConfig:GraphConfig) = {
+    val singleEdgeDir = AssociationMergeabilityGraph.getSingleEdgeDir(subdomain,graphConfig)
     val file = createParentDirs(new File(singleEdgeDir.getAbsolutePath + s"/$filename"))
     toJsonFile(file)
   }
@@ -107,7 +108,7 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationGraphEdge])
         AssociationGraphEdge(e.v1,e.v2,newSUmmedEvidence,newFilteredEvidenceMultiSet)
       })
       .filter(_.evidenceMultiSet.size>0)
-    AssociationMergeabilityGraph(edgesNew)
+    AssociationMergeabilityGraph(edgesNew,graphConfig)
   }
 
 
@@ -140,29 +141,28 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationGraphEdge])
 
   }
 
-  def writeToStandardFile(subdomain:String) = {
-    toJsonFile(AssociationMergeabilityGraph.getAssociationMergeabilityGraphFile(subdomain))
+  def writeToStandardFile(subdomain:String,graphConfig:GraphConfig) = {
+    toJsonFile(AssociationMergeabilityGraph.getAssociationMergeabilityGraphFile(subdomain,graphConfig))
   }
 
 }
 object AssociationMergeabilityGraph extends JsonReadable[AssociationMergeabilityGraph]{
-  def readFromSingleEdgeFiles(subdomain: String) = {
-    val edges = getSingleEdgeDir(subdomain)
+  def readFromSingleEdgeFiles(subdomain: String,graphConfig:GraphConfig) = {
+    val edges = getSingleEdgeDir(subdomain,graphConfig:GraphConfig)
       .listFiles()
       .flatMap(f => fromJsonFile(f.getAbsolutePath).edges)
       .toIndexedSeq
-    AssociationMergeabilityGraph(edges)
+    AssociationMergeabilityGraph(edges,graphConfig)
   }
 
-  def getSingleEdgeDir(subdomain: String) = createParentDirs(new File(ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR(subdomain)))
+  def getSingleEdgeDir(subdomain: String,graphConfig:GraphConfig) = createParentDirs(new File(ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR(subdomain,graphConfig)))
 
-  def readFromStandardFile(subdomain:String) = {
-    fromJsonFile(getAssociationMergeabilityGraphFile(subdomain).getAbsolutePath)
+  def readFromStandardFile(subdomain:String,graphConfig:GraphConfig) = {
+    fromJsonFile(getAssociationMergeabilityGraphFile(subdomain,graphConfig).getAbsolutePath)
   }
 
-
-  def getAssociationMergeabilityGraphFile(subdomain: String) = {
-    val file = new File(s"${ASSOCIATIONS_MERGEABILITY_GRAPH_DIR(subdomain)}/associationMergeabilityGraph.json")
+  def getAssociationMergeabilityGraphFile(subdomain: String,graphConfig:GraphConfig) = {
+    val file = new File(s"${ASSOCIATIONS_MERGEABILITY_GRAPH_DIR(subdomain,graphConfig)}/associationMergeabilityGraph.json")
     createParentDirs(file)
   }
 

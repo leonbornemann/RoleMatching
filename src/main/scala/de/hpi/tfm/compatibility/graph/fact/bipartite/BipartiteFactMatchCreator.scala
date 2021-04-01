@@ -1,6 +1,7 @@
 package de.hpi.tfm.compatibility.graph.fact.bipartite
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.{FactMatchCreator, TupleReference}
 import de.hpi.tfm.compatibility.index.BipartiteTupleIndex
 import de.hpi.tfm.util.RuntimeMeasurementUtil.executionTimeInSeconds
@@ -8,7 +9,9 @@ import de.hpi.tfm.util.RuntimeMeasurementUtil.executionTimeInSeconds
 import java.time.LocalDate
 
 
-class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]], tuplesRight: IndexedSeq[TupleReference[A]]) extends FactMatchCreator[A] with StrictLogging{
+class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
+                                   tuplesRight: IndexedSeq[TupleReference[A]],
+                                   graphConfig: GraphConfig) extends FactMatchCreator[A] with StrictLogging{
 
   val detailedLogging:Boolean = false
   var totalIndexTime:Double = 0.0
@@ -111,4 +114,5 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]], tu
     }
   }
 
+  override def getGraphConfig: GraphConfig = graphConfig
 }

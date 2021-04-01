@@ -27,7 +27,7 @@ object MergeabilityGraphCreationTest extends App {
   val idRight = AssociationIdentifier("subdomain","right",0,Some(0))
   val left = FieldLineageAsCharacterString.toAssociationTable(IndexedSeq(toFieldLineageAsCharacterString(matchingsToRank.head._1)),idLeft)
   val right = FieldLineageAsCharacterString.toAssociationTable(matchingsToRank.map(t => toFieldLineageAsCharacterString(t._2)),idRight)
-  val mg = new BipartiteFactMatchCreator(left.tupleReferences,right.tupleReferences)
+  val mg = new BipartiteFactMatchCreator(left.tupleReferences,right.tupleReferences,null)
   assert(mg.facts.size==12)
   assert(mg.facts.map(_.tupleReferenceB.rowIndex).toIndexedSeq.sorted == (0 until matchingsToRank.size))
 }

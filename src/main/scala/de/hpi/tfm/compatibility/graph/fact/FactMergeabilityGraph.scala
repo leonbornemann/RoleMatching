@@ -1,6 +1,7 @@
 package de.hpi.tfm.compatibility.graph.fact
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.association.{AssociationGraphEdge, AssociationMergeabilityGraph}
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
@@ -14,7 +15,7 @@ import scalax.collection.edge.WLkUnDiEdge
 import java.io.File
 import scala.io.Source
 
-case class FactMergeabilityGraph(edges: IndexedSeq[FactMergeabilityGraphEdge]) extends JsonWritable[FactMergeabilityGraph]{
+case class FactMergeabilityGraph(edges: IndexedSeq[FactMergeabilityGraphEdge],graphConfig: GraphConfig) extends JsonWritable[FactMergeabilityGraph]{
 
   def transformToOptimizationGraph[A](inputTables: Map[AssociationIdentifier, TemporalDatabaseTableTrait[A]]) = {
     val newVertices = scala.collection.mutable.HashSet[TupleReference[A]]()
@@ -36,7 +37,7 @@ case class FactMergeabilityGraph(edges: IndexedSeq[FactMergeabilityGraphEdge]) e
 
   //discard evidence to save memory
   def withoutEvidenceSets = FactMergeabilityGraph(edges
-    .map(e => FactMergeabilityGraphEdge(e.tupleReferenceA,e.tupleReferenceB,e.evidence,None)))
+    .map(e => FactMergeabilityGraphEdge(e.tupleReferenceA,e.tupleReferenceB,e.evidence,None)),graphConfig)
 
   def transformToTableGraph = {
     val tableGraphEdges = edges
@@ -61,20 +62,20 @@ case class FactMergeabilityGraph(edges: IndexedSeq[FactMergeabilityGraphEdge]) e
         val summedEvidence = v.map(_._1).sum
         AssociationGraphEdge(keyList(0),keyList(1),summedEvidence,evidenceMultiSet)
       }}
-    AssociationMergeabilityGraph(tableGraphEdges)
+    AssociationMergeabilityGraph(tableGraphEdges,graphConfig)
   }
 
 
   def idSet:Set[AssociationIdentifier] = edges.flatMap(e => Set[AssociationIdentifier](e.tupleReferenceA.associationID,e.tupleReferenceB.associationID)).toSet
 
   def writeToStandardFile() = {
-    toJsonFile(FactMergeabilityGraph.getFieldLineageMergeabilityGraphFile(idSet))
+    toJsonFile(FactMergeabilityGraph.getFieldLineageMergeabilityGraphFile(idSet,graphConfig))
   }
 
 }
 object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with StrictLogging{
 
-  def loadComponent(componentFile: File,subdomain:String) = {
+  def loadComponent(componentFile: File,subdomain:String,graphConfig: GraphConfig) = {
     val inputTables = Source.fromFile(componentFile)
       .getLines()
       .toIndexedSeq
@@ -83,7 +84,7 @@ object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with St
         val table = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)
         (id,table)
       }).toMap
-    val fieldLineageMergeabilityGraph = FactMergeabilityGraph.loadSubGraph(inputTables.keySet,subdomain)
+    val fieldLineageMergeabilityGraph = FactMergeabilityGraph.loadSubGraph(inputTables.keySet,subdomain,graphConfig)
     fieldLineageMergeabilityGraph
   }
 
@@ -97,20 +98,20 @@ object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with St
     tokensFinal.map(AssociationIdentifier.fromCompositeID(_)).toSet
   }
 
-  def loadSubGraph(inputTableIDs: Set[AssociationIdentifier], subdomain:String, discardEvidenceSet:Boolean = true) = {
-    val files = getFieldLineageMergeabilityFiles(subdomain)
+  def loadSubGraph(inputTableIDs: Set[AssociationIdentifier], subdomain:String,graphConfig: GraphConfig, discardEvidenceSet:Boolean = true) = {
+    val files = getFieldLineageMergeabilityFiles(subdomain,graphConfig)
     val subGraphEdges = files
       .filter(f => {
         val idsInFile = idsFromFilename(f)
         idsInFile.forall(inputTableIDs.contains(_))
       })
       .flatMap(f => fromJsonFile(f.getAbsolutePath).withoutEvidenceSets.edges)
-    FactMergeabilityGraph(subGraphEdges)
+    FactMergeabilityGraph(subGraphEdges,graphConfig)
   }
 
-  def readFieldLineageMergeabilityGraphAndAggregateToTableGraph(subdomain:String, fileCountLimit:Int = Integer.MAX_VALUE) = {
+  def readFieldLineageMergeabilityGraphAndAggregateToTableGraph(subdomain:String,graphConfig: GraphConfig, fileCountLimit:Int = Integer.MAX_VALUE) = {
     var count = 0
-    val allEdges = getFieldLineageMergeabilityFiles(subdomain)
+    val allEdges = getFieldLineageMergeabilityFiles(subdomain,graphConfig)
       .take(fileCountLimit)
       .toIndexedSeq
       .flatMap(f => {
@@ -120,11 +121,11 @@ object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with St
           logger.debug(s"Read $count files")
         tg.edges
       })
-    AssociationMergeabilityGraph(allEdges)
+    AssociationMergeabilityGraph(allEdges,graphConfig)
   }
 
-  def readAllBipartiteGraphs(subdomain:String) = {
-    val allEdges = getFieldLineageMergeabilityFiles(subdomain)
+  def readAllBipartiteGraphs(subdomain:String,graphConfig: GraphConfig) = {
+    val allEdges = getFieldLineageMergeabilityFiles(subdomain,graphConfig:GraphConfig)
       .toIndexedSeq
       .flatMap(f => fromJsonFile(f.getAbsolutePath).edges)
     //consistency check:
@@ -135,24 +136,24 @@ object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with St
         }
         assert(g._2.size==1)
       })
-    FactMergeabilityGraph(allEdges)
+    FactMergeabilityGraph(allEdges,graphConfig)
   }
 
-  def readFromStandardFile(ids:Set[AssociationIdentifier]) = {
-    fromJsonFile(getFieldLineageMergeabilityGraphFile(ids).getAbsolutePath)
+  def readFromStandardFile(ids:Set[AssociationIdentifier],graphConfig: GraphConfig) = {
+    fromJsonFile(getFieldLineageMergeabilityGraphFile(ids,graphConfig).getAbsolutePath)
   }
 
-  def getFieldLineageMergeabilityFiles(subdomain:String) = {
-    new File(FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR(subdomain)).listFiles()
+  def getFieldLineageMergeabilityFiles(subdomain:String,graphConfig: GraphConfig) = {
+    new File(FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR(subdomain,graphConfig)).listFiles()
   }
 
-  def getFieldLineageMergeabilityGraphFile(ids: Set[AssociationIdentifier]): File = {
+  def getFieldLineageMergeabilityGraphFile(ids: Set[AssociationIdentifier],graphConfig: GraphConfig): File = {
     val idString = ids.toIndexedSeq.map(_.compositeID).sorted.mkString(";")
     val subdomain = ids.map(_.subdomain).toSet
     if(subdomain.size!=1)
       println()
     assert(subdomain.size==1)
-    createParentDirs(new File(FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR(subdomain.head) + s"/" + idString + ".json"))
+    createParentDirs(new File(FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR(subdomain.head,graphConfig) + s"/" + idString + ".json"))
   }
 
 }

@@ -1,13 +1,14 @@
 package de.hpi.tfm.fact_merging.optimization
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import scalax.collection.Graph
 import scalax.collection.edge.WLkUnDiEdge
 
 import java.io.{File, PrintWriter}
 
-class GreedyEdgeWeightOptimizer(subdomain: String, connectedComponentListFile: File) extends ConnectedComponentMergeOptimizer(subdomain,connectedComponentListFile) with StrictLogging{
+class GreedyEdgeWeightOptimizer(subdomain: String, connectedComponentListFile: File,graphConfig: GraphConfig) extends ConnectedComponentMergeOptimizer(subdomain,connectedComponentListFile,graphConfig) with StrictLogging{
 
   var chosenmerges = scala.collection.mutable.HashSet[TupleMerge]()
 

@@ -1,15 +1,16 @@
 package de.hpi.tfm.compatibility.graph.association.connected_component
 
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.association.AssociationMergeabilityGraph
 import de.hpi.tfm.io.DBSynthesis_IOService
 
 import java.io.{File, PrintWriter}
 import scala.reflect.io.Directory
 
-class AssociationConnectedComponentCreator(subdomain: String) {
+class AssociationConnectedComponentCreator(subdomain: String,graphConfig: GraphConfig) {
 
   def create() = {
-    val graphRead = AssociationMergeabilityGraph.readFromStandardFile(subdomain)
+    val graphRead = AssociationMergeabilityGraph.readFromStandardFile(subdomain,graphConfig)
     //delete old connected component files:
     new Directory(new File(DBSynthesis_IOService.CONNECTED_COMPONENT_DIR(subdomain))).deleteRecursively()
     var connectedComponentCounter = 0

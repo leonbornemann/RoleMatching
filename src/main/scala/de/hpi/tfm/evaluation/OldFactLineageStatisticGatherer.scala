@@ -1,6 +1,7 @@
 package de.hpi.tfm.evaluation
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraph, TupleReference}
 import de.hpi.tfm.data.tfmp_input.association.{AssociationIdentifier, AssociationSchema}
 import de.hpi.tfm.data.tfmp_input.factLookup.FactLookupTable
@@ -8,7 +9,7 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, SurrogateBasedSy
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
-class OldFactLineageStatisticGatherer(subdomain:String) extends StrictLogging{
+class OldFactLineageStatisticGatherer(subdomain:String,graphConfig: GraphConfig) extends StrictLogging{
 
   val connectedComponentFiles = FactMergeabilityGraph.getAllConnectedComponentFiles(subdomain)
   val associations = AssociationSchema.loadAllAssociationsInSubdomain(subdomain)
@@ -53,7 +54,7 @@ class OldFactLineageStatisticGatherer(subdomain:String) extends StrictLogging{
     connectedComponentFiles.foreach(f => {
       fileCount +=1
       logger.debug(s"Processing ${f} ($fileCount / $totalfileCount)")
-      val g = FactMergeabilityGraph.loadComponent(f,subdomain)
+      val g = FactMergeabilityGraph.loadComponent(f,subdomain,graphConfig)
       val totalEdgeCount = g.edges.size
       var processedEdges = 0
       g.edges.foreach(e => {

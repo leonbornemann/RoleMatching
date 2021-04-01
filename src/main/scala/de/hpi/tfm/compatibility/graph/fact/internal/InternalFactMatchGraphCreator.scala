@@ -1,10 +1,11 @@
 package de.hpi.tfm.compatibility.graph.fact.internal
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.{FactMatchCreator, TupleReference}
 import de.hpi.tfm.compatibility.index.TupleSetIndex
 
-class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]]) extends FactMatchCreator[A] with StrictLogging{
+class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],graphConfig:GraphConfig) extends FactMatchCreator[A] with StrictLogging{
 
   init()
 
@@ -51,7 +52,7 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]]) ex
     if(gaussSum(n) > 50) true else false
   }
 
-
+  override def getGraphConfig: GraphConfig = graphConfig
 }
 object InternalFactMatchGraphCreator{
 

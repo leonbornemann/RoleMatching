@@ -33,7 +33,7 @@ object DBSynthesis_IOService extends StrictLogging{
   //mergeability graphs:
   def ASSOCIATIONS_MERGEABILITY_GRAPH_DIR(subdomain:String,graphConfig:GraphConfig) = OPTIMIZATION_INPUT_DIR(subdomain) + s"/${graphConfig.toFileNameString}/associationMergeabilityGraphs/"
   def ASSOCIATIONS_MERGEABILITY_SINGLE_EDGE_DIR(subdomain:String,graphConfig:GraphConfig) = ASSOCIATIONS_MERGEABILITY_GRAPH_DIR(subdomain,graphConfig) + s"/singleEdgeFiles/"
-  def FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR(subdomain:String,graphConfig:GraphConfig) = OPTIMIZATION_INPUT_DIR(subdomain) + s"/fieldLineageMergeabilityGraph/${graphConfig.toFileNameString}"
+  def FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR(subdomain:String,graphConfig:GraphConfig) = OPTIMIZATION_INPUT_DIR(subdomain) + s"/fieldLineageMergeabilityGraph/${graphConfig.toFileNameString}/"
   def COMPATIBILITY_GRAPH_DIR(subdomain:String) = OPTIMIZATION_INPUT_DIR(subdomain) + "/compatibilityGraphs/"
   def CONNECTED_COMPONENT_DIR(subdomain:String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + s"/connectedComponents/")).getAbsolutePath
   def CONNECTED_COMPONENT_FILE(subdomain:String,filecounter:Int) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + s"/connectedComponents/$filecounter.txt")).getAbsolutePath

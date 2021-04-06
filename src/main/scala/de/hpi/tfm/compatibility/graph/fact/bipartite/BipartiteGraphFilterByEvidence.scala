@@ -27,6 +27,11 @@ object BipartiteGraphFilterByEvidence extends App with StrictLogging {
   logger.debug(s"Found ${allGraphFiles.size} graph files")
   (startFileIndex until allGraphFiles.size).foreach(i => {
     val f = allGraphFiles(i)
+    if(!f.exists()){
+      println(f.getAbsolutePath)
+      println("does not exist")
+    }
+    assert(f.exists())
     val curSubGraph = FactMergeabilityGraph.fromJsonFile(f.getAbsolutePath)
     val newEdges = curSubGraph.edges.filter(e => e.evidence >= newMinEvidence)
     if(newEdges.size>0)

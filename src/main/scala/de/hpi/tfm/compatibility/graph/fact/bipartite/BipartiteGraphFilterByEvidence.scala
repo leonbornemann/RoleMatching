@@ -18,13 +18,16 @@ object BipartiteGraphFilterByEvidence extends App with StrictLogging {
   val timeRangeEnd = LocalDate.parse(args(3))
   val oldMinEvidence = 0
   val newMinEvidence = args(4).toInt
+  val startFileIndex = args(5).toInt //in order to allow restart of failed programs!
   val graphConfig = GraphConfig(oldMinEvidence,timeRangeStart,timeRangeEnd)
   logger.debug("Starting to list graph files")
   val allGraphFiles = FactMergeabilityGraph.getFieldLineageMergeabilityFiles(subdomain,graphConfig)
+    .toIndexedSeq
   val newGraphConfig = GraphConfig(newMinEvidence,timeRangeStart,timeRangeEnd)
   logger.debug(s"Found ${allGraphFiles.size} graph files")
   var processedFiles = 0
-  allGraphFiles.foreach(f => {
+  (startFileIndex until allGraphFiles.size).foreach(i => {
+    val f = allGraphFiles(i)
     val curSubGraph = FactMergeabilityGraph.fromJsonFile(f.getAbsolutePath)
     val newEdges = curSubGraph.edges.filter(e => e.evidence >= newMinEvidence)
     if(newEdges.size>0)
@@ -33,4 +36,5 @@ object BipartiteGraphFilterByEvidence extends App with StrictLogging {
     if(processedFiles%100==0)
       logger.debug(s"Finished $processedFiles (${100* processedFiles / allGraphFiles.size.toDouble}%)")
   })
+
 }

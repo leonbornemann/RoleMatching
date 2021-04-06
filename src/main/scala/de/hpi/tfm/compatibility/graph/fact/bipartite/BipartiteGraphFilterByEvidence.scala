@@ -25,16 +25,14 @@ object BipartiteGraphFilterByEvidence extends App with StrictLogging {
     .toIndexedSeq
   val newGraphConfig = GraphConfig(newMinEvidence,timeRangeStart,timeRangeEnd)
   logger.debug(s"Found ${allGraphFiles.size} graph files")
-  var processedFiles = 0
   (startFileIndex until allGraphFiles.size).foreach(i => {
     val f = allGraphFiles(i)
     val curSubGraph = FactMergeabilityGraph.fromJsonFile(f.getAbsolutePath)
     val newEdges = curSubGraph.edges.filter(e => e.evidence >= newMinEvidence)
     if(newEdges.size>0)
       FactMergeabilityGraph(newEdges,newGraphConfig).writeToStandardFile()
-    processedFiles+=1
-    if(processedFiles%100==0)
-      logger.debug(s"Finished $processedFiles (${100* processedFiles / allGraphFiles.size.toDouble}%)")
+    if(i%100==0)
+      logger.debug(s"Finished $i (${100* i / allGraphFiles.size.toDouble}%)")
   })
 
 }

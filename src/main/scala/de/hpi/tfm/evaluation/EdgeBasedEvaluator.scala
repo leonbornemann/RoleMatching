@@ -42,7 +42,7 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
         vl
       })
     val res = FactLineage.tryMergeAll(toCheck)
-    val interesting = toCheck.exists(_.lineage.lastKey.isAfter(IOService.STANDARD_TIME_FRAME_END))
+    val interesting = toCheck.exists(_.lineage.exists{case (t,v) => t.isAfter(IOService.STANDARD_TIME_FRAME_END) && !toCheck.head.isWildcard(v)})
     (res.isDefined,interesting)
   }
 

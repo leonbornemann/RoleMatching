@@ -14,14 +14,26 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
   def projectToTimeRange(timeRangeStart: LocalDate, timeRangeEnd: LocalDate) = {
     val prevStart = lineage.firstKey
     val afterStart = lineage.filter { case (k, v) => !k.isBefore(timeRangeStart) && !k.isAfter(timeRangeEnd) }
-    if(afterStart.firstKey!=timeRangeStart){
-      val before = lineage.maxBefore(afterStart.firstKey).get
-      assert(before._1.isBefore(timeRangeStart))
-      afterStart.put(timeRangeStart,before._2)
+    if(afterStart.isEmpty){
+      val last = lineage.maxBefore(timeRangeStart).get
+      FactLineage(mutable.TreeMap((timeRangeStart,last._2)))
+    } else{
+      if(afterStart.firstKey!=timeRangeStart){
+        if(!lineage.maxBefore(afterStart.firstKey).isDefined){
+          println("what?")
+          println(this)
+          println(this.lineage)
+          println(timeRangeStart)
+          println(timeRangeEnd)
+        }
+        val before = lineage.maxBefore(afterStart.firstKey).get
+        assert(before._1.isBefore(timeRangeStart))
+        afterStart.put(timeRangeStart,before._2)
+      }
+      assert(afterStart.firstKey==timeRangeStart)
+      assert(prevStart == lineage.firstKey)
+      FactLineage(afterStart)
     }
-    assert(afterStart.firstKey==timeRangeStart)
-    assert(prevStart == lineage.firstKey)
-    FactLineage(afterStart)
   }
 
   def keepOnlyStandardTimeRange = FactLineage(lineage.filter(!_._1.isAfter(IOService.STANDARD_TIME_FRAME_END)))

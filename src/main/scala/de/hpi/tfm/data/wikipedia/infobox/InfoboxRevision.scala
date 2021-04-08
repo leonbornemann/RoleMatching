@@ -16,4 +16,10 @@ case class InfoboxRevision(revisionId:BigInt,
                            validTo:Option[String]=None
 ) extends JsonWritable[InfoboxRevision]
 
-object InfoboxRevision extends JsonReadable[InfoboxRevision]
+object InfoboxRevision extends JsonReadable[InfoboxRevision] {
+  def toChangeCube(objects: collection.Seq[InfoboxRevision]) = {
+    val byKey = objects.groupBy(_.key)
+    //byKey.foreach()
+  }
+
+}

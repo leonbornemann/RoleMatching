@@ -8,7 +8,7 @@ import java.io.File
 object Evaluation_IOService {
 
   def getEdgeEvaluationFile(subdomain: String, trainGraphConfig: GraphConfig, evaluationGraphConfig: GraphConfig) = {
-    createParentDirs(new File(EVALUATION_RESULT_DIR(subdomain,trainGraphConfig) + s"/$evaluationGraphConfig/allEdgesEvaluation.csv"))
+    createParentDirs(new File(EVALUATION_RESULT_DIR(subdomain,trainGraphConfig) + s"/${evaluationGraphConfig.toFileNameString}/allEdgesEvaluation.csv"))
   }
 
 

@@ -24,16 +24,18 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
   pr.println(EdgeEvaluationRow.schema)
 
   def getValidityAndInterestingness(tr1: TupleReference[Any], tr2: TupleReference[Any]): (Boolean,Boolean) = {
-    val toCheck = IndexedSeq(tr1,tr2)
+    val originalAndtoCheck = IndexedSeq(tr1,tr2)
       .map(vertex => {
         val surrogateKey = vertex.table.getRow(vertex.rowIndex).keys.head
         //TODO: we need to look up that surrogate key in the bcnf reference table
-        val vl = getFactLookupTable(vertex.toIDBasedTupleReference.associationID).getCorrespondingValueLineage(surrogateKey)
-        vl.projectToTimeRange(evaluationGraphConfig.timeRangeStart,evaluationGraphConfig.timeRangeEnd)
+        val original = getFactLookupTable(vertex.toIDBasedTupleReference.associationID).getCorrespondingValueLineage(surrogateKey)
+        val projected = original.projectToTimeRange(evaluationGraphConfig.timeRangeStart,evaluationGraphConfig.timeRangeEnd)
+        (original,projected)
       })
+    val toCheck = originalAndtoCheck.map(_._2)
+    val originals = originalAndtoCheck.map(_._1)
     val res = FactLineage.tryMergeAll(toCheck)
-    //TODO: we need to check for an actual change
-    val interesting = toCheck.exists(_.lineage.exists{case (t,v) => t.isAfter(trainGraphConfig.timeRangeEnd) && !toCheck.head.isWildcard(v)})
+    val interesting = originals.exists(_.lineage.exists{case (t,v) => t.isAfter(trainGraphConfig.timeRangeEnd) && !toCheck.head.isWildcard(v)})
     (res.isDefined,interesting)
   }
 

@@ -10,6 +10,11 @@ import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends AbstractTemporalField[Any] with Serializable{
+
+  def projectToTimeRange(timeRangeStart: LocalDate, timeRangeEnd: LocalDate) = {
+    FactLineage(lineage.filter{case (k,v) => !k.isBefore(timeRangeStart) && !k.isAfter(timeRangeEnd)})
+  }
+
   def keepOnlyStandardTimeRange = FactLineage(lineage.filter(!_._1.isAfter(IOService.STANDARD_TIME_FRAME_END)))
 
 

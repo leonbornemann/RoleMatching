@@ -27,8 +27,7 @@ class SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id:String,
 
   def projectToTimeRange(timeRangeStart: LocalDate, timeRangeEnd: LocalDate): SurrogateBasedSynthesizedTemporalDatabaseTableAssociation = {
     val newRows = rows.map(r => {
-      val tsToValue = r.valueLineage.lineage.filter{case (k,v) => !k.isBefore(timeRangeStart) && !k.isAfter(timeRangeEnd)}
-      val newFL = FactLineage(tsToValue)
+      val newFL = r.valueLineage.projectToTimeRange(timeRangeStart,timeRangeEnd)
       buildNewRow(r.keys.head,newFL).asInstanceOf[SurrogateBasedTemporalRow]
     })
     new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id,unionedOriginalTables,key,nonKeyAttribute,foreignKeys,newRows)

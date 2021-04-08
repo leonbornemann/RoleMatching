@@ -5,7 +5,7 @@ import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraph, TupleReference}
 import de.hpi.tfm.data.tfmp_input.association.{AssociationIdentifier, AssociationSchema}
 import de.hpi.tfm.data.tfmp_input.factLookup.FactLookupTable
-import de.hpi.tfm.data.tfmp_input.table.AbstractTemporalField
+import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalDatabaseTableTrait}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, ValueTransition}
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.{DBSynthesis_IOService, Evaluation_IOService, IOService}
@@ -14,21 +14,22 @@ import java.io.PrintWriter
 
 class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evaluationGraphConfig:GraphConfig) extends StrictLogging{
 
-  val connectedComponentFiles = FactMergeabilityGraph.getAllConnectedComponentFiles(subdomain,trainGraphConfig)
+  assert(evaluationGraphConfig.timeRangeStart.isAfter(trainGraphConfig.timeRangeEnd))
+
+  val graphFiles = FactMergeabilityGraph.getFieldLineageMergeabilityFiles(subdomain,trainGraphConfig)
   val associations = AssociationSchema.loadAllAssociationsInSubdomain(subdomain)
     .map(_.id)
-  val byAssociationID = associations
-    .flatMap(id => {
-      val a = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)
-      if(GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(a)._1>0)
-        Seq((id,a))
-      else
-        Seq()
-    })
-    .toMap
-  val factLookupTables = byAssociationID.keySet
-    .map(id => (id,FactLookupTable.readFromStandardFile(id)))
-    .toMap
+//  val byAssociationID = associations
+//    .flatMap(id => {
+//      val a = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)
+//      if(GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(a)._1>0)
+//        Seq((id,a))
+//      else
+//        Seq()
+//    })
+//    .toMap
+  val factLookupTables = scala.collection.mutable.HashMap[AssociationIdentifier, FactLookupTable]()
+  val byAssociationID = scala.collection.mutable.HashMap[AssociationIdentifier,  SurrogateBasedSynthesizedTemporalDatabaseTableAssociation]()
   logger.debug("Finished constructor")
   val pr = new PrintWriter(Evaluation_IOService.getEdgeEvaluationFile(subdomain,trainGraphConfig,evaluationGraphConfig))
   pr.println(EdgeEvaluationRow.schema)
@@ -38,12 +39,16 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
       .map(vertex => {
         val surrogateKey = vertex.table.getRow(vertex.rowIndex).keys.head
         //TODO: we need to look up that surrogate key in the bcnf reference table
-        val vl = factLookupTables(vertex.toIDBasedTupleReference.associationID).getCorrespondingValueLineage(surrogateKey)
-        vl
+        val vl = getFactLookupTable(vertex.toIDBasedTupleReference.associationID).getCorrespondingValueLineage(surrogateKey)
+        vl.projectToTimeRange(evaluationGraphConfig.timeRangeStart,evaluationGraphConfig.timeRangeEnd)
       })
     val res = FactLineage.tryMergeAll(toCheck)
-    val interesting = toCheck.exists(_.lineage.exists{case (t,v) => t.isAfter(IOService.STANDARD_TIME_FRAME_END) && !toCheck.head.isWildcard(v)})
+    val interesting = toCheck.exists(_.lineage.exists{case (t,v) => t.isAfter(trainGraphConfig.timeRangeEnd) && !toCheck.head.isWildcard(v)})
     (res.isDefined,interesting)
+  }
+
+  private def getFactLookupTable(id: AssociationIdentifier) = {
+    factLookupTables.getOrElseUpdate(id,FactLookupTable.readFromStandardFile(id))
   }
 
   def getEqualTransitionCount(tr1: TupleReference[Any], tr2: TupleReference[Any]):(Int,Int) = {
@@ -65,18 +70,22 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
     (numEqual,numUnEqual)
   }
 
+  def getAssociation(associationID: AssociationIdentifier) = {
+    byAssociationID.getOrElseUpdate(associationID,SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(associationID))
+  }
+
   def evaluate() = {
-    val totalfileCount = connectedComponentFiles.size
+    val totalfileCount = graphFiles.size
     var fileCount = 0
-    connectedComponentFiles.foreach(f => {
+    graphFiles.foreach(f => {
       fileCount +=1
       logger.debug(s"Processing ${f} ($fileCount / $totalfileCount)")
-      val g = FactMergeabilityGraph.loadComponent(f,subdomain,trainGraphConfig)
+      val g = FactMergeabilityGraph.fromJsonFile(f.getAbsolutePath)
       val totalEdgeCount = g.edges.size
       var processedEdges = 0
       g.edges.foreach(e => {
-        val tr1 = e.tupleReferenceA.toTupleReference(byAssociationID(e.tupleReferenceA.associationID))
-        val tr2 = e.tupleReferenceB.toTupleReference(byAssociationID(e.tupleReferenceB.associationID))
+        val tr1 = e.tupleReferenceA.toTupleReference(getAssociation(e.tupleReferenceA.associationID))
+        val tr2 = e.tupleReferenceB.toTupleReference(getAssociation(e.tupleReferenceB.associationID))
         val evidenceCount = tr1.getDataTuple.head.getOverlapEvidenceCount(tr2.getDataTuple.head)
         val (isValid,isInteresting) = getValidityAndInterestingness(tr1,tr2)
         val (numEqual,numUnequal) = getEqualTransitionCount(tr1,tr2)
@@ -85,7 +94,7 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
         val edgeEvaluationRow = EdgeEvaluationRow(e.tupleReferenceA,e.tupleReferenceB,isValid,isInteresting,numEqual,numUnequal,evidenceCount,mi,newScore)
         pr.println(edgeEvaluationRow.toCSVRow)
         processedEdges +=1
-        if(processedEdges % 10000==0){
+        if(processedEdges % 100==0){
           logger.debug(s"Processed $processedEdges / $totalEdgeCount (${100*processedEdges / totalEdgeCount.toDouble}%)")
         }
       })

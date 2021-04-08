@@ -54,6 +54,6 @@ object TupleMergeEvaluationResult extends JsonReadable[TupleMergeEvaluationResul
   def loadFromStandardFile(subdomain:String,methodName:String,graphConfig: GraphConfig) = fromJsonFile(getStandardFile(subdomain,methodName,graphConfig).getAbsolutePath)
 
   def getStandardFile(subdomain:String,methodName:String,graphConfig: GraphConfig) = {
-    createParentDirs(new File(Evaluation_IOService.EVALUATION_RESULT_DIR(subdomain,methodName,graphConfig) + "/tupleMergeEvaluationResult.json"))
+    createParentDirs(new File(Evaluation_IOService.EVALUATION_RESULT_DIR_FOR_METHOD(subdomain,methodName,graphConfig) + "/tupleMergeEvaluationResult.json"))
   }
 }

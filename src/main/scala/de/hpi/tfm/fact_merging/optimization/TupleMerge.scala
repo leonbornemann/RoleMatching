@@ -4,7 +4,7 @@ import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.IDBasedTupleReference
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.io.DBSynthesis_IOService.{FIELD_MERGE_RESULT_DIR, createParentDirs}
-import de.hpi.tfm.io.Evaluation_IOService.EVALUATION_RESULT_DIR
+import de.hpi.tfm.io.Evaluation_IOService.EVALUATION_RESULT_DIR_FOR_METHOD
 
 import java.io.File
 
@@ -18,8 +18,8 @@ object TupleMerge extends JsonReadable[TupleMerge] {
   def loadCorrectMerges(subdomain:String,methodName: String,graphConfig: GraphConfig) = fromJsonObjectPerLineFile(getCorrectMergeFile(subdomain,methodName,graphConfig).getAbsolutePath)
 
 
-  def getCorrectMergeFile(subdomain:String,methodName: String,graphConfig: GraphConfig) = createParentDirs(new File(EVALUATION_RESULT_DIR(subdomain,methodName,graphConfig) + "/correctMerges.json"))
-  def getIncorrectMergeFile(subdomain:String,methodName: String,graphConfig: GraphConfig) = createParentDirs(new File(EVALUATION_RESULT_DIR(subdomain,methodName,graphConfig) + "/incorrectMerges.json"))
+  def getCorrectMergeFile(subdomain:String,methodName: String,graphConfig: GraphConfig) = createParentDirs(new File(EVALUATION_RESULT_DIR_FOR_METHOD(subdomain,methodName,graphConfig) + "/correctMerges.json"))
+  def getIncorrectMergeFile(subdomain:String,methodName: String,graphConfig: GraphConfig) = createParentDirs(new File(EVALUATION_RESULT_DIR_FOR_METHOD(subdomain,methodName,graphConfig) + "/incorrectMerges.json"))
 
 
   def getStandardObjectPerLineFiles(subdomain:String,methodName:String) = {

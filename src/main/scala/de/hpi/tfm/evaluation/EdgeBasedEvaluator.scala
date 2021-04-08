@@ -17,17 +17,6 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
   assert(evaluationGraphConfig.timeRangeStart.isAfter(trainGraphConfig.timeRangeEnd))
 
   val graphFiles = FactMergeabilityGraph.getFieldLineageMergeabilityFiles(subdomain,trainGraphConfig)
-  val associations = AssociationSchema.loadAllAssociationsInSubdomain(subdomain)
-    .map(_.id)
-//  val byAssociationID = associations
-//    .flatMap(id => {
-//      val a = SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(id)
-//      if(GLOBAL_CONFIG.CHANGE_COUNT_METHOD.countChanges(a)._1>0)
-//        Seq((id,a))
-//      else
-//        Seq()
-//    })
-//    .toMap
   val factLookupTables = scala.collection.mutable.HashMap[AssociationIdentifier, FactLookupTable]()
   val byAssociationID = scala.collection.mutable.HashMap[AssociationIdentifier,  SurrogateBasedSynthesizedTemporalDatabaseTableAssociation]()
   logger.debug("Finished constructor")

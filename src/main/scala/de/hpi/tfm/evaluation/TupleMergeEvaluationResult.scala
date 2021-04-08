@@ -1,11 +1,12 @@
 package de.hpi.tfm.evaluation
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.evaluation.TupleMergeEvaluationResult.getStandardFile
 import de.hpi.tfm.io.DBSynthesis_IOService.createParentDirs
-import de.hpi.tfm.io.{DBSynthesis_IOService, IOService}
+import de.hpi.tfm.io.{DBSynthesis_IOService, Evaluation_IOService, IOService}
 
 import java.io.File
 
@@ -27,8 +28,8 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
   }
 
 
-  def writeToStandardFile(subdomain:String,methodName: String) = {
-    toJsonFile(getStandardFile(subdomain,methodName))
+  def writeToStandardFile(subdomain:String,methodName: String,graphConfig: GraphConfig) = {
+    toJsonFile(getStandardFile(subdomain,methodName,graphConfig))
   }
 
 
@@ -50,9 +51,9 @@ case class TupleMergeEvaluationResult(var correctNoChange: Int=0,
 
 }
 object TupleMergeEvaluationResult extends JsonReadable[TupleMergeEvaluationResult]{
-  def loadFromStandardFile(subdomain:String,methodName:String) = fromJsonFile(getStandardFile(subdomain,methodName).getAbsolutePath)
+  def loadFromStandardFile(subdomain:String,methodName:String,graphConfig: GraphConfig) = fromJsonFile(getStandardFile(subdomain,methodName,graphConfig).getAbsolutePath)
 
-  def getStandardFile(subdomain:String,methodName:String) = {
-    createParentDirs(new File(DBSynthesis_IOService.EVALUATION_RESULT_DIR(subdomain,methodName) + "/tupleMergeEvaluationResult.json"))
+  def getStandardFile(subdomain:String,methodName:String,graphConfig: GraphConfig) = {
+    createParentDirs(new File(Evaluation_IOService.EVALUATION_RESULT_DIR(subdomain,methodName,graphConfig) + "/tupleMergeEvaluationResult.json"))
   }
 }

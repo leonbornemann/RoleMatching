@@ -10,4 +10,5 @@ case class IDBasedTupleReference(associationID: AssociationIdentifier, rowIndex:
     TupleReference(association, rowIndex)
   }
 
+  override def toString: String = associationID.compositeID + "_" + rowIndex
 }

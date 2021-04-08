@@ -8,7 +8,7 @@ import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.TemporalDatabaseTableTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
-import de.hpi.tfm.io.DBSynthesis_IOService.{CONNECTED_COMPONENT_DIR, FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR, createParentDirs}
+import de.hpi.tfm.io.DBSynthesis_IOService.{CONNECTED_ASSOCIATION_COMPONENT_DIR, FIELD_LINEAGE_MERGEABILITY_GRAPH_DIR, createParentDirs}
 import scalax.collection.Graph
 import scalax.collection.edge.WLkUnDiEdge
 
@@ -88,8 +88,8 @@ object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with St
     fieldLineageMergeabilityGraph
   }
 
-  def getAllConnectedComponentFiles(subdomain:String) = {
-    new File(CONNECTED_COMPONENT_DIR(subdomain)).listFiles()
+  def getAllConnectedComponentFiles(subdomain:String,graphConfig: GraphConfig) = {
+    new File(CONNECTED_ASSOCIATION_COMPONENT_DIR(subdomain,graphConfig)).listFiles()
   }
 
   def idsFromFilename(f: File) = {

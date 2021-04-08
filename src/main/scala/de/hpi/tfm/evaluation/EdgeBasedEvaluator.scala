@@ -32,6 +32,7 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
         vl.projectToTimeRange(evaluationGraphConfig.timeRangeStart,evaluationGraphConfig.timeRangeEnd)
       })
     val res = FactLineage.tryMergeAll(toCheck)
+    //TODO: we need to check for an actual change
     val interesting = toCheck.exists(_.lineage.exists{case (t,v) => t.isAfter(trainGraphConfig.timeRangeEnd) && !toCheck.head.isWildcard(v)})
     (res.isDefined,interesting)
   }

@@ -3,7 +3,7 @@ package de.hpi.tfm.data.tfmp_input.table
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.tfm.fact_merging.config.{GLOBAL_CONFIG, UpdateChangeCounter}
-import de.hpi.tfm.fact_merging.metrics.{EntropyComputer, MutualInformationComputer, UltimateChangeScoreComputer}
+import de.hpi.tfm.fact_merging.metrics.{EntropyComputer, MutualInformationComputer, MultipleEventWeightScoreComputer}
 import de.hpi.tfm.io.IOService
 
 import java.time.LocalDate
@@ -12,7 +12,7 @@ import scala.collection.mutable
 trait TemporalFieldTrait[T] {
 
   def newScore(other: TemporalFieldTrait[T]) = {
-    new UltimateChangeScoreComputer(this, other).score()
+    new MultipleEventWeightScoreComputer(this, other).score()
   }
 
 

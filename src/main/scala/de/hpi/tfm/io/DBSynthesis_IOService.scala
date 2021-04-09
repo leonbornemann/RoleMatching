@@ -37,7 +37,7 @@ object DBSynthesis_IOService extends StrictLogging{
   def COMPATIBILITY_GRAPH_DIR(subdomain:String) = OPTIMIZATION_INPUT_DIR(subdomain) + "/compatibilityGraphs/"
   def CONNECTED_ASSOCIATION_COMPONENT_DIR(subdomain:String, graphConfig: GraphConfig) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + s"${graphConfig.toFileNameString}/connectedComponents/")).getAbsolutePath
   def CONNECTED_ASSOCIATION_COMPONENT_FILE(subdomain:String, graphConfig: GraphConfig, filecounter:Int) = createParentDirs(new File(CONNECTED_ASSOCIATION_COMPONENT_DIR(subdomain,graphConfig) + s"/$filecounter.txt")).getAbsolutePath
-  def FIELD_MERGE_RESULT_DIR(subdomain:String,methodName: String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + s"/mergedTuples/$methodName/")).getAbsolutePath
+  def FIELD_MERGE_RESULT_DIR(subdomain:String,methodName: String,targetFunctionName:String) = createParentDirs(new File(OPTIMIZATION_INPUT_DIR(subdomain) + s"/mergedTuples/$methodName/$targetFunctionName/")).getAbsolutePath
 
   //EVALUATION:
   def getAssociationGraphEdgeCandidateFile(subdomain:String,graphConfig:GraphConfig) =

@@ -22,11 +22,11 @@ object TupleMerge extends JsonReadable[TupleMerge] {
   def getIncorrectMergeFile(subdomain:String,methodName: String,graphConfig: GraphConfig) = createParentDirs(new File(EVALUATION_RESULT_DIR_FOR_METHOD(subdomain,methodName,graphConfig) + "/incorrectMerges.json"))
 
 
-  def getStandardObjectPerLineFiles(subdomain:String,methodName:String) = {
-    createParentDirs(new File(FIELD_MERGE_RESULT_DIR(subdomain,methodName))).listFiles()
+  def getStandardObjectPerLineFiles(subdomain:String,methodName:String,targetFunctionName:String) = {
+    createParentDirs(new File(FIELD_MERGE_RESULT_DIR(subdomain,methodName,targetFunctionName))).listFiles()
   }
 
-  def getStandardJsonObjectPerLineFile(subdomain:String,methodName:String,componentFileName: String) = {
-    createParentDirs(new File(FIELD_MERGE_RESULT_DIR(subdomain,methodName) + componentFileName + ".json"))
+  def getStandardJsonObjectPerLineFile(subdomain:String,methodName:String,targetFunctionName:String,componentFileName: String) = {
+    createParentDirs(new File(FIELD_MERGE_RESULT_DIR(subdomain,methodName,targetFunctionName) + componentFileName + ".json"))
   }
 }

@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.data.tfmp_input.table.AbstractTemporalField
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import scalax.collection.Graph
 import scalax.collection.edge.WLkUnDiEdge
 
@@ -42,7 +43,10 @@ class GreedyMaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFil
   def run() = {
     logger.debug(s"Starting Clique Partitioning Optimization for $connectedComponentListFile")
     val traverser = inputGraph.componentTraverser()
-    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(subdomain,methodName,connectedComponentListFile.getName))
+    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(subdomain,
+      methodName,
+      GLOBAL_CONFIG.OPTIMIZATION_TARGET_FUNCTION_NAME,
+      connectedComponentListFile.getName))
     var totalScore = 0.0
     var tupleReductionCount = 0
     val cliqueSizeHistogram = mutable.HashMap[Int,Int]()

@@ -3,7 +3,7 @@ package de.hpi.tfm.fact_merging.metrics
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{CommonPointOfInterestIterator, ValueTransition}
 
-class UltimateChangeScoreComputer[A](a:TemporalFieldTrait[A],b:TemporalFieldTrait[A]) {
+class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A], b:TemporalFieldTrait[A]) {
 
   val WILDCARD_TO_KNOWN_TRANSITION_WEIGHT = -0.05
   val WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT = -0.1

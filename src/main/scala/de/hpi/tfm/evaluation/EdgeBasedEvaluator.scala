@@ -81,8 +81,8 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
         val evidenceCount = tr1.getDataTuple.head.getOverlapEvidenceCount(tr2.getDataTuple.head)
         val (isValid,isInteresting) = getValidityAndInterestingness(tr1,tr2)
         val (numEqual,numUnequal) = getEqualTransitionCount(tr1,tr2)
-        val mi = AbstractTemporalField.MUTUAL_INFORMATION(tr1,tr2)
-        val newScore = GLOBAL_CONFIG.NEW_TARGET_FUNCTION(tr1,tr2)
+        val mi = AbstractTemporalField.mutualInformation(tr1,tr2)
+        val newScore = AbstractTemporalField.multipleEventWeightScore(tr1,tr2)
         val edgeEvaluationRow = EdgeEvaluationRow(e.tupleReferenceA,e.tupleReferenceB,isValid,isInteresting,numEqual,numUnequal,evidenceCount,mi,newScore)
         pr.println(edgeEvaluationRow.toCSVRow)
         processedEdges +=1

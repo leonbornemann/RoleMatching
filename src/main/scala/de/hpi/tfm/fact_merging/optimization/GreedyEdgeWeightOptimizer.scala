@@ -3,6 +3,7 @@ package de.hpi.tfm.fact_merging.optimization
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import scalax.collection.Graph
 import scalax.collection.edge.WLkUnDiEdge
 
@@ -16,7 +17,10 @@ class GreedyEdgeWeightOptimizer(subdomain: String, connectedComponentListFile: F
     logger.debug(s"Starting Clique Partitioning Optimization for $connectedComponentListFile")
     logger.debug(s"Input Graph has ${inputGraph.nodes.size} vertices and ${inputGraph.edges.size} edges and ${inputGraph.componentTraverser().size} connected components")
     val traverser = inputGraph.componentTraverser()
-    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(subdomain,GreedyEdgeWeightOptimizer.methodName,connectedComponentListFile.getName))
+    val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(subdomain,
+      GreedyEdgeWeightOptimizer.methodName,
+      GLOBAL_CONFIG.OPTIMIZATION_TARGET_FUNCTION_NAME,
+      connectedComponentListFile.getName))
     var numNonTrivialComponents = 0
     traverser.foreach(e => {
       val subGraph: Graph[TupleReference[Any], WLkUnDiEdge] = componentToGraph(e)

@@ -98,7 +98,6 @@ case class AssociationMergeabilityGraph(edges: IndexedSeq[AssociationGraphEdge],
     table
   }
 
-
   def filterGraphEdges(p : ((ValueTransition[Any],Int) => Boolean)) = {
     //TODO: recompute summedEvidence here:
     val edgesNew = edges

@@ -39,19 +39,19 @@ case class FactMergeabilityGraph(edges: IndexedSeq[FactMergeabilityGraphEdge],gr
   def withoutEvidenceSets = FactMergeabilityGraph(edges
     .map(e => FactMergeabilityGraphEdge(e.tupleReferenceA,e.tupleReferenceB,e.evidence,None)),graphConfig)
 
-  def transformToTableGraph = {
+  def transformToAssociationGraph = {
     val tableGraphEdges = edges
       .groupMap(e => Set(e.tupleReferenceA.associationID,e.tupleReferenceB.associationID))(e => (e.evidence,e.evidenceSet.get))
       .toIndexedSeq
-      .withFilter{case (k,v) =>{
-        if(!v.forall(t => t._1 == t._2.map(_._2).sum)){
-          println(k)
-          val failed = v.filter(t => t._1 != t._2.map(_._2).sum)
-          failed.foreach(println(_))
-        }
-        assert(v.forall(t => t._1 == t._2.map(_._2).sum))
-        v.map(_._1).sum>0
-      }}
+//      .withFilter{case (k,v) =>{
+//        if(!v.forall(t => t._1 == t._2.map(_._2).sum)){
+//          println(k)
+//          val failed = v.filter(t => t._1 != t._2.map(_._2).sum)
+//          failed.foreach(println(_))
+//        }
+//        assert(v.forall(t => t._1 == t._2.map(_._2).sum))
+//        v.map(_._1).sum>0
+//      }}
       .map{case (k,v) => {
         assert(k.size==2)
         val keyList = k.toIndexedSeq
@@ -74,6 +74,12 @@ case class FactMergeabilityGraph(edges: IndexedSeq[FactMergeabilityGraphEdge],gr
 
 }
 object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with StrictLogging{
+
+  def loadCompleteGraph(subdomain:String,graphConfig: GraphConfig) = {
+    val allEdges = getFieldLineageMergeabilityFiles(subdomain,graphConfig)
+      .flatMap(f => fromJsonFile(f.getAbsolutePath).edges)
+    FactMergeabilityGraph(allEdges,graphConfig)
+  }
 
   def loadComponent(componentFile: File,subdomain:String,graphConfig: GraphConfig) = {
     val inputTables = Source.fromFile(componentFile)
@@ -115,7 +121,7 @@ object FactMergeabilityGraph extends JsonReadable[FactMergeabilityGraph] with St
       .take(fileCountLimit)
       .toIndexedSeq
       .flatMap(f => {
-        val tg = fromJsonFile(f.getAbsolutePath).transformToTableGraph
+        val tg = fromJsonFile(f.getAbsolutePath).transformToAssociationGraph
         count +=1
         if(count%100==0)
           logger.debug(s"Read $count files")

@@ -44,7 +44,7 @@ object BipartiteFactMatchGraphCreationMain extends App with StrictLogging {
     logger.debug(s"Found ${matchGraph.edges.size} edges ")
     if (matchGraph.edges.size > 0) {
       matchGraph.writeToStandardFile()
-      val tg = matchGraph.transformToTableGraph
+      val tg = matchGraph.transformToAssociationGraph
       assert(tg.edges.size <= 1)
       if (tg.edges.size > 0) {
         val filename = tg.edges.head.v1.compositeID + ";" + tg.edges.head.v2.compositeID + ".json"

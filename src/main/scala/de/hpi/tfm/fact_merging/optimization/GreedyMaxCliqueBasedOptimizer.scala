@@ -13,8 +13,6 @@ import scala.collection.mutable
 
 class GreedyMaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFile: File,graphConfig:GraphConfig) extends ConnectedComponentMergeOptimizer(subdomain,connectedComponentListFile,graphConfig) with StrictLogging {
 
-  val methodName = "GreedyMaxCliqueBasedOptimizer"
-
   def runGreedy(vertexSet:Set[TupleReference[Any]], cliquesWithScore: Map[Set[TupleReference[Any]], Double]) = {
     val coveredVertices = mutable.HashSet[TupleReference[Any]]()
     val chosenMerges = mutable.HashSet[TupleMerge]()
@@ -44,7 +42,7 @@ class GreedyMaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFil
     logger.debug(s"Starting Clique Partitioning Optimization for $connectedComponentListFile")
     val traverser = inputGraph.componentTraverser()
     val pr = new PrintWriter(TupleMerge.getStandardJsonObjectPerLineFile(subdomain,
-      methodName,
+      name,
       GLOBAL_CONFIG.OPTIMIZATION_TARGET_FUNCTION_NAME,
       connectedComponentListFile.getName))
     var totalScore = 0.0
@@ -84,4 +82,11 @@ class GreedyMaxCliqueBasedOptimizer(subdomain: String, connectedComponentListFil
       .sortBy(_._1)
       .foreach(t => println(s"${t._1},${t._2}"))
   }
+
+  def name = GreedyMaxCliqueBasedOptimizer.methodName
+}
+object GreedyMaxCliqueBasedOptimizer{
+
+  val methodName = "GreedyMaxCliqueBasedOptimizer"
+
 }

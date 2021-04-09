@@ -3,7 +3,7 @@ package de.hpi.tfm.compatibility.graph.fact
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.association.connected_component.AssociationConnectedComponentCreator
 import de.hpi.tfm.compatibility.graph.association.connected_component.ConnectedComponentCreationMain.{graphConfig, subdomain}
-import de.hpi.tfm.fact_merging.optimization.SimpleGreedyEdgeWeightOptimizationMain.args
+import de.hpi.tfm.fact_merging.optimization.MergeOptimizationMain.args
 import de.hpi.tfm.io.IOService
 
 import java.time.LocalDate

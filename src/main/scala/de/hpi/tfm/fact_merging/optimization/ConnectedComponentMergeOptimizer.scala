@@ -10,7 +10,7 @@ import scalax.collection.edge.WLkUnDiEdge
 import java.io.File
 import scala.io.Source
 
-class ConnectedComponentMergeOptimizer(subdomain: String, connectedComponentListFile: File,graphConfig: GraphConfig) {
+abstract class ConnectedComponentMergeOptimizer(subdomain: String, connectedComponentListFile: File,graphConfig: GraphConfig) {
 
   val inputTables = Source.fromFile(connectedComponentListFile)
     .getLines()
@@ -35,6 +35,10 @@ class ConnectedComponentMergeOptimizer(subdomain: String, connectedComponentList
     val subGraph = Graph.from(vertices, edges)
     subGraph
   }
+
+  def run():Unit
+
+  def name:String
 
 }
 

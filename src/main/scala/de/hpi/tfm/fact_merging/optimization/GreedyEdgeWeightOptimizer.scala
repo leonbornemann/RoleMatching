@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
+import de.hpi.tfm.fact_merging.optimization.GreedyEdgeWeightOptimizer.methodName
 import scalax.collection.Graph
 import scalax.collection.edge.WLkUnDiEdge
 
@@ -39,6 +40,8 @@ class GreedyEdgeWeightOptimizer(subdomain: String, connectedComponentListFile: F
     pr.close()
     logger.debug(s"Found $numNonTrivialComponents nonTrivialComponents")
   }
+
+  def name = methodName
 }
 
 object GreedyEdgeWeightOptimizer{

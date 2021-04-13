@@ -31,6 +31,10 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
       val t1 = ValueTransition(vl1.valueAt(standardtimerange(i-1)),vl1.valueAt(standardtimerange(i)))
       val t2 = ValueTransition(vl2.valueAt(standardtimerange(i-1)),vl2.valueAt(standardtimerange(i)))
       if(!FactLineage.isWildcard(t1.prev) && !FactLineage.isWildcard(t1.after) && !FactLineage.isWildcard(t2.prev) && !FactLineage.isWildcard(t2.after)){
+        if(t1!=t2){
+          println(t1)
+          println(t2)
+        }
         assert(t1 == t2)
         numEqual+=1
       } else{

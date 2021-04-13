@@ -39,18 +39,6 @@ case class CliqueBasedEvaluator(subdomain: String, optimizationMethodName: Strin
         val (remainsValid,hasChangeAfterTrainPeriod) = getValidityAndInterestingness(tupleReferenceVertices)
         val numVerticesWithChangeAfterTrainPeriod = getNumVerticesWithChangeAfterTrainPeriod(tupleReferenceVertices)
         val (numValidEdges,numEdgesInClique) = getNumValidEdges(tupleReferenceVertices)
-        //optimizationMethodName:String,
-        //                               edgeScoreName:String,
-        //                               componentFile:String,
-        //                               mergedLineages:IndexedSeq[IDBasedTupleReference],
-        //                               cliqueSize:Int,
-        //                               numEdgesInClique:Int, //for convenience
-        //                               remainsValid:Boolean,
-        //                               numValidEdges:Int,
-        //                               numInvalidEdges:Int,
-        //                               hasChangeAfterTrainPeriod:Boolean,
-        //                               totalScore:Double,
-        //                               scoreAggregateMethodName:String
         val row = CliqueEvaluationRow(optimizationMethodName,targetFunctionName,f.getAbsolutePath,vertices,vertices.size,numEdgesInClique,remainsValid,numValidEdges,numVerticesWithChangeAfterTrainPeriod,tm.score,"All Pair Average")
         pr.println(row.toCSVRowString())
       })

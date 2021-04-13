@@ -14,7 +14,19 @@ case class CliqueEvaluationRow(optimizationMethodName:String,
                                numVerticesWithChangeAfterTrainPeriod:Int,
                                totalScore:Double,
                                scoreAggregateMethodName:String){
-  def toCSVRowString():String = ???
+  def toCSVRowString():String = Seq(
+    optimizationMethodName,
+    edgeScoreName,
+    componentFile,
+    mergedLineages.mkString(";"),
+    cliqueSize,
+    numEdgesInClique, //for convenience
+    remainsValid,
+    numValidEdges,
+    numVerticesWithChangeAfterTrainPeriod,
+    totalScore,
+    scoreAggregateMethodName
+  ).mkString(",")
 
 }
 object CliqueEvaluationRow{

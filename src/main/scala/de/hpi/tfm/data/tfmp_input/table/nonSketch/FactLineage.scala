@@ -100,7 +100,7 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
 }
 object FactLineage{
 
-  def WILDCARD_VALUES:Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_ROW,ReservedChangeValues.NOT_EXISTANT_CELL,ReservedChangeValues.NOT_KNOWN_DUE_TO_TIMESTAMP_RESOLUTION)
+  def WILDCARD_VALUES:Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_DATASET,ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_ROW,ReservedChangeValues.NOT_EXISTANT_CELL,ReservedChangeValues.NOT_KNOWN_DUE_TO_TIMESTAMP_RESOLUTION)
 
   def tryMergeAll(toMerge: IndexedSeq[FactLineage]) = {
     var res = Option(toMerge.head)

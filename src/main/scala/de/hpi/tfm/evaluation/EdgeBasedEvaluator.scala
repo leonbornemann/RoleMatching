@@ -34,6 +34,9 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
         if(t1!=t2){
           println(t1)
           println(t2)
+          val mergeRes = vl1.tryMergeWithConsistent(vl2)
+          println(mergeRes)
+          println(FactLineage.isWildcard())
         }
         assert(t1 == t2)
         numEqual+=1

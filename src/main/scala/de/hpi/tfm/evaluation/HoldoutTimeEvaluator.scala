@@ -38,17 +38,36 @@ abstract class HoldoutTimeEvaluator(trainGraphConfig:GraphConfig,evaluationGraph
     (res.isDefined,interesting)
   }
 
+  //Real change Definition: Either Wildcard to nonWildcard or non-wildcard to different non-wildcard! TODO: decide whcih variant is best suited
+//  def getPointInTimeOfRealChangeAfterTrainPeriod(lineage: FactLineage) = {
+//    val prev = if(lineage.lineage.contains(trainGraphConfig.timeRangeEnd)) lineage.lineage(trainGraphConfig.timeRangeEnd) else lineage.lineage.maxBefore(trainGraphConfig.timeRangeEnd).get
+//    val it = lineage.lineage.iteratorFrom(trainGraphConfig.timeRangeEnd)
+//    var pointInTime:Option[LocalDate] = None
+//    while(it.hasNext && !pointInTime.isDefined){
+//      val (curTIme,curValue) = it.next()
+//      if(lineage.isWildcard(prev) && !lineage.isWildcard(curValue) || !lineage.isWildcard(prev) && !lineage.isWildcard(curValue) && curValue!=prev){
+//        pointInTime = Some(curTIme)
+//      }
+//    }
+//    pointInTime
+//  }
+
+  //Real change Definition: Non-Wildcard to new Non-Wildcard
   def getPointInTimeOfRealChangeAfterTrainPeriod(lineage: FactLineage) = {
-    val prev = if(lineage.lineage.contains(trainGraphConfig.timeRangeEnd)) lineage.lineage(trainGraphConfig.timeRangeEnd) else lineage.lineage.maxBefore(trainGraphConfig.timeRangeEnd).get
-    val it = lineage.lineage.iteratorFrom(trainGraphConfig.timeRangeEnd)
-    var pointInTime:Option[LocalDate] = None
-    while(it.hasNext && !pointInTime.isDefined){
-      val (curTIme,curValue) = it.next()
-      if(lineage.isWildcard(prev) && !lineage.isWildcard(curValue) || !lineage.isWildcard(prev) && !lineage.isWildcard(curValue) && curValue!=prev){
-        pointInTime = Some(curTIme)
+    val prevNonWcValue = lineage.lineage.filter(t => !lineage.isWildcard(t._2) && !t._1.isAfter(trainGraphConfig.timeRangeEnd)).lastOption
+    if(prevNonWcValue.isEmpty)
+      None
+    else {
+      val it = lineage.lineage.iteratorFrom(trainGraphConfig.timeRangeEnd)
+      var pointInTime:Option[LocalDate] = None
+      while(it.hasNext && !pointInTime.isDefined){
+        val (curTIme,curValue) = it.next()
+        if(!lineage.isWildcard(curValue) && curValue!=prevNonWcValue.get._2){
+          pointInTime = Some(curTIme)
+        }
       }
+      pointInTime
     }
-    pointInTime
   }
 
   def referencesToOriginal(references:IndexedSeq[TupleReference[Any]]) = {

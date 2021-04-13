@@ -75,3 +75,6 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A], b:TemporalFie
   }
 
 }
+object MultipleEventWeightScoreComputer {
+  def scoreOfSingletonVertex = 0.0
+}

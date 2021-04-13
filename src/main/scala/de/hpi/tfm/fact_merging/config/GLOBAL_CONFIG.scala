@@ -24,6 +24,7 @@ object GLOBAL_CONFIG {
 
   var OPTIMIZATION_TARGET_FUNCTION_NAME:String = ""
 
+  def OPTIMIZATION_TARGET_FUNCTION[A](tr1: TupleReference[A]) = nameToFunction(OPTIMIZATION_TARGET_FUNCTION_NAME).compute(tr1)
   //def OPTIMIZATION_TARGET_FUNCTION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = AbstractTemporalField.MUTUAL_INFORMATION(tr1,tr2)
   def OPTIMIZATION_TARGET_FUNCTION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = nameToFunction(OPTIMIZATION_TARGET_FUNCTION_NAME).compute(tr1,tr2)
 

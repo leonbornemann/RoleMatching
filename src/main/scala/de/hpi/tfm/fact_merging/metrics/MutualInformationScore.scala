@@ -6,6 +6,8 @@ class MutualInformationScore extends EdgeScore {
 
   override def compute[A](tr1: TupleReference[A], tr2: TupleReference[A]): Double =
     new MutualInformationComputer[A](tr1.getDataTuple.head,tr2.getDataTuple.head).mutualInfo()
+
+  override def compute[A](tr1: TupleReference[A]): Double = 0.0
 }
 object MutualInformationScore{
   val name = "MutualInformationScore"

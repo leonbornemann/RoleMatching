@@ -1,6 +1,7 @@
 package de.hpi.tfm.fact_merging.optimization
 
 import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraphEdge, TupleReference}
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import scalax.collection.Graph
 import scalax.collection.edge.WLkUnDiEdge
 
@@ -15,7 +16,7 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[TupleReference[A
     .toMap
 
   val merges = scala.collection.mutable.HashMap() ++ subGraph.nodes
-    .map(n => (n.value.toIDBasedTupleReference,TupleMerge(Set(n.value.toIDBasedTupleReference),0.0)))
+    .map(n => (n.value.toIDBasedTupleReference,TupleMerge(Set(n.value.toIDBasedTupleReference),GLOBAL_CONFIG.OPTIMIZATION_TARGET_FUNCTION(n.value))))
     .toMap
 
   def executeMergeIfPossible(curEdge: FactMergeabilityGraphEdge) = {

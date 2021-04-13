@@ -6,5 +6,6 @@ trait EdgeScore {
 
   def name:String
   def compute[A](tr1: TupleReference[A], tr2: TupleReference[A]) :Double
+  def compute[A](tr1: TupleReference[A]): Double
 
 }

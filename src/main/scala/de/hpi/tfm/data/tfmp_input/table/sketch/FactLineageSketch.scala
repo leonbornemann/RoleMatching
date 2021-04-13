@@ -101,7 +101,7 @@ object FactLineageSketch {
   }
 
   def HASH_FUNCTION_STANDARD(v:Any):Int = {
-    if(v==ReservedChangeValues.NOT_EXISTANT_COL || v == ReservedChangeValues.NOT_EXISTANT_DATASET || v == ReservedChangeValues.NOT_EXISTANT_ROW)
+    if(FactLineage.isWildcard(v))
       WILDCARD
     else {
       var hash = if (v == null) "null".hashCode else v.hashCode()

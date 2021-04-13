@@ -12,36 +12,14 @@ import de.hpi.tfm.io.{DBSynthesis_IOService, Evaluation_IOService, IOService}
 
 import java.io.PrintWriter
 
-class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evaluationGraphConfig:GraphConfig) extends StrictLogging{
+class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evaluationGraphConfig:GraphConfig) extends HoldoutTimeEvaluator(trainGraphConfig,evaluationGraphConfig) with StrictLogging{
 
   assert(evaluationGraphConfig.timeRangeStart.isAfter(trainGraphConfig.timeRangeEnd))
 
   val graphFiles = FactMergeabilityGraph.getFieldLineageMergeabilityFiles(subdomain,trainGraphConfig)
-  val factLookupTables = scala.collection.mutable.HashMap[AssociationIdentifier, FactLookupTable]()
-  val byAssociationID = scala.collection.mutable.HashMap[AssociationIdentifier,  SurrogateBasedSynthesizedTemporalDatabaseTableAssociation]()
   logger.debug("Finished constructor")
   val pr = new PrintWriter(Evaluation_IOService.getEdgeEvaluationFile(subdomain,trainGraphConfig,evaluationGraphConfig))
   pr.println(EdgeEvaluationRow.schema)
-
-  def getValidityAndInterestingness(tr1: TupleReference[Any], tr2: TupleReference[Any]): (Boolean,Boolean) = {
-    val originalAndtoCheck = IndexedSeq(tr1,tr2)
-      .map(vertex => {
-        val surrogateKey = vertex.table.getRow(vertex.rowIndex).keys.head
-        //TODO: we need to look up that surrogate key in the bcnf reference table
-        val original = getFactLookupTable(vertex.toIDBasedTupleReference.associationID).getCorrespondingValueLineage(surrogateKey)
-        val projected = original.projectToTimeRange(evaluationGraphConfig.timeRangeStart,evaluationGraphConfig.timeRangeEnd)
-        (original,projected)
-      })
-    val toCheck = originalAndtoCheck.map(_._2)
-    val originals = originalAndtoCheck.map(_._1)
-    val res = FactLineage.tryMergeAll(toCheck)
-    val interesting = originals.exists(_.lineage.exists{case (t,v) => t.isAfter(trainGraphConfig.timeRangeEnd) && !toCheck.head.isWildcard(v)})
-    (res.isDefined,interesting)
-  }
-
-  private def getFactLookupTable(id: AssociationIdentifier) = {
-    factLookupTables.getOrElseUpdate(id,FactLookupTable.readFromStandardFile(id))
-  }
 
   def getEqualTransitionCount(tr1: TupleReference[Any], tr2: TupleReference[Any]):(Int,Int) = {
     val vl1 = tr1.getDataTuple.head
@@ -62,10 +40,6 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
     (numEqual,numUnEqual)
   }
 
-  def getAssociation(associationID: AssociationIdentifier) = {
-    byAssociationID.getOrElseUpdate(associationID,SurrogateBasedSynthesizedTemporalDatabaseTableAssociation.loadFromStandardOptimizationInputFile(associationID))
-  }
-
   def evaluate() = {
     val totalfileCount = graphFiles.size
     var fileCount = 0
@@ -79,11 +53,13 @@ class EdgeBasedEvaluator(subdomain:String, trainGraphConfig: GraphConfig, evalua
         val tr1 = e.tupleReferenceA.toTupleReference(getAssociation(e.tupleReferenceA.associationID))
         val tr2 = e.tupleReferenceB.toTupleReference(getAssociation(e.tupleReferenceB.associationID))
         val evidenceCount = tr1.getDataTuple.head.getOverlapEvidenceCount(tr2.getDataTuple.head)
-        val (isValid,isInteresting) = getValidityAndInterestingness(tr1,tr2)
+        val (isValid,hasCHangeAfterTrainPeriod) = getValidityAndInterestingness(IndexedSeq(tr1,tr2))
+        val dateOfChange = getEarliestPointInTimeOfRealChangeAfterTrainPeriod(IndexedSeq(tr1,tr2))
         val (numEqual,numUnequal) = getEqualTransitionCount(tr1,tr2)
         val mi = AbstractTemporalField.mutualInformation(tr1,tr2)
         val newScore = AbstractTemporalField.multipleEventWeightScore(tr1,tr2)
-        val edgeEvaluationRow = EdgeEvaluationRow(e.tupleReferenceA,e.tupleReferenceB,isValid,isInteresting,numEqual,numUnequal,evidenceCount,mi,newScore)
+        val numDaysUntilRealChangeAfterTrainPeriod = if(dateOfChange.isDefined) dateOfChange.get.toEpochDay - IOService.STANDARD_TIME_FRAME_END.toEpochDay  else -1
+        val edgeEvaluationRow = EdgeEvaluationRow(e.tupleReferenceA,e.tupleReferenceB,isValid,hasCHangeAfterTrainPeriod,numDaysUntilRealChangeAfterTrainPeriod.toInt,numEqual,numUnequal,evidenceCount,mi,newScore)
         pr.println(edgeEvaluationRow.toCSVRow)
         processedEdges +=1
         if(processedEdges % 100==0){

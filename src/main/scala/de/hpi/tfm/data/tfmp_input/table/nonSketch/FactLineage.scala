@@ -2,6 +2,7 @@ package de.hpi.tfm.data.tfmp_input.table.nonSketch
 
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage.WILDCARD_VALUES
 import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalFieldTrait}
 import de.hpi.tfm.io.IOService
 
@@ -95,9 +96,11 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
 
   override def allTimestamps: Iterable[LocalDate] = lineage.keySet
 
-  override def WILDCARDVALUES: Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_ROW)
+  override def WILDCARDVALUES: Set[Any] = WILDCARD_VALUES
 }
 object FactLineage{
+
+  def WILDCARD_VALUES:Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_ROW,ReservedChangeValues.NOT_EXISTANT_CELL,ReservedChangeValues.NOT_KNOWN_DUE_TO_TIMESTAMP_RESOLUTION)
 
   def tryMergeAll(toMerge: IndexedSeq[FactLineage]) = {
     var res = Option(toMerge.head)
@@ -111,6 +114,6 @@ object FactLineage{
 
   def fromSerializationHelper(valueLineageWithHashMap: FactLineageWithHashMap) = FactLineage(mutable.TreeMap[LocalDate,Any]() ++ valueLineageWithHashMap.lineage)
 
-  def isWildcard(value: Any) = value == ReservedChangeValues.NOT_EXISTANT_DATASET || value == ReservedChangeValues.NOT_EXISTANT_COL || value == ReservedChangeValues.NOT_EXISTANT_ROW
+  def isWildcard(value: Any) = WILDCARD_VALUES.contains(value)
 
 }

@@ -1,0 +1,31 @@
+package de.hpi.tfm.evaluation
+
+import de.hpi.tfm.compatibility.graph.fact.IDBasedTupleReference
+
+//mergedLineages (somehow encode),cliqueSize,remainsValid,remainsInteresting,totalScore,scoreName,optimizationMethodName
+case class CliqueEvaluationRow(optimizationMethodName:String,
+                               edgeScoreName:String,
+                               componentFile:String,
+                               mergedLineages:IndexedSeq[IDBasedTupleReference],
+                               cliqueSize:Int,
+                               numEdgesInClique:Int, //for convenience
+                               remainsValid:Boolean,
+                               numValidEdges:Int,
+                               numVerticesWithChangeAfterTrainPeriod:Int,
+                               totalScore:Double,
+                               scoreAggregateMethodName:String){
+  def toCSVRowString():String = ???
+
+}
+object CliqueEvaluationRow{
+  def schema = Seq("optimizationMethodName",
+    "edgeScoreName",
+    "mergedLineages",
+    "cliqueSize",
+    "numEdgesInClique",
+    "remainsValid",
+    "numValidEdges",
+    "numVerticesWithChangeAfterTrainPeriod",
+    "totalScore",
+    "scoreAggregateMethodName")
+}

@@ -15,10 +15,10 @@ object CliqueBasedEvaluationMain extends App {
   val timeRangeStart = LocalDate.parse(args(5))
   val timeRangeEnd = LocalDate.parse(args(6))
   val graphConfig = GraphConfig(minEvidence,timeRangeStart,timeRangeEnd)
-  val minEvidenceEval = args(4).toInt
-  val timeRangeStartEval = LocalDate.parse(args(5))
-  val timeRangeEndEval = LocalDate.parse(args(6))
+  val minEvidenceEval = args(7).toInt
+  val timeRangeStartEval = LocalDate.parse(args(8))
+  val timeRangeEndEval = LocalDate.parse(args(9))
   val graphConfigEval = GraphConfig(minEvidenceEval,timeRangeStartEval,timeRangeEndEval)
-  val evaluator = new CliqueBasedEvaluator(subdomain,optimizationMethodName,targetFunctionName,graphConfig,graphConfigEval)
-  //mergedLineages (somehow encode),cliqueSize,remainsValid,remainsInteresting,totalScore,scoreName,optimizationMethodName
+  new CliqueBasedEvaluator(subdomain,optimizationMethodName,targetFunctionName,graphConfig,graphConfigEval)
+    .evaluate()
 }

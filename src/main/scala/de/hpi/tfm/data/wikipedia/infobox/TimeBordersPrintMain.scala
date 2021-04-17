@@ -1,7 +1,5 @@
 package de.hpi.tfm.data.wikipedia.infobox
 
-import org.apache.commons.compress.archivers.sevenz.{SevenZArchiveEntry, SevenZFile}
-
 import java.io.{ByteArrayOutputStream, File, FileOutputStream}
 
 object TimeBordersPrintMain extends App {

@@ -31,6 +31,7 @@ case class CliqueBasedEvaluator(subdomain: String, optimizationMethodName: Strin
 
   def evaluate() = {
     val pr = new PrintWriter(Evaluation_IOService.getCliqueEvaluationFile(subdomain,optimizationMethodName,targetFunctionName,trainGraphConfig))
+    pr.println(CliqueEvaluationRow.schema)
     mergeFiles.foreach(f => {
       val merges = TupleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath)
       merges.foreach(tm => {

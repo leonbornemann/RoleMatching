@@ -7,6 +7,7 @@ import java.io.File
 import java.time.LocalDate
 
 object CliqueBasedEvaluationMain extends App {
+  println(CliqueEvaluationRow.schema)
   IOService.socrataDir = args(0)
   val subdomain = args(1)
   val optimizationMethodName = args(2)

@@ -17,8 +17,6 @@ libraryDependencies += "com.google.code.gson" % "gson" % "2.8.5"
 // https://mvnrepository.com/artifact/com.typesafe.scala-logging/scala-logging
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
-// https://mvnrepository.com/artifact/org.json4s/json4s-ext
-libraryDependencies += "org.json4s" %% "json4s-ext" % "3.7.0-M4"
 // https://mvnrepository.com/artifact/org.apache.commons/commons-math3
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 // https://mvnrepository.com/artifact/org.apache.commons/commons-csv
@@ -27,5 +25,12 @@ libraryDependencies += "org.apache.commons" % "commons-csv" % "1.8"
 libraryDependencies += "org.json" % "json" % "20200518"
 // https://mvnrepository.com/artifact/org.scala-graph/graph-core
 libraryDependencies += "org.scala-graph" %% "graph-core" % "1.13.2"
+// https://mvnrepository.com/artifact/org.apache.commons/commons-compress
+//libraryDependencies += "org.apache.commons" % "commons-compress" % "1.20"
+// https://mvnrepository.com/artifact/org.tukaani/xz
+//libraryDependencies += "org.tukaani" % "xz" % "1.9"
+// https://mvnrepository.com/artifact/org.json4s/json4s-ext
+libraryDependencies += "org.json4s" %% "json4s-ext" % "3.7.0-M4"
+
 
 

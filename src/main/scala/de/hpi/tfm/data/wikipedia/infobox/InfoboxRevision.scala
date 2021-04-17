@@ -1,5 +1,6 @@
 package de.hpi.tfm.data.wikipedia.infobox
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.json.custom_serializer.{LocalDateKeySerializer, LocalDateSerializer}
 import de.hpi.tfm.data.socrata.metadata.Provenance
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
@@ -7,6 +8,9 @@ import de.hpi.tfm.data.wikipedia.infobox.InfoboxRevision.rename
 import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.FieldSerializer.{renameFrom, renameTo}
 import org.json4s.ext.EnumNameSerializer
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 case class InfoboxRevision(revisionId:BigInt,
                            template:Option[String]=None,
@@ -20,7 +24,7 @@ case class InfoboxRevision(revisionId:BigInt,
                            user:Option[User]=None,
                            key:String,
                            validTo:Option[String]=None
-) extends JsonWritable[InfoboxRevision]{
+) extends JsonWritable[InfoboxRevision] with StrictLogging{
 
   def checkIntegrity() ={
     assert(revisionType=="DELETE" ^ attributes.isDefined) //^ = xor
@@ -31,12 +35,20 @@ case class InfoboxRevision(revisionId:BigInt,
       assert(changes.forall(_.previousValue.isEmpty))
   }
 
+  //May 15, 2012 11:16:19 PM
+  def stringToDate(str:String):LocalDateTime = {
+    LocalDateTime.parse(str,InfoboxRevision.formatter)
+  }
+
 
   override implicit def formats = InfoboxRevision.formats
 
+  def validFromAsDate  = stringToDate(validFrom)
 }
 
-object InfoboxRevision extends JsonReadable[InfoboxRevision] {
+object InfoboxRevision extends JsonReadable[InfoboxRevision] with StrictLogging {
+
+  val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d[d], yyyy h[h]:mm:ss a")
 
   val rename = FieldSerializer[InfoboxRevision](renameTo("type", "revisionType"),renameFrom("type", "revisionType"))
 
@@ -45,9 +57,19 @@ object InfoboxRevision extends JsonReadable[InfoboxRevision] {
     + LocalDateKeySerializer
     + rename)
 
-  def toChangeCube(objects: collection.Seq[InfoboxRevision]) = {
+  def toPaddedInfoboxHistory(objects: collection.Seq[InfoboxRevision]) = {
     val byKey = objects.groupBy(_.key)
-    byKey.flatMap(k => InfoboxRevisionHistory(k._1,k._2).toChangeCube)
+    val todo = byKey.size
+    logger.debug(s"Found $todo infobox lineages to create")
+    var done = 0
+    byKey.map(k => {
+      val res = InfoboxRevisionHistory(k._1,k._2).toPaddedInfoboxHistory
+      done +=1
+      if(done%100==0) {
+        logger.debug(s"Done with $done")
+      }
+      res
+    })
   }
 
 }

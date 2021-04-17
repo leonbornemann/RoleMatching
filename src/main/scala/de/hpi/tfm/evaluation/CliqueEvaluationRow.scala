@@ -39,5 +39,5 @@ object CliqueEvaluationRow{
     "numValidEdges",
     "numVerticesWithChangeAfterTrainPeriod",
     "totalScore",
-    "scoreAggregateMethodName")
+    "scoreAggregateMethodName").mkString(",")
 }

@@ -20,19 +20,21 @@ case class InfoboxRevision(revisionId:BigInt,
                            validFrom:String,
                            position:Option[Int]=None,
                            pageID:BigInt,
-                           revisionType:String,
+                           revisionType:Option[String],
                            user:Option[User]=None,
                            key:String,
                            validTo:Option[String]=None
 ) extends JsonWritable[InfoboxRevision] with StrictLogging{
 
   def checkIntegrity() ={
-    assert(revisionType=="DELETE" ^ attributes.isDefined) //^ = xor
     changes.forall(c => c.currentValue.isEmpty || c.previousValue.isEmpty || c.currentValue.get!=c.previousValue.get)
-    if(revisionType=="DELETE")
-      assert(changes.forall(_.currentValue.isEmpty))
-    if(revisionType=="CREATE")
-      assert(changes.forall(_.previousValue.isEmpty))
+    if(revisionType.isDefined){
+      assert(revisionType.get=="DELETE" ^ attributes.isDefined) //^ = xor
+      if(revisionType.get=="DELETE")
+        assert(changes.forall(_.currentValue.isEmpty))
+      if(revisionType.get=="CREATE")
+        assert(changes.forall(_.previousValue.isEmpty))
+    }
   }
 
   //May 15, 2012 11:16:19 PM

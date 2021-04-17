@@ -38,6 +38,7 @@ case class InfoboxRevision(revisionId:BigInt,
   }
 
   //May 15, 2012 11:16:19 PM
+  //'2014-08-16T13:39:23Z'
   def stringToDate(str:String):LocalDateTime = {
     LocalDateTime.parse(str,InfoboxRevision.formatter)
   }
@@ -50,7 +51,7 @@ case class InfoboxRevision(revisionId:BigInt,
 
 object InfoboxRevision extends JsonReadable[InfoboxRevision] with StrictLogging {
 
-  val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d[d], yyyy h[h]:mm:ss a")
+  val formatter: DateTimeFormatter = DateTimeFormatter.ISO_INSTANT//.ofPattern("MMM d[d], yyyy h[h]:mm:ss a")
 
   val rename = FieldSerializer[InfoboxRevision](renameTo("type", "revisionType"),renameFrom("type", "revisionType"))
 

@@ -9,7 +9,7 @@ import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.FieldSerializer.{renameFrom, renameTo}
 import org.json4s.ext.EnumNameSerializer
 
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
 
 case class InfoboxRevision(revisionId:BigInt,
@@ -40,7 +40,8 @@ case class InfoboxRevision(revisionId:BigInt,
   //May 15, 2012 11:16:19 PM
   //'2014-08-16T13:39:23Z'
   def stringToDate(str:String):LocalDateTime = {
-    LocalDateTime.parse(str,InfoboxRevision.formatter)
+    Instant.parse(str).atZone(ZoneOffset.UTC).toLocalDateTime
+    //LocalDateTime.parse(str,InfoboxRevision.formatter)
   }
 
 

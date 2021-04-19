@@ -4,7 +4,6 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.json.custom_serializer.{LocalDateKeySerializer, LocalDateSerializer}
 import de.hpi.tfm.data.socrata.metadata.Provenance
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
-import de.hpi.tfm.data.wikipedia.infobox.InfoboxRevision.rename
 import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.FieldSerializer.{renameFrom, renameTo}
 import org.json4s.ext.EnumNameSerializer
@@ -54,12 +53,15 @@ object InfoboxRevision extends JsonReadable[InfoboxRevision] with StrictLogging 
 
   val formatter: DateTimeFormatter = DateTimeFormatter.ISO_INSTANT//.ofPattern("MMM d[d], yyyy h[h]:mm:ss a")
 
-  val rename = FieldSerializer[InfoboxRevision](renameTo("type", "revisionType"),renameFrom("type", "revisionType"))
+  val rename1 = FieldSerializer[InfoboxRevision](renameTo("type", "revisionType"),renameFrom("type", "revisionType"))
+  val rename2 = FieldSerializer[InfoboxProperty](renameTo("type", "propertyType"),renameFrom("type", "propertyType"))
+
 
   override implicit def formats = (DefaultFormats.preservingEmptyValues
     + LocalDateSerializer
     + LocalDateKeySerializer
-    + rename)
+    + rename1
+    + rename2)
 
   def toPaddedInfoboxHistory(objects: collection.Seq[InfoboxRevision]) = {
     val byKey = objects.groupBy(_.key)

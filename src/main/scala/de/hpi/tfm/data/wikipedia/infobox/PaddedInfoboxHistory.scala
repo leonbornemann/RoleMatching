@@ -3,7 +3,7 @@ package de.hpi.tfm.data.wikipedia.infobox
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap}
 
-import java.io.File
+import java.io.{File, PrintWriter}
 import scala.collection.mutable
 
 case class PaddedInfoboxHistory(template: Option[String],
@@ -12,9 +12,8 @@ case class PaddedInfoboxHistory(template: Option[String],
                                 key: String,
                                 lineages: mutable.HashMap[String, FactLineageWithHashMap]) extends JsonWritable[PaddedInfoboxHistory]{
 
-  def writeToDir(dir:File) = {
-    val fname = Seq(template.getOrElse(""),pageID,pageTitle,key,".json").mkString("_")
-    toJsonFile(new File(dir.getAbsolutePath + s"/$fname"))
+  def appendToBucketFile(bucketFileWriter:PrintWriter) = {
+    appendToWriter(bucketFileWriter,false,true)
   }
 
 }

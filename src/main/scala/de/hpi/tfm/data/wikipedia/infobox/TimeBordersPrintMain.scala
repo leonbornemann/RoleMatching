@@ -1,8 +1,24 @@
 package de.hpi.tfm.data.wikipedia.infobox
 
 import java.io.{ByteArrayOutputStream, File, FileOutputStream}
+import java.time.LocalDate
+import scala.io.Source
 
 object TimeBordersPrintMain extends App {
+//  val fileMin = "/home/leon/data/dataset_versioning/WIkipedia/infoboxes/minTs.txt"
+//  val fileMax = "/home/leon/data/dataset_versioning/WIkipedia/infoboxes/maxTs.txt"
+//  val min = Source.fromFile(fileMin)
+//    .getLines()
+//    .toIndexedSeq
+//    .map(s => LocalDate.parse(s))
+//    .minBy(_.toEpochDay)
+//  println(min)
+//  val max = Source.fromFile(fileMax)
+//    .getLines()
+//    .toIndexedSeq
+//    .map(s => LocalDate.parse(s))
+//    .maxBy(_.toEpochDay)
+//  println(max)
   //val archiveFile = new SevenZFile(new File(args(0)))
   val tmpOutputFile = args(0)
 //  var entry:SevenZArchiveEntry = archiveFile.getNextEntry
@@ -25,5 +41,5 @@ object TimeBordersPrintMain extends App {
     .map(_.validFromAsDate.toLocalDate)
   println("min TImestamp: " + dates.minBy(_.toEpochDay))
   println("max: TImestamp" + dates.maxBy(_.toEpochDay))
-  new File(tmpOutputFile).delete()
+  //new File(tmpOutputFile).delete()
 }

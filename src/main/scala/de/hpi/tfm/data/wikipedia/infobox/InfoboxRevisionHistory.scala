@@ -7,6 +7,7 @@ import de.hpi.tfm.io.IOService
 
 import java.time.{Duration, LocalDate, LocalDateTime, Period}
 import java.time.format.DateTimeFormatter
+import java.util.regex.Pattern
 
 case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRevision]) {
 
@@ -18,11 +19,11 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
   val valueConfirmationPoints = revisionsSorted.map(_.validFromAsDate.toLocalDate).toSet
   val earliestInsertOfThisInfobox = valueConfirmationPoints.min
 
-  def updateHistory(p: String, newValue: String,t:LocalDateTime) = {
-    val curHistory = propToValueHistory.getOrElseUpdate(p,collection.mutable.TreeMap[LocalDateTime,String]())
+  def updateHistory(p: InfoboxProperty, newValue: String,t:LocalDateTime) = {
+    val curHistory = propToValueHistory.getOrElseUpdate(p.name,collection.mutable.TreeMap[LocalDateTime,String]())
     if(curHistory.isEmpty && t!=EARLIEST_HISTORY_TIMESTAMP){
-      if(earliestInsertOfThisInfobox.isAfter(EARLIEST_HISTORY_TIMESTAMP.toLocalDate)) {
-        curHistory.put(EARLIEST_HISTORY_TIMESTAMP,ReservedChangeValues.NOT_EXISTANT_ROW)
+      if(earliestInsertOfThisInfobox.isAfter(EARLIEST_HISTORY_TIMESTAMP)) {
+        curHistory.put(EARLIEST_HISTORY_TIMESTAMP.atStartOfDay(),ReservedChangeValues.NOT_EXISTANT_ROW)
       }
       if(t.toLocalDate.isAfter(earliestInsertOfThisInfobox)){
         curHistory.put(earliestInsertOfThisInfobox.atStartOfDay(),ReservedChangeValues.NOT_EXISTANT_CELL)
@@ -45,10 +46,21 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
   }
 
   def transformGranularityAndExpandTimeRange() = {
+//    val relevantTimePoints = revisionsSorted
+//      .map(r => r.validFromAsDate)
+//      .toSet
+//      .toIndexedSeq
+//      .sorted
+//    //map this to the ranges that are relevant:
+//
     val factLineages = propToValueHistory.map{case (k,valueHistory) => {
-      var curStart = EARLIEST_HISTORY_TIMESTAMP.toLocalDate
+//      relevantTimePoints.foreach(ld => {
+//
+//      })
+//
+      var curStart = EARLIEST_HISTORY_TIMESTAMP
       var curEnd = curStart.plusDays(lowestGranularityInDays)
-      val latest = LATEST_HISTORY_TIMESTAMP.toLocalDate
+      val latest = LATEST_HISTORY_TIMESTAMP
       val curSequence = scala.collection.mutable.ArrayBuffer[(LocalDate,String)]()
       while(curEnd!=curStart){
         val oldValueGetsConfirmed = (curStart.toEpochDay until curEnd.toEpochDay)
@@ -59,7 +71,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
         curStart = curEnd
         curEnd = Seq(curStart.plusDays(lowestGranularityInDays),latest).min
       }
-      assert(curSequence.size == LATEST_HISTORY_TIMESTAMP.toLocalDate.toEpochDay - EARLIEST_HISTORY_TIMESTAMP.toLocalDate.toEpochDay) //only works for daily!
+      assert(curSequence.size == LATEST_HISTORY_TIMESTAMP.toEpochDay - EARLIEST_HISTORY_TIMESTAMP.toEpochDay) //only works for daily!
       //eliminate duplicates:
       val lineage = (0 until curSequence.size)
         .filter(i => i==0 || curSequence(i)._2 != curSequence(i-1)._2)
@@ -76,15 +88,33 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     factLineages
   }
 
+  def extractExtraLinkHistories() = {
+    val linkPositions = IndexedSeq(0,1,2)
+    val pattern = Pattern.compile("\\[\\[((?:\\w+:)?[^<>\\[\\]\"\\|]+)(?:\\|[^\\n\\]]+)?\\]\\]")
+    val extraLinks = propToValueHistory.flatMap{case (p,vh) => {
+      vh.map{case (t,value) => {
+        val matcher = pattern.matcher(value)
+        var curLinkPosition = 0
+        while(matcher.find() && curLinkPosition < linkPositions.size){
+          val linkTarget = matcher.group(1)
+          curLinkPosition+=1
+        }
+      }}
+    }}
+  }
+
   def toPaddedInfoboxHistory = {
    revisionsSorted.foreach(r => {
-      r.changes.foreach(c => {
+      r.changes
+        .withFilter(_.property.propertyType!="meta")
+        .foreach(c => {
         val p = c.property
         val e = r.key
         val newValue = if(c.currentValue.isDefined) c.currentValue.get else ReservedChangeValues.NOT_EXISTANT_CELL
         updateHistory(p,newValue,r.validFromAsDate)
       })
     })
+    extractExtraLinkHistories()
     integrityCheckHistories()
     val lineages = transformGranularityAndExpandTimeRange
       .map(t => (t._1,t._2.toSerializationHelper))
@@ -94,6 +124,6 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
 object InfoboxRevisionHistory{
   val lowestGranularityInDays = 1
 
-  def LATEST_HISTORY_TIMESTAMP = LocalDateTime.parse("2017-11-03T15:20:41") //TODO: find out the date of that LocalDate.parse("2016-11-01", IOService.dateTimeFormatter)
-  def EARLIEST_HISTORY_TIMESTAMP = LocalDateTime.parse("2005-07-29T22:31:59") //TODO: find out the date of that LocalDate.parse("2016-11-01", IOService.dateTimeFormatter)
+  def LATEST_HISTORY_TIMESTAMP = LocalDate.parse("2019-09-02") //TODO: find out the date of that LocalDate.parse("2016-11-01", IOService.dateTimeFormatter)
+  def EARLIEST_HISTORY_TIMESTAMP = LocalDate.parse("2001-03-25") //TODO: find out the date of that LocalDate.parse("2016-11-01", IOService.dateTimeFormatter)
 }

@@ -28,7 +28,7 @@ class TimeRangeToSingleValueReducer(curStart: LocalDate,
           //assert(prevValue.get._1.toLocalDate==curStart.minusDays(InfoboxRevisionHistory.lowestGranularityInDays))
           prevValue.get._2
         } else {
-          assert(curStart == InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP.toLocalDate)
+          assert(curStart == InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP)
           ReservedChangeValues.NOT_EXISTANT_CELL
         }
       } else if(curStart==InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP){

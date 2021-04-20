@@ -8,7 +8,6 @@ import scala.collection.mutable
 class TimeRangeToSingleValueReducer(curStart: LocalDate,
                                     curEnd: LocalDate,
                                     completeLineage: mutable.TreeMap[LocalDateTime, String],
-                                    earliestInsertOfThisInfobox:LocalDate,
                                     valueConfirmed:Boolean) {
 
   val valueToDuration = mutable.HashMap[String,Duration]()

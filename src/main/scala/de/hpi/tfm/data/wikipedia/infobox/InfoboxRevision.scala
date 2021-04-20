@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.json.custom_serializer.{LocalDateKeySerializer, LocalDateSerializer}
 import de.hpi.tfm.data.socrata.metadata.Provenance
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
+import de.hpi.tfm.data.wikipedia.infobox.InfoboxRevisionHistory.logger
 import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.FieldSerializer.{renameFrom, renameTo}
 import org.json4s.ext.EnumNameSerializer
@@ -26,6 +27,7 @@ case class InfoboxRevision(revisionId:BigInt,
 ) extends JsonWritable[InfoboxRevision] with StrictLogging{
 
   def checkIntegrity() ={
+    assert(changes.size == changes.map(_.property.name).toSet.size)
     changes.forall(c => c.currentValue.isEmpty || c.previousValue.isEmpty || c.currentValue.get!=c.previousValue.get)
     if(revisionType.isDefined){
       assert(revisionType.get=="DELETE" ^ attributes.isDefined) //^ = xor
@@ -68,7 +70,7 @@ object InfoboxRevision extends JsonReadable[InfoboxRevision] with StrictLogging 
     val todo = byKey.size
     logger.debug(s"Found $todo infobox lineages to create")
     var done = 0
-    byKey.map(k => {
+    val res = byKey.map(k => {
       val res = InfoboxRevisionHistory(k._1,k._2).toPaddedInfoboxHistory
       done +=1
       if(done%100==0) {
@@ -76,6 +78,7 @@ object InfoboxRevision extends JsonReadable[InfoboxRevision] with StrictLogging 
       }
       res
     })
+    res
   }
 
 }

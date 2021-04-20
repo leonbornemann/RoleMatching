@@ -3,7 +3,7 @@ package de.hpi.tfm.data.wikipedia.infobox
 import java.io.{File, PrintWriter}
 import scala.collection.immutable
 
-case class InfoboxRevisionBucket(paddedHistories: IndexedSeq[PaddedInfoboxHistory], originalFileName: String) {
+case class PaddedInfoboxHistoryBucket(paddedHistories: IndexedSeq[PaddedInfoboxHistory], originalFileName: String) {
   val pageMin = BigInt(originalFileName.split("xml-p")(1).split("p")(0))
   val pageMax = BigInt(originalFileName.split("xml-p")(1).split("p")(1).split("\\.")(0))
   paddedHistories.foreach(ph => {

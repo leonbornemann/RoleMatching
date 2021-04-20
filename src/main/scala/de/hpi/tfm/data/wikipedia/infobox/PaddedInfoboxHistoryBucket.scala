@@ -17,5 +17,6 @@ case class PaddedInfoboxHistoryBucket(paddedHistories: IndexedSeq[PaddedInfoboxH
     paddedHistories.foreach(ph => {
       ph.appendToBucketFile(pr)
     })
+    pr.close()
   }
 }

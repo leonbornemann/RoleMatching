@@ -19,7 +19,7 @@ object WikipediaCompatibilityForQueryMain extends App with StrictLogging {
   var processed = 0
   val fulfillsFilter = files.toIndexedSeq.flatMap(f => {
     val res = PaddedInfoboxHistory.fromJsonObjectPerLineFile(f.getAbsolutePath)
-      .flatMap(ph => ph.lineages.map{case (p,h) => WikipediaInfoboxValueHistory(ph.pageID,ph.key,p,h)})
+      .flatMap(ph => ph.asWikipediaInfoboxValueHistories)
       .filter(wiwh => query.forall(s => wiwh.lineage.lineage.values.exists(_.toString.contains(s)))) //all query strings need to be matched in at least one value
     processed+=1
     if(processed%100==0)

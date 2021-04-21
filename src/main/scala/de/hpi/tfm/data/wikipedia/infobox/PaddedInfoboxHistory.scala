@@ -11,6 +11,10 @@ case class PaddedInfoboxHistory(template: Option[String],
                                 pageTitle: String,
                                 key: String,
                                 lineages: mutable.HashMap[String, FactLineageWithHashMap]) extends JsonWritable[PaddedInfoboxHistory]{
+  def asWikipediaInfoboxValueHistories = lineages
+    .map{case (p,h) => WikipediaInfoboxValueHistory(template,pageID,key,p,h)}
+    .toIndexedSeq
+
 
   def appendToBucketFile(bucketFileWriter:PrintWriter) = {
     appendToWriter(bucketFileWriter,false,true)

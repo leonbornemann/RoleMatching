@@ -1,4 +1,6 @@
-package de.hpi.tfm.data.wikipedia.infobox
+package de.hpi.tfm.data.wikipedia.infobox.statistics
+
+import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
 
 import java.io.{File, PrintWriter}
 
@@ -13,7 +15,7 @@ class WikipediaInfoboxStatistiicsGatherer(file:File) {
     pr.println(vh.toWikipediaInfoboxStatisticsLine.getCSVLine)
   }
 
-  def addToFile(vhs: collection.Seq[WikipediaInfoboxValueHistory]) = {
+  def addToFile(vhs: collection.Iterable[WikipediaInfoboxValueHistory]) = {
     vhs.foreach(vh => addLineToFile(vh))
   }
 

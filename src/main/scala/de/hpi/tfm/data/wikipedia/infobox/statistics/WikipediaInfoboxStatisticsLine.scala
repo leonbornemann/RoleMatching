@@ -1,7 +1,8 @@
-package de.hpi.tfm.data.wikipedia.infobox
+package de.hpi.tfm.data.wikipedia.infobox.statistics
 
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap}
-import de.hpi.tfm.data.wikipedia.infobox.WikipediaInfoboxStatisticsLine.years
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
+import de.hpi.tfm.data.wikipedia.infobox.statistics.WikipediaInfoboxStatisticsLine.years
 
 import java.time.LocalDate
 import scala.collection.mutable

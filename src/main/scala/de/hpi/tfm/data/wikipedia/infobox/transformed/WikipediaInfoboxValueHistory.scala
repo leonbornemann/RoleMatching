@@ -1,11 +1,16 @@
-package de.hpi.tfm.data.wikipedia.infobox
+package de.hpi.tfm.data.wikipedia.infobox.transformed
 
-import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.socrata.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
+import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
+import de.hpi.tfm.data.wikipedia.infobox.statistics.WikipediaInfoboxStatisticsLine
 
-case class WikipediaInfoboxValueHistory(template:Option[String],pageID: BigInt, key: String, p: String, lineage: FactLineageWithHashMap) extends JsonWritable[WikipediaInfoboxValueHistory]{
+case class WikipediaInfoboxValueHistory(template:Option[String],
+                                        pageID: BigInt,
+                                        key: String,
+                                        p: String,
+                                        lineage: FactLineageWithHashMap) extends JsonWritable[WikipediaInfoboxValueHistory]{
   def toWikipediaInfoboxStatisticsLine = {
     WikipediaInfoboxStatisticsLine(template,pageID,key,p,lineage)
   }
@@ -31,5 +36,11 @@ object WikipediaInfoboxValueHistory extends JsonReadable[WikipediaInfoboxValueHi
       attributeLineage,
       IndexedSeq[SurrogateAttributeLineage](),
       rows)
+  }
+
+  def getFilenameForBucket(originalBucketFilename:String) = {
+    val pageMin = BigInt(originalBucketFilename.split("xml-p")(1).split("p")(0))
+    val pageMax = BigInt(originalBucketFilename.split("xml-p")(1).split("p")(1).split("\\.")(0))
+    s"$pageMin-$pageMax.json"
   }
 }

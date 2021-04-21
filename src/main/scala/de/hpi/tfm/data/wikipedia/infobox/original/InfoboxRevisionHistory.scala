@@ -1,16 +1,13 @@
-package de.hpi.tfm.data.wikipedia.infobox
+package de.hpi.tfm.data.wikipedia.infobox.original
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.tfm.data.socrata.change.{Change, ReservedChangeValues}
+import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.tfm.data.wikipedia.infobox.InfoboxRevision.logger
-import de.hpi.tfm.data.wikipedia.infobox.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, lowestGranularityInDays}
+import de.hpi.tfm.data.wikipedia.infobox.transformed.{ TimeRangeToSingleValueReducer, WikipediaInfoboxValueHistory}
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
 import de.hpi.tfm.evaluation.Histogram
-import de.hpi.tfm.io.IOService
 
-import java.lang.AssertionError
-import java.time.{Duration, LocalDate, LocalDateTime, Period}
-import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
 import java.util.regex.Pattern
 import scala.collection.mutable.ArrayBuffer
 
@@ -160,7 +157,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       .printAll()
   }
 
-  def toPaddedInfoboxHistory = {
+  def toWikipediaInfoboxValueHistories = {
     revisionsSorted.foreach(r => {
       r.changes
         .withFilter(_.property.propertyType!="meta")
@@ -175,10 +172,12 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     extractExtraLinkHistories()
     integrityCheckHistories()
     val lineages = transformGranularityAndExpandTimeRange
-      .map(t => (t._1,t._2.toSerializationHelper))
-      .filter(_._2.lineage.values.exists(v => !FactLineage.isWildcard(v)))
-    PaddedInfoboxHistory(revisions.head.template,revisions.head.pageID,revisions.head.pageTitle,revisions.head.key,lineages)
-    //TODO: directly use the other format
+      .withFilter(_._2.lineage.values.exists(v => !FactLineage.isWildcard(v)))
+      .map(t => {
+        (t._1,t._2.toSerializationHelper)
+        WikipediaInfoboxValueHistory(revisions.head.template,revisions.head.pageID,revisions.head.key,t._1,t._2.toSerializationHelper)
+      })
+    lineages
   }
 }
 object InfoboxRevisionHistory extends StrictLogging{

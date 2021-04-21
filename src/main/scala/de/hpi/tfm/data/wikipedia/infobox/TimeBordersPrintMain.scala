@@ -1,5 +1,7 @@
 package de.hpi.tfm.data.wikipedia.infobox
 
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevision
+
 import java.io.{ByteArrayOutputStream, File, FileOutputStream}
 import java.time.LocalDate
 import scala.io.Source

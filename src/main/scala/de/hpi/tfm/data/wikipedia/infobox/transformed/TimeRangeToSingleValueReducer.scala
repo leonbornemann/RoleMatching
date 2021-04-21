@@ -1,6 +1,7 @@
-package de.hpi.tfm.data.wikipedia.infobox
+package de.hpi.tfm.data.wikipedia.infobox.transformed
 
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 
 import java.time.{Duration, LocalDate, LocalDateTime}
 import scala.collection.mutable

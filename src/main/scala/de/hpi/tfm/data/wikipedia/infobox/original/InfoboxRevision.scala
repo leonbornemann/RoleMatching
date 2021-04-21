@@ -1,16 +1,13 @@
-package de.hpi.tfm.data.wikipedia.infobox
+package de.hpi.tfm.data.wikipedia.infobox.original
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.json.custom_serializer.{LocalDateKeySerializer, LocalDateSerializer}
-import de.hpi.tfm.data.socrata.metadata.Provenance
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
-import de.hpi.tfm.data.wikipedia.infobox.InfoboxRevisionHistory.logger
-import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.FieldSerializer.{renameFrom, renameTo}
-import org.json4s.ext.EnumNameSerializer
+import org.json4s.{DefaultFormats, FieldSerializer}
 
-import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 case class InfoboxRevision(revisionId:BigInt,
                            template:Option[String]=None,
@@ -71,7 +68,7 @@ object InfoboxRevision extends JsonReadable[InfoboxRevision] with StrictLogging 
     logger.debug(s"Found $todo infobox lineages to create")
     var done = 0
     val res = byKey.map(k => {
-      val res = InfoboxRevisionHistory(k._1,k._2).toPaddedInfoboxHistory
+      val res = InfoboxRevisionHistory(k._1,k._2).toWikipediaInfoboxValueHistories
       done +=1
       if(done%100==0) {
         logger.debug(s"Done with $done")

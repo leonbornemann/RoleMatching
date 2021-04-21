@@ -1,4 +1,4 @@
-import de.hpi.tfm.data.wikipedia.infobox.InfoboxRevision
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevision
 
 object PaddedHistoryCreationTest extends App {
   //revisionId:BigInt,

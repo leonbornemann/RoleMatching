@@ -176,7 +176,9 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     integrityCheckHistories()
     val lineages = transformGranularityAndExpandTimeRange
       .map(t => (t._1,t._2.toSerializationHelper))
+      .filter(_._2.lineage.values.exists(v => !FactLineage.isWildcard(v)))
     PaddedInfoboxHistory(revisions.head.template,revisions.head.pageID,revisions.head.pageTitle,revisions.head.key,lineages)
+    //TODO: directly use the other format
   }
 }
 object InfoboxRevisionHistory extends StrictLogging{

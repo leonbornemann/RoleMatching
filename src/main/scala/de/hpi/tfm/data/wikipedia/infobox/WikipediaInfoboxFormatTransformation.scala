@@ -1,6 +1,7 @@
 package de.hpi.tfm.data.wikipedia.infobox
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 
 import java.io.{File, PrintWriter}
 
@@ -15,6 +16,7 @@ object WikipediaInfoboxFormatTransformation extends App with StrictLogging{
   files.foreach(f => {
     val histories = PaddedInfoboxHistory.fromJsonObjectPerLineFile(f.getAbsolutePath)
     val vhs = histories.flatMap(_.asWikipediaInfoboxValueHistories)
+      .filter(_.lineage.lineage.values.exists(v => !FactLineage.isWildcard(v)))
     statisticsGatherer.addToFile(vhs)
     val pr = new PrintWriter(outputDir + s"/${f.getName}" )
     vhs.foreach(_.appendToWriter(pr,false,true))

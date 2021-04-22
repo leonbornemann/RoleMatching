@@ -18,7 +18,6 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     assert(revisionsSorted.size == revisionsSorted.map(_.validFrom).toSet.size)
   }
 
-
   val revisionsSorted = revisions
     .filter(r => r.validTo.isEmpty || r.validFrom!=r.validTo.get)
     .sortBy(r => r.validFromAsDate)
@@ -45,8 +44,12 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
         curHistory.put(earliestInsertOfThisInfobox.atStartOfDay(),ReservedChangeValues.NOT_EXISTANT_CELL)
       }
     }
-    assert(newValue!=curHistory.last._2)
-    curHistory.put(t,newValue)
+    if(newValue==ReservedChangeValues.NOT_EXISTANT_CELL && curHistory.last._2 == ReservedChangeValues.NOT_EXISTANT_CELL){
+      //do nothing - this is an edge case that can happen for changes that are immediately reverted!
+    } else {
+      assert(newValue!=curHistory.last._2)
+      curHistory.put(t,newValue)
+    }
   }
 
   def integrityCheckHistories() = {
@@ -163,6 +166,8 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
         .withFilter(_.property.propertyType!="meta")
         .foreach(c => {
         val p = c.property
+        if(p.name=="14")
+          println()
         val e = r.key
         val newValue = if(c.currentValue.isDefined) c.currentValue.get else ReservedChangeValues.NOT_EXISTANT_CELL
         updateHistoryIfChanged(p,newValue,r.validFromAsDate)

@@ -2,6 +2,7 @@ package de.hpi.tfm.compatibility.graph.fact.internal
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
+import de.hpi.tfm.compatibility.graph.fact.bipartite.BipartiteFactMatchCreator
 import de.hpi.tfm.compatibility.graph.fact.{FactMatchCreator, TupleReference}
 import de.hpi.tfm.compatibility.index.TupleSetIndex
 
@@ -16,17 +17,31 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],gra
 
   def buildGraph(originalInput:IndexedSeq[TupleReference[A]], index: TupleSetIndex[A]):Unit = {
     if(index.indexBuildWasSuccessfull){
+      val nonWildcards = collection.mutable.ArrayBuffer[TupleReference[A]]()
       index.tupleGroupIterator(true).foreach{case g => {
-        val tuplesInNode = (g.tuplesInNode ++ g.wildcardTuples)
-        if(squareProductTooBig(tuplesInNode.size)){
+        nonWildcards ++= g.tuplesInNode
+        if(squareProductTooBig(g.tuplesInNode.size)){
           //further index this: new Index
-          val newIndexForSubNode = new TupleSetIndex[A](tuplesInNode.toIndexedSeq,index.indexedTimestamps.toIndexedSeq,g.valuesAtTimestamps,index.wildcardKeyValues,true)
-          buildGraph(tuplesInNode.toIndexedSeq,newIndexForSubNode)
+          val newIndexForSubNode = new TupleSetIndex[A](g.tuplesInNode.toIndexedSeq,index.indexedTimestamps.toIndexedSeq,g.valuesAtTimestamps,index.wildcardKeyValues,true)
+          buildGraph(g.tuplesInNode.toIndexedSeq,newIndexForSubNode)
         } else{
-          val tuplesInNodeAsIndexedSeq = tuplesInNode.toIndexedSeq
+          val tuplesInNodeAsIndexedSeq = g.tuplesInNode.toIndexedSeq
           doPairwiseMatching(tuplesInNodeAsIndexedSeq)
         }
       }}
+      //wildcards internally:
+      val wildcardBucket = index.getWildcardBucket
+      if(squareProductTooBig(wildcardBucket.size)){
+        val newIndex = new TupleSetIndex[A](wildcardBucket,index.indexedTimestamps.toIndexedSeq,index.parentNodesKeys ++ Seq(index.wildcardKeyValues.head),index.wildcardKeyValues,true)
+        buildGraph(wildcardBucket,newIndex)
+      } else {
+        doPairwiseMatching(wildcardBucket)
+      }
+      //wildcards to the rest:
+      if(wildcardBucket.size>0 && nonWildcards.size>0){
+        val bipartite = new BipartiteFactMatchCreator[A](wildcardBucket,nonWildcards.toIndexedSeq,graphConfig)
+        facts ++= bipartite.facts
+      }
     } else {
       doPairwiseMatching(originalInput)
     }

@@ -26,7 +26,12 @@ object WikipediaCompatibilityForQueryMain extends App with StrictLogging {
       logger.debug(s"finished $processed")
     res
   })
+  private val queryFilename = s"${query.mkString("_AND_")}"
   logger.debug(s"Found ${fulfillsFilter.size} lineages containing all terms in $query")
+  val queryFile = new File(queryResultDir+s"/${queryFilename}_vertices.json")
+  val pr = new PrintWriter(queryFile)
+  fulfillsFilter.foreach(_.appendToWriter(pr,false,true))
+  pr.close()
   val id = new AssociationIdentifier("wikipedia", s"contains all in $query", 0, Some(0))
   val attrID = 0
   val table = WikipediaInfoboxValueHistory.toAssociationTable(fulfillsFilter, id, attrID)
@@ -37,7 +42,7 @@ object WikipediaCompatibilityForQueryMain extends App with StrictLogging {
     .edges
     .map(e => WikipediaInfoboxValueHistoryMatch(fulfillsFilter(e.tupleReferenceA.rowIndex), fulfillsFilter(e.tupleReferenceB.rowIndex)))
   logger.debug("Finished compatibility graph creation")
-  val writer = new PrintWriter(queryResultDir.getAbsolutePath + s"/${query.mkString("_AND_")}.json")
+  val writer = new PrintWriter(queryResultDir.getAbsolutePath + s"/${queryFilename}_edges.json")
   edges.foreach(m => m.appendToWriter(writer, false, true))
   writer.close()
 

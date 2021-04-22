@@ -36,6 +36,9 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
         logger.debug(s"Finished $finished infobox histories")
       }
     })
-  if(statGatherer.isDefined) statGatherer.get.closeFile()
   pr.close()
+  //try reading:
+  val res = WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(resultFile)
+  if(statGatherer.isDefined)
+    statGatherer.get.closeFile()
 }

@@ -5,7 +5,7 @@ import de.hpi.tfm.data.socrata.metadata.Provenance
 import org.json4s.DefaultFormats
 import org.json4s.ext.EnumNameSerializer
 
-import java.io.{File, FileWriter, StringWriter}
+import java.io.{File, FileWriter, PrintWriter, StringWriter}
 
 trait JsonWritable[T <: AnyRef] {
 

@@ -57,8 +57,6 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       val vhAsIndexedSeq = vh.toIndexedSeq
       assert(vh.head._1==EARLIEST_HISTORY_TIMESTAMP.atStartOfDay())
       for(i <- 1 until vhAsIndexedSeq.size){
-        if(!(vhAsIndexedSeq(i-1)._2!=vhAsIndexedSeq(i)._2))
-          println()
         assert(vhAsIndexedSeq(i-1)._2!=vhAsIndexedSeq(i)._2)
         assert(vhAsIndexedSeq(i-1)._1.isBefore(vhAsIndexedSeq(i)._1))
       }

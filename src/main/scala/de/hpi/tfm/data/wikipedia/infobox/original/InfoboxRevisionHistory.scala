@@ -47,7 +47,8 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     if(newValue==ReservedChangeValues.NOT_EXISTANT_CELL && curHistory.last._2 == ReservedChangeValues.NOT_EXISTANT_CELL){
       //do nothing - this is an edge case that can happen for changes that are immediately reverted!
     } else {
-      assert(newValue!=curHistory.last._2)
+      if(!curHistory.isEmpty)
+        assert(newValue!=curHistory.last._2)
       curHistory.put(t,newValue)
     }
   }
@@ -55,7 +56,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
   def integrityCheckHistories() = {
     propToValueHistory.foreach{case (k,vh) => {
       val vhAsIndexedSeq = vh.toIndexedSeq
-      assert(vh.head._1==EARLIEST_HISTORY_TIMESTAMP.atStartOfDay())
+      assert(vh.head._1.toLocalDate==EARLIEST_HISTORY_TIMESTAMP)
       for(i <- 1 until vhAsIndexedSeq.size){
         assert(vhAsIndexedSeq(i-1)._2!=vhAsIndexedSeq(i)._2)
         assert(vhAsIndexedSeq(i-1)._1.isBefore(vhAsIndexedSeq(i)._1))

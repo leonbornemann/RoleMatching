@@ -24,8 +24,9 @@ case class InfoboxRevision(revisionId:BigInt,
 ) extends JsonWritable[InfoboxRevision] with StrictLogging{
 
   def checkIntegrity() ={
-    assert(changes.size == changes.map(_.property.name).toSet.size)
-    changes.forall(c => c.currentValue.isEmpty || c.previousValue.isEmpty || c.currentValue.get!=c.previousValue.get)
+    val nonMetaPropChanges = changes.filter(_.property.propertyType!="meta")
+    assert(nonMetaPropChanges.size == nonMetaPropChanges.map(_.property.name).toSet.size)
+    nonMetaPropChanges.forall(c => c.currentValue.isEmpty || c.previousValue.isEmpty || c.currentValue.get!=c.previousValue.get)
     if(revisionType.isDefined){
       assert(revisionType.get=="DELETE" ^ attributes.isDefined) //^ = xor
       if(revisionType.get=="DELETE")

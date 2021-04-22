@@ -57,6 +57,8 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       val vhAsIndexedSeq = vh.toIndexedSeq
       assert(vh.head._1==EARLIEST_HISTORY_TIMESTAMP.atStartOfDay())
       for(i <- 1 until vhAsIndexedSeq.size){
+        if(!(vhAsIndexedSeq(i-1)._2!=vhAsIndexedSeq(i)._2))
+          println()
         assert(vhAsIndexedSeq(i-1)._2!=vhAsIndexedSeq(i)._2)
         assert(vhAsIndexedSeq(i-1)._1.isBefore(vhAsIndexedSeq(i)._1))
       }
@@ -112,8 +114,6 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       lineage
         .zipWithIndex
         .foreach(t => {
-          if(!(t._2==0 || lineage(t._2-1)._2 != t._1._2 && lineage(t._2-1)._1.isBefore(t._1._1)))
-            println()
           assert(t._2==0 || lineage(t._2-1)._2 != t._1._2 && lineage(t._2-1)._1.isBefore(t._1._1))
         })
       (k,FactLineage(collection.mutable.TreeMap[LocalDate,Any]() ++ lineage))
@@ -146,7 +146,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
         var curLinkPosition = 0
         while(matcher.find() && curLinkPosition < linkPositions.size){
           val linkTarget = matcher.group(1)
-          updateHistoryIfChanged(new InfoboxProperty("extra_link",p + s"_link$curLinkPosition"),linkTarget,t)
+          updateHistoryIfChanged(new InfoboxProperty("extra_link",p + s"_🔗_extractedLink$curLinkPosition"),linkTarget,t)
           curLinkPosition+=1
         }
         //count what we could have found:
@@ -166,8 +166,6 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
         .withFilter(_.property.propertyType!="meta")
         .foreach(c => {
         val p = c.property
-        if(p.name=="14")
-          println()
         val e = r.key
         val newValue = if(c.currentValue.isDefined) c.currentValue.get else ReservedChangeValues.NOT_EXISTANT_CELL
         updateHistoryIfChanged(p,newValue,r.validFromAsDate)

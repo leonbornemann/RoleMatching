@@ -8,6 +8,7 @@ object QueryAnalysis extends App {
   val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(edgeFile)
   val ids = Set(BigInt(24113),BigInt(32212))
   println(edges.filter(e => ids.forall(id => Set(e.a.pageID,e.b.pageID).contains(id))))
+  val edgeAnalyser = new EdgeAnalyser(edges)
   val vertices = WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(vertexFile)
   val president = vertices.filter(v => v.pageID==BigInt(24113) && v.p=="incumbent_\uD83D\uDD17_extractedLink0").head
   val armedForces = vertices.filter(v => v.pageID==BigInt(32212) && v.p=="commander-in-chief_\uD83D\uDD17_extractedLink1").head

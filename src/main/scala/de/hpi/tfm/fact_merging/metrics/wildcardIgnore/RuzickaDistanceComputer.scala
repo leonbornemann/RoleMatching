@@ -1,9 +1,10 @@
 package de.hpi.tfm.fact_merging.metrics.wildcardIgnore
 
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
+import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 
 //https://en.wikipedia.org/wiki/Jaccard_index#Generalized_Jaccard_similarity_and_distance
-class RuzickaDistanceComputer[A](tr1: TupleReference[A], tr2: TupleReference[A]) extends WildcardIgnoreHistogramBasedComputer[A](tr1,tr2){
+class RuzickaDistanceComputer[A](f1: TemporalFieldTrait[A], f2: TemporalFieldTrait[A]) extends WildcardIgnoreHistogramBasedComputer[A](f1,f2){
 
   def computeScore(): Double = {
     val (nominator,denominator) = hist1.keySet.union(hist2.keySet)

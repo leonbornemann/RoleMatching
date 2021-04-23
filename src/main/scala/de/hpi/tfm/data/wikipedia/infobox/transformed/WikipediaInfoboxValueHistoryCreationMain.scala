@@ -38,7 +38,7 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
       filtered += (res.size - retained.size)
       total += res.size
       retained.foreach(_.appendToWriter(pr,false,true))
-      if(statGatherer.isDefined) statGatherer.get.addToFile(res)
+      if(statGatherer.isDefined) statGatherer.get.addToFile(retained)
       finished += 1
       if (finished % 100 == 0) {
         logger.debug(s"Finished $finished infobox histories leading to ${total} num facts of which we discarded ${filtered} (${100*filtered / total.toDouble}%)")

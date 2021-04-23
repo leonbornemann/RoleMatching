@@ -3,6 +3,7 @@ package de.hpi.tfm.data.wikipedia.infobox.statistics
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap}
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.statistics.WikipediaInfoboxStatisticsLine.years
+import de.hpi.tfm.util.CSVUtil
 
 import java.time.LocalDate
 import scala.collection.mutable
@@ -22,8 +23,6 @@ case class WikipediaInfoboxStatisticsLine(template: Option[String], pageID: BigI
     withoutWildcard.filter{case (v,i) => i!=0 && v!=withoutWildcard(i-1)}.size
   }
 
-  def toCleanString(value: Any) = value.toString.replace(",",";").replace('\r','_').replace('\n','_')
-
   def getCSVLine = {
     (Seq(template.getOrElse(""),
       pageID,
@@ -31,7 +30,7 @@ case class WikipediaInfoboxStatisticsLine(template: Option[String], pageID: BigI
       p,
       nonWcValues,
       totalRealChanges
-    ) ++ nonWcValuesPerYear ++ realChangesPerYear).map(toCleanString(_)).mkString(",")
+    ) ++ nonWcValuesPerYear ++ realChangesPerYear).map(CSVUtil.toCleanString(_)).mkString(",")
   }
 
   private def getNonWCValuesInRange(fl: mutable.TreeMap[LocalDate, Any]) = {

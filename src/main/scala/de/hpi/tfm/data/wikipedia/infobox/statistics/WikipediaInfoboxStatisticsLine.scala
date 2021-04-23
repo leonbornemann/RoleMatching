@@ -9,6 +9,12 @@ import scala.collection.mutable
 
 case class WikipediaInfoboxStatisticsLine(template: Option[String], pageID: BigInt, key: String, p: String, lineage: FactLineageWithHashMap) {
 
+  val fl = FactLineage.fromSerializationHelper(lineage).lineage
+  val nonWcValues = getNonWCValuesInRange(fl)
+  val totalRealChanges = getRealChangeCountInRange(fl)
+  val nonWcValuesPerYear = years.map(i => getNonWCValuesInRange(fl.range(LocalDate.ofYearDay(i, 1), LocalDate.ofYearDay(i + 1, 1))))
+  val realChangesPerYear = years.map( i => getRealChangeCountInRange(fl.range(LocalDate.ofYearDay(i,1),LocalDate.ofYearDay(i+1,1))))
+
   def getRealChangeCountInRange(fl: mutable.TreeMap[LocalDate, Any]) = {
     val withoutWildcard =fl
       .filter(v => !FactLineage.isWildcard(v))
@@ -16,14 +22,9 @@ case class WikipediaInfoboxStatisticsLine(template: Option[String], pageID: BigI
     withoutWildcard.filter{case (v,i) => i!=0 && v!=withoutWildcard(i-1)}.size
   }
 
-  def toCleanString(value: Any) = value.toString.replace(",",";")
+  def toCleanString(value: Any) = value.toString.replace(",",";").replace('\r','_').replace('\n','_')
 
   def getCSVLine = {
-    val fl = FactLineage.fromSerializationHelper(lineage).lineage
-    val nonWcValues = getNonWCValuesInRange(fl)
-    val totalRealChanges = getRealChangeCountInRange(fl)
-    val nonWcValuesPerYear = years.map(i => getNonWCValuesInRange(fl.range(LocalDate.ofYearDay(i, 1), LocalDate.ofYearDay(i + 1, 1))))
-    val realChangesPerYear = years.map( i => getRealChangeCountInRange(fl.range(LocalDate.ofYearDay(i,1),LocalDate.ofYearDay(i+1,1))))
     (Seq(template.getOrElse(""),
       pageID,
       key,

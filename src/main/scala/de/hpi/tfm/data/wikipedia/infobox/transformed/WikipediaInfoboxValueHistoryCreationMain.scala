@@ -26,14 +26,22 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   var finished = 0
   val resultFile = resultDir.getAbsolutePath + "/" + WikipediaInfoboxValueHistory.getFilenameForBucket(new File(file).getName)
   val pr = new PrintWriter(resultFile)
+  var filtered = 0
+  var total = 0
   revisionHistories
     .foreach(r => {
       val res = r.toWikipediaInfoboxValueHistories
-      res.foreach(_.appendToWriter(pr,false,true))
+      val retained = res.filter(vh => {
+        val statLine = vh.toWikipediaInfoboxStatisticsLine
+        statLine.totalRealChanges>=1 && statLine.nonWcValues>10 //very basic filtering to weed out uninteresting infoboxes / property lineages
+      })
+      filtered += (res.size - retained.size)
+      total += res.size
+      retained.foreach(_.appendToWriter(pr,false,true))
       if(statGatherer.isDefined) statGatherer.get.addToFile(res)
       finished += 1
       if (finished % 100 == 0) {
-        logger.debug(s"Finished $finished infobox histories")
+        logger.debug(s"Finished $finished infobox histories leading to ${total} num facts of which we discarded ${filtered} (${100*filtered / total.toDouble}%)")
       }
     })
   pr.close()

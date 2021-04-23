@@ -70,6 +70,11 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       val nextDay = t.plusDays(1)
       if(!valueConfirmationPoints.contains(nextDay) && v!=ReservedChangeValues.NOT_EXISTANT_CELL)
         curSequence.append((nextDay,ReservedChangeValues.NOT_EXISTANT_CELL))
+    } else {
+      //we confirm this value, but it is the same as the previous so no need to insert anything new, but we might need to insert something on the next day
+      val nextDay = t.plusDays(1)
+      if(!valueConfirmationPoints.contains(nextDay) && v!=ReservedChangeValues.NOT_EXISTANT_CELL)
+        curSequence.append((nextDay,ReservedChangeValues.NOT_EXISTANT_CELL))
     }
   }
 
@@ -91,25 +96,6 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
         val value = new TimeRangeToSingleValueReducer(ld,ld.plusDays(1),valueHistory,true).computeValue()
         addValueToSequence(lineage,ld,value)
       })
-
-//      var curStart = EARLIEST_HISTORY_TIMESTAMP
-//      var curEnd = curStart.plusDays(lowestGranularityInDays)
-//      val latest = LATEST_HISTORY_TIMESTAMP
-//
-//      while(curEnd!=curStart){
-//        val oldValueGetsConfirmed = (curStart.toEpochDay until curEnd.toEpochDay)
-//          .map(l => LocalDate.ofEpochDay(l))
-//          .exists(ld => valueConfirmationPoints.contains(ld))
-//        val value = new TimeRangeToSingleValueReducer(curStart,curEnd,valueHistory,earliestInsertOfThisInfobox,oldValueGetsConfirmed).computeValue()
-//        curSequence.append((curStart,value))
-//        curStart = curEnd
-//        curEnd = Seq(curStart.plusDays(lowestGranularityInDays),latest).min
-//      }
-//      assert(curSequence.size == LATEST_HISTORY_TIMESTAMP.toEpochDay - EARLIEST_HISTORY_TIMESTAMP.toEpochDay) //only works for daily!
-//      //eliminate duplicates:
-//      val lineage = (0 until curSequence.size)
-//        .filter(i => i==0 || curSequence(i)._2 != curSequence(i-1)._2)
-//        .map(i => curSequence(i))
       lineage
         .zipWithIndex
         .foreach(t => {

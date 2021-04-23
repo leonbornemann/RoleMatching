@@ -5,6 +5,7 @@ import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import java.time.LocalDate
 
 case class FactLineageWithHashMap(lineage: Map[LocalDate, Any]) extends JsonWritable[FactLineageWithHashMap]{
+  def toFactLineage = FactLineage.fromSerializationHelper(this)
 
 }
 

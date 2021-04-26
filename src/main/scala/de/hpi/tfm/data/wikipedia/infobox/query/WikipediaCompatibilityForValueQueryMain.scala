@@ -10,7 +10,7 @@ import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistor
 import java.io.{File, PrintWriter}
 import java.util.regex.Pattern
 
-object WikipediaCompatibilityForQueryMain extends App with StrictLogging {
+object WikipediaCompatibilityForValueQueryMain extends App with StrictLogging {
 
   val query = args(0).split(Pattern.quote("&")).toIndexedSeq
   val infoboxHistoryDir = new File(args(1))

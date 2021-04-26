@@ -69,12 +69,12 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     if(curSequence.isEmpty || curSequence.last._2!=v){
       curSequence.append((t,v))
       val nextTimePoint = t.plusDays(lowestGranularityInDays)
-      if(!valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL)
+      if(!valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
         curSequence.append((nextTimePoint,ReservedChangeValues.NOT_EXISTANT_CELL))
     } else {
-      //we confirm this value, but it is the same as the previous so no need to insert anything new, but we might need to insert something on the next day
+      //we confirm this value, but it is the same as the previous so no need to insert anything new, but we might need to insert wildcard on the next day
       val nextTimePoint = t.plusDays(lowestGranularityInDays)
-      if(!valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL)
+      if(!valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
         curSequence.append((nextTimePoint,ReservedChangeValues.NOT_EXISTANT_CELL))
     }
   }
@@ -177,7 +177,7 @@ object InfoboxRevisionHistory extends StrictLogging{
       .map(t => InfoboxRevisionHistory(t._1,t._2.toIndexedSeq))
   }
 
-  private var lowestGranularityInDays = 7
+  private var lowestGranularityInDays = 1
 
   val LATEST_HISTORY_TIMESTAMP = LocalDate.parse("2019-09-02")
   val EARLIEST_HISTORY_TIMESTAMP = LocalDate.parse("2003-01-04")

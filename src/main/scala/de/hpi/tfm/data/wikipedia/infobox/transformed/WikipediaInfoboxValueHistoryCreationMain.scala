@@ -7,14 +7,6 @@ import de.hpi.tfm.data.wikipedia.infobox.statistics.WikipediaInfoboxStatistiicsG
 import java.io.{File, PrintWriter}
 
 object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
-  //https://owncloud.hpi.de/s/H2juuaquPE7BUAV/download?path=%2F&files=enwiki-20190901-pages-meta-history27.xml-p57135490p57467999.output.json.7z
-  //  val file1 = Source.fromFile("/home/leon/data/dataset_versioning/WIkipedia/infoboxes/owncloud files")
-  //    .getLines()
-  //    .toIndexedSeq
-  //    .filter(_.contains("enwiki-20190901-pages-meta"))
-  //    .map(l => "https://owncloud.hpi.de/s/H2juuaquPE7BUAV/download?path=%2F&files=" + l.split("Aktionen")(0))
-  //    .foreach(println)
-  //  assert(false)
   val file = args(0)
   val resultDir = new File(args(1))
   val granularityInDays = args(2).toInt
@@ -33,6 +25,8 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   revisionHistories
     .foreach(r => {
       val res = r.toWikipediaInfoboxValueHistories
+      val weird = res.filter(_.lineage.lineage.keySet.exists(_.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)))
+      assert(weird.size==0)
       val retained = res.filter(vh => {
         val statLine = vh.toWikipediaInfoboxStatisticsLine
         statLine.totalRealChanges>=1 && statLine.nonWcValues>10 //very basic filtering to weed out uninteresting infoboxes / property lineages

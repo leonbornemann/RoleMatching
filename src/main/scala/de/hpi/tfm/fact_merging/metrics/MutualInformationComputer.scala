@@ -59,7 +59,8 @@ class MutualInformationComputer[A](a: TemporalFieldTrait[A], b: TemporalFieldTra
 //    println("B")
 //    transitionOccurrencesB.foreach(println)
 //    println("--------------------------------------------------------------------")
-
+    if(!(transitionPairOccurrences.values.sum == numPointsInTime-1))
+      println()
     assert(transitionPairOccurrences.values.sum == numPointsInTime-1)
     val denominator = (numPointsInTime-1).toDouble
     val terms = transitionPairOccurrences.map{case ((tA,tB),count) => {

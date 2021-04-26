@@ -42,11 +42,10 @@ class TimeRangeToSingleValueReducer(curStart: LocalDate,
   }
 
   private def getMajorityValue(inRange: IndexedSeq[(LocalDateTime, String)]) = {
-    var prevTs = curStart
     val prevValueOption = completeLineage.maxBefore(curStart.atStartOfDay())
     if(prevValueOption.isDefined){
       val prevValue = prevValueOption.get._2
-      val duration = getTimePeriod(prevTs.atStartOfDay(), inRange(0)._1)
+      val duration = getTimePeriod(curStart.atStartOfDay(), inRange(0)._1)
       valueToDuration.put(prevValue, duration)
     }
     inRange.zipWithIndex.foreach { case ((d, v), i) => {
@@ -54,10 +53,11 @@ class TimeRangeToSingleValueReducer(curStart: LocalDate,
       val curDuration = if (i < inRange.size - 1)
         Duration.between(d, inRange(i + 1)._1)
       else
-        Duration.between(d, d.toLocalDate.plusDays(InfoboxRevisionHistory.lowestGranularityInDays).atStartOfDay())
+        Duration.between(d, curEnd.atStartOfDay())
       valueToDuration(v) = prevDuration.plus(curDuration)
     }
     }
+    assert(valueToDuration.values.reduce(_.plus(_)) == Duration.between(curStart,curEnd))
     valueToDuration.maxBy(_._2)._1
   }
 }

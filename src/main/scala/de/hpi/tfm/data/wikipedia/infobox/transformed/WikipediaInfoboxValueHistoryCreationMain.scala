@@ -17,7 +17,9 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   //  assert(false)
   val file = args(0)
   val resultDir = new File(args(1))
-  val statGatherer = if(args.size==3) Some( new WikipediaInfoboxStatistiicsGatherer(new File(args(2)))) else None
+  val granularityInDays = args(2).toInt
+  val statGatherer = new WikipediaInfoboxStatistiicsGatherer(new File(args(3)))
+  InfoboxRevisionHistory.setGranularityInDays(granularityInDays)
   val objects = InfoboxRevision.fromJsonObjectPerLineFile(file)
   objects.foreach(_.checkIntegrity())
   val revisionHistories = InfoboxRevisionHistory.getFromRevisionCollection(objects)
@@ -38,7 +40,7 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
       filtered += (res.size - retained.size)
       total += res.size
       retained.foreach(_.appendToWriter(pr,false,true))
-      if(statGatherer.isDefined) statGatherer.get.addToFile(retained)
+      statGatherer.addToFile(retained)
       finished += 1
       if (finished % 100 == 0) {
         logger.debug(s"Finished $finished infobox histories leading to ${total} num facts of which we discarded ${filtered} (${100*filtered / total.toDouble}%)")
@@ -47,6 +49,5 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   pr.close()
   //try reading:
   val res = WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(resultFile)
-  if(statGatherer.isDefined)
-    statGatherer.get.closeFile()
+  statGatherer.closeFile()
 }

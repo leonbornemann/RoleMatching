@@ -12,6 +12,10 @@ object QueryAnalysis extends App {
   val vertices = WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(vertexFile)
   val president = vertices.filter(v => v.pageID==BigInt(24113) && v.p=="incumbent_\uD83D\uDD17_extractedLink0").head
   val armedForces = vertices.filter(v => v.pageID==BigInt(32212) && v.p=="commander-in-chief_\uD83D\uDD17_extractedLink1").head
+  println("President")
+  president.lineage.toFactLineage.lineage.foreach(println(_))
+  println("Armed Forces")
+  armedForces.lineage.toFactLineage.lineage.foreach(println(_))
   val res = president.lineage.toFactLineage.tryMergeWithConsistent(armedForces.lineage.toFactLineage)
   println()
 }

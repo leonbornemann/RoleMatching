@@ -3,8 +3,8 @@ package de.hpi.tfm.data.wikipedia.infobox.original
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.tfm.data.wikipedia.infobox.transformed.{ TimeRangeToSingleValueReducer, WikipediaInfoboxValueHistory}
-import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
+import de.hpi.tfm.data.wikipedia.infobox.transformed.{TimeRangeToSingleValueReducer, WikipediaInfoboxValueHistory}
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, TIME_AXIS, lowestGranularityInDays}
 import de.hpi.tfm.evaluation.Histogram
 
 import java.time.{LocalDate, LocalDateTime}
@@ -27,7 +27,8 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
 
   val propToValueHistory = collection.mutable.HashMap[String,collection.mutable.TreeMap[LocalDateTime,String]]()
 
-  val valueConfirmationPoints = revisionsSorted.map(_.validFromAsDate.toLocalDate).toSet
+  val valueConfirmationPoints = revisionsSorted
+    .map(r => InfoboxRevisionHistory.TIME_AXIS.maxBefore(r.validFromAsDate.toLocalDate.plusDays(1)).get).toSet
   val earliestInsertOfThisInfobox = valueConfirmationPoints.min
 
   //just to get some stats:
@@ -67,14 +68,14 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
   def addValueToSequence(curSequence: ArrayBuffer[(LocalDate, String)], t: LocalDate, v: String) = {
     if(curSequence.isEmpty || curSequence.last._2!=v){
       curSequence.append((t,v))
-      val nextDay = t.plusDays(1)
-      if(!valueConfirmationPoints.contains(nextDay) && v!=ReservedChangeValues.NOT_EXISTANT_CELL)
-        curSequence.append((nextDay,ReservedChangeValues.NOT_EXISTANT_CELL))
+      val nextTimePoint = t.plusDays(lowestGranularityInDays)
+      if(!valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL)
+        curSequence.append((nextTimePoint,ReservedChangeValues.NOT_EXISTANT_CELL))
     } else {
       //we confirm this value, but it is the same as the previous so no need to insert anything new, but we might need to insert something on the next day
-      val nextDay = t.plusDays(1)
-      if(!valueConfirmationPoints.contains(nextDay) && v!=ReservedChangeValues.NOT_EXISTANT_CELL)
-        curSequence.append((nextDay,ReservedChangeValues.NOT_EXISTANT_CELL))
+      val nextTimePoint = t.plusDays(lowestGranularityInDays)
+      if(!valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL)
+        curSequence.append((nextTimePoint,ReservedChangeValues.NOT_EXISTANT_CELL))
     }
   }
 
@@ -93,7 +94,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
         addValueToSequence(lineage,EARLIEST_HISTORY_TIMESTAMP,ReservedChangeValues.NOT_EXISTANT_ROW)
       }
       confirmationPointsSorted.foreach(ld => {
-        val value = new TimeRangeToSingleValueReducer(ld,ld.plusDays(1),valueHistory,true).computeValue()
+        val value = new TimeRangeToSingleValueReducer(ld,ld.plusDays(lowestGranularityInDays),valueHistory,true).computeValue()
         addValueToSequence(lineage,ld,value)
       })
       lineage
@@ -176,12 +177,21 @@ object InfoboxRevisionHistory extends StrictLogging{
       .map(t => InfoboxRevisionHistory(t._1,t._2.toIndexedSeq))
   }
 
-  val lowestGranularityInDays = 1
+  private var lowestGranularityInDays = 7
 
-  if(lowestGranularityInDays!=1){
-    throw new AssertionError("Implementation of transformGranularityAndExpandTimeRange only works with daily granularity - this should be changed to use ranges of days if the granularity is more course")
+  val LATEST_HISTORY_TIMESTAMP = LocalDate.parse("2019-09-02")
+  val EARLIEST_HISTORY_TIMESTAMP = LocalDate.parse("2003-01-04")
+  var TIME_AXIS = recomputeTimeAxis
+
+  private def recomputeTimeAxis = {
+    val axis = collection.mutable.TreeSet[LocalDate]() ++ EARLIEST_HISTORY_TIMESTAMP.toEpochDay.to(LATEST_HISTORY_TIMESTAMP.toEpochDay).by(lowestGranularityInDays)
+      .map(l => LocalDate.ofEpochDay(l))
+    logger.debug(s"Reset time axis to: $axis")
+    axis
   }
 
-  def LATEST_HISTORY_TIMESTAMP = LocalDate.parse("2019-09-02")
-  def EARLIEST_HISTORY_TIMESTAMP = LocalDate.parse("2003-01-04")
+  def setGranularityInDays(g:Int) = {
+    lowestGranularityInDays = g
+    TIME_AXIS = recomputeTimeAxis
+  }
 }

@@ -3,7 +3,7 @@ package de.hpi.tfm.data.wikipedia.infobox.transformed
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 
-import java.time.{Duration, LocalDate, LocalDateTime}
+import java.time.{Duration, LocalDate, LocalDateTime, ZoneId, ZoneOffset}
 import scala.collection.mutable
 
 class TimeRangeToSingleValueReducer(curStart: LocalDate,
@@ -57,7 +57,7 @@ class TimeRangeToSingleValueReducer(curStart: LocalDate,
       valueToDuration(v) = prevDuration.plus(curDuration)
     }
     }
-    assert(valueToDuration.values.reduce(_.plus(_)) == Duration.between(curStart,curEnd))
+    assert(valueToDuration.values.reduce(_.plus(_)) == Duration.between(curStart.atStartOfDay().toInstant(ZoneOffset.UTC),curEnd.atStartOfDay().toInstant(ZoneOffset.UTC)))
     valueToDuration.maxBy(_._2)._1
   }
 }

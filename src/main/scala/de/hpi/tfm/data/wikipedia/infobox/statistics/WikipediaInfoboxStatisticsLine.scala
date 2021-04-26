@@ -18,8 +18,10 @@ case class WikipediaInfoboxStatisticsLine(template: Option[String], pageID: BigI
 
   def getRealChangeCountInRange(fl: mutable.TreeMap[LocalDate, Any]) = {
     val withoutWildcard =fl
+      .values
+      .toIndexedSeq
       .filter(v => !FactLineage.isWildcard(v))
-      .toIndexedSeq.zipWithIndex
+      .zipWithIndex
     withoutWildcard.filter{case (v,i) => i!=0 && v!=withoutWildcard(i-1)}.size
   }
 

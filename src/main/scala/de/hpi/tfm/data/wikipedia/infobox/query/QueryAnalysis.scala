@@ -11,12 +11,13 @@ object QueryAnalysis extends App with StrictLogging{
   val vertexFile = args(0)
   val edgeFile = args(1)
   val edgeResultFile = args(2)
-  val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(edgeFile)
-    .zipWithIndex
-    .filter(_._2>5000)
-    .map(_._1)
-  val edgeAnalyser = new EdgeAnalyser(edges)
   val vertices = WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(vertexFile)
+
+  def isWeird(a: WikipediaInfoboxValueHistory) = a.lineage.lineage.keySet.exists(_.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
+
+  val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(edgeFile)
+    .filter(e => !isWeird(e.a) && !isWeird(e.b))
+  val edgeAnalyser = new EdgeAnalyser(edges)
   logger.debug(s"Loaded query result with ${vertices.size} vertices and ${edges.size} edges")
   IOService.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
   IOService.STANDARD_TIME_FRAME_END = InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP

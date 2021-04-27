@@ -22,7 +22,7 @@ case class WikipediaInfoboxStatisticsLine(template: Option[String], pageID: BigI
       .toIndexedSeq
       .filter(v => !FactLineage.isWildcard(v))
       .zipWithIndex
-    withoutWildcard.filter{case (v,i) => i!=0 && v!=withoutWildcard(i-1)}.size
+    withoutWildcard.filter{case (v,i) => i!=0 && v!=withoutWildcard(i-1)._1}.size
   }
 
   def getCSVLine = {

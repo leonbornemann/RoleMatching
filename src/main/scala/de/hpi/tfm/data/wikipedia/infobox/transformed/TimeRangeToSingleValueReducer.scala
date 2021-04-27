@@ -57,7 +57,9 @@ class TimeRangeToSingleValueReducer(curStart: LocalDate,
       valueToDuration(v) = prevDuration.plus(curDuration)
     }
     }
-    assert(valueToDuration.values.reduce(_.plus(_)) == Duration.between(curStart.atStartOfDay().toInstant(ZoneOffset.UTC),curEnd.atStartOfDay().toInstant(ZoneOffset.UTC)))
+    val totalDuration= valueToDuration.values.reduce(_.plus(_))
+    val maxDuration = Duration.between(curStart.atStartOfDay().toInstant(ZoneOffset.UTC),curEnd.atStartOfDay().toInstant(ZoneOffset.UTC))
+    assert(prevValueOption.isEmpty || valueToDuration.values.reduce(_.plus(_)) == Duration.between(curStart.atStartOfDay().toInstant(ZoneOffset.UTC),curEnd.atStartOfDay().toInstant(ZoneOffset.UTC)))
     valueToDuration.maxBy(_._2)._1
   }
 }

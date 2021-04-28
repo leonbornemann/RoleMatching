@@ -5,7 +5,6 @@ import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.tfm.data.wikipedia.infobox.statistics.WikipediaInfoboxStatisticsLine
-import jdk.javadoc.internal.tool.Start
 
 import java.time.LocalDate
 

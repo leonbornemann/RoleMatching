@@ -11,8 +11,6 @@ import java.io.{File, PrintWriter}
 import java.util.regex.Pattern
 
 object WikipediaCompatibilityForValueQueryMain extends App with StrictLogging {
-  InfoboxRevisionHistory.setGranularityInDays(7)
-  println(InfoboxRevisionHistory.TIME_AXIS.size)
   val query = args(0).split(Pattern.quote("&")).toIndexedSeq
   val infoboxHistoryDir = new File(args(1))
   val queryResultDir = new File(args(2))

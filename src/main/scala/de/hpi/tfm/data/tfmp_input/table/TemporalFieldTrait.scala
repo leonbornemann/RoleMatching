@@ -30,15 +30,17 @@ trait TemporalFieldTrait[T] {
 
   def mutualInformation(other: TemporalFieldTrait[T]): Double = new MutualInformationComputer(this, other).mutualInfo()
 
-  def valueTransitions(includeSameValueTransitions: Boolean = false): Set[ValueTransition[T]] = {
+  def valueTransitions(includeSameValueTransitions: Boolean = false,ignoreInterleavedWildcards:Boolean=true): Set[ValueTransition[T]] = {
+    val lineage = if(ignoreInterleavedWildcards) getValueLineage.filter{case (k,v) => !isWildcard(v)} else getValueLineage
     if (!includeSameValueTransitions) {
-      val vl = getValueLineage
+      val vl = lineage
         .values
         //.filter(!isWildcard(_))
         .toIndexedSeq
       (1 until vl.size).map(i => ValueTransition[T](vl(i - 1), vl(i))).toSet
     } else {
-      val vl = getValueLineage.toIndexedSeq
+      assert(!ignoreInterleavedWildcards) //implementation is not tailored to that yet
+      val vl = lineage.toIndexedSeq
       val transitions = (1 until vl.size)
         .flatMap(i => {
           val prev = vl(i - 1)

@@ -5,9 +5,17 @@ import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.bipartite.BipartiteFactMatchCreator
 import de.hpi.tfm.compatibility.graph.fact.{FactMatchCreator, TupleReference}
 import de.hpi.tfm.compatibility.index.TupleSetIndex
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 
-class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],graphConfig:GraphConfig) extends FactMatchCreator[A] with StrictLogging{
-
+class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
+                                       graphConfig:GraphConfig,
+                                       filterByCommonWildcardIgnoreChangeTransition:Boolean=true) extends FactMatchCreator[A] with StrictLogging{
+  var tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]] = None
+  if(filterByCommonWildcardIgnoreChangeTransition){
+    tupleToNonWcTransitions = Some(tuples
+      .map(t => (t,t.getDataTuple.head.valueTransitions(false,true)))
+      .toMap)
+  }
   init()
 
   def init() = {
@@ -39,7 +47,7 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],gra
       }
       //wildcards to the rest:
       if(wildcardBucket.size>0 && nonWildcards.size>0){
-        val bipartite = new BipartiteFactMatchCreator[A](wildcardBucket,nonWildcards.toIndexedSeq,graphConfig)
+        val bipartite = new BipartiteFactMatchCreator[A](wildcardBucket,nonWildcards.toIndexedSeq,graphConfig,filterByCommonWildcardIgnoreChangeTransition,tupleToNonWcTransitions)
         facts ++= bipartite.facts
       }
     } else {
@@ -54,9 +62,11 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],gra
       for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
         val ref1 = tuplesInNodeAsIndexedSeq(i)
         val ref2 = tuplesInNodeAsIndexedSeq(j)
-        val edge = getTupleMatchOption(ref1, ref2)
-        if (edge.isDefined)
-          facts.add(edge.get)
+        if(!filterByCommonWildcardIgnoreChangeTransition || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
+          val edge = getTupleMatchOption(ref1, ref2)
+          if (edge.isDefined)
+            facts.add(edge.get)
+        }
       }
     }
   }

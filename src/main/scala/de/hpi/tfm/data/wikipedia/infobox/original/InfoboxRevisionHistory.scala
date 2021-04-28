@@ -179,7 +179,7 @@ object InfoboxRevisionHistory extends StrictLogging{
 
   private var lowestGranularityInDays = 1
 
-  val LATEST_HISTORY_TIMESTAMP = LocalDate.parse("2019-09-02")
+  val LATEST_HISTORY_TIMESTAMP = LocalDate.parse("2019-09-02") //train end: 5 May 2011
   val EARLIEST_HISTORY_TIMESTAMP = LocalDate.parse("2003-01-04")
   var TIME_AXIS = recomputeTimeAxis
 

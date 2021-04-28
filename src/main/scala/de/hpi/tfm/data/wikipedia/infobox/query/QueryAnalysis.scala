@@ -17,12 +17,13 @@ object QueryAnalysis extends App with StrictLogging{
 
   val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(edgeFile)
     .filter(e => !isWeird(e.a) && !isWeird(e.b))
-  val edgeAnalyser = new EdgeAnalyser(edges)
-  logger.debug(s"Loaded query result with ${vertices.size} vertices and ${edges.size} edges")
-  IOService.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
-  IOService.STANDARD_TIME_FRAME_END = InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP
-  edgeAnalyser.toCsvFile(new File(edgeResultFile))
-  assert(false) //TODO: delete filter at top
+  assert(false)
+//  val edgeAnalyser = new EdgeAnalyser(edges)
+//  logger.debug(s"Loaded query result with ${vertices.size} vertices and ${edges.size} edges")
+//  IOService.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
+//  IOService.STANDARD_TIME_FRAME_END = InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP
+//  edgeAnalyser.toCsvFile(new File(edgeResultFile))
+//  assert(false) //TODO: delete filter at top
 //  //President.incumbent and ArmedForces.commander in chief:
 //  val ids = Set(BigInt(24113),BigInt(32212))
 //  println(edges.filter(e => ids.forall(id => Set(e.a.pageID,e.b.pageID).contains(id))))

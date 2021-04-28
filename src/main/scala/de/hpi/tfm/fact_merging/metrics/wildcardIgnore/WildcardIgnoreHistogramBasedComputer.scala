@@ -5,13 +5,11 @@ import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 
-abstract class WildcardIgnoreHistogramBasedComputer[A](f1: TemporalFieldTrait[A], f2: TemporalFieldTrait[A]) {
-
-  val TIMESTAMP_RESOLUTION_IN_DAYS: Long = 1
+abstract class WildcardIgnoreHistogramBasedComputer[A](f1: TemporalFieldTrait[A], f2: TemporalFieldTrait[A],TIMESTAMP_RESOLUTION_IN_DAYS:Long) {
 
   def buildTransitionHistogram(f1: TemporalFieldTrait[A]) = {
     val withIndex = f1.getValueLineage
-      .filter(t => isWildcard(t._2))
+      .filter(t => !isWildcard(t._2))
       .toIndexedSeq
       .zipWithIndex
     val transitionToPeriod = withIndex
@@ -23,7 +21,7 @@ abstract class WildcardIgnoreHistogramBasedComputer[A](f1: TemporalFieldTrait[A]
         val timePeriod = TimeInterval(tPrev.plusDays(TIMESTAMP_RESOLUTION_IN_DAYS),Some(t))
         (transition,timePeriod)
       }}
-      .groupMap(_._1)(_._1)
+      .groupMap(_._1)(_._2)
     transitionToPeriod
   }
 

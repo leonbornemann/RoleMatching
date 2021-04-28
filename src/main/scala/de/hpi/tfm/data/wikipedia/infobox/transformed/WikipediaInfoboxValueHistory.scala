@@ -5,12 +5,19 @@ import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.tfm.data.wikipedia.infobox.statistics.WikipediaInfoboxStatisticsLine
+import jdk.javadoc.internal.tool.Start
+
+import java.time.LocalDate
 
 case class WikipediaInfoboxValueHistory(template:Option[String],
                                         pageID: BigInt,
                                         key: String,
                                         p: String,
                                         lineage: FactLineageWithHashMap) extends JsonWritable[WikipediaInfoboxValueHistory]{
+  def projectToTimeRange(start: LocalDate, end: LocalDate) = {
+    WikipediaInfoboxValueHistory(template,pageID,key,p,lineage.toFactLineage.projectToTimeRange(start,end).toSerializationHelper)
+  }
+
   def toWikipediaInfoboxStatisticsLine = {
     WikipediaInfoboxStatisticsLine(template,pageID,key,p,lineage)
   }

@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.{FactMatchCreator, TupleReference}
 import de.hpi.tfm.compatibility.index.BipartiteTupleIndex
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.tfm.util.RuntimeMeasurementUtil.executionTimeInSeconds
 
 import java.time.LocalDate
@@ -11,13 +12,19 @@ import java.time.LocalDate
 
 class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
                                    tuplesRight: IndexedSeq[TupleReference[A]],
-                                   graphConfig: GraphConfig) extends FactMatchCreator[A] with StrictLogging{
+                                   graphConfig: GraphConfig,
+                                   filterByCommonWildcardIgnoreChangeTransition:Boolean=true,
+                                   tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]]=None) extends FactMatchCreator[A] with StrictLogging{
+
+  if(filterByCommonWildcardIgnoreChangeTransition)
+    assert(tupleToNonWcTransitions.isDefined)
 
   val detailedLogging:Boolean = false
   var totalIndexTime:Double = 0.0
   var totalMatchExecutionTime = 0.0
   var lastIndexTimeReport = 0.0
   var lastMatchTimeReport = 0.0
+  var skippedMatchesDueToFilter = 0
   val programStartInMs = System.currentTimeMillis()
   var computedMatches = 0
   init()
@@ -71,6 +78,7 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
     logger.debug(s"Total Time since constructor: ${timePassedInSeconds}s")
     logger.debug(s"Unaccounted Time: ${timePassedInSeconds - totalMatchExecutionTime - totalIndexTime}s")
     logger.debug(s"Computed Matches: $computedMatches (${computedMatches / timePassedInSeconds} matches per second)")
+    logger.debug(s"Filtered Matches: $skippedMatchesDueToFilter (${100*skippedMatchesDueToFilter / (computedMatches + skippedMatchesDueToFilter).toDouble}%)")
     logger.debug("----------------------------------------------------------------------------------------------")
     lastMatchTimeReport = totalMatchExecutionTime
     lastIndexTimeReport = totalIndexTime
@@ -105,10 +113,14 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
         for (j <- 0 until tuplesRight.size) {
           val ref1 = tuplesLeft(i)
           val ref2 = tuplesRight(j)
-          val edge = getTupleMatchOption(ref1, ref2)
-          computedMatches +=1
-          if (edge.isDefined)
-            facts.add(edge.get)
+          if(!filterByCommonWildcardIgnoreChangeTransition || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
+            val edge = getTupleMatchOption(ref1, ref2)
+            computedMatches +=1
+            if (edge.isDefined)
+              facts.add(edge.get)
+          } else {
+            skippedMatchesDueToFilter +=1
+          }
         }
       }
     }

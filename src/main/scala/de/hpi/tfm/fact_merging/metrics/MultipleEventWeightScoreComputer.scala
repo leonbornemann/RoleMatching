@@ -9,8 +9,8 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A], b:TemporalFie
   val WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT = -0.1
   val BOTH_WILDCARD_WEIGHT = -0.01
   val SYNCHRONOUS_NON_WILDCARD_TRANSITION = 1.0
-  val transitionSetA = a.valueTransitions(true)
-  val transitionSetB = b.valueTransitions(true)
+  val transitionSetA = a.valueTransitions(true,false)
+  val transitionSetB = b.valueTransitions(true,false)
   var totalScore = 0.0
 
   computeScore()

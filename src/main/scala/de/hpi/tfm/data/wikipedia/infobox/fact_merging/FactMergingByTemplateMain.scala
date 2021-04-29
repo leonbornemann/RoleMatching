@@ -35,7 +35,8 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val table = WikipediaInfoboxValueHistory.toAssociationTable(lineagesTrain, id, attrID)
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Starting compatibility graph creation")
-  val edges = new InternalFactMatchGraphCreator(table.tupleReferences, graphConfig)
+  val nonInformativeValues:Set[Any] = Set("")
+  val edges = new InternalFactMatchGraphCreator(table.tupleReferences, graphConfig,true,nonInformativeValues)
     .toFieldLineageMergeabilityGraph(false)
     .edges
     .map(e => WikipediaInfoboxValueHistoryMatch(lineagesComplete(e.tupleReferenceA.rowIndex), lineagesComplete(e.tupleReferenceB.rowIndex)))

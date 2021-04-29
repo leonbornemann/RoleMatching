@@ -9,11 +9,15 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 
 class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
                                        graphConfig:GraphConfig,
-                                       filterByCommonWildcardIgnoreChangeTransition:Boolean=true) extends FactMatchCreator[A] with StrictLogging{
+                                       filterByCommonWildcardIgnoreChangeTransition:Boolean=true,
+                                       nonInformativeValues:Set[A] = Set[A]()) extends FactMatchCreator[A] with StrictLogging{
   var tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]] = None
   if(filterByCommonWildcardIgnoreChangeTransition){
     tupleToNonWcTransitions = Some(tuples
-      .map(t => (t,t.getDataTuple.head.valueTransitions(false,true)))
+      .map(t => (t,t.getDataTuple.head
+        .valueTransitions(false,true)
+        .filter(t => !nonInformativeValues.contains(t.prev) && !nonInformativeValues.contains(t.after))
+      ))
       .toMap)
   }
   init()

@@ -22,6 +22,10 @@ object EdgeAnalysisMain extends App with StrictLogging{
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Beginning to load edges")
   val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
+  edges
+    .filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid)
+    //.map(e => )
+  assert(false)
   logger.debug("Finsihed loading edges")
   new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays).toCsvFile(resultFile)
 }

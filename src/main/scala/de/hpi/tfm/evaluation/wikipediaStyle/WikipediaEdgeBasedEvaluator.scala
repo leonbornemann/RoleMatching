@@ -13,7 +13,8 @@ import java.io.{File, PrintWriter}
 class WikipediaEdgeBasedEvaluator(subdomain: String,
                                   trainGraphConfig: GraphConfig,
                                   evaluationGraphConfig: GraphConfig,
-                                  resultFile:File) extends HoldoutTimeEvaluator(trainGraphConfig,evaluationGraphConfig) with StrictLogging{
+                                  resultFileJson:File,
+                                  resultFileStats:File) extends HoldoutTimeEvaluator(trainGraphConfig,evaluationGraphConfig) with StrictLogging{
 
   assert(evaluationGraphConfig.timeRangeStart.isAfter(trainGraphConfig.timeRangeEnd))
 
@@ -31,8 +32,9 @@ class WikipediaEdgeBasedEvaluator(subdomain: String,
   }
 
   def evaluate() = {
-    val pr = new PrintWriter(resultFile)
-    pr.println(EdgeEvaluationRow.schema)
+    val prStats = new PrintWriter(resultFileStats)
+    val prJson = new PrintWriter(resultFileStats)
+    prStats.println(EdgeEvaluationRow.schema)
     edges.foreach(e => {
       val realEdge = getRealEdge(e)
       val edgeString1 = "socrata_"+subdomain + e.tupleReferenceA.toString
@@ -40,10 +42,12 @@ class WikipediaEdgeBasedEvaluator(subdomain: String,
       val v1 = realEdge._1.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString1)
       val v2 = realEdge._2.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString2)
       val identifiedEdge = GeneralEdge(v1,v2)
+      identifiedEdge.appendToWriter(prJson,false,true)
       val line = identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig)
         .toCSVLine
-      pr.println(line)
+      prStats.println(line)
     })
-    pr.close()
+    prStats.close()
+    prJson.close()
   }
 }

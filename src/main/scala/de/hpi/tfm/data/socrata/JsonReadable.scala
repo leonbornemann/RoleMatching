@@ -29,6 +29,10 @@ trait JsonReadable[T <: AnyRef] {
     json.extract[T]
   }
 
+  def iterableFromJsonObjectPerLineFile(path:String)(implicit m: Manifest[T]) = {
+    new JsonObjectPerLineFileIterator(path)(m)
+  }
+
   def fromJsonObjectPerLineFile(path: String)(implicit m: Manifest[T]): collection.Seq[T] = {
     val result = scala.collection.mutable.ArrayBuffer[T]()
     Source.fromFile(path).getLines()
@@ -36,5 +40,11 @@ trait JsonReadable[T <: AnyRef] {
         result.addOne(fromJsonString(l))
       })
     result
+  }
+
+  class JsonObjectPerLineFileIterator(path: String)(implicit m: Manifest[T]) extends Iterator[T]{
+    val it = Source.fromFile(path).getLines()
+    override def hasNext: Boolean = it.hasNext
+    override def next(): T = fromJsonString(it.next())
   }
 }

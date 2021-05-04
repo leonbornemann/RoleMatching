@@ -4,6 +4,7 @@ import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage.WILDCARD_VALUES
 import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalFieldTrait}
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
 import de.hpi.tfm.io.IOService
 
@@ -12,6 +13,25 @@ import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends AbstractTemporalField[Any] with Serializable{
+
+  def toShortString: String = {
+    val withoutWIldcard = lineage
+      .filter(v => !isWildcard(v._2))
+      .toIndexedSeq
+      .zipWithIndex
+    val withoutDuplicates = withoutWIldcard
+      .filter { case ((t, v), i) => i == 0 || v != withoutWIldcard(i - 1)._1._2 }
+      .map(_._1)
+      .zipWithIndex
+    "<" + withoutDuplicates
+      .map{case ((t,v),i) => {
+        val begin = t
+        val end = if(i==withoutDuplicates.size-1) "?" else withoutDuplicates(i+1)._1._1.toString
+        begin.toString + "-" + end + ":" +v
+      }}//(_._1._2)
+      .mkString(",") + ">"
+  }
+
   def toIdentifiedFactLineage(edgeString1: String) = IdentifiedFactLineage(edgeString1,toSerializationHelper)
 
 

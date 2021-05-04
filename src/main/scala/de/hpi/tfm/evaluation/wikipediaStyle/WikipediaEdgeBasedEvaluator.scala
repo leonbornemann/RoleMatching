@@ -33,20 +33,25 @@ class WikipediaEdgeBasedEvaluator(subdomain: String,
 
   def evaluate() = {
     val prStats = new PrintWriter(resultFileStats)
-    val prJson = new PrintWriter(resultFileStats)
+    val prJson = new PrintWriter(resultFileJson)
     prStats.println(EdgeEvaluationRow.schema)
-    edges.foreach(e => {
-      val realEdge = getRealEdge(e)
-      val edgeString1 = "socrata_"+subdomain + e.tupleReferenceA.toString
-      val edgeString2 = "socrata_"+subdomain + e.tupleReferenceB.toString
-      val v1 = realEdge._1.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString1)
-      val v2 = realEdge._2.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString2)
-      val identifiedEdge = GeneralEdge(v1,v2)
-      identifiedEdge.appendToWriter(prJson,false,true)
-      val line = identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig)
-        .toCSVLine
-      prStats.println(line)
-    })
+    edges
+      .zipWithIndex
+      .foreach{case (e,i) => {
+        val realEdge = getRealEdge(e)
+        val edgeString1 = "socrata_"+subdomain + e.tupleReferenceA.toString
+        val edgeString2 = "socrata_"+subdomain + e.tupleReferenceB.toString
+        val v1 = realEdge._1.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString1)
+        val v2 = realEdge._2.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString2)
+        val identifiedEdge = GeneralEdge(v1,v2)
+        identifiedEdge.appendToWriter(prJson,false,true)
+        if(i==0){
+          identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig).getSchema.mkString(",")
+        }
+        val line = identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig)
+          .toCSVLine
+        prStats.println(line)
+    }}
     prStats.close()
     prJson.close()
   }

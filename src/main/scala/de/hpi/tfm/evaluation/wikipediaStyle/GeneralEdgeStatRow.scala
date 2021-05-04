@@ -45,7 +45,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,trainGraphConfig:
         .map(k => (this.v1.getValueLineage(k),this.v2.getValueLineage(k)))
       println()
     }
-    (Seq(edgeString1 ++ edgeString2) ++ Seq(remainsValid,isInteresting) ++ computedMetrics).map(CSVUtil.toCleanString(_)).mkString(",")
+    (Seq(edgeString1,edgeString2) ++ Seq(remainsValid,isInteresting) ++ computedMetrics).map(CSVUtil.toCleanString(_)).mkString(",")
   }
 
 }

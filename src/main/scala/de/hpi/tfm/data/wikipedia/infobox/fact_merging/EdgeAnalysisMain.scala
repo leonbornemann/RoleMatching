@@ -24,7 +24,15 @@ object EdgeAnalysisMain extends App with StrictLogging{
   val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
   edges
     .filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid)
-    //.map(e => )
+    .zipWithIndex
+    .foreach{case (e,i) => {
+//      val str = e.a.toWikipediaURLInfo + "===" + e.b.toWikipediaURLInfo
+//      println(str)
+      e.printTabularEventLineageString
+//      println(e.a.lineage.toFactLineage.toShortString)
+//      println(e.b.lineage.toFactLineage.toShortString)
+//      println("-----------------------------------------------------------------------------------------------------------------")
+    }}
   assert(false)
   logger.debug("Finsihed loading edges")
   new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays).toCsvFile(resultFile)

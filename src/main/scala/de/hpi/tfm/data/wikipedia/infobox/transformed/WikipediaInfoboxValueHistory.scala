@@ -14,6 +14,8 @@ case class WikipediaInfoboxValueHistory(template:Option[String],
                                         key: String,
                                         p: String,
                                         lineage: FactLineageWithHashMap) extends JsonWritable[WikipediaInfoboxValueHistory]{
+  def toWikipediaURLInfo = s"https://en.wikipedia.org/?curid=$pageID ($p)"
+
   def projectToTimeRange(start: LocalDate, end: LocalDate) = {
     WikipediaInfoboxValueHistory(template,pageID,key,p,lineage.toFactLineage.projectToTimeRange(start,end).toSerializationHelper)
   }

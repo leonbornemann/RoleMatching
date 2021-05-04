@@ -26,15 +26,17 @@ class WikipediaEdgeBasedEvaluator(subdomain: String,
   logger.debug("Finished constructor")
 
   def getRealEdge(e: FactMergeabilityGraphEdge) = {
-    val v1 = e.tupleReferenceA.toTupleReference(getAssociation(e.tupleReferenceA.associationID)).getDataTuple.head
-    val v2 = e.tupleReferenceB.toTupleReference(getAssociation(e.tupleReferenceB.associationID)).getDataTuple.head
-    (v1,v2)
+    val v1 = e.tupleReferenceA.toTupleReference(getAssociation(e.tupleReferenceA.associationID))
+    //val v1 = tupleReference1.getDataTuple.head
+    val v2 = e.tupleReferenceB.toTupleReference(getAssociation(e.tupleReferenceB.associationID))
+    //val v2 = tupleReference2.getDataTuple.head
+    val originals = referencesToOriginal(IndexedSeq(v1,v2))
+    (originals(0),originals(1))
   }
 
   def evaluate() = {
     val prStats = new PrintWriter(resultFileStats)
     val prJson = new PrintWriter(resultFileJson)
-    prStats.println(EdgeEvaluationRow.schema)
     edges
       .zipWithIndex
       .foreach{case (e,i) => {
@@ -46,7 +48,7 @@ class WikipediaEdgeBasedEvaluator(subdomain: String,
         val identifiedEdge = GeneralEdge(v1,v2)
         identifiedEdge.appendToWriter(prJson,false,true)
         if(i==0){
-          identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig).getSchema.mkString(",")
+          prStats.println(identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig).getSchema.mkString(","))
         }
         val line = identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig)
           .toCSVLine

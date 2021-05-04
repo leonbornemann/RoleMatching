@@ -5,7 +5,8 @@ import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.internal.InternalFactMatchGraphCreator
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
-import de.hpi.tfm.data.wikipedia.infobox.query.{EdgeAnalyser, WikipediaInfoboxValueHistoryMatch}
+import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
+import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
 import de.hpi.tfm.io.IOService
 

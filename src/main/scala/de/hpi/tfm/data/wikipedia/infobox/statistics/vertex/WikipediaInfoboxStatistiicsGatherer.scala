@@ -1,4 +1,4 @@
-package de.hpi.tfm.data.wikipedia.infobox.statistics
+package de.hpi.tfm.data.wikipedia.infobox.statistics.vertex
 
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
 

@@ -2,7 +2,7 @@ package de.hpi.tfm.data.wikipedia.infobox.transformed
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.wikipedia.infobox.original.{InfoboxRevision, InfoboxRevisionHistory}
-import de.hpi.tfm.data.wikipedia.infobox.statistics.WikipediaInfoboxStatistiicsGatherer
+import de.hpi.tfm.data.wikipedia.infobox.statistics.vertex.WikipediaInfoboxStatistiicsGatherer
 
 import java.io.{File, PrintWriter}
 

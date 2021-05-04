@@ -4,7 +4,8 @@ import de.hpi.tfm.data.socrata.change.temporal_tables.attribute.{AttributeLineag
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
-import de.hpi.tfm.data.wikipedia.infobox.statistics.WikipediaInfoboxStatisticsLine
+import de.hpi.tfm.data.wikipedia.infobox.statistics.vertex.WikipediaInfoboxStatisticsLine
+import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
 
 import java.time.LocalDate
 
@@ -15,6 +16,11 @@ case class WikipediaInfoboxValueHistory(template:Option[String],
                                         lineage: FactLineageWithHashMap) extends JsonWritable[WikipediaInfoboxValueHistory]{
   def projectToTimeRange(start: LocalDate, end: LocalDate) = {
     WikipediaInfoboxValueHistory(template,pageID,key,p,lineage.toFactLineage.projectToTimeRange(start,end).toSerializationHelper)
+  }
+
+  def toGeneralFactLineage = {
+    val wikipediaID = WikipediaInfoboxPropertyID(template,pageID,key,p)
+    IdentifiedFactLineage(wikipediaID.toCompositeID,lineage)
   }
 
   def toWikipediaInfoboxStatisticsLine = {

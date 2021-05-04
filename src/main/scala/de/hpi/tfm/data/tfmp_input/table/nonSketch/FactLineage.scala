@@ -4,6 +4,7 @@ import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage.WILDCARD_VALUES
 import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalFieldTrait}
+import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
 import de.hpi.tfm.io.IOService
 
 import java.time.LocalDate
@@ -11,6 +12,8 @@ import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends AbstractTemporalField[Any] with Serializable{
+  def toIdentifiedFactLineage(edgeString1: String) = IdentifiedFactLineage(edgeString1,toSerializationHelper)
+
 
   def projectToTimeRange(timeRangeStart: LocalDate, timeRangeEnd: LocalDate) = {
     val prevStart = lineage.firstKey

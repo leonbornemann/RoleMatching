@@ -19,7 +19,7 @@ object FactFilteringMain extends App {
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
   val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
   val filtered = edges.filter(e => {
-    val statRow = e.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays)
+    val statRow = e.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow
     !statRow.remainsValid && !statRow.isInteresting
   })
   println(s"Found ${filtered.size} weird edges")

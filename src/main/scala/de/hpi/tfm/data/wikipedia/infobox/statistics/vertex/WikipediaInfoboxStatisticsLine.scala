@@ -1,8 +1,7 @@
-package de.hpi.tfm.data.wikipedia.infobox.statistics
+package de.hpi.tfm.data.wikipedia.infobox.statistics.vertex
 
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap}
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
-import de.hpi.tfm.data.wikipedia.infobox.statistics.WikipediaInfoboxStatisticsLine.years
 import de.hpi.tfm.util.CSVUtil
 
 import java.time.LocalDate
@@ -13,8 +12,8 @@ case class WikipediaInfoboxStatisticsLine(template: Option[String], pageID: BigI
   val fl = FactLineage.fromSerializationHelper(lineage).lineage
   val nonWcValues = getNonWCValuesInRange(fl)
   val totalRealChanges = getRealChangeCountInRange(fl)
-  val nonWcValuesPerYear = years.map(i => getNonWCValuesInRange(fl.range(LocalDate.ofYearDay(i, 1), LocalDate.ofYearDay(i + 1, 1))))
-  val realChangesPerYear = years.map( i => getRealChangeCountInRange(fl.range(LocalDate.ofYearDay(i,1),LocalDate.ofYearDay(i+1,1))))
+  val nonWcValuesPerYear = WikipediaInfoboxStatisticsLine.years.map(i => getNonWCValuesInRange(fl.range(LocalDate.ofYearDay(i, 1), LocalDate.ofYearDay(i + 1, 1))))
+  val realChangesPerYear = WikipediaInfoboxStatisticsLine.years.map( i => getRealChangeCountInRange(fl.range(LocalDate.ofYearDay(i,1),LocalDate.ofYearDay(i+1,1))))
 
   def getRealChangeCountInRange(fl: mutable.TreeMap[LocalDate, Any]) = {
     val withoutWildcard =fl

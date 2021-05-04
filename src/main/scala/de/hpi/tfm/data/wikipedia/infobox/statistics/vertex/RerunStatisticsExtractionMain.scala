@@ -1,4 +1,4 @@
-package de.hpi.tfm.data.wikipedia.infobox.statistics
+package de.hpi.tfm.data.wikipedia.infobox.statistics.vertex
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
@@ -6,9 +6,9 @@ import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistor
 import java.io.{File, PrintWriter}
 import scala.util.Random
 
-object RerunStatisticsExtractionMain extends App with StrictLogging{
+object RerunStatisticsExtractionMain extends App with StrictLogging {
   val infoboxHistoryDir = new File(args(0))
-  val statisticsResultWriter =  new PrintWriter(args(1))
+  val statisticsResultWriter = new PrintWriter(args(1))
   val statisticsResultWriterSample = new PrintWriter(args(2))
   val sampleProbability = args(3).toDouble
   val files = infoboxHistoryDir.listFiles()

@@ -3,7 +3,8 @@ package de.hpi.tfm.data.wikipedia.infobox.fact_merging
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
-import de.hpi.tfm.data.wikipedia.infobox.query.{EdgeAnalyser, WikipediaInfoboxValueHistoryMatch}
+import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
+import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
 import de.hpi.tfm.io.IOService
 
 import java.io.File

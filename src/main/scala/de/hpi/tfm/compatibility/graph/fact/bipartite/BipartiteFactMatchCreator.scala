@@ -116,8 +116,9 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
           if(!filterByCommonWildcardIgnoreChangeTransition || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
             val edge = getTupleMatchOption(ref1, ref2)
             computedMatches +=1
-            if (edge.isDefined)
+            if (edge.isDefined) {
               facts.add(edge.get)
+            }
           } else {
             skippedMatchesDueToFilter +=1
           }

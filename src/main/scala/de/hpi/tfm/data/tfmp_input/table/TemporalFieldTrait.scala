@@ -12,8 +12,10 @@ import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
 
-  def newScore(other: TemporalFieldTrait[T]) = {
-    new MultipleEventWeightScoreComputer(this, other).score()
+  def newScore(other: TemporalFieldTrait[T]):Double = {
+    assert(false) // Timestamp granularity needs to be set properly!
+    //new MultipleEventWeightScoreComputer(this, other,1).score()
+    ???
   }
 
 

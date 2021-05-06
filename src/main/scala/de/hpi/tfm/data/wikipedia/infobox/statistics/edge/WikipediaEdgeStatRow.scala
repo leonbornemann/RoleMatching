@@ -5,7 +5,7 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.evaluation.wikipediaStyle.GeneralEdgeStatRow
 import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScore
-import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaSimilarityWildcardIgnore, TransitionMatchScore}
+import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaSimilarity, TransitionMatchScore}
 import de.hpi.tfm.util.CSVUtil
 
 import java.time.LocalDate

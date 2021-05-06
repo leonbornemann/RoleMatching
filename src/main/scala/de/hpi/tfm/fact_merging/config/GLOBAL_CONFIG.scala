@@ -3,7 +3,7 @@ package de.hpi.tfm.fact_merging.config
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.data.tfmp_input.table.AbstractTemporalField
-import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScore
+import de.hpi.tfm.fact_merging.metrics.{EdgeScore, MultipleEventWeightScore}
 import de.hpi.tfm.fact_merging.optimization.{ConnectedComponentMergeOptimizer, GreedyEdgeWeightOptimizer, GreedyMaxCliqueBasedOptimizer}
 
 import java.io.File
@@ -20,7 +20,7 @@ object GLOBAL_CONFIG {
   }
 
 
-  val nameToFunction = Map((MultipleEventWeightScore.name,new MultipleEventWeightScore()))
+  val nameToFunction:Map[String,EdgeScore] = ???//Map((MultipleEventWeightScore.name,new MultipleEventWeightScore(1))) //TODO: set granularity properly
 
   var OPTIMIZATION_TARGET_FUNCTION_NAME:String = ""
 

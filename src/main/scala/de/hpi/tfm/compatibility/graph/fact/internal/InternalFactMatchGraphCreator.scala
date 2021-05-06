@@ -68,8 +68,9 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
         val ref2 = tuplesInNodeAsIndexedSeq(j)
         if(!filterByCommonWildcardIgnoreChangeTransition || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
           val edge = getTupleMatchOption(ref1, ref2)
-          if (edge.isDefined)
+          if (edge.isDefined) {
             facts.add(edge.get)
+          }
         }
       }
     }

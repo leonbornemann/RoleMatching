@@ -22,18 +22,18 @@ object EdgeAnalysisMain extends App with StrictLogging{
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Beginning to load edges")
   val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
-  edges
-    .filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid)
-    .zipWithIndex
-    .foreach{case (e,i) => {
-//      val str = e.a.toWikipediaURLInfo + "===" + e.b.toWikipediaURLInfo
-//      println(str)
-      e.printTabularEventLineageString
-//      println(e.a.lineage.toFactLineage.toShortString)
-//      println(e.b.lineage.toFactLineage.toShortString)
-//      println("-----------------------------------------------------------------------------------------------------------------")
-    }}
-  assert(false)
-  logger.debug("Finsihed loading edges")
+//  logger.debug(s"Found ${edges.size} edges of which ${edges.filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid).size} remain valid")
+//  edges
+//    .filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid)
+//    .zipWithIndex
+//    .foreach{case (e,i) => {
+////      val str = e.a.toWikipediaURLInfo + "===" + e.b.toWikipediaURLInfo
+////      println(str)
+//      e.printTabularEventLineageString
+////      println(e.a.lineage.toFactLineage.toShortString)
+////      println(e.b.lineage.toFactLineage.toShortString)
+////      println("-----------------------------------------------------------------------------------------------------------------")
+//    }}
+//  logger.debug("Finsihed loading edges")
   new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays).toCsvFile(resultFile)
 }

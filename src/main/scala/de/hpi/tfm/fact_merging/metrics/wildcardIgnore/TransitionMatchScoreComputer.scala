@@ -3,11 +3,13 @@ package de.hpi.tfm.fact_merging.metrics.wildcardIgnore
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
+import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.TransitionHistogramMode.TransitionHistogramMode
 
 class TransitionMatchScoreComputer[A](f1: TemporalFieldTrait[A],
                                       f2: TemporalFieldTrait[A],
                                       TIMESTAMP_RESOLUTION_IN_DAYS:Long,
-                                      ignoreNonChangeTransitions:Boolean) extends WildcardIgnoreHistogramBasedComputer[A](f1,f2,TIMESTAMP_RESOLUTION_IN_DAYS){
+                                      histogramMode: TransitionHistogramMode)
+  extends WildcardIgnoreHistogramBasedComputer[A](f1,f2,TIMESTAMP_RESOLUTION_IN_DAYS,histogramMode){
 
   def overlaps(ti1: TimeInterval, ti2: TimeInterval): Boolean = {
     ti1.intersect(ti2).isDefined
@@ -17,7 +19,7 @@ class TransitionMatchScoreComputer[A](f1: TemporalFieldTrait[A],
     val denominator: Int = getDenominator
     val chosenFromIntervals2 = collection.mutable.HashSet[TimeInterval]()
     val nominator = hist1.keySet.intersect(hist2.keySet)
-      .filter(t => !ignoreNonChangeTransitions || t.prev!=t.after)
+      //.filter(t => !ignoreNonChangeTransitions || t.prev!=t.after)
       .map(k => {
         val intervals1 = hist1(k)
         val matchesForThis = intervals1.map(ti1 => {
@@ -28,28 +30,25 @@ class TransitionMatchScoreComputer[A](f1: TemporalFieldTrait[A],
         }).sum
         matchesForThis
     }).sum
-    if(nominator>denominator){
-      println()
-    }
     nominator / denominator.toDouble
   }
 
   private def getDenominator = {
-    if(!ignoreNonChangeTransitions){
+    //if(!ignoreNonChangeTransitions){
       val hist1IntervalCount = hist1.values.map(_.size).sum
       val hist2IntervalCount = hist2.values.map(_.size).sum
       val denominator = Seq(hist1IntervalCount, hist2IntervalCount).max
       denominator
-    } else {
-      val hist1IntervalCount = hist1
-        .filter(t => t._1.prev!=t._1.after)
-        .values.map(_.size).sum
-      val hist2IntervalCount = hist2
-        .filter(t => t._1.prev!=t._1.after)
-        .values.map(_.size).sum
-      val denominator = Seq(hist1IntervalCount, hist2IntervalCount).max
-      denominator
-    }
+//    } else {
+//      val hist1IntervalCount = hist1
+//        .filter(t => t._1.prev!=t._1.after)
+//        .values.map(_.size).sum
+//      val hist2IntervalCount = hist2
+//        .filter(t => t._1.prev!=t._1.after)
+//        .values.map(_.size).sum
+//      val denominator = Seq(hist1IntervalCount, hist2IntervalCount).max
+//      denominator
+//    }
 
   }
 }

@@ -5,6 +5,7 @@ import de.hpi.tfm.data.wikipedia.infobox.original.{InfoboxRevision, InfoboxRevis
 import de.hpi.tfm.data.wikipedia.infobox.statistics.vertex.WikipediaInfoboxStatistiicsGatherer
 
 import java.io.{File, PrintWriter}
+import java.time.{Duration, Period}
 
 object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   val file = args(0)
@@ -29,7 +30,10 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
       assert(weird.size==0)
       val retained = res.filter(vh => {
         val statLine = vh.toWikipediaInfoboxStatisticsLine
-        statLine.totalRealChanges>=1 && statLine.nonWcValues>10 //very basic filtering to weed out uninteresting infoboxes / property lineages
+        val nonWildcardPeriod = vh.lineage.toFactLineage.nonWildcardDuration(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)
+        val hasRealChange = statLine.totalRealChanges >= 1
+        val hasEnoughNonWildcard = nonWildcardPeriod.getDays >= Period.ofYears(1).getDays
+        hasRealChange && hasEnoughNonWildcard //very basic filtering to weed out uninteresting infoboxes / property lineages
       })
       filtered += (res.size - retained.size)
       total += res.size

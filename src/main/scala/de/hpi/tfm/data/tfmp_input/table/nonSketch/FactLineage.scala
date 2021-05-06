@@ -8,11 +8,25 @@ import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
 import de.hpi.tfm.io.IOService
 
-import java.time.LocalDate
+import java.time.{LocalDate, Period}
 import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends AbstractTemporalField[Any] with Serializable{
+  def nonWildcardDuration(timeRangeEnd:LocalDate) = {
+    val withIndex = lineage
+      .zipWithIndex
+      .toIndexedSeq
+    var period = Period.ZERO
+    withIndex.map{case ((ld,v),i) => {
+      val begin = ld
+      val end = if(i!=withIndex.size-1) withIndex(i+1)._1._1 else timeRangeEnd
+      if(!isWildcard(begin))
+        period = period.plus(Period.between(begin,end))
+    }}
+    period
+  }
+
 
   def toShortString: String = {
     val withoutWIldcard = lineage

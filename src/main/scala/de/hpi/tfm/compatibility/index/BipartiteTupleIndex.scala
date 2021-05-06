@@ -62,8 +62,11 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
         .head
       if(bestTimestamp._2>=priorCombinations)
         None
-      else
+      else {
+        println(s"parent ts: $parentTimestamps parent key: $parentKeyValues")
+        println(s"Chosing $bestTimestamp for input ${tuplesLeft.map(_.rowIndex)} and ${tuplesRight.map(_.rowIndex)}")
         Some(bestTimestamp)
+      }
     }
   }
 

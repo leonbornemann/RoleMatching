@@ -60,9 +60,9 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
         allTuplesRight ++= tuplesRight
         //Wildcards to Wildcards:
       }}
-      buildGraphRecursively(index.parentTimestamps,index.parentKeyValues,index.wildcardsLeft,index.wildcardsRight)
-      buildGraphRecursively(index.parentTimestamps,index.parentKeyValues,index.wildcardsLeft,allTuplesRight.toIndexedSeq)
-      buildGraphRecursively(index.parentTimestamps,index.parentKeyValues,allTuplesLeft.toIndexedSeq,index.wildcardsRight)
+      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,index.wildcardsRight)
+      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,allTuplesRight.toIndexedSeq)
+      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),allTuplesLeft.toIndexedSeq,index.wildcardsRight)
     } else {
       val (_,time) = executionTimeInSeconds(doPairwiseMatching(originalInputLeft,originalInputRight))
       totalMatchExecutionTime += time
@@ -95,6 +95,7 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
       if(indexTimeReportDue && detailedLogging){
         reportRunTimes()
       }
+      logger.debug(s"Calling buildGraph with Left: ${tuplesLeft.map(_.rowIndex)} and right: ${tuplesRight.map(_.rowIndex)}")
       buildGraph(tuplesLeft, tuplesRight, newIndexForSubNode)
     } else {
       val (_,time) = executionTimeInSeconds(doPairwiseMatching(tuplesLeft, tuplesRight))

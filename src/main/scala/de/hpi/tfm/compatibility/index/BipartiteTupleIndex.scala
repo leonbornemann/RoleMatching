@@ -53,18 +53,12 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
         val combinationsAfterSplit = nonWildCardCombinations + wildcardsLeftSum + wildcardsRightSum
         (t,combinationsAfterSplit)
       }).toIndexedSeq
-      if(bestTimestampCandidates.size==0){
-        println(parentTimestamps)
-        println(parentKeyValues)
-      }
       val bestTimestamp = bestTimestampCandidates
         .sortBy(_._2)
         .head
       if(bestTimestamp._2>=priorCombinations)
         None
       else {
-        println(s"parent ts: $parentTimestamps parent key: $parentKeyValues")
-        println(s"Chosing $bestTimestamp for input ${tuplesLeft.map(_.rowIndex)} and ${tuplesRight.map(_.rowIndex)}")
         Some(bestTimestamp)
       }
     }

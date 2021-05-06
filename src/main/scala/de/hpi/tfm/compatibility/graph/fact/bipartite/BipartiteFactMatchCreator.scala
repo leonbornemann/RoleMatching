@@ -95,7 +95,6 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
       if(indexTimeReportDue && detailedLogging){
         reportRunTimes()
       }
-      logger.debug(s"Calling buildGraph with Left: ${tuplesLeft.map(_.rowIndex)} and right: ${tuplesRight.map(_.rowIndex)}")
       buildGraph(tuplesLeft, tuplesRight, newIndexForSubNode)
     } else {
       val (_,time) = executionTimeInSeconds(doPairwiseMatching(tuplesLeft, tuplesRight))

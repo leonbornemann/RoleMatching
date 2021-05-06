@@ -65,16 +65,16 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     }}
   }
 
-  def addValueToSequence(curSequence: ArrayBuffer[(LocalDate, String)], t: LocalDate, v: String) = {
+  def addValueToSequence(curSequence: ArrayBuffer[(LocalDate, String)], t: LocalDate, v: String,insertWildcardAfter:Boolean) = {
     if(curSequence.isEmpty || curSequence.last._2!=v){
       curSequence.append((t,v))
       val nextTimePoint = t.plusDays(lowestGranularityInDays)
-      if(!valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
+      if(insertWildcardAfter && !valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
         curSequence.append((nextTimePoint,ReservedChangeValues.NOT_EXISTANT_CELL))
     } else {
       //we confirm this value, but it is the same as the previous so no need to insert anything new, but we might need to insert wildcard on the next day
       val nextTimePoint = t.plusDays(lowestGranularityInDays)
-      if(!valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
+      if(insertWildcardAfter && !valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
         curSequence.append((nextTimePoint,ReservedChangeValues.NOT_EXISTANT_CELL))
     }
   }
@@ -91,12 +91,22 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     val factLineages = propToValueHistory.map{case (k,valueHistory) => {
       val lineage = scala.collection.mutable.ArrayBuffer[(LocalDate,String)]()
       if(!valueConfirmationPoints.contains(EARLIEST_HISTORY_TIMESTAMP)){
-        addValueToSequence(lineage,EARLIEST_HISTORY_TIMESTAMP,ReservedChangeValues.NOT_EXISTANT_ROW)
+        addValueToSequence(lineage,EARLIEST_HISTORY_TIMESTAMP,ReservedChangeValues.NOT_EXISTANT_ROW,false)
       }
-      confirmationPointsSorted.foreach(ld => {
-        val value = new TimeRangeToSingleValueReducer(ld,ld.plusDays(lowestGranularityInDays),valueHistory,true).computeValue()
-        addValueToSequence(lineage,ld,value)
-      })
+      confirmationPointsSorted
+        .zipWithIndex
+        .foreach{case (ld,i) => {
+          val value = new TimeRangeToSingleValueReducer(ld,ld.plusDays(lowestGranularityInDays),valueHistory,true).computeValue()
+          if(i<confirmationPointsSorted.size-1){
+            val nextDate = confirmationPointsSorted(i+1)
+            val nextValue = new TimeRangeToSingleValueReducer(nextDate,nextDate.plusDays(lowestGranularityInDays),valueHistory,true).computeValue()
+            val insertWildcardAfter = nextValue!=value
+            addValueToSequence(lineage,ld,value,insertWildcardAfter)
+          } else {
+            addValueToSequence(lineage,ld,value,false)
+          }
+
+      }}
       lineage
         .zipWithIndex
         .foreach(t => {

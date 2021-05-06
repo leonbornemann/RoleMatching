@@ -16,8 +16,8 @@ case class WikipediaInfoboxValueHistoryMatch(a: WikipediaInfoboxValueHistory, b:
     val dates2 = b.lineage.toFactLineage.lineage.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
     val allDates = dates.union(dates2).toIndexedSeq.sorted
     val header = Seq("") ++ allDates
-    val cells1 = Seq(id1) ++ allDates.map(t => a.lineage.lineage.getOrElse(t,"")).map(v => if(FactLineage.isWildcard(v)) "_" else v)
-    val cells2 = Seq(id2) ++ allDates.map(t => b.lineage.lineage.getOrElse(t,"")).map(v => if(FactLineage.isWildcard(v)) "_" else v)
+    val cells1 = Seq(id1) ++ allDates.map(t => a.lineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
+    val cells2 = Seq(id2) ++ allDates.map(t => b.lineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
     TableFormatter.printTable(header,Seq(cells1,cells2))
   }
 

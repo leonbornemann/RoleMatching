@@ -19,10 +19,11 @@ object IndexByTemplateMain extends App with StrictLogging{
   val templateFileWriters = templateNames
     .map(tn => (tn,new PrintWriter(s"${templateDir.getAbsolutePath}/$tn.json")))
     .toMap
+
   val fulfillsFilter = files.toIndexedSeq.foreach(f => {
     logger.debug(s"processing ${f.getAbsolutePath}")
     val res = WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(f.getAbsolutePath)
-      .withFilter(wiwh => wiwh.template.isDefined && templateNames.contains(wiwh.template.get)) //all query strings need to be matched in at least one value
+      .withFilter(wiwh => wiwh.template.isDefined && templateNames.contains(wiwh.template.get) && wiwh.isOfInterest) //all query strings need to be matched in at least one value
       .foreach(wiwh => wiwh.appendToWriter(templateFileWriters(wiwh.template.get),false,true))
     processed += 1
     if (processed % 100 == 0)

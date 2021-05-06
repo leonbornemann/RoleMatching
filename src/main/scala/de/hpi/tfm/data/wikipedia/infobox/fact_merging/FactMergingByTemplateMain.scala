@@ -41,7 +41,8 @@ object FactMergingByTemplateMain extends App with StrictLogging{
     .toFieldLineageMergeabilityGraph(false)
     .edges
     .map(e => WikipediaInfoboxValueHistoryMatch(lineagesComplete(e.tupleReferenceA.rowIndex), lineagesComplete(e.tupleReferenceB.rowIndex)))
-  logger.debug("Finished compatibility graph creation")
+  logger.debug(s"Finished compatibility graph creation, found ${edges.size} edges")
+  logger.debug(s"serializing to ${resultDir.getAbsolutePath + s"/${templateSetString}_edges.json"}")
   val writer = new PrintWriter(resultDir.getAbsolutePath + s"/${templateSetString}_edges.json")
   edges.foreach(m => m.appendToWriter(writer, false, true))
   writer.close()

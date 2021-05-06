@@ -4,16 +4,25 @@ import de.hpi.tfm.data.socrata.change.temporal_tables.attribute.{AttributeLineag
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.statistics.vertex.WikipediaInfoboxStatisticsLine
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
 
-import java.time.LocalDate
+import java.time.{LocalDate, Period}
 
 case class WikipediaInfoboxValueHistory(template:Option[String],
                                         pageID: BigInt,
                                         key: String,
                                         p: String,
                                         lineage: FactLineageWithHashMap) extends JsonWritable[WikipediaInfoboxValueHistory]{
+  def isOfInterest = {
+    val statLine = toWikipediaInfoboxStatisticsLine
+    val nonWildcardPeriod = lineage.toFactLineage.nonWildcardDuration(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)
+    val hasRealChange = statLine.totalRealChanges >= 1
+    val hasEnoughNonWildcard = nonWildcardPeriod.getDays >= Period.ofYears(1).getDays
+    hasRealChange && hasEnoughNonWildcard
+  }
+
   def toWikipediaURLInfo = s"https://en.wikipedia.org/?curid=$pageID ($p)"
 
   def projectToTimeRange(start: LocalDate, end: LocalDate) = {

@@ -5,7 +5,10 @@ import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 
-abstract class WildcardIgnoreHistogramBasedComputer[A](f1: TemporalFieldTrait[A], f2: TemporalFieldTrait[A],TIMESTAMP_RESOLUTION_IN_DAYS:Long) {
+import java.time.LocalDate
+
+abstract class WildcardIgnoreHistogramBasedComputer[A](f1: TemporalFieldTrait[A], f2: TemporalFieldTrait[A],TIMESTAMP_RESOLUTION_IN_DAYS:Long,
+                                                       includeConsecutiveSameValueTransitions:Boolean=true) {
 
   def buildTransitionHistogram(f1: TemporalFieldTrait[A]) = {
     val withIndex = f1.getValueLineage
@@ -17,8 +20,17 @@ abstract class WildcardIgnoreHistogramBasedComputer[A](f1: TemporalFieldTrait[A]
       //.withFilter{case ((t,v),i) => i!=0}
       .map{case ((t,v),i) => {
         val ((tPrev,vPrev),iPrev) = withIndex(i-1)
+        if(includeConsecutiveSameValueTransitions){
+          //add tPrev as many times as we have it:
+          val begin = tPrev.toEpochDay
+          val end = t.minusDays(TIMESTAMP_RESOLUTION_IN_DAYS).toEpochDay
+          val intervals = (begin until end by TIMESTAMP_RESOLUTION_IN_DAYS).map(begin => {
+            TimeInterval(LocalDate.ofEpochDay(begin),Some(LocalDate.ofEpochDay(begin+TIMESTAMP_RESOLUTION_IN_DAYS)))
+          })
+
+        }
         val transition = ValueTransition(vPrev,v)
-        val timePeriod = TimeInterval(tPrev.plusDays(TIMESTAMP_RESOLUTION_IN_DAYS),Some(t))
+        val timePeriod = TimeInterval(t.minusDays(TIMESTAMP_RESOLUTION_IN_DAYS),Some(t))
         (transition,timePeriod)
       }}
       .groupMap(_._1)(_._2)

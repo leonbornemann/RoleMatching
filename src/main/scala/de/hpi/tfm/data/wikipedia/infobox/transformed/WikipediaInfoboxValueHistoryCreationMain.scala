@@ -29,11 +29,8 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
       val weird = res.filter(_.lineage.lineage.keySet.exists(_.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)))
       assert(weird.size==0)
       val retained = res.filter(vh => {
-        val statLine = vh.toWikipediaInfoboxStatisticsLine
-        val nonWildcardPeriod = vh.lineage.toFactLineage.nonWildcardDuration(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)
-        val hasRealChange = statLine.totalRealChanges >= 1
-        val hasEnoughNonWildcard = nonWildcardPeriod.getDays >= Period.ofYears(1).getDays
-        hasRealChange && hasEnoughNonWildcard //very basic filtering to weed out uninteresting infoboxes / property lineages
+        vh.isOfInterest
+         //very basic filtering to weed out uninteresting infoboxes / property lineages
       })
       filtered += (res.size - retained.size)
       total += res.size

@@ -12,7 +12,7 @@ import java.time.LocalDate
 
 case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,trainGraphConfig:GraphConfig,edgeString1: String, edgeString2: String, v1: TemporalFieldTrait[Any], v2: TemporalFieldTrait[Any]) {
 
-  val histogramModes = Seq(TransitionHistogramMode.NORMAL,TransitionHistogramMode.IGNORE_NON_CHANGE,TransitionHistogramMode.COUNT_CONSECUTIVE_NON_CHANGE_ONLY_ONCE)
+  val histogramModes = Seq(TransitionHistogramMode.NORMAL,TransitionHistogramMode.IGNORE_NON_CHANGE,TransitionHistogramMode.COUNT_NON_CHANGE_ONLY_ONCE)
   val metricsTrain = histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS,m),
     new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m)
     ,new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd)))
@@ -23,7 +23,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,trainGraphConfig:
   val remainsValid = v1.tryMergeWithConsistent(v2).isDefined
   val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(v1).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(v2).isDefined
   val v1Train = v1.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
-  val v2Train = v1.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
+  val v2Train = v2.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
   val computedMetricsTrain = metricsTrain.map(m => m.compute(v1Train,v2Train))
   val computedMetricsFull = metricsFull.map(m => m.compute(v1,v2))
 

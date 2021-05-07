@@ -35,10 +35,9 @@ abstract class WildcardIgnoreHistogramBasedComputer[A](val f1: TemporalFieldTrai
             })
             transitions ++= intervals
           } else {
-            assert(transitionHistogramMode == TransitionHistogramMode.COUNT_CONSECUTIVE_NON_CHANGE_ONLY_ONCE)
+            assert(transitionHistogramMode == TransitionHistogramMode.COUNT_NON_CHANGE_ONLY_ONCE)
             transitions.append((prevTransition,TimeInterval(LocalDate.ofEpochDay(begin),Some(LocalDate.ofEpochDay(end).minusDays(1)))))
           }
-
         }
         val transition = ValueTransition(vPrev,v)
         val timePeriod = TimeInterval(t.minusDays(TIMESTAMP_RESOLUTION_IN_DAYS),Some(t.minusDays(1)))

@@ -5,6 +5,7 @@ import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
+import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaDistanceComputer, TransitionHistogramMode}
 import de.hpi.tfm.io.IOService
 
 import java.io.File
@@ -22,7 +23,7 @@ object EdgeAnalysisMain extends App with StrictLogging{
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Beginning to load edges")
   val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
-//  logger.debug(s"Found ${edges.size} edges of which ${edges.filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid).size} remain valid")
+  logger.debug(s"Found ${edges.size} edges of which ${edges.filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid).size} remain valid")
 //  edges
 //    .filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid)
 //    .zipWithIndex
@@ -30,10 +31,18 @@ object EdgeAnalysisMain extends App with StrictLogging{
 ////      val str = e.a.toWikipediaURLInfo + "===" + e.b.toWikipediaURLInfo
 ////      println(str)
 //      e.printTabularEventLineageString
+//      val generalStatRow = e.toWikipediaEdgeStatRow(graphConfig, timestampResolutionInDays)
+//      println(generalStatRow)
+//      val computer = new RuzickaDistanceComputer(e.a.lineage.toFactLineage,
+//        e.b.lineage.toFactLineage,
+//        1,
+//        TransitionHistogramMode.NORMAL)
 ////      println(e.a.lineage.toFactLineage.toShortString)
 ////      println(e.b.lineage.toFactLineage.toShortString)
 ////      println("-----------------------------------------------------------------------------------------------------------------")
+//      println(computer.computeScore())
+//      println(computer.computeScore())
 //    }}
-//  logger.debug("Finsihed loading edges")
+  logger.debug("Finsihed loading edges")
   new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays).toCsvFile(resultFile)
 }

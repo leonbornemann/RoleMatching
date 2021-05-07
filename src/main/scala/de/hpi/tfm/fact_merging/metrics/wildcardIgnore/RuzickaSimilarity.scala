@@ -14,6 +14,7 @@ class RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS:Long, histogramMode: Transi
 
   override def compute[A](tr1: TupleReference[A]): Double = 0.0
 
-  override def compute[A](f1: TemporalFieldTrait[A], f2: TemporalFieldTrait[A]): Double =
+  override def compute[A](f1: TemporalFieldTrait[A], f2: TemporalFieldTrait[A]): Double = {
     new RuzickaDistanceComputer(f1,f2,TIMESTAMP_RESOLUTION_IN_DAYS,histogramMode).computeScore()
+  }
 }

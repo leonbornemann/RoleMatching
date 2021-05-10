@@ -13,13 +13,15 @@ object DirectEdgeFileEvaluation extends App {
   val timeRangeStart = LocalDate.parse(args(2))
   val timeRangeEnd = LocalDate.parse(args(3))
   val trainGraphConfig = GraphConfig(minEvidence,timeRangeStart,timeRangeEnd)
-  val edges = GeneralEdge.fromJsonObjectPerLineFile(edgeFile)
+  val edges = GeneralEdge.iterableFromJsonObjectPerLineFile(edgeFile)
   val resultPR = new PrintWriter(resultFile)
-  edges.zipWithIndex.foreach{case (e,i) => {
+  var i = 0
+  edges.foreach{case e => {
     val statRow = e.toGeneralEdgeStatRow(1,trainGraphConfig)
     if(i==0)
       resultPR.println(statRow.getSchema.mkString(","))
     resultPR.println(statRow.toCSVLine)
+    i+=1
   }}
   resultPR.close()
   //timeRangeStartTrain="2019-11-01"

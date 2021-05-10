@@ -5,6 +5,7 @@ import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistor
 import java.io.{File, PrintWriter}
 
 class WikipediaInfoboxStatistiicsGatherer(file:File) {
+
   def closeFile() = pr.close()
 
   val pr = new PrintWriter(file)

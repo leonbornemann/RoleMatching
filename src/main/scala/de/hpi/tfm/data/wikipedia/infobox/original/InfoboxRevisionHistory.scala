@@ -4,7 +4,8 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.data.wikipedia.infobox.transformed.{TimeRangeToSingleValueReducer, WikipediaInfoboxValueHistory}
-import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, TIME_AXIS, lowestGranularityInDays}
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, TIME_AXIS, lowestGranularityInDays}
+import de.hpi.tfm.data.wikipedia.infobox.original.WikipediaLineageCreationMode.{WILDCARD_BETWEEN_ALL_CONFIRMATIONS, WILDCARD_BETWEEN_CHANGE, WILDCARD_OUTSIDE_OF_GRACE_PERIOD, WikipediaLineageCreationMode}
 import de.hpi.tfm.evaluation.Histogram
 
 import java.time.{LocalDate, LocalDateTime}
@@ -79,7 +80,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     }
   }
 
-  def transformGranularityAndExpandTimeRange() = {
+  def transformGranularityAndExpandTimeRange(mode:WikipediaLineageCreationMode) = {
 //    val relevantTimePoints = revisionsSorted
 //      .map(r => r.validFromAsDate)
 //      .toSet
@@ -89,8 +90,6 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
 //
     val confirmationPointsSorted = valueConfirmationPoints.toIndexedSeq.sortBy(_.toEpochDay)
     val factLineages = propToValueHistory.map{case (k,valueHistory) => {
-      if(k=="image_caption" && this.revisions.head.pageID==BigInt(21210))
-        println()
       val lineage = scala.collection.mutable.ArrayBuffer[(LocalDate,String)]()
       if(!valueConfirmationPoints.contains(EARLIEST_HISTORY_TIMESTAMP)){
         addValueToSequence(lineage,EARLIEST_HISTORY_TIMESTAMP,ReservedChangeValues.NOT_EXISTANT_ROW,false)
@@ -101,11 +100,33 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
           val value = new TimeRangeToSingleValueReducer(ld,ld.plusDays(lowestGranularityInDays),valueHistory,true).computeValue()
           if(i<confirmationPointsSorted.size-1){
             val nextDate = confirmationPointsSorted(i+1)
-            val nextValue = new TimeRangeToSingleValueReducer(nextDate,nextDate.plusDays(lowestGranularityInDays),valueHistory,true).computeValue()
-            val insertWildcardAfter = nextValue!=value
-            addValueToSequence(lineage,ld,value,insertWildcardAfter)
+            if(mode==WikipediaLineageCreationMode.WILDCARD_BETWEEN_CHANGE){
+              val nextValue = new TimeRangeToSingleValueReducer(nextDate,nextDate.plusDays(lowestGranularityInDays),valueHistory,true).computeValue()
+              val insertWildcardAfter = nextValue!=value
+              addValueToSequence(lineage,ld,value,insertWildcardAfter)
+            } else if(mode==WikipediaLineageCreationMode.WILDCARD_BETWEEN_ALL_CONFIRMATIONS){
+              val insertWildcardAfter = valueConfirmationPoints.contains(nextDate)
+              addValueToSequence(lineage,ld,value,insertWildcardAfter)
+            } else{
+              assert(mode==WILDCARD_OUTSIDE_OF_GRACE_PERIOD)
+              addValueToSequence(lineage,ld,value,false)
+              val nextChangeIsAfterGracePeriod = nextDate.isAfter(ld.plusDays(getGracePeriodInDays))
+              if(nextChangeIsAfterGracePeriod)
+                addValueToSequence(lineage,ld.plusDays(getGracePeriodInDays),ReservedChangeValues.NOT_EXISTANT_CELL,false)
+            }
           } else {
-            addValueToSequence(lineage,ld,value,false)
+            if(mode==WILDCARD_BETWEEN_CHANGE) {
+              addValueToSequence(lineage,ld,value,false)
+            } else if(mode==WILDCARD_BETWEEN_ALL_CONFIRMATIONS){
+              val insertWildcardAfter = ld!=LATEST_HISTORY_TIMESTAMP
+              addValueToSequence(lineage,ld,value,insertWildcardAfter)
+            } else {
+              assert(mode==WILDCARD_OUTSIDE_OF_GRACE_PERIOD)
+              addValueToSequence(lineage,ld,value,false)
+              val nextChangeIsAfterGracePeriod = LATEST_HISTORY_TIMESTAMP.isAfter(ld.plusDays(getGracePeriodInDays))
+              if(nextChangeIsAfterGracePeriod)
+                addValueToSequence(lineage,ld.plusDays(getGracePeriodInDays),ReservedChangeValues.NOT_EXISTANT_CELL,false)
+            }
           }
 
       }}
@@ -158,7 +179,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       .printAll()
   }
 
-  def toWikipediaInfoboxValueHistories = {
+  def toWikipediaInfoboxValueHistories(mode: WikipediaLineageCreationMode) = {
     revisionsSorted.foreach(r => {
       r.changes
         .withFilter(_.property.propertyType!="meta")
@@ -172,7 +193,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     //propToValueHistory("map2 cap")
     extractExtraLinkHistories()
     integrityCheckHistories()
-    val lineages = transformGranularityAndExpandTimeRange
+    val lineages = transformGranularityAndExpandTimeRange(mode)
       .withFilter(_._2.lineage.values.exists(v => !FactLineage.isWildcard(v)))
       .map(t => {
         (t._1,t._2.toSerializationHelper)
@@ -180,6 +201,16 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       })
     lineages
   }
+
+  def getGracePeriodInDays = {
+    28
+  }
+
+  def changeCount(p:String) = {
+
+
+  }
+
 }
 object InfoboxRevisionHistory extends StrictLogging{
 

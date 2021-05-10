@@ -14,11 +14,9 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,trainGraphConfig:
 
   val histogramModes = Seq(TransitionHistogramMode.NORMAL,TransitionHistogramMode.IGNORE_NON_CHANGE,TransitionHistogramMode.COUNT_NON_CHANGE_ONLY_ONCE)
   val metricsTrain = histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS,m),
-    new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m)
-    ,new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd)))
+    new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m)) ++ Seq(new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd)))
   val metricsFull = histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS,m),
-    new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m)
-    ,new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,IOService.STANDARD_TIME_FRAME_END)))
+    new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m))) ++ Seq(new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,IOService.STANDARD_TIME_FRAME_END))
 
   val remainsValid = v1.tryMergeWithConsistent(v2).isDefined
   val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(v1).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(v2).isDefined

@@ -1,7 +1,7 @@
 package de.hpi.tfm.data.wikipedia.infobox.transformed
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.tfm.data.wikipedia.infobox.original.{InfoboxRevision, InfoboxRevisionHistory}
+import de.hpi.tfm.data.wikipedia.infobox.original.{InfoboxRevision, InfoboxRevisionHistory, WikipediaLineageCreationMode}
 import de.hpi.tfm.data.wikipedia.infobox.statistics.vertex.WikipediaInfoboxStatistiicsGatherer
 
 import java.io.{File, PrintWriter}
@@ -12,6 +12,7 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   val resultDir = new File(args(1))
   val granularityInDays = args(2).toInt
   val statGatherer = new WikipediaInfoboxStatistiicsGatherer(new File(args(3)))
+  val mode = WikipediaLineageCreationMode.withName(args(4))
   InfoboxRevisionHistory.setGranularityInDays(granularityInDays)
   val objects = InfoboxRevision.fromJsonObjectPerLineFile(file)
   objects.foreach(_.checkIntegrity())
@@ -25,7 +26,7 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   var total = 0
   revisionHistories
     .foreach(r => {
-      val res = r.toWikipediaInfoboxValueHistories
+      val res = r.toWikipediaInfoboxValueHistories(mode)
       val weird = res.filter(_.lineage.lineage.keySet.exists(_.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)))
       assert(weird.size==0)
       val retained = res.filter(vh => {

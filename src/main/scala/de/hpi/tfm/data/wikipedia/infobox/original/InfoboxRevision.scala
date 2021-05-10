@@ -63,20 +63,4 @@ object InfoboxRevision extends JsonReadable[InfoboxRevision] with StrictLogging 
     + rename1
     + rename2)
 
-  def toPaddedInfoboxHistory(objects: collection.Seq[InfoboxRevision]) = {
-    val byKey = objects.groupBy(_.key)
-    val todo = byKey.size
-    logger.debug(s"Found $todo infobox lineages to create")
-    var done = 0
-    val res = byKey.map(k => {
-      val res = InfoboxRevisionHistory(k._1,k._2).toWikipediaInfoboxValueHistories
-      done +=1
-      if(done%100==0) {
-        logger.debug(s"Done with $done")
-      }
-      res
-    })
-    res
-  }
-
 }

@@ -32,7 +32,9 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
       totalScore = MultipleEventWeightScoreComputer.scoreForInconsistent
     } else {
       val commonPointOfInterestIterator = new CommonPointOfInterestIterator[A](a,b)
-      commonPointOfInterestIterator.foreach(cp => {
+      commonPointOfInterestIterator
+        .withFilter(cp => !cp.pointInTime.isAfter(timeEnd))
+        .foreach(cp => {
         //handle previous transitions:
         val countPrevInDays = cp.pointInTime.toEpochDay - cp.prevPointInTime.toEpochDay - TIMESTAMP_GRANULARITY_IN_DAYS
         if(!(countPrevInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0))
@@ -72,12 +74,10 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
           }
         }
       })
-      val lastKey = Seq(a.getValueLineage.lastKey,b.getValueLineage.lastKey).maxBy(_.toEpochDay)
+      val lastKey = Seq(a.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1,b.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1).maxBy(_.toEpochDay)
       val lastValueA = a.getValueLineage.last._2
       val lastValueB = b.getValueLineage.last._2
       val countLastInDays = timeEnd.toEpochDay - lastKey.toEpochDay - TIMESTAMP_GRANULARITY_IN_DAYS
-      if(!(countLastInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0))
-        println()
       assert(countLastInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0)
       val countLast = countLastInDays / TIMESTAMP_GRANULARITY_IN_DAYS
       handleSameValueTransitions(lastValueA,lastValueB,countLast.toInt)

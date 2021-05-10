@@ -7,6 +7,7 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithH
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.statistics.vertex.WikipediaInfoboxStatisticsLine
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
+import de.hpi.tfm.fact_merging.config.UpdateChangeCounter
 
 import java.time.{LocalDate, Period}
 
@@ -21,6 +22,17 @@ case class WikipediaInfoboxValueHistory(template:Option[String],
     val hasRealChange = statLine.totalRealChanges >= 1
     val hasEnoughNonWildcard = nonWildcardPeriod.getDays >= Period.ofYears(1).getDays
     hasRealChange && hasEnoughNonWildcard
+  }
+
+  def changeCount = {
+    val withIndex = lineage.toFactLineage.lineage
+      .filter(t => !FactLineage.isWildcard(t._2))
+      .toIndexedSeq
+      .zipWithIndex
+    withIndex
+      //.withFilter{case ((t,v),i) => !FactLineage.isWildcard(v)}
+      .filter{case ((t,v),i) => i==0 || v != withIndex(i-1)}
+      .size-1
   }
 
   def toWikipediaURLInfo = s"https://en.wikipedia.org/?curid=$pageID ($p)"

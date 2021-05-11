@@ -18,6 +18,8 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   objects.foreach(_.checkIntegrity())
   val revisionHistories = InfoboxRevisionHistory.getFromRevisionCollection(objects)
   revisionHistories.foreach(rh => rh.integrityCheck())
+  logger.debug(s"Running with mode $mode")
+  logger.debug(s"Running granularity (days) $granularityInDays")
   logger.debug(s"Found ${revisionHistories.size} infobox histories to process")
   var finished = 0
   val resultFile = resultDir.getAbsolutePath + "/" + WikipediaInfoboxValueHistory.getFilenameForBucket(new File(file).getName)

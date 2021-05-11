@@ -8,6 +8,7 @@ import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
 import java.io.{File, PrintWriter}
@@ -23,6 +24,8 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val resultDir = new File(args(2))
   val endDateTrainPhase = LocalDate.parse(args(3))
   val timestampResolutionInDays = args(4).toInt
+  GLOBAL_CONFIG.trainTimeEnd=endDateTrainPhase
+  GLOBAL_CONFIG.granularityInDays=timestampResolutionInDays
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
   val infoboxHistoryFiles = templates.map(t => new File(byTemplateDir.getAbsolutePath + s"/$t.json"))
   val lineagesComplete = infoboxHistoryFiles.flatMap(f => {

@@ -5,7 +5,8 @@ import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.fact_merging.metrics.EdgeScore
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.TransitionHistogramMode.TransitionHistogramMode
 
-class TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS:Long,histogramMode: TransitionHistogramMode) extends EdgeScore{
+class TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS:Long,
+                           histogramMode: TransitionHistogramMode) extends EdgeScore{
   override def name: String = s"TransitionMatchScore_$histogramMode"
 
   override def compute[A](tr1: TupleReference[A]): Double = 0.0

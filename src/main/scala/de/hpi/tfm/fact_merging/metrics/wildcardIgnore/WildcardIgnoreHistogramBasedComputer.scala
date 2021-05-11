@@ -5,15 +5,38 @@ import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.TransitionHistogramMode.TransitionHistogramMode
+import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.WildcardIgnoreHistogramBasedComputer.buildTransitionHistogram
 
 import java.time.LocalDate
 
 abstract class WildcardIgnoreHistogramBasedComputer[A](val f1: TemporalFieldTrait[A],
                                                        val f2: TemporalFieldTrait[A],
                                                        val TIMESTAMP_RESOLUTION_IN_DAYS:Long,
-                                                       val transitionHistogramMode:TransitionHistogramMode) {
+                                                       val transitionHistogramMode:TransitionHistogramMode,
+                                                       val hist1:Map[ValueTransition[A], IndexedSeq[TimeInterval]],
+                                                       val hist2:Map[ValueTransition[A], IndexedSeq[TimeInterval]]) {
 
-  def buildTransitionHistogram(f1: TemporalFieldTrait[A]) = {
+  def this(f1: TemporalFieldTrait[A],
+    f2: TemporalFieldTrait[A],
+    TIMESTAMP_RESOLUTION_IN_DAYS:Long,
+    transitionHistogramMode:TransitionHistogramMode) {
+    this(f1,
+      f2,
+      TIMESTAMP_RESOLUTION_IN_DAYS,
+      transitionHistogramMode,
+      buildTransitionHistogram(f1,transitionHistogramMode,TIMESTAMP_RESOLUTION_IN_DAYS),
+      buildTransitionHistogram(f2,transitionHistogramMode,TIMESTAMP_RESOLUTION_IN_DAYS))
+  }
+
+  def isWildcard(a:A) = f1.isWildcard(a)
+
+}
+object WildcardIgnoreHistogramBasedComputer {
+
+  def buildTransitionHistogram[A](f1: TemporalFieldTrait[A],transitionHistogramMode:TransitionHistogramMode,TIMESTAMP_RESOLUTION_IN_DAYS:Long) = {
+
+    def isWildcard(a:A) = f1.isWildcard(a)
+
     val withIndex = f1.getValueLineage
       .filter(t => !isWildcard(t._2))
       .toIndexedSeq
@@ -47,11 +70,4 @@ abstract class WildcardIgnoreHistogramBasedComputer[A](val f1: TemporalFieldTrai
       .groupMap(_._1)(_._2)
     transitionToPeriod
   }
-
-  def isWildcard(a:A) = f1.isWildcard(a)
-
-  //build histograms:
-  val hist1 = buildTransitionHistogram(f1)
-  val hist2 = buildTransitionHistogram(f2)
-
 }

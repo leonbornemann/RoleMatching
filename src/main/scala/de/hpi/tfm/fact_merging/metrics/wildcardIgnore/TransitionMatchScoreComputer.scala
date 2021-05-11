@@ -3,13 +3,29 @@ package de.hpi.tfm.fact_merging.metrics.wildcardIgnore
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.TransitionHistogramMode.TransitionHistogramMode
+import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.WildcardIgnoreHistogramBasedComputer.buildTransitionHistogram
 
 class TransitionMatchScoreComputer[A](f1: TemporalFieldTrait[A],
                                       f2: TemporalFieldTrait[A],
                                       TIMESTAMP_RESOLUTION_IN_DAYS:Long,
-                                      histogramMode: TransitionHistogramMode)
-  extends WildcardIgnoreHistogramBasedComputer[A](f1,f2,TIMESTAMP_RESOLUTION_IN_DAYS,histogramMode){
+                                      histogramMode: TransitionHistogramMode,
+                                      hist1:Map[ValueTransition[A], IndexedSeq[TimeInterval]],
+                                      hist2:Map[ValueTransition[A], IndexedSeq[TimeInterval]])
+  extends WildcardIgnoreHistogramBasedComputer[A](f1,f2,TIMESTAMP_RESOLUTION_IN_DAYS,histogramMode,hist1,hist2){
+
+  def this(f1: TemporalFieldTrait[A],
+           f2: TemporalFieldTrait[A],
+           TIMESTAMP_RESOLUTION_IN_DAYS:Long,
+           transitionHistogramMode:TransitionHistogramMode) {
+    this(f1,
+      f2,
+      TIMESTAMP_RESOLUTION_IN_DAYS,
+      transitionHistogramMode,
+      buildTransitionHistogram(f1,transitionHistogramMode,TIMESTAMP_RESOLUTION_IN_DAYS),
+      buildTransitionHistogram(f2,transitionHistogramMode,TIMESTAMP_RESOLUTION_IN_DAYS))
+  }
 
   def overlaps(ti1: TimeInterval, ti2: TimeInterval): Boolean = {
     ti1.intersect(ti2).isDefined

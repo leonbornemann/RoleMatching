@@ -7,7 +7,9 @@ import de.hpi.tfm.fact_merging.metrics.{EdgeScore, MultipleEventWeightScore}
 import de.hpi.tfm.fact_merging.optimization.{ConnectedComponentMergeOptimizer, GreedyEdgeWeightOptimizer, GreedyMaxCliqueBasedOptimizer}
 
 import java.io.File
+import java.lang
 import java.lang.AssertionError
+import java.time.LocalDate
 
 object GLOBAL_CONFIG {
 
@@ -19,8 +21,14 @@ object GLOBAL_CONFIG {
     }
   }
 
+  var granularityInDays = Int.MaxValue
+  var trainTimeEnd = LocalDate.MIN
 
-  val nameToFunction:Map[String,EdgeScore] = ???//Map((MultipleEventWeightScore.name,new MultipleEventWeightScore(1))) //TODO: set granularity properly
+  def nameToFunction:Map[String,EdgeScore] = {
+    if(granularityInDays == Int.MaxValue || trainTimeEnd==LocalDate.MIN)
+      throw new AssertionError("Config not complete!")
+    Map((MultipleEventWeightScore.name,new MultipleEventWeightScore(granularityInDays,trainTimeEnd)))
+  }
 
   var OPTIMIZATION_TARGET_FUNCTION_NAME:String = ""
 

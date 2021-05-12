@@ -1,7 +1,7 @@
 package de.hpi.tfm.data.tfmp_input.table
 
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
-import de.hpi.tfm.data.socrata.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
+import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.fact_merging.config.UpdateChangeCounter
 

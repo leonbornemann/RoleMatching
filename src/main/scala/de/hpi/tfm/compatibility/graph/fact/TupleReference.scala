@@ -1,6 +1,5 @@
 package de.hpi.tfm.compatibility.graph.fact
 
-import de.hpi.tfm.compatibility.graph
 import de.hpi.tfm.data.tfmp_input.table.TemporalDatabaseTableTrait
 
 @SerialVersionUID(3L)

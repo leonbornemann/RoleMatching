@@ -7,7 +7,6 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.SurrogateBasedSynthesizedTempo
 import de.hpi.tfm.data.tfmp_input.table.sketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch
 import de.hpi.tfm.data.tfmp_input.table.{AbstractSurrogateBasedTemporalRow, AbstractSurrogateBasedTemporalTable, TemporalDatabaseTableTrait, TemporalFieldTrait}
 import de.hpi.tfm.data.tfmp_input.{BinaryReadable, SynthesizedDatabaseTableRegistry}
-import de.hpi.tfm.io.DBSynthesis_IOService
 import de.hpi.tfm.io.DBSynthesis_IOService.{OPTIMIZATION_INPUT_ASSOCIATION_DIR, OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_DIR, createParentDirs}
 
 import java.io.File

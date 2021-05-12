@@ -3,12 +3,9 @@ package de.hpi.tfm.evaluation
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraph, TupleReference}
-import de.hpi.tfm.data.tfmp_input.association.{AssociationIdentifier, AssociationSchema}
-import de.hpi.tfm.data.tfmp_input.factLookup.FactLookupTable
-import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalDatabaseTableTrait}
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, ValueTransition}
-import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
-import de.hpi.tfm.io.{DBSynthesis_IOService, Evaluation_IOService, IOService}
+import de.hpi.tfm.data.tfmp_input.table.AbstractTemporalField
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, ValueTransition}
+import de.hpi.tfm.io.{Evaluation_IOService, IOService}
 
 import java.io.PrintWriter
 

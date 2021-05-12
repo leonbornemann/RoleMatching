@@ -1,6 +1,5 @@
 package de.hpi.tfm.fact_merging.metrics.wildcardIgnore
 
-import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition

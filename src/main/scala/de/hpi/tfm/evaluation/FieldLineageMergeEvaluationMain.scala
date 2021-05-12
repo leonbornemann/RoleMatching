@@ -1,13 +1,6 @@
 package de.hpi.tfm.evaluation
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.tfm.data.tfmp_input.factLookup.FactLookupTable
-import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalFieldTrait}
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation}
-import de.hpi.tfm.fact_merging.optimization.{GreedyEdgeWeightOptimizer, TupleMerge}
-import de.hpi.tfm.io.IOService
-
-import java.io.{File, PrintWriter}
 
 object FieldLineageMergeEvaluationMain extends App with StrictLogging{
 //  IOService.socrataDir = args(0)

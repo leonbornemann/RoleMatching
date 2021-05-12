@@ -1,8 +1,8 @@
 package de.hpi.tfm.evaluation.wikipediaStyle
 
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.evaluation.data.{GeneralEdge, IdentifiedFactLineage}
-import de.hpi.tfm.evaluation.wikipediaStyle.EdgeBasedEvaluationWikipediaStyleMain.{args, minEvidence}
+import de.hpi.tfm.evaluation.data.GeneralEdge
+import de.hpi.tfm.evaluation.wikipediaStyle.EdgeBasedEvaluationWikipediaStyleMain.minEvidence
 
 import java.io.PrintWriter
 import java.time.LocalDate

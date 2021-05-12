@@ -1,7 +1,7 @@
 package de.hpi.tfm.score_exploration
 
-import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalFieldTrait}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
+import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalFieldTrait}
 
 case class ValueLineageClique(clique: IndexedSeq[FactLineage]) {
 

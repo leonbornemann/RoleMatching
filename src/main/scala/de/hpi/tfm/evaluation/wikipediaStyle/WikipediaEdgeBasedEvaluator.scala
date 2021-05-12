@@ -4,9 +4,8 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraph, FactMergeabilityGraphEdge}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
+import de.hpi.tfm.evaluation.HoldoutTimeEvaluator
 import de.hpi.tfm.evaluation.data.{GeneralEdge, IdentifiedFactLineage}
-import de.hpi.tfm.evaluation.{EdgeEvaluationRow, HoldoutTimeEvaluator}
-import de.hpi.tfm.io.Evaluation_IOService
 
 import java.io.{File, PrintWriter}
 

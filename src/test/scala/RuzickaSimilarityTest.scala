@@ -1,8 +1,6 @@
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
-import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaDistanceComputer, TransitionHistogramMode}
-import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.TransitionHistogramMode.TransitionHistogramMode
 import de.hpi.tfm.io.IOService
 
 import java.time.LocalDate

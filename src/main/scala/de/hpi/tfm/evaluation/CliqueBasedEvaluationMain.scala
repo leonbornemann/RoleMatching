@@ -3,7 +3,6 @@ package de.hpi.tfm.evaluation
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.io.IOService
 
-import java.io.File
 import java.time.LocalDate
 
 object CliqueBasedEvaluationMain extends App {

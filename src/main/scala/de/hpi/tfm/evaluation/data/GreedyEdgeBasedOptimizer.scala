@@ -1,6 +1,5 @@
 package de.hpi.tfm.evaluation.data
 
-import de.hpi.tfm.compatibility.graph.fact.FactMergeabilityGraphEdge
 import de.hpi.tfm.fact_merging.optimization.GreedyEdgeWeightOptimizerForComponent
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge

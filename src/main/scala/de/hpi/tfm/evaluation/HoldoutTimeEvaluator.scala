@@ -7,7 +7,6 @@ import de.hpi.tfm.data.tfmp_input.factLookup.FactLookupTable
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation}
 
 import java.time.LocalDate
-import scala.Console.in
 
 abstract class HoldoutTimeEvaluator(trainGraphConfig:GraphConfig,evaluationGraphConfig:GraphConfig) {
 

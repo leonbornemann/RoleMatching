@@ -5,8 +5,6 @@ import de.hpi.tfm.data.tfmp_input.association.AssociationSchema
 import de.hpi.tfm.data.tfmp_input.table.sketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 
-import java.time.LocalDate
-
 class AssociationGraphEdgeCandidateGenerator(subdomain: String,
                                              graphConfig: GraphConfig) extends StrictLogging{
 

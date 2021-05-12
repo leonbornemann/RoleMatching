@@ -6,7 +6,7 @@ import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.evaluation.TupleMergeEvaluationResult.getStandardFile
 import de.hpi.tfm.io.DBSynthesis_IOService.createParentDirs
-import de.hpi.tfm.io.{DBSynthesis_IOService, Evaluation_IOService, IOService}
+import de.hpi.tfm.io.{Evaluation_IOService, IOService}
 
 import java.io.File
 

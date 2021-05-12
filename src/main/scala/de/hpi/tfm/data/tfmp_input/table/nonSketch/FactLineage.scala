@@ -4,7 +4,6 @@ import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage.WILDCARD_VALUES
 import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalFieldTrait}
-import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
 import de.hpi.tfm.io.IOService
 

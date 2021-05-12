@@ -2,13 +2,10 @@ package de.hpi.tfm.io
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.data.socrata.DatasetInstance
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
-import de.hpi.tfm.io.IOService.{createParentDirs, socrataDir}
 
 import java.io.File
 import java.time.LocalDate
-import scala.reflect.io.Directory
 
 object DBSynthesis_IOService extends StrictLogging{
   def DB_SYNTHESIS_DIR = socrataDir + "/db_synthesis"

@@ -2,12 +2,11 @@ package de.hpi.tfm.data.tfmp_input.table.sketch
 
 import de.hpi.tfm.data.socrata.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.tfm.data.tfmp_input.association.{AssociationIdentifier, AssociationSchema}
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.data.tfmp_input.table.sketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch.{getFullTimeRangeFile, getOptimizationInputAssociationSketchFile}
 import de.hpi.tfm.data.tfmp_input.table.{AbstractSurrogateBasedTemporalRow, AbstractSurrogateBasedTemporalTable, TemporalDatabaseTableTrait, TemporalFieldTrait}
 import de.hpi.tfm.data.tfmp_input.{BinaryReadable, SynthesizedDatabaseTableRegistry}
 import de.hpi.tfm.io.DBSynthesis_IOService
-import de.hpi.tfm.io.DBSynthesis_IOService.{OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR, OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_DIR, OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_SKETCH_DIR, createParentDirs}
+import de.hpi.tfm.io.DBSynthesis_IOService.{OPTIMIZATION_INPUT_ASSOCIATION_SKETCH_DIR, OPTIMIZATION_INPUT_FULL_TIME_RANGE_ASSOCIATION_SKETCH_DIR, createParentDirs}
 
 import java.io.File
 import java.time.LocalDate

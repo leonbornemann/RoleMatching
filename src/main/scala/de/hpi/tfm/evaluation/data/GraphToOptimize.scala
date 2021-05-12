@@ -1,10 +1,6 @@
 package de.hpi.tfm.evaluation.data
 
-import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
-import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
-import de.hpi.tfm.data.tfmp_input.table.TemporalDatabaseTableTrait
-import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.fact_merging.metrics.EdgeScore
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge

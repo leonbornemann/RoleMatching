@@ -3,7 +3,7 @@ package de.hpi.tfm.data.wikipedia.infobox.transformed
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 
-import java.time.{Duration, LocalDate, LocalDateTime, ZoneId, ZoneOffset}
+import java.time.{Duration, LocalDate, LocalDateTime, ZoneOffset}
 import scala.collection.mutable
 
 class TimeRangeToSingleValueReducer(curStart: LocalDate,

@@ -1,7 +1,6 @@
 package de.hpi.tfm.fact_merging.optimization
 
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.compatibility.graph.fact.internal.InternalFactMatchGraphCreationMain.args
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 

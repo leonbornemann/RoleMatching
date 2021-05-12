@@ -12,7 +12,7 @@ import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.DBSynthesis_IOService
 import de.hpi.tfm.util.RuntimeMeasurementUtil.executionTimeInSeconds
 
-import java.io.{FileWriter, PrintWriter}
+import java.io.PrintWriter
 import scala.collection.mutable
 
 /***

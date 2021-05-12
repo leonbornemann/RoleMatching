@@ -1,8 +1,7 @@
 package de.hpi.tfm.fact_merging.optimization
 
-import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraphEdge, TupleReference}
+import de.hpi.tfm.compatibility.graph.fact.FactMergeabilityGraphEdge
 import de.hpi.tfm.evaluation.data.IdentifiedTupleMerge
-import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 

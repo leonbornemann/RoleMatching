@@ -1,7 +1,6 @@
 package de.hpi.tfm.data.tfmp_input.association
 
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
-import de.hpi.tfm.io.DBSynthesis_IOService
 
 @SerialVersionUID(3L)
 case class AssociationIdentifier(subdomain:String, viewID:String, bcnfID:Int, associationID:Option[Int]) extends Serializable with JsonWritable[AssociationIdentifier]{

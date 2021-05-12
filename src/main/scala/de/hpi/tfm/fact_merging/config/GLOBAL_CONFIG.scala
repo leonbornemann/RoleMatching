@@ -2,13 +2,10 @@ package de.hpi.tfm.fact_merging.config
 
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
-import de.hpi.tfm.data.tfmp_input.table.AbstractTemporalField
 import de.hpi.tfm.fact_merging.metrics.{EdgeScore, MultipleEventWeightScore}
 import de.hpi.tfm.fact_merging.optimization.{ConnectedComponentMergeOptimizer, GreedyMaxCliqueBasedOptimizer}
 
 import java.io.File
-import java.lang
-import java.lang.AssertionError
 import java.time.LocalDate
 
 object GLOBAL_CONFIG {

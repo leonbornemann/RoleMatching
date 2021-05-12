@@ -6,7 +6,6 @@ import de.hpi.tfm.data.socrata.change.temporal_tables.attribute.{AttributeLineag
 import de.hpi.tfm.data.tfmp_input.BinarySerializable
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.tfm.io.DBSynthesis_IOService
 
 import java.time.LocalDate
 import scala.collection.mutable

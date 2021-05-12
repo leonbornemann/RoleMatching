@@ -1,19 +1,14 @@
 package de.hpi.tfm.compatibility
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.tfm.compatibility.graph.association.{AssociationGraphEdgeCandidate, AssociationMatch}
 import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraphEdge, TupleReference}
-import de.hpi.tfm.compatibility.index.{BipartiteTupleIndex, IterableTupleIndex, MostDistinctTimestampIndexBuilder, TupleGroup, TupleSetIndex}
-import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
+import de.hpi.tfm.compatibility.index.{BipartiteTupleIndex, IterableTupleIndex, MostDistinctTimestampIndexBuilder, TupleSetIndex}
 import de.hpi.tfm.data.tfmp_input.table.TemporalDatabaseTableTrait
 import de.hpi.tfm.data.tfmp_input.table.sketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch
-import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
-import de.hpi.tfm.io.DBSynthesis_IOService
 import de.hpi.tfm.util.RuntimeMeasurementUtil.executionTimeInSeconds
 
-import java.io.{FileWriter, PrintWriter}
+import java.io.PrintWriter
 import java.time.LocalDate
-import scala.collection.mutable
 
 class CompatiblityGraphCreator(unmatchedAssociations: collection.Set[SurrogateBasedSynthesizedTemporalDatabaseTableAssociationSketch],
                                datasetName:String,

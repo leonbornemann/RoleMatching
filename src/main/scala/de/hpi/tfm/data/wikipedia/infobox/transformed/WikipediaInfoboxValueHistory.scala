@@ -7,7 +7,6 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithH
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.statistics.vertex.WikipediaInfoboxStatisticsLine
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
-import de.hpi.tfm.fact_merging.config.UpdateChangeCounter
 
 import java.time.{LocalDate, Period}
 

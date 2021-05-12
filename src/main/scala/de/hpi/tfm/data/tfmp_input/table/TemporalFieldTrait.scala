@@ -1,10 +1,9 @@
 package de.hpi.tfm.data.tfmp_input.table
 
-import de.hpi.tfm.data.socrata.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
+import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
-import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
 import de.hpi.tfm.fact_merging.config.{GLOBAL_CONFIG, UpdateChangeCounter}
-import de.hpi.tfm.fact_merging.metrics.{EntropyComputer, MultipleEventWeightScoreComputer, MutualInformationComputer}
+import de.hpi.tfm.fact_merging.metrics.{EntropyComputer, MutualInformationComputer}
 import de.hpi.tfm.io.IOService
 
 import java.time.LocalDate

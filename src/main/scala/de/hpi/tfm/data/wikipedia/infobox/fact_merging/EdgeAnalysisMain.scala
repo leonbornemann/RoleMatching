@@ -5,12 +5,10 @@ import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
-import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaDistanceComputer, TransitionHistogramMode}
 import de.hpi.tfm.io.IOService
 
 import java.io.File
 import java.time.LocalDate
-import java.util.regex.Pattern
 
 object EdgeAnalysisMain extends App with StrictLogging{
   IOService.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP

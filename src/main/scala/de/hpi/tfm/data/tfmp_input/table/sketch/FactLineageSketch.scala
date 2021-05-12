@@ -1,17 +1,14 @@
 package de.hpi.tfm.data.tfmp_input.table.sketch
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.tfm.data.socrata.change.ReservedChangeValues
-import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.tfm.data.tfmp_input.table.sketch.FactLineageSketch.{WILDCARD}
+import de.hpi.tfm.data.tfmp_input.table.sketch.FactLineageSketch.WILDCARD
 import de.hpi.tfm.io.IOService
 
 import java.nio.{ByteBuffer, ByteOrder}
 import java.time.LocalDate
 import scala.collection.mutable
-import scala.collection.mutable.HashMap
 
 @SerialVersionUID(3L)
 class FactLineageSketch(val factLineage: FactLineage) extends FieldLineageSketch with StrictLogging{

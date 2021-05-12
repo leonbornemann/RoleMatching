@@ -1,8 +1,6 @@
 package de.hpi.tfm.evaluation.wikipediaStyle
 
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.evaluation.EdgeBasedEvaluationMain.args
-import de.hpi.tfm.evaluation.EdgeBasedEvaluator
 import de.hpi.tfm.io.IOService
 
 import java.io.File

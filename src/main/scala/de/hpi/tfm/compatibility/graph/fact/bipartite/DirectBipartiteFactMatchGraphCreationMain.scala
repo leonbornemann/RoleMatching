@@ -2,7 +2,6 @@ package de.hpi.tfm.compatibility.graph.fact.bipartite
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.compatibility.graph.association.connected_component.ConnectedComponentCreationMain.args
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG

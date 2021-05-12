@@ -2,7 +2,6 @@ package de.hpi.tfm.compatibility.graph.fact.internal
 
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.FactMergeabilityGraph
-import de.hpi.tfm.compatibility.graph.fact.bipartite.BipartiteFactMatchGraphCreationMain.args
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG

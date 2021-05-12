@@ -4,7 +4,7 @@ import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScore
-import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaSimilarity, TransitionHistogramMode, TransitionMatchScore, WildcardIgnoreHistogramBasedComputer}
+import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaSimilarity, TransitionHistogramMode, TransitionMatchScore}
 import de.hpi.tfm.io.IOService
 import de.hpi.tfm.util.CSVUtil
 

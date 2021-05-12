@@ -3,9 +3,6 @@ package de.hpi.tfm.data.wikipedia.infobox.query
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
-import de.hpi.tfm.io.IOService
-
-import java.io.File
 
 object QueryAnalysis extends App with StrictLogging{
   val vertexFile = args(0)

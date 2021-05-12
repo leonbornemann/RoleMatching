@@ -1,5 +1,4 @@
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
-import de.hpi.tfm.data.socrata.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.data.tfmp_input.table.sketch.FactLineageSketch
 import de.hpi.tfm.io.IOService

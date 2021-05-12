@@ -1,10 +1,8 @@
 package de.hpi.tfm.evaluation.data
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.tfm.compatibility.graph.fact.TupleReference
-import de.hpi.tfm.fact_merging.optimization.GreedyEdgeWeightOptimizerForComponent
 import scalax.collection.Graph
-import scalax.collection.edge.{WLkUnDiEdge, WUnDiEdge}
+import scalax.collection.edge.WUnDiEdge
 
 import java.io.{File, PrintWriter}
 

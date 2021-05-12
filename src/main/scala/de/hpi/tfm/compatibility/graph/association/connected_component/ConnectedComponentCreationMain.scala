@@ -1,7 +1,6 @@
 package de.hpi.tfm.compatibility.graph.association.connected_component
 
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.compatibility.graph.fact.bipartite.BipartiteFactMatchGraphCreationMain.args
 import de.hpi.tfm.io.IOService
 
 import java.time.LocalDate

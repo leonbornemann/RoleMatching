@@ -5,7 +5,6 @@ import de.hpi.tfm.data.wikipedia.infobox.original.{InfoboxRevision, InfoboxRevis
 import de.hpi.tfm.data.wikipedia.infobox.statistics.vertex.WikipediaInfoboxStatistiicsGatherer
 
 import java.io.{File, PrintWriter}
-import java.time.{Duration, Period}
 
 object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   val file = args(0)

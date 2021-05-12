@@ -3,9 +3,9 @@ package de.hpi.tfm.data.wikipedia.infobox.original
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.change.ReservedChangeValues
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.tfm.data.wikipedia.infobox.transformed.{TimeRangeToSingleValueReducer, WikipediaInfoboxValueHistory}
-import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, TIME_AXIS, lowestGranularityInDays}
+import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, lowestGranularityInDays}
 import de.hpi.tfm.data.wikipedia.infobox.original.WikipediaLineageCreationMode.{WILDCARD_BETWEEN_ALL_CONFIRMATIONS, WILDCARD_BETWEEN_CHANGE, WILDCARD_OUTSIDE_OF_GRACE_PERIOD, WikipediaLineageCreationMode}
+import de.hpi.tfm.data.wikipedia.infobox.transformed.{TimeRangeToSingleValueReducer, WikipediaInfoboxValueHistory}
 import de.hpi.tfm.evaluation.Histogram
 
 import java.time.{LocalDate, LocalDateTime}

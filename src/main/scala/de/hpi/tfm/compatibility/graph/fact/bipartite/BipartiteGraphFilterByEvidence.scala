@@ -2,10 +2,7 @@ package de.hpi.tfm.compatibility.graph.fact.bipartite
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.compatibility.graph.association.AssociationGraphEdgeCandidate
 import de.hpi.tfm.compatibility.graph.fact.FactMergeabilityGraph
-import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.SurrogateBasedSynthesizedTemporalDatabaseTableAssociation
 import de.hpi.tfm.io.IOService
 
 import java.time.LocalDate

@@ -41,7 +41,7 @@ object FactMergingMain extends App with StrictLogging{
   val id = new AssociationIdentifier("wikipedia", "test", 0, Some(0))
   val attrID = 0
   val table = IdentifiedFactLineage.toAssociationTable(lineagesTrain, id, attrID)
-  val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
+  val graphConfig = GraphConfig(0, standardTimeStart, endDateTrainPhase)
   logger.debug("Starting compatibility graph creation")
   val nonInformativeValues:Set[Any] = Set("")
   val edges = new InternalFactMatchGraphCreator(table.tupleReferences, graphConfig,true,nonInformativeValues)

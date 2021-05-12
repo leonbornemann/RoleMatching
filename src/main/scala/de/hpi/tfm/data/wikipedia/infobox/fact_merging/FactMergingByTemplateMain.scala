@@ -49,5 +49,5 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val writer = new PrintWriter(resultDir.getAbsolutePath + s"/${templateSetString}_edges.json")
   edges.foreach(m => m.appendToWriter(writer, false, true))
   writer.close()
-  new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays).toCsvFile(new File(resultDir.getAbsolutePath + s"/${templateSetString}_edgeStats.csv"))
+  //new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays).toCsvFile(new File(resultDir.getAbsolutePath + s"/${templateSetString}_edgeStats.csv"))
 }

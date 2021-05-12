@@ -5,6 +5,7 @@ import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
+import de.hpi.tfm.evaluation.data.GeneralEdge
 import de.hpi.tfm.io.IOService
 
 import java.io.File
@@ -20,8 +21,8 @@ object EdgeAnalysisMain extends App with StrictLogging{
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Beginning to load edges")
-  val edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
-  logger.debug(s"Found ${edges.size} edges of which ${edges.filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid).size} remain valid")
+  val edges = GeneralEdge.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
+  logger.debug(s"Found ${edges.size} edges of which ${edges.filter(_.toGeneralEdgeStatRow(timestampResolutionInDays,graphConfig).remainsValid).size} remain valid")
 //  edges
 //    .filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid)
 //    .zipWithIndex

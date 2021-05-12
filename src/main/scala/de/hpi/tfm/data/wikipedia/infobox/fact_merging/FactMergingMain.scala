@@ -8,6 +8,7 @@ import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
+import de.hpi.tfm.evaluation.data.{GeneralEdge, IdentifiedFactLineage}
 import de.hpi.tfm.io.IOService
 
 import java.io.{File, PrintWriter}
@@ -33,20 +34,20 @@ object FactMergingMain extends App with StrictLogging{
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
   val lineagesComplete = vertexFiles.flatMap(f => {
     logger.debug(s"Reading vertex File $f")
-    WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(f).toIndexedSeq
+    IdentifiedFactLineage.fromJsonObjectPerLineFile(f).toIndexedSeq
   })
   val lineagesTrain = lineagesComplete
-    .map(h => h.projectToTimeRange(InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP,endDateTrainPhase))
+    .map(h => h.factLineage.toFactLineage.projectToTimeRange(InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP,endDateTrainPhase))
   val id = new AssociationIdentifier("wikipedia", "test", 0, Some(0))
   val attrID = 0
-  val table = WikipediaInfoboxValueHistory.toAssociationTable(lineagesTrain, id, attrID)
+  val table = IdentifiedFactLineage.toAssociationTable(lineagesTrain, id, attrID)
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Starting compatibility graph creation")
   val nonInformativeValues:Set[Any] = Set("")
   val edges = new InternalFactMatchGraphCreator(table.tupleReferences, graphConfig,true,nonInformativeValues)
     .toFieldLineageMergeabilityGraph(false)
     .edges
-    .map(e => WikipediaInfoboxValueHistoryMatch(lineagesComplete(e.tupleReferenceA.rowIndex), lineagesComplete(e.tupleReferenceB.rowIndex)))
+    .map(e => GeneralEdge(lineagesComplete(e.tupleReferenceA.rowIndex), lineagesComplete(e.tupleReferenceB.rowIndex)))
   logger.debug("Finished compatibility graph creation - beginning edge serialization")
   val writer = new PrintWriter(edgeFile)
   edges.foreach(m => m.appendToWriter(writer, false, true))

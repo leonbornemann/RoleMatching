@@ -37,7 +37,7 @@ object FactMergingMain extends App with StrictLogging{
     IdentifiedFactLineage.fromJsonObjectPerLineFile(f).toIndexedSeq
   })
   val lineagesTrain = lineagesComplete
-    .map(h => h.factLineage.toFactLineage.projectToTimeRange(InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP,endDateTrainPhase))
+    .map(h => h.factLineage.toFactLineage.projectToTimeRange(standardTimeStart,endDateTrainPhase))
   val id = new AssociationIdentifier("wikipedia", "test", 0, Some(0))
   val attrID = 0
   val table = IdentifiedFactLineage.toAssociationTable(lineagesTrain, id, attrID)

@@ -21,13 +21,17 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
       .toMap)
   }
   init()
+  var totalNumTopLevelNodes = -1
+  var processedTopLvlNodes = 0
 
   def init() = {
     val index = new TupleSetIndex[A](tuples,IndexedSeq(),IndexedSeq(),tuples.head.table.wildcardValues.toSet,true)
-    buildGraph(tuples,index)
+    totalNumTopLevelNodes = if(!index.indexBuildWasSuccessfull) 0 else  index.tupleGroupIterator(true).size
+    logger.debug(s"Iterating through $totalNumTopLevelNodes")
+    buildGraph(tuples,index,0)
   }
 
-  def buildGraph(originalInput:IndexedSeq[TupleReference[A]], index: TupleSetIndex[A]):Unit = {
+  def buildGraph(originalInput:IndexedSeq[TupleReference[A]], index: TupleSetIndex[A],recurseDepth:Int):Unit = {
     if(index.indexBuildWasSuccessfull){
       val nonWildcards = collection.mutable.ArrayBuffer[TupleReference[A]]()
       index.tupleGroupIterator(true).foreach{case g => {
@@ -35,29 +39,47 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
         if(squareProductTooBig(g.tuplesInNode.size)){
           //further index this: new Index
           val newIndexForSubNode = new TupleSetIndex[A](g.tuplesInNode.toIndexedSeq,index.indexedTimestamps.toIndexedSeq,g.valuesAtTimestamps,index.wildcardKeyValues,true)
-          buildGraph(g.tuplesInNode.toIndexedSeq,newIndexForSubNode)
+          buildGraph(g.tuplesInNode.toIndexedSeq,newIndexForSubNode,recurseDepth+1)
         } else{
           val tuplesInNodeAsIndexedSeq = g.tuplesInNode.toIndexedSeq
           doPairwiseMatching(tuplesInNodeAsIndexedSeq)
         }
+        if(recurseDepth==0){
+          processedTopLvlNodes+=1
+          if(logProgress)
+            logger.debug(s"Finished $processedTopLvlNodes out of $totalNumTopLevelNodes top level nodes(${100*processedTopLvlNodes / totalNumTopLevelNodes.toDouble}%) ")
+        }
       }}
       //wildcards internally:
       val wildcardBucket = index.getWildcardBucket
+      if(recurseDepth==0)
+        logger.debug("Processing Wildcards internally")
       if(squareProductTooBig(wildcardBucket.size)){
         val newIndex = new TupleSetIndex[A](wildcardBucket,index.indexedTimestamps.toIndexedSeq,index.parentNodesKeys ++ Seq(index.wildcardKeyValues.head),index.wildcardKeyValues,true)
-        buildGraph(wildcardBucket,newIndex)
+        buildGraph(wildcardBucket,newIndex,recurseDepth+1)
       } else {
         doPairwiseMatching(wildcardBucket)
       }
+      if(recurseDepth==0)
+        logger.debug("Finished Processing Wildcards internally")
       //wildcards to the rest:
+      if(recurseDepth==0)
+        logger.debug("Beginning to process wildcards to other nodes")
       if(wildcardBucket.size>0 && nonWildcards.size>0){
-        val bipartite = new BipartiteFactMatchCreator[A](wildcardBucket,nonWildcards.toIndexedSeq,graphConfig,filterByCommonWildcardIgnoreChangeTransition,tupleToNonWcTransitions)
-        facts ++= bipartite.facts
+        val bipartiteCreator = new BipartiteFactMatchCreator[A](wildcardBucket,
+          nonWildcards.toIndexedSeq,
+          graphConfig,
+          filterByCommonWildcardIgnoreChangeTransition,
+          tupleToNonWcTransitions,
+          recurseDepth==0)
+        facts ++= bipartiteCreator.facts
       }
     } else {
       doPairwiseMatching(originalInput)
     }
   }
+
+  def logProgress = processedTopLvlNodes % (totalNumTopLevelNodes/1000) == 0
 
   private def doPairwiseMatching(tuplesInNodeAsIndexedSeq: IndexedSeq[TupleReference[A]]) = {
     //we construct a graph as an adjacency list:

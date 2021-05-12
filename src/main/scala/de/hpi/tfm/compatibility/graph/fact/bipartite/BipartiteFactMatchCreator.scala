@@ -14,7 +14,9 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
                                    tuplesRight: IndexedSeq[TupleReference[A]],
                                    graphConfig: GraphConfig,
                                    filterByCommonWildcardIgnoreChangeTransition:Boolean=true,
-                                   tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]]=None) extends FactMatchCreator[A] with StrictLogging{
+                                   tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]]=None,
+                                   logProgress:Boolean=false,
+                                   logRuntimes:Boolean=false) extends FactMatchCreator[A] with StrictLogging{
 
   if(filterByCommonWildcardIgnoreChangeTransition)
     assert(tupleToNonWcTransitions.isDefined)
@@ -27,16 +29,19 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
   var skippedMatchesDueToFilter = 0
   val programStartInMs = System.currentTimeMillis()
   var computedMatches = 0
+  var totalNumTopLvlNodes = -1
+  var numProcessedTopLvlNodes = 0
   init()
 
   def init() = {
     val (index,indexTime) = executionTimeInSeconds(new BipartiteTupleIndex[A](tuplesLeft,tuplesRight,IndexedSeq(),IndexedSeq(),true))
+    totalNumTopLvlNodes = if(index.indexFailed) 0 else index.getBipartiteTupleGroupIterator().size
     totalIndexTime += indexTime
     if(detailedLogging){
       val topLevelPairwiseComputations = index.getBipartiteTupleGroupIterator().toIndexedSeq.map(_.totalComputationsIfPairwise)
       logger.debug(s"Constructed Top-Level Index with ${topLevelPairwiseComputations.size} top-level nodes, total possible match computations: ${topLevelPairwiseComputations.map(_.toLong).sum}")
     }
-    buildGraph(tuplesLeft,tuplesRight,index)
+    buildGraph(tuplesLeft,tuplesRight,index,0)
     reportRunTimes()
   }
 
@@ -44,7 +49,14 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
     size*size1>50
   }
 
-  def buildGraph(originalInputLeft:IndexedSeq[TupleReference[A]], originalInputRight:IndexedSeq[TupleReference[A]], index: BipartiteTupleIndex[A]):Unit = {
+  def logProgressNow: Boolean = logProgress && numProcessedTopLvlNodes % (totalNumTopLvlNodes / 1000)==0
+
+  def buildGraph(originalInputLeft:IndexedSeq[TupleReference[A]],
+                 originalInputRight:IndexedSeq[TupleReference[A]],
+                 index: BipartiteTupleIndex[A],
+                 recurseDepth:Int):Unit = {
+    if(logProgress && recurseDepth==0)
+      logger.debug(s"Iterating through $totalNumTopLvlNodes nodes")
     if(!index.indexFailed){
       val allTuplesLeft = scala.collection.mutable.ArrayBuffer[TupleReference[A]]()
       val allTuplesRight = scala.collection.mutable.ArrayBuffer[TupleReference[A]]()
@@ -54,15 +66,19 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
         val wildcardTuplesLeft = g.wildcardTuplesLeft
         val wildCardTuplesRight = g.wildcardTuplesRight
         assert(g.tuplesLeft.toSet.intersect(wildcardTuplesLeft.toSet).isEmpty && g.tuplesRight.toSet.intersect(wildCardTuplesRight.toSet).isEmpty)
-        buildGraphRecursively(g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps, tuplesLeft, tuplesRight)
+        buildGraphRecursively(g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps, tuplesLeft, tuplesRight,recurseDepth+1)
         //TODO: process Wildcards to others:
         allTuplesLeft ++= tuplesLeft
         allTuplesRight ++= tuplesRight
+        if(recurseDepth==0)
+          numProcessedTopLvlNodes+=1
+        if(recurseDepth==0 && logProgressNow)
+          logger.debug(s"Finished $numProcessedTopLvlNodes out of $totalNumTopLvlNodes top level nodes(${100*numProcessedTopLvlNodes / totalNumTopLvlNodes.toDouble}%) ")
         //Wildcards to Wildcards:
       }}
-      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,index.wildcardsRight)
-      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,allTuplesRight.toIndexedSeq)
-      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),allTuplesLeft.toIndexedSeq,index.wildcardsRight)
+      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,index.wildcardsRight,recurseDepth+1)
+      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,allTuplesRight.toIndexedSeq,recurseDepth+1)
+      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),allTuplesLeft.toIndexedSeq,index.wildcardsRight,recurseDepth+1)
     } else {
       val (_,time) = executionTimeInSeconds(doPairwiseMatching(originalInputLeft,originalInputRight))
       totalMatchExecutionTime += time
@@ -70,24 +86,30 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
   }
 
   def reportRunTimes() = {
-    val timeNow = System.currentTimeMillis()
-    logger.debug("----------------------------------------------------------------------------------------------")
-    logger.debug(s"Total Index Time: ${totalIndexTime}s")
-    logger.debug(s"Total Match Execution Time: ${totalMatchExecutionTime}s")
-    val timePassedInSeconds = (timeNow - programStartInMs) / 1000.0
-    logger.debug(s"Total Time since constructor: ${timePassedInSeconds}s")
-    logger.debug(s"Unaccounted Time: ${timePassedInSeconds - totalMatchExecutionTime - totalIndexTime}s")
-    logger.debug(s"Computed Matches: $computedMatches (${computedMatches / timePassedInSeconds} matches per second)")
-    logger.debug(s"Filtered Matches: $skippedMatchesDueToFilter (${100*skippedMatchesDueToFilter / (computedMatches + skippedMatchesDueToFilter).toDouble}%)")
-    logger.debug("----------------------------------------------------------------------------------------------")
-    lastMatchTimeReport = totalMatchExecutionTime
-    lastIndexTimeReport = totalIndexTime
+    if(logRuntimes){
+      val timeNow = System.currentTimeMillis()
+      logger.debug("----------------------------------------------------------------------------------------------")
+      logger.debug(s"Total Index Time: ${totalIndexTime}s")
+      logger.debug(s"Total Match Execution Time: ${totalMatchExecutionTime}s")
+      val timePassedInSeconds = (timeNow - programStartInMs) / 1000.0
+      logger.debug(s"Total Time since constructor: ${timePassedInSeconds}s")
+      logger.debug(s"Unaccounted Time: ${timePassedInSeconds - totalMatchExecutionTime - totalIndexTime}s")
+      logger.debug(s"Computed Matches: $computedMatches (${computedMatches / timePassedInSeconds} matches per second)")
+      logger.debug(s"Filtered Matches: $skippedMatchesDueToFilter (${100*skippedMatchesDueToFilter / (computedMatches + skippedMatchesDueToFilter).toDouble}%)")
+      logger.debug("----------------------------------------------------------------------------------------------")
+      lastMatchTimeReport = totalMatchExecutionTime
+      lastIndexTimeReport = totalIndexTime
+    }
   }
 
   def indexTimeReportDue: Boolean = totalIndexTime - lastIndexTimeReport > 10
   def matchTimeReportDue: Boolean = totalMatchExecutionTime - lastMatchTimeReport > 10
 
-  private def buildGraphRecursively(parentTimestamps:IndexedSeq[LocalDate], parentValues:IndexedSeq[A], tuplesLeft: IndexedSeq[TupleReference[A]], tuplesRight: IndexedSeq[TupleReference[A]]) = {
+  private def buildGraphRecursively(parentTimestamps:IndexedSeq[LocalDate],
+                                    parentValues:IndexedSeq[A],
+                                    tuplesLeft: IndexedSeq[TupleReference[A]],
+                                    tuplesRight: IndexedSeq[TupleReference[A]],
+                                    newRecurseDepth:Int) = {
     if (productTooBig(tuplesLeft.size, tuplesRight.size)) {
       //further index this: new Index
       val (newIndexForSubNode,newIndexTime) = executionTimeInSeconds(new BipartiteTupleIndex[A](tuplesLeft, tuplesRight, parentTimestamps, parentValues, true))
@@ -95,7 +117,7 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
       if(indexTimeReportDue && detailedLogging){
         reportRunTimes()
       }
-      buildGraph(tuplesLeft, tuplesRight, newIndexForSubNode)
+      buildGraph(tuplesLeft, tuplesRight, newIndexForSubNode,newRecurseDepth)
     } else {
       val (_,time) = executionTimeInSeconds(doPairwiseMatching(tuplesLeft, tuplesRight))
       totalMatchExecutionTime += time

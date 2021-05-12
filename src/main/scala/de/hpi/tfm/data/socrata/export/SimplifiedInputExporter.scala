@@ -62,7 +62,8 @@ class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLoggi
           identifiedLineage.appendToWriter(flResultFileWriter,false,true)
           serialized+=1
       })
-      //logger.debug(s"Serialized $serialized lineages to $identifiedFactLineageFile")
+      logger.debug(s"Found ${associationFullTimeRange.rows.size} lineages without filter")
+      logger.debug(s"Serialized $serialized lineages to $identifiedFactLineageFile")
     }}
     flResultFileWriter.close()
     val allTImstamps = tt.rows.flatMap(r =>

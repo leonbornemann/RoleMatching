@@ -53,13 +53,16 @@ class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLoggi
       associationFullTimeRange.writeToFullTimeRangeFile()
       associationFullTimeRange.toSketch.writeToFullTimeRangeFile()
       writeFactTable(dttID, vlToSurrogateKey, entityIDToSurrogateKey)
+      var serialized= 0
       associationFullTimeRange.tupleReferences
         .withFilter(_.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1>0)
         .foreach(r => {
           val id = IdentifiedFactLineage.getIDString(subdomain,r.toIDBasedTupleReference)
           val identifiedLineage = r.getDataTuple.head.asInstanceOf[FactLineage].toIdentifiedFactLineage(id)
           identifiedLineage.appendToWriter(flResultFileWriter,false,true)
+          serialized+=1
       })
+      //logger.debug(s"Serialized $serialized lineages to $identifiedFactLineageFile")
     }}
     flResultFileWriter.close()
     val allTImstamps = tt.rows.flatMap(r =>

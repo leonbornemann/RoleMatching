@@ -12,13 +12,14 @@ import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
 import java.io.{File, PrintWriter}
+import java.time.LocalDate
 import scala.collection.mutable
 
 class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLogging{
 
   var numAssociationsWithChangesAfterStandardTimeEnd = 0
 
-  def exportAll(identifiedFactLineageFile:File) = {
+  def exportAll(identifiedFactLineageFile:File,trainTimeEnd:LocalDate) = {
     logger.debug(s"processing $id")
     val tt = TemporalTable.load(id)
     val flResultFileWriter = new PrintWriter(identifiedFactLineageFile)
@@ -55,7 +56,7 @@ class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLoggi
       writeFactTable(dttID, vlToSurrogateKey, entityIDToSurrogateKey)
       var serialized= 0
       associationFullTimeRange.tupleReferences
-        .withFilter(_.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1>0)
+        .withFilter(_.getDataTuple.head.asInstanceOf[FactLineage].projectToTimeRange(IOService.STANDARD_TIME_FRAME_START,trainTimeEnd).countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1>0)
         .foreach(r => {
           val id = IdentifiedFactLineage.getIDString(subdomain,r.toIDBasedTupleReference)
           val identifiedLineage = r.getDataTuple.head.asInstanceOf[FactLineage].toIdentifiedFactLineage(id)

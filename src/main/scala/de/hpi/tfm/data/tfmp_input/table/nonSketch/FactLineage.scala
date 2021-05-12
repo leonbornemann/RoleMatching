@@ -46,7 +46,7 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
       .mkString(",") + ">"
   }
 
-  def toIdentifiedFactLineage(edgeString1: String) = IdentifiedFactLineage(edgeString1,toSerializationHelper)
+  def toIdentifiedFactLineage(id: String) = IdentifiedFactLineage(id,toSerializationHelper)
 
 
   def projectToTimeRange(timeRangeStart: LocalDate, timeRangeEnd: LocalDate) = {

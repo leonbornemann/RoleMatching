@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraph, FactMergeabilityGraphEdge}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.tfm.evaluation.data.GeneralEdge
+import de.hpi.tfm.evaluation.data.{GeneralEdge, IdentifiedFactLineage}
 import de.hpi.tfm.evaluation.{EdgeEvaluationRow, HoldoutTimeEvaluator}
 import de.hpi.tfm.io.Evaluation_IOService
 
@@ -41,8 +41,8 @@ class WikipediaEdgeBasedEvaluator(subdomain: String,
       .zipWithIndex
       .foreach{case (e,i) => {
         val realEdge = getRealEdge(e)
-        val edgeString1 = "socrata_"+subdomain + e.tupleReferenceA.toString
-        val edgeString2 = "socrata_"+subdomain + e.tupleReferenceB.toString
+        val edgeString1 = IdentifiedFactLineage.getIDString(subdomain,e.tupleReferenceA)
+        val edgeString2 = IdentifiedFactLineage.getIDString(subdomain,e.tupleReferenceB)
         val v1 = realEdge._1.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString1)
         val v2 = realEdge._2.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString2)
         val identifiedEdge = GeneralEdge(v1,v2)

@@ -17,8 +17,8 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
   val WILDCARD_TO_KNOWN_TRANSITION_WEIGHT = -0.1 / totalTransitionCount
   val WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT = -0.5 / totalTransitionCount
   val BOTH_WILDCARD_WEIGHT = 0
-  val SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION = 0.5 / totalTransitionCount
-  val SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION = 0.1 / totalTransitionCount
+  val SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT = 0.5 / totalTransitionCount
+  val SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT = 0.1 / totalTransitionCount
   val transitionSetA = a.valueTransitions(true,false)
   val transitionSetB = b.valueTransitions(true,false)
   var totalScore = 0.5
@@ -47,7 +47,7 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
         //handle transition:
         val noWildcardInTransition = Set(prevValueA,prevValueB,cp.curValueA,cp.curValueB).forall(v => !a.isWildcard(v))
         if(noWildcardInTransition){
-          totalScore +=1*SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION
+          totalScore +=1*SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT
           totalScoreChanges+=1
         } else {
           val aChanged = cp.curValueA!=cp.prevValueA && !a.isWildcard(cp.curValueA) && !a.isWildcard(cp.prevValueA)
@@ -105,7 +105,7 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
         totalScoreChanges+=countPrev
       }
     } else {
-      totalScore+=countPrev*SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION
+      totalScore+=countPrev*SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT
       totalScoreChanges+=countPrev
     }
   }

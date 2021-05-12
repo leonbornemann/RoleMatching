@@ -1,27 +1,35 @@
 package de.hpi.tfm.fact_merging.optimization
 
 import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraphEdge, TupleReference}
+import de.hpi.tfm.evaluation.data.IdentifiedTupleMerge
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import scalax.collection.Graph
-import scalax.collection.edge.WLkUnDiEdge
+import scalax.collection.edge.WUnDiEdge
 
-class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[TupleReference[Any], WLkUnDiEdge]) {
+class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[String, WUnDiEdge],MIN_EDGE_WEIGHT_THRESHOLD:Double) {
 
-  private var MIN_EDGE_WEIGHT_THRESHOLD = 0.0
-
-  val adjacencyList = subGraph.edges.map(e => {
-    val edgeObject = e.label.asInstanceOf[FactMergeabilityGraphEdge]
-    (Set(edgeObject.tupleReferenceA,edgeObject.tupleReferenceB),e)
+  val vertexPairToEdge = subGraph.edges.map(e => {
+    val vertexSet = e.nodes.map(_.value).toSet
+    (vertexSet,e)
     })
     .toMap
 
   val merges = scala.collection.mutable.HashMap() ++ subGraph.nodes
-    .map(n => (n.value.toIDBasedTupleReference,TupleMerge(Set(n.value.toIDBasedTupleReference),GLOBAL_CONFIG.OPTIMIZATION_TARGET_FUNCTION(n.value))))
+    .map(n => (n.value,IdentifiedTupleMerge(Set(n.value),MIN_EDGE_WEIGHT_THRESHOLD))) //every node starts out with the min threshold originally, so that we only merge if we exceed that
     .toMap
 
-  def executeMergeIfPossible(curEdge: FactMergeabilityGraphEdge) = {
-    val v1 = curEdge.tupleReferenceA
-    val v2 = curEdge.tupleReferenceB
+  def executeMergeIfPossibleA(curEdge: FactMergeabilityGraphEdge) = {
+
+  }
+
+  def vertexPairFromEdge(curEdgeObject: subGraph.EdgeT) = {
+    val seq = curEdgeObject.nodes.toIndexedSeq
+    assert(seq.size==2)
+    (seq(0).value,seq(1).value)
+  }
+
+  def executeMergeIfPossible(curEdgeObject: subGraph.EdgeT) = {
+    val (v1,v2) = vertexPairFromEdge(curEdgeObject)
     val curV1Clique = merges(v1).clique
     val curV2Clique = merges(v2).clique
     if(curV1Clique==curV2Clique){
@@ -38,7 +46,7 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[TupleReference[A
       var n1 = it1.next()
       while(isClique && it2.hasNext){
         val n2 = it2.next()
-        val edge = adjacencyList.get(Set(n1,n2))
+        val edge = vertexPairToEdge.get(Set(n1,n2))
         if(edge.isEmpty){
           //early abort
           isClique = false
@@ -54,7 +62,7 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[TupleReference[A
       if(isClique){
         //executeMerge
         val mergedClique = curV1Clique.union(curV2Clique)
-        val newMerge = TupleMerge(mergedClique,merges(v1).score + merges(v2).score + newScore)
+        val newMerge = IdentifiedTupleMerge(mergedClique,merges(v1).cliqueScore + merges(v2).cliqueScore + newScore)
         mergedClique.foreach(v => {
           merges(v) = newMerge
         })
@@ -69,11 +77,10 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[TupleReference[A
     var done = false
     while(edges.hasNext && !done){
       val curEdgeObject = edges.next()
-      val curEdge = curEdgeObject.label.asInstanceOf[FactMergeabilityGraphEdge]
       if(curEdgeObject.weight<=MIN_EDGE_WEIGHT_THRESHOLD){
         done = true
       } else {
-        executeMergeIfPossible(curEdge)
+        executeMergeIfPossible(curEdgeObject)
       }
     }
     merges.values.toSet

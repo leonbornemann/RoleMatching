@@ -4,7 +4,7 @@ import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.data.tfmp_input.table.AbstractTemporalField
 import de.hpi.tfm.fact_merging.metrics.{EdgeScore, MultipleEventWeightScore}
-import de.hpi.tfm.fact_merging.optimization.{ConnectedComponentMergeOptimizer, GreedyEdgeWeightOptimizer, GreedyMaxCliqueBasedOptimizer}
+import de.hpi.tfm.fact_merging.optimization.{ConnectedComponentMergeOptimizer, GreedyMaxCliqueBasedOptimizer}
 
 import java.io.File
 import java.lang
@@ -15,7 +15,6 @@ object GLOBAL_CONFIG {
 
   def getOptimizer(optimizationMethodName: String, subdomain: String, connectedComponentFile: File, graphConfig: GraphConfig):ConnectedComponentMergeOptimizer = {
     optimizationMethodName match {
-      case GreedyEdgeWeightOptimizer.methodName => new GreedyEdgeWeightOptimizer(subdomain,connectedComponentFile,graphConfig)
       case GreedyMaxCliqueBasedOptimizer.methodName => new GreedyMaxCliqueBasedOptimizer(subdomain,connectedComponentFile,graphConfig)
       case _ => throw new AssertionError(s"$optimizationMethodName not known")
     }

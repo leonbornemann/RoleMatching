@@ -7,17 +7,21 @@ import de.hpi.tfm.data.tfmp_input.GlobalSurrogateRegistry
 import de.hpi.tfm.data.tfmp_input.association.{AssociationIdentifier, AssociationSchema}
 import de.hpi.tfm.data.tfmp_input.factLookup.{FactLookupTable, FactTableRow}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
+import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
+import java.io.{File, PrintWriter}
 import scala.collection.mutable
 
 class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLogging{
 
   var numAssociationsWithChangesAfterStandardTimeEnd = 0
 
-  def exportAll() = {
+  def exportAll(identifiedFactLineageFile:File) = {
     logger.debug(s"processing $id")
     val tt = TemporalTable.load(id)
+    val flResultFileWriter = new PrintWriter(identifiedFactLineageFile)
     tt.attributes.zipWithIndex.foreach{case (al,i) => {
       val attrID = tt.attributes(i).attrId
       val dttID = AssociationIdentifier(subdomain, id, 0, Some(i))
@@ -49,7 +53,15 @@ class SimplifiedInputExporter(subdomain: String, id: String) extends StrictLoggi
       associationFullTimeRange.writeToFullTimeRangeFile()
       associationFullTimeRange.toSketch.writeToFullTimeRangeFile()
       writeFactTable(dttID, vlToSurrogateKey, entityIDToSurrogateKey)
+      associationFullTimeRange.tupleReferences
+        .withFilter(_.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1>0)
+        .foreach(r => {
+          val id = IdentifiedFactLineage.getIDString(subdomain,r.toIDBasedTupleReference)
+          val identifiedLineage = r.getDataTuple.head.asInstanceOf[FactLineage].toIdentifiedFactLineage(id)
+          identifiedLineage.appendToWriter(flResultFileWriter,false,true)
+      })
     }}
+    flResultFileWriter.close()
     val allTImstamps = tt.rows.flatMap(r =>
       r.fields.flatMap(_.lineage.keySet).toSet).toSet
     val ttContainsEvaluationChanges = allTImstamps.exists(_.isAfter(IOService.STANDARD_TIME_FRAME_END))

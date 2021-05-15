@@ -14,12 +14,19 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
                                    tuplesRight: IndexedSeq[TupleReference[A]],
                                    graphConfig: GraphConfig,
                                    filterByCommonWildcardIgnoreChangeTransition:Boolean=true,
-                                   tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]]=None,
+                                   var tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]]=None,
                                    logProgress:Boolean=false,
                                    logRuntimes:Boolean=false) extends FactMatchCreator[A] with StrictLogging{
 
-  if(filterByCommonWildcardIgnoreChangeTransition)
+  if(filterByCommonWildcardIgnoreChangeTransition) {
+    if(!tupleToNonWcTransitions.isDefined){
+      tupleToNonWcTransitions = Some((tuplesLeft++tuplesRight)
+        .map(t => (t,t.getDataTuple.head
+          .valueTransitions(false,true))
+        ).toMap)
+    }
     assert(tupleToNonWcTransitions.isDefined)
+  }
 
   val detailedLogging:Boolean = false
   var totalIndexTime:Double = 0.0

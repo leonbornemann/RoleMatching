@@ -1,4 +1,4 @@
-package de.hpi.tfm.fact_merging.optimization
+package de.hpi.tfm.fact_merging.optimization.old
 
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
@@ -17,8 +17,8 @@ object MergeOptimizationMain extends App {
   val minEvidence = args(5).toInt
   val timeRangeStart = LocalDate.parse(args(6))
   val timeRangeEnd = LocalDate.parse(args(7))
-  val graphConfig = GraphConfig(minEvidence,timeRangeStart,timeRangeEnd)
+  val graphConfig = GraphConfig(minEvidence, timeRangeStart, timeRangeEnd)
   GLOBAL_CONFIG.OPTIMIZATION_TARGET_FUNCTION_NAME = targetFunctionName
-  val optimizer = GLOBAL_CONFIG.getOptimizer(optimizationMethodName,subdomain,connectedComponentFile,graphConfig)
+  val optimizer = GLOBAL_CONFIG.getOptimizer(optimizationMethodName, subdomain, connectedComponentFile, graphConfig)
   optimizer.run()
 }

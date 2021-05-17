@@ -1,4 +1,4 @@
-package de.hpi.tfm.fact_merging.optimization
+package de.hpi.tfm.fact_merging.optimization.old
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig

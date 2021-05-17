@@ -17,8 +17,8 @@ object EdgeBasedEvaluationWikipediaStyleMain extends App {
   val timeRangeStartEval = LocalDate.parse(args(6))
   val timeRangeEndEval = LocalDate.parse(args(7))
   val resultFileJson = new File(args(8))
-  val resultFileEdges = new File(args(9))
+  val resultFileStats = new File(args(9))
   val graphConfigEval = GraphConfig(minEvidenceEval,timeRangeStartEval,timeRangeEndEval)
-  val edgeBasedEvaluator = new WikipediaEdgeBasedEvaluator(subdomain,graphConfig,graphConfigEval,resultFileJson,resultFileEdges)
+  val edgeBasedEvaluator = new WikipediaEdgeBasedEvaluator(subdomain,graphConfig,graphConfigEval,resultFileJson,resultFileStats)
   edgeBasedEvaluator.evaluate()
 }

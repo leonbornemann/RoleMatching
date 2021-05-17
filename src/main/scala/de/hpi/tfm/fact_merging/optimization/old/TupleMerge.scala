@@ -1,4 +1,4 @@
-package de.hpi.tfm.fact_merging.optimization
+package de.hpi.tfm.fact_merging.optimization.old
 
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.IDBasedTupleReference

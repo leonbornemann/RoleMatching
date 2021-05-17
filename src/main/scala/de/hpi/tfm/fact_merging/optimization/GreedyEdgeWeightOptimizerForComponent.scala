@@ -14,12 +14,8 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[String, WUnDiEdg
     .toMap
 
   val merges = scala.collection.mutable.HashMap() ++ subGraph.nodes
-    .map(n => (n.value,IdentifiedTupleMerge(Set(n.value),MIN_EDGE_WEIGHT_THRESHOLD))) //every node starts out with the min threshold originally, so that we only merge if we exceed that
+    .map(n => (n.value,IdentifiedTupleMerge(Set(n.value),Math.nextDown(MIN_EDGE_WEIGHT_THRESHOLD)))) //every node starts out with the min threshold originally, so that we only merge if we exceed that
     .toMap
-
-  def executeMergeIfPossibleA(curEdge: FactMergeabilityGraphEdge) = {
-
-  }
 
   def vertexPairFromEdge(curEdgeObject: subGraph.EdgeT) = {
     val seq = curEdgeObject.nodes.toIndexedSeq
@@ -76,7 +72,7 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[String, WUnDiEdg
     var done = false
     while(edges.hasNext && !done){
       val curEdgeObject = edges.next()
-      if(curEdgeObject.weight<=MIN_EDGE_WEIGHT_THRESHOLD){
+      if(curEdgeObject.weight<MIN_EDGE_WEIGHT_THRESHOLD){
         done = true
       } else {
         executeMergeIfPossible(curEdgeObject)

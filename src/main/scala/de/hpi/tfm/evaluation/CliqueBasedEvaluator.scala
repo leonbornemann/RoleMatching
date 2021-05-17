@@ -2,7 +2,7 @@ package de.hpi.tfm.evaluation
 
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
-import de.hpi.tfm.fact_merging.optimization.TupleMerge
+import de.hpi.tfm.fact_merging.optimization.old.TupleMerge
 import de.hpi.tfm.io.Evaluation_IOService
 
 import java.io.PrintWriter

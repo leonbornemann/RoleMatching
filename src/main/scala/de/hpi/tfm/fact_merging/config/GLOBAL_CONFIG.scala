@@ -3,7 +3,7 @@ package de.hpi.tfm.fact_merging.config
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.fact_merging.metrics.{EdgeScore, MultipleEventWeightScore}
-import de.hpi.tfm.fact_merging.optimization.{ConnectedComponentMergeOptimizer, GreedyMaxCliqueBasedOptimizer}
+import de.hpi.tfm.fact_merging.optimization.old.{ConnectedComponentMergeOptimizer, GreedyMaxCliqueBasedOptimizer}
 
 import java.io.File
 import java.time.LocalDate

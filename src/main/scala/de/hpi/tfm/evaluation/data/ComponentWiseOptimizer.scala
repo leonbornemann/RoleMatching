@@ -32,8 +32,8 @@ abstract class ComponentWiseOptimizer(val inputGraph: Graph[String, WUnDiEdge], 
     var i = 0
     traverser.foreach(e => {
       val subGraph: Graph[String, WUnDiEdge] = componentToGraph(e)
-      logger.debug(s"Handling Component with Vertices: ${subGraph.nodes.map(_.value)}")
-      logger.debug(s"Vertex Count: ${subGraph.nodes.size}, edge count: ${subGraph.edges.size}")
+      //logger.debug(s"Handling Component with Vertices: ${subGraph.nodes.map(_.value)}")
+      //logger.debug(s"Vertex Count: ${subGraph.nodes.size}, edge count: ${subGraph.edges.size}")
       val componentMerges = mergeComponent(subGraph)
       assert(componentMerges.toIndexedSeq.flatMap(_.clique).size==subGraph.nodes.size)
       componentMerges.foreach(tm => {

@@ -1,6 +1,6 @@
-package de.hpi.tfm.evaluation.data
+package de.hpi.tfm.fact_merging.optimization
 
-import de.hpi.tfm.fact_merging.optimization.GreedyEdgeWeightOptimizerForComponent
+import de.hpi.tfm.evaluation.data.{ComponentWiseOptimizer, IdentifiedTupleMerge}
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 

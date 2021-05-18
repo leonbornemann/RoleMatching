@@ -1,5 +1,6 @@
 package de.hpi.tfm.data.wikipedia.infobox.transformed
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
@@ -8,6 +9,7 @@ import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.statistics.vertex.WikipediaInfoboxStatisticsLine
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
 
+import java.io.File
 import java.time.{LocalDate, Period}
 
 case class WikipediaInfoboxValueHistory(template:Option[String],
@@ -51,7 +53,7 @@ case class WikipediaInfoboxValueHistory(template:Option[String],
 
 }
 
-object WikipediaInfoboxValueHistory extends JsonReadable[WikipediaInfoboxValueHistory]{
+object WikipediaInfoboxValueHistory extends JsonReadable[WikipediaInfoboxValueHistory] with StrictLogging{
 
   def toAssociationTable(histories: IndexedSeq[WikipediaInfoboxValueHistory], id:AssociationIdentifier,attrID:Int) = {
     //id:String,
@@ -70,6 +72,21 @@ object WikipediaInfoboxValueHistory extends JsonReadable[WikipediaInfoboxValueHi
       attributeLineage,
       IndexedSeq[SurrogateAttributeLineage](),
       rows)
+  }
+
+  def findFileForID(dir:File,id:BigInt) = {
+    val matchingFile = dir
+      .listFiles()
+      .toIndexedSeq
+      .map(f => {
+        val tokens = f.getName.split("-")
+        (f,BigInt(tokens(0)),BigInt(tokens(1).split("\\.")(0)))
+      })
+      .filter(t => id <= t._3 && id >= t._2)
+    if (matchingFile.size!=1){
+      logger.debug(s"Weird for $id")
+    }
+    matchingFile.head._1
   }
 
   def getFilenameForBucket(originalBucketFilename:String) = {

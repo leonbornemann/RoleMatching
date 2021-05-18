@@ -21,9 +21,10 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val templates = args(0).split(Pattern.quote(";")).toIndexedSeq
   val templateSetString = templates.mkString("&")
   val byTemplateDir = new File(args(1))
-  val resultDir = new File(args(2))
-  val endDateTrainPhase = LocalDate.parse(args(3))
-  val timestampResolutionInDays = args(4).toInt
+  val resultFileEdges = new File(args(2))
+  val resultFileStats = new File(args(3))
+  val endDateTrainPhase = LocalDate.parse(args(4))
+  val timestampResolutionInDays = args(5).toInt
   GLOBAL_CONFIG.trainTimeEnd=endDateTrainPhase
   GLOBAL_CONFIG.granularityInDays=timestampResolutionInDays
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
@@ -45,9 +46,9 @@ object FactMergingByTemplateMain extends App with StrictLogging{
     .edges
     .map(e => WikipediaInfoboxValueHistoryMatch(lineagesComplete(e.tupleReferenceA.rowIndex), lineagesComplete(e.tupleReferenceB.rowIndex)))
   logger.debug(s"Finished compatibility graph creation, found ${edges.size} edges")
-  logger.debug(s"serializing to ${resultDir.getAbsolutePath + s"/${templateSetString}_edges.json"}")
-  val writer = new PrintWriter(resultDir.getAbsolutePath + s"/${templateSetString}_edges.json")
+  logger.debug(s"serializing edges to ${resultFileEdges.getAbsolutePath}")
+  val writer = new PrintWriter(resultFileEdges.getAbsolutePath)
   edges.foreach(m => m.appendToWriter(writer, false, true))
   writer.close()
-  //new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays).toCsvFile(new File(resultDir.getAbsolutePath + s"/${templateSetString}_edgeStats.csv"))
+  new EdgeAnalyser(edges.map(_.toGeneralEdge),graphConfig,timestampResolutionInDays).toCsvFile(resultFileStats)
 }

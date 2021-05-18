@@ -41,7 +41,7 @@ object GroundTruthCheckMain extends App with StrictLogging{
       } else {
         val vh1 = valueHistories1.head
         val vh2 = valueHistories2.head
-        if(vh1.toGeneralFactLineage.factLineage.toFactLineage.tryMergeWithConsistent(vh2.toGeneralFactLineage.factLineage.toFactLineage).isDefined){
+        if(vh1.toIdentifiedFactLineage.factLineage.toFactLineage.tryMergeWithConsistent(vh2.toIdentifiedFactLineage.factLineage.toFactLineage).isDefined){
           logger.debug(s"True for $rID (${(rID,id1,p1,id2,p2)})")
           (rID,true)
         } else {

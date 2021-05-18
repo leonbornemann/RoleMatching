@@ -42,7 +42,7 @@ case class WikipediaInfoboxValueHistory(template:Option[String],
     WikipediaInfoboxValueHistory(template,pageID,key,p,lineage.toFactLineage.projectToTimeRange(start,end).toSerializationHelper)
   }
 
-  def toGeneralFactLineage = {
+  def toIdentifiedFactLineage = {
     val wikipediaID = WikipediaInfoboxPropertyID(template,pageID,key,p)
     IdentifiedFactLineage(wikipediaID.toCompositeID,lineage)
   }

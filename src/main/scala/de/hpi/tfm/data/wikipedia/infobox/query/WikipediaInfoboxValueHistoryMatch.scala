@@ -5,9 +5,12 @@ import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.WikipediaEdgeStatRow
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
+import de.hpi.tfm.evaluation.data.GeneralEdge
 import de.hpi.tfm.util.TableFormatter
 
 case class WikipediaInfoboxValueHistoryMatch(a: WikipediaInfoboxValueHistory, b: WikipediaInfoboxValueHistory) extends JsonWritable[WikipediaInfoboxValueHistoryMatch]{
+  def toGeneralEdge: GeneralEdge = GeneralEdge(a.toIdentifiedFactLineage,b.toIdentifiedFactLineage)
+
 
   def printTabularEventLineageString = {
     val id1 = a.toWikipediaURLInfo

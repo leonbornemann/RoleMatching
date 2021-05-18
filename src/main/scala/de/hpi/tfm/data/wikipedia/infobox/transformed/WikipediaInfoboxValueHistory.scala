@@ -84,9 +84,13 @@ object WikipediaInfoboxValueHistory extends JsonReadable[WikipediaInfoboxValueHi
       })
       .filter(t => id <= t._3 && id >= t._2)
     if (matchingFile.size!=1){
-      logger.debug(s"Weird for $id")
+      logger.debug(s"Weird for $id, found $matchingFile")
     }
-    matchingFile.head._1
+    if(matchingFile.size!=0)
+      Some(matchingFile.head._1)
+    else {
+      None
+    }
   }
 
   def getFilenameForBucket(originalBucketFilename:String) = {

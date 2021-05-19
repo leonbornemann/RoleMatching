@@ -15,6 +15,7 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
                                    graphConfig: GraphConfig,
                                    filterByCommonWildcardIgnoreChangeTransition:Boolean=true,
                                    var tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]]=None,
+                                   nonInformativeValues:Set[A] = Set[A](),
                                    logProgress:Boolean=false,
                                    logRuntimes:Boolean=false) extends FactMatchCreator[A] with StrictLogging{
 
@@ -22,7 +23,8 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
     if(!tupleToNonWcTransitions.isDefined){
       tupleToNonWcTransitions = Some((tuplesLeft++tuplesRight)
         .map(t => (t,t.getDataTuple.head
-          .valueTransitions(false,true))
+          .valueTransitions(false,true)
+          .filter(t => !nonInformativeValues.contains(t.prev) && !nonInformativeValues.contains(t.after)))
         ).toMap)
     }
     assert(tupleToNonWcTransitions.isDefined)

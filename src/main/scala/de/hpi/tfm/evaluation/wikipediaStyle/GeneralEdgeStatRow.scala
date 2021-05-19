@@ -15,18 +15,18 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,trainGraphConfig:
   val histogramModes = Seq(TransitionHistogramMode.NORMAL,TransitionHistogramMode.IGNORE_NON_CHANGE,TransitionHistogramMode.COUNT_NON_CHANGE_ONLY_ONCE)
   val metricsTrain = histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS,m),
     new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m)) ++ Seq(new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd)))
-  val metricsFull = histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS,m),
-    new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m))) ++ Seq(new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,IOService.STANDARD_TIME_FRAME_END))
+//  val metricsFull = histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS,m),
+//    new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m))) ++ Seq(new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,IOService.STANDARD_TIME_FRAME_END))
 
   val remainsValid = v1.tryMergeWithConsistent(v2).isDefined
   val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(v1).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(v2).isDefined
   val v1Train = v1.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
   val v2Train = v2.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
   val computedMetricsTrain = metricsTrain.map(m => m.compute(v1Train,v2Train))
-  val computedMetricsFull = metricsFull.map(m => m.compute(v1,v2))
+  //val computedMetricsFull = metricsFull.map(m => m.compute(v1,v2))
 
   def getSchema = {
-    Seq("Vertex1ID,Vertex2ID") ++ Seq("remainsValid","hasChangeAfterTrainPeriod") ++ metricsTrain.map(_.name + "_TrainPeriod") ++ metricsFull.map(_.name + "_FullPeriod")
+    Seq("Vertex1ID,Vertex2ID") ++ Seq("remainsValid","hasChangeAfterTrainPeriod") ++ metricsTrain.map(_.name + "_TrainPeriod") //++ metricsFull.map(_.name + "_FullPeriod")
   }
 
   //Dirty: copied from HoldoutTimeEvaluator
@@ -48,7 +48,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,trainGraphConfig:
   }
 
   def toCSVLine = {
-    (Seq(edgeString1,edgeString2) ++ Seq(remainsValid,isInteresting) ++ computedMetricsTrain ++ computedMetricsFull).map(CSVUtil.toCleanString(_)).mkString(",")
+    (Seq(edgeString1,edgeString2) ++ Seq(remainsValid,isInteresting) ++ computedMetricsTrain /*++ computedMetricsFull*/).map(CSVUtil.toCleanString(_)).mkString(",")
   }
 
 }

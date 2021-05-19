@@ -28,6 +28,8 @@ object EdgeAnalysisMain extends App with StrictLogging{
   } else if(edgeType=="wikipedia"){
     edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
       .map(_.toGeneralEdge)
+  } else {
+    assert(false)
   }
   logger.debug(s"Found ${edges.size} edges of which ${edges.filter(_.toGeneralEdgeStatRow(timestampResolutionInDays,graphConfig).remainsValid).size} remain valid")
 //  edges

@@ -71,6 +71,7 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
           graphConfig,
           filterByCommonWildcardIgnoreChangeTransition,
           tupleToNonWcTransitions,
+          nonInformativeValues,
           recurseDepth==0)
         facts ++= bipartiteCreator.facts
       }

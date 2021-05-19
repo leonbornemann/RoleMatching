@@ -30,11 +30,12 @@ object BipartiteFactMatchGraphCreationMain extends App with StrictLogging {
         .projectToTimeRange(timeRangeStart,timeRangeEnd))
     }
   }
+  val nonInformativeValues:Set[Any] = Set("",null)
   for (edge <- edges) {
     logger.debug(s"Discovering mergeability for $edge")
     val tableLeft = getOrLoad(edge.firstMatchPartner)
     val tableRight = getOrLoad(edge.secondMatchPartner)
-    val matchGraphEdges = new BipartiteFactMatchCreator(tableLeft.tupleReferences, tableRight.tupleReferences,graphConfig)
+    val matchGraphEdges = new BipartiteFactMatchCreator(tableLeft.tupleReferences, tableRight.tupleReferences,graphConfig,true,None,nonInformativeValues)
       .toFieldLineageMergeabilityGraph(true)
       .edges
       .filter(_.evidence>=minEvidence)

@@ -18,10 +18,17 @@ object EdgeAnalysisMain extends App with StrictLogging{
   val resultFile = new File(args(1))
   val endDateTrainPhase = LocalDate.parse(args(2))
   val timestampResolutionInDays = args(3).toInt
+  val edgeType = args(4)
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Beginning to load edges")
-  val edges = GeneralEdge.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
+  var edges:collection.Seq[GeneralEdge] = IndexedSeq()
+  if(edgeType=="general"){
+    edges = GeneralEdge.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
+  } else if(edgeType=="wikipedia"){
+    edges = WikipediaInfoboxValueHistoryMatch.fromJsonObjectPerLineFile(matchFile.getAbsolutePath)
+      .map(_.toGeneralEdge)
+  }
   logger.debug(s"Found ${edges.size} edges of which ${edges.filter(_.toGeneralEdgeStatRow(timestampResolutionInDays,graphConfig).remainsValid).size} remain valid")
 //  edges
 //    .filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid)

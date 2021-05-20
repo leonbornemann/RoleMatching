@@ -20,7 +20,7 @@ case class SlimOptimizationGraph(vertices:Set[String],edges:IndexedSeq[SlimEdge]
 
 object SlimOptimizationGraph extends JsonReadable[SlimOptimizationGraph]{
 
-  def fromIdentifiedEdges(edges:IndexedSeq[GeneralEdge],scoringFunction:EdgeScore) = {
+  def fromIdentifiedEdges(edges:IndexedSeq[GeneralEdge],scoringFunction:EdgeScore[Any]) = {
     val vertices = edges.flatMap(e => Seq(e.v1.id,e.v2.id)).toSet
     val slimEdges = edges.map(e => SlimEdge(e.v1.id,e.v2.id,scoringFunction.compute(e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)))
     SlimOptimizationGraph(vertices,slimEdges)

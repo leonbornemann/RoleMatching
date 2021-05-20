@@ -12,6 +12,7 @@ import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends AbstractTemporalField[Any] with Serializable{
+
   def nonWildcardDuration(timeRangeEnd:LocalDate) = {
     val withIndex = lineage
       .zipWithIndex

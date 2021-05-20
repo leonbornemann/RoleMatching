@@ -10,15 +10,37 @@ import java.time.LocalDate
 class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
                                           b:TemporalFieldTrait[A],
                                           val TIMESTAMP_GRANULARITY_IN_DAYS:Int,
-                                          timeEnd:LocalDate // this should be the end of train time!
+                                          timeEnd:LocalDate, // this should be the end of train time!
+                                          nonInformativeValues:Set[A],
+                                          nonInformativeValueIsStrict:Boolean, //true if it is enough for one value in a transition to be non-informative to discard it, false if both of them need to be non-informative to discard it
+                                          transitionHistogramForTFIDF:Option[Map[ValueTransition[A],Int]],
+                                          lineageCount:Option[Int]
                                          ) {
 
+  if(transitionHistogramForTFIDF.isDefined)
+    assert(lineageCount.isDefined)
   val totalTransitionCount = (IOService.STANDARD_TIME_FRAME_START.toEpochDay until timeEnd.toEpochDay by TIMESTAMP_GRANULARITY_IN_DAYS).size-1
   val WILDCARD_TO_KNOWN_TRANSITION_WEIGHT = -0.1 / totalTransitionCount
   val WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT = -0.5 / totalTransitionCount
   val BOTH_WILDCARD_WEIGHT = 0
-  val SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT = 0.5 / totalTransitionCount
-  val SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT = 0.1 / totalTransitionCount
+  val SYNCHRONOUS_NON_INFORMATIVE_TRANSITION_WEIGHT = 0
+
+  def SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT(t:ValueTransition[A]) = {
+    if(transitionHistogramForTFIDF.isDefined){
+      val weightForThis = 1.0 - (transitionHistogramForTFIDF.get(t)-2).toDouble / lineageCount.get
+      weightForThis*(0.5 / totalTransitionCount)
+    } else {
+      0.5 / totalTransitionCount
+    }
+  }
+  def SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT(t:ValueTransition[A]) = {
+    if(transitionHistogramForTFIDF.isDefined){
+      val weightForThis = 1.0 - (transitionHistogramForTFIDF.get(t)-2).toDouble / lineageCount.get
+      weightForThis*(0.1 / totalTransitionCount)
+    } else {
+      0.1 / totalTransitionCount
+    }
+  }
   val transitionSetA = a.valueTransitions(true,false)
   val transitionSetB = b.valueTransitions(true,false)
   var totalScore = 0.5
@@ -26,6 +48,12 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
 
   computeScore()
 
+
+  def transitionIsNonInformative(value: ValueTransition[A]): Boolean = {
+    val containsPrev = nonInformativeValues.contains(value.prev)
+    val containsAfter = nonInformativeValues.contains(value.after)
+    if(nonInformativeValueIsStrict) containsPrev || containsAfter else containsPrev && containsAfter
+  }
 
   private def computeScore() = {
     if(!a.tryMergeWithConsistent(b).isDefined){
@@ -44,36 +72,38 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
         val prevValueA = cp.prevValueA
         val prevValueB = cp.prevValueB
         handleSameValueTransitions(prevValueA,prevValueB,countPrev.toInt)
-        //handle transition:
-        val noWildcardInTransition = Set(prevValueA,prevValueB,cp.curValueA,cp.curValueB).forall(v => !a.isWildcard(v))
+        val values = Set(prevValueA, prevValueB, cp.curValueA, cp.curValueB)
+          //handle transition:
+        val noWildcardInTransition = values.forall(v => !a.isWildcard(v))
         if(noWildcardInTransition){
-          totalScore +=1*SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT
-          totalScoreChanges+=1
+          assert(prevValueA==prevValueB && cp.curValueA==cp.curValueB)
+          if(transitionIsNonInformative(ValueTransition(prevValueA,cp.curValueA))){
+            totalScore+=countPrev*SYNCHRONOUS_NON_INFORMATIVE_TRANSITION_WEIGHT //TODO: is one existence enough or do both parts need to be it? - I think both parts
+          } else {
+            totalScore +=1*SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT(ValueTransition(prevValueA,cp.curValueA))
+          }
         } else {
           val aChanged = cp.curValueA!=cp.prevValueA && !a.isWildcard(cp.curValueA) && !a.isWildcard(cp.prevValueA)
           val bChanged = cp.curValueB!=cp.prevValueB && !a.isWildcard(cp.curValueB) && !a.isWildcard(cp.prevValueB)
           if (aChanged) {
             if(transitionSetB.contains(ValueTransition(cp.prevValueA,cp.curValueA))){
               totalScore+=1*WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
-              totalScoreChanges+=1
             } else {
               totalScore+=1*WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
-              totalScoreChanges+=1
             }
           } else if(bChanged) {
             if(transitionSetA.contains(ValueTransition(cp.prevValueB,cp.curValueB))){
               totalScore+=1*WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
-              totalScoreChanges+=1
             } else {
               totalScore+=1*WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
-              totalScoreChanges+=1
             }
           } else {
             totalScore += 1 * WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
-            totalScoreChanges+=1
           }
         }
-      })
+        totalScoreChanges+=1
+
+        })
       val lastKey = Seq(a.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1,b.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1).maxBy(_.toEpochDay)
       val lastValueA = a.getValueLineage.last._2
       val lastValueB = b.getValueLineage.last._2
@@ -85,27 +115,30 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
   }
 
   def handleSameValueTransitions(prevValueA: A, prevValueB: A, countPrev: Int) = {
-    if(a.isWildcard(prevValueA) && a.isWildcard(prevValueB)){
-      totalScore += countPrev*BOTH_WILDCARD_WEIGHT
-      totalScoreChanges+=countPrev
-    } else if(a.isWildcard(prevValueA)){
-      if(transitionSetA.contains(ValueTransition(prevValueB,prevValueB))){
-        totalScore+=countPrev*WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
-        totalScoreChanges+=countPrev
+    if(countPrev!=0){
+      if(a.isWildcard(prevValueA) && a.isWildcard(prevValueB)){
+        totalScore += countPrev*BOTH_WILDCARD_WEIGHT
+      } else if(a.isWildcard(prevValueA)){
+        if(transitionSetA.contains(ValueTransition(prevValueB,prevValueB))){
+          totalScore+=countPrev*WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
+        } else {
+          totalScore+=countPrev*WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
+        }
+      } else if(a.isWildcard(prevValueB)){
+        if(transitionSetB.contains(ValueTransition(prevValueA,prevValueA))){
+          totalScore+=countPrev*WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
+        } else {
+          totalScore+=countPrev*WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
+        }
       } else {
-        totalScore+=countPrev*WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
-        totalScoreChanges+=countPrev
+        assert(prevValueA==prevValueB)
+        val t = ValueTransition(prevValueA,prevValueB)
+        if(transitionIsNonInformative(t)){
+          totalScore+=countPrev*SYNCHRONOUS_NON_INFORMATIVE_TRANSITION_WEIGHT
+        } else{
+          totalScore+=countPrev*SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT(t)
+        }
       }
-    } else if(a.isWildcard(prevValueB)){
-      if(transitionSetB.contains(ValueTransition(prevValueA,prevValueA))){
-        totalScore+=countPrev*WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
-        totalScoreChanges+=countPrev
-      } else {
-        totalScore+=countPrev*WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
-        totalScoreChanges+=countPrev
-      }
-    } else {
-      totalScore+=countPrev*SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT
       totalScoreChanges+=countPrev
     }
   }

@@ -6,6 +6,7 @@ import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
 import de.hpi.tfm.evaluation.data.GeneralEdge
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
 import java.io.File
@@ -31,7 +32,7 @@ object EdgeAnalysisMain extends App with StrictLogging{
   } else {
     assert(false)
   }
-  logger.debug(s"Found ${edges.size} edges of which ${edges.filter(_.toGeneralEdgeStatRow(timestampResolutionInDays,graphConfig).remainsValid).size} remain valid")
+  //logger.debug(s"Found ${edges.size} edges of which ${edges.filter(_.toGeneralEdgeStatRow(timestampResolutionInDays,graphConfig).remainsValid).size} remain valid")
 //  edges
 //    .filter(_.toWikipediaEdgeStatRow(graphConfig,timestampResolutionInDays).toGeneralStatRow.remainsValid)
 //    .zipWithIndex
@@ -52,5 +53,5 @@ object EdgeAnalysisMain extends App with StrictLogging{
 //      println(computer.computeScore())
 //    }}
   logger.debug("Finsihed loading edges")
-  new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays).toCsvFile(resultFile)
+  new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues).toCsvFile(resultFile)
 }

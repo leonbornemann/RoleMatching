@@ -8,6 +8,7 @@ import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
+import de.hpi.tfm.evaluation.data.GeneralEdge
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
@@ -50,5 +51,6 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val writer = new PrintWriter(resultFileEdges.getAbsolutePath)
   edges.foreach(m => m.appendToWriter(writer, false, true))
   writer.close()
-  new EdgeAnalyser(edges.map(_.toGeneralEdge),graphConfig,timestampResolutionInDays).toCsvFile(resultFileStats)
+  private val generalEdges: IndexedSeq[GeneralEdge] = edges.map(_.toGeneralEdge)
+  new EdgeAnalyser(generalEdges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues).toCsvFile(resultFileStats)
 }

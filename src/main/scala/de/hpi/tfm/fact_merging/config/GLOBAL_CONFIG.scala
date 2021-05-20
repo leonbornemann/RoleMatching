@@ -17,21 +17,12 @@ object GLOBAL_CONFIG {
     }
   }
 
+  var nonInformativeValues:Set[Any]= Set("",null)
+
   var granularityInDays = Int.MaxValue
   var trainTimeEnd = LocalDate.MIN
 
-  def nameToFunction:Map[String,EdgeScore] = {
-    if(granularityInDays == Int.MaxValue || trainTimeEnd==LocalDate.MIN)
-      throw new AssertionError("Config not complete!")
-    Map((MultipleEventWeightScore.name,new MultipleEventWeightScore(granularityInDays,trainTimeEnd)))
-  }
-
   var OPTIMIZATION_TARGET_FUNCTION_NAME:String = ""
-
-  def OPTIMIZATION_TARGET_FUNCTION[A](tr1: TupleReference[A]) = nameToFunction(OPTIMIZATION_TARGET_FUNCTION_NAME).compute(tr1)
-  //def OPTIMIZATION_TARGET_FUNCTION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = AbstractTemporalField.MUTUAL_INFORMATION(tr1,tr2)
-  def OPTIMIZATION_TARGET_FUNCTION[A](tr1: TupleReference[A], tr2: TupleReference[A]) = nameToFunction(OPTIMIZATION_TARGET_FUNCTION_NAME).compute(tr1,tr2)
-
   var ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS = false
 
   //val CHANGE_COUNT_METHOD = new DatasetInsertIgnoreFieldChangeCounter()

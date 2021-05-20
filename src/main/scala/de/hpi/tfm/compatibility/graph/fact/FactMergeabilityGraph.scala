@@ -22,7 +22,7 @@ case class FactMergeabilityGraph(edges: IndexedSeq[FactMergeabilityGraphEdge],gr
     val newEdges = edges.map(e => {
       val tr1 = getTupleReference[A](e.tupleReferenceA,inputTables(e.tupleReferenceA.associationID))
       val tr2 = getTupleReference[A](e.tupleReferenceB,inputTables(e.tupleReferenceB.associationID))
-      val edgeScore = GLOBAL_CONFIG.OPTIMIZATION_TARGET_FUNCTION(tr1,tr2)
+      val edgeScore = ???
       newVertices.add(tr1)
       newVertices.add(tr2)
       WLkUnDiEdge(tr1,tr2)(edgeScore,e)

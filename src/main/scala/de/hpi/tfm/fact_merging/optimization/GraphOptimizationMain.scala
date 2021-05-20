@@ -2,7 +2,7 @@ package de.hpi.tfm.fact_merging.optimization
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.evaluation.data.{GeneralEdge, SlimOptimizationGraph}
-import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScore
+import de.hpi.tfm.fact_merging.metrics.{EdgeScore, MultipleEventWeightScore}
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.TransitionHistogramMode.TransitionHistogramMode
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaSimilarity, TransitionHistogramMode}
 import de.hpi.tfm.io.IOService
@@ -22,7 +22,7 @@ object GraphOptimizationMain extends App with StrictLogging{
   assert(resultFile.getParentFile.exists())
   IOService.STANDARD_TIME_FRAME_START=timeStart
   IOService.STANDARD_TIME_FRAME_END=timeEnd
-  val distanceMetric = new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,trainTimeEnd)
+  val distanceMetric:EdgeScore[Any] = ???//new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,trainTimeEnd)
   logger.debug("Loading edges")
   var edges = GeneralEdge.fromJsonObjectPerLineFile(args(0)).toIndexedSeq
   logger.debug("Finished loading edges")

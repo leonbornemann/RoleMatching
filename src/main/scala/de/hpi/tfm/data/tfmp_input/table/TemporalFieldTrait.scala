@@ -3,7 +3,7 @@ package de.hpi.tfm.data.tfmp_input.table
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.tfm.fact_merging.config.{GLOBAL_CONFIG, UpdateChangeCounter}
-import de.hpi.tfm.fact_merging.metrics.{EntropyComputer, MutualInformationComputer}
+import de.hpi.tfm.fact_merging.metrics.EntropyComputer
 import de.hpi.tfm.io.IOService
 
 import java.time.LocalDate
@@ -30,7 +30,27 @@ trait TemporalFieldTrait[T] {
     //    }
   }
 
-  def mutualInformation(other: TemporalFieldTrait[T]): Double = new MutualInformationComputer(this, other).mutualInfo()
+  def getValueTransitionSet(ignoreWildcards: Boolean,granularityInDays:Int) = {
+    val vl = if(ignoreWildcards) getValueLineage.filter{case (k,v) => !isWildcard(v)}.toIndexedSeq else getValueLineage.toIndexedSeq
+    val transitions = (1 until vl.size)
+      .flatMap(i => {
+        val prev = vl(i - 1)
+        val cur = vl(i)
+        //handle prev to prev
+        val res = scala.collection.mutable.ArrayBuffer[ValueTransition[T]]()
+        if (cur._1.toEpochDay - prev._1.toEpochDay > granularityInDays) {
+          //add Prev to Prev
+          res += ValueTransition(prev._2, prev._2)
+        }
+        res += ValueTransition(prev._2, cur._2)
+        //handle last:
+        if (i == vl.size - 1 && cur._1.isBefore(IOService.STANDARD_TIME_FRAME_END)) {
+          res += ValueTransition(cur._2, cur._2)
+        }
+        res
+      })
+    transitions.toSet
+  }
 
   def valueTransitions(includeSameValueTransitions: Boolean = false,ignoreInterleavedWildcards:Boolean=true): Set[ValueTransition[T]] = {
     val lineage = if(ignoreInterleavedWildcards) getValueLineage.filter{case (k,v) => !isWildcard(v)} else getValueLineage

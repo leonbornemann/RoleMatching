@@ -9,6 +9,7 @@ import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
 import de.hpi.tfm.evaluation.data.{GeneralEdge, IdentifiedFactLineage}
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
 import java.io.{File, PrintWriter}
@@ -53,5 +54,5 @@ object FactMergingMain extends App with StrictLogging{
   edges.foreach(m => m.appendToWriter(writer, false, true))
   writer.close()
   logger.debug("Beginning edge analysis")
-  new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays).toCsvFile(edgeStatResultFile)
+  new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues).toCsvFile(edgeStatResultFile)
 }

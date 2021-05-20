@@ -15,17 +15,6 @@ case class ValueLineageClique(clique: IndexedSeq[FactLineage]) {
     }
   }
 
-
-  def averageMutualInformation = {
-    if(clique.size==1){
-      0
-    } else {
-      clique.map(v => {
-        v.mutualInformation(merge)
-      }).sum / clique.size.toDouble
-    }
-  }
-
   def entropyReduction = {
     if(clique.size==1){
       0

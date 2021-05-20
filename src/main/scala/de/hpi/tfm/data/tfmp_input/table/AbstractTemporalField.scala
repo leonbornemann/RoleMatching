@@ -117,9 +117,6 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
 }
 object AbstractTemporalField{
 
-  def mutualInformation[A](tr1: TupleReference[A], tr2: TupleReference[A]) = {
-    tr1.getDataTuple.head.mutualInformation(tr2.getDataTuple.head)
-  }
 
   def multipleEventWeightScore[A](tr1: TupleReference[A], tr2: TupleReference[A]) = {
     tr1.getDataTuple.head.newScore(tr2.getDataTuple.head)

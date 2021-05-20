@@ -6,6 +6,7 @@ import de.hpi.tfm.compatibility.graph.fact.{FactMergeabilityGraph, FactMergeabil
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.evaluation.HoldoutTimeEvaluator
 import de.hpi.tfm.evaluation.data.{GeneralEdge, IdentifiedFactLineage}
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 
 import java.io.{File, PrintWriter}
 
@@ -22,6 +23,12 @@ class WikipediaEdgeBasedEvaluator(subdomain: String,
       logger.debug(s"Loading file $f")
       FactMergeabilityGraph.fromJsonFile(f.getAbsolutePath).edges
     })
+    .toIndexedSeq
+  val edgesGeneral = edges.map(e => {
+    getGeneralEdge(e)
+  })
+  val hist = GeneralEdge.getTransitionHistogramForTFIDF(edgesGeneral,1)
+  val count = GeneralEdge.getLineageCount(edgesGeneral)
   logger.debug("Finished constructor")
 
   def getRealEdge(e: FactMergeabilityGraphEdge) = {
@@ -33,23 +40,26 @@ class WikipediaEdgeBasedEvaluator(subdomain: String,
     (originals(0),originals(1))
   }
 
+  def getGeneralEdge(e: FactMergeabilityGraphEdge) ={
+    val realEdge = getRealEdge(e)
+    val edgeString1 = IdentifiedFactLineage.getIDString(subdomain,e.tupleReferenceA)
+    val edgeString2 = IdentifiedFactLineage.getIDString(subdomain,e.tupleReferenceB)
+    val v1 = realEdge._1.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString1)
+    val v2 = realEdge._2.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString2)
+    GeneralEdge(v1,v2)
+  }
+
   def evaluate() = {
     val prStats = new PrintWriter(resultFileStats)
     val prJson = new PrintWriter(resultFileJson)
-    edges
+    edgesGeneral
       .zipWithIndex
-      .foreach{case (e,i) => {
-        val realEdge = getRealEdge(e)
-        val edgeString1 = IdentifiedFactLineage.getIDString(subdomain,e.tupleReferenceA)
-        val edgeString2 = IdentifiedFactLineage.getIDString(subdomain,e.tupleReferenceB)
-        val v1 = realEdge._1.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString1)
-        val v2 = realEdge._2.asInstanceOf[FactLineage].toIdentifiedFactLineage(edgeString2)
-        val identifiedEdge = GeneralEdge(v1,v2)
+      .foreach{case (identifiedEdge,i) => {
         identifiedEdge.appendToWriter(prJson,false,true)
         if(i==0){
-          prStats.println(identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig).getSchema.mkString(","))
+          prStats.println(identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig,GLOBAL_CONFIG.nonInformativeValues,hist,count).getSchema.mkString(","))
         }
-        val line = identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig)
+        val line = identifiedEdge.toGeneralEdgeStatRow(1,trainGraphConfig,GLOBAL_CONFIG.nonInformativeValues,hist,count)
           .toCSVLine
         prStats.println(line)
     }}

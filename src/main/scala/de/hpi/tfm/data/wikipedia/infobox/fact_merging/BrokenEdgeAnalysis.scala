@@ -1,9 +1,12 @@
 package de.hpi.tfm.data.wikipedia.infobox.fact_merging
 
 import de.hpi.tfm.compatibility.GraphConfig
+import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
 import de.hpi.tfm.evaluation.data.GeneralEdge
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
+import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 object BrokenEdgeAnalysis extends App {
@@ -11,7 +14,14 @@ object BrokenEdgeAnalysis extends App {
   val trainTimeEnd = LocalDate.parse("2020-04-30")
   val edges = GeneralEdge.fromJsonObjectPerLineFile(edgeFile)
   val trainGraphConfig = GraphConfig(0,IOService.STANDARD_TIME_FRAME_START,trainTimeEnd)
-  val invalidEdges = edges.filter(e => !e.toGeneralEdgeStatRow(1,trainGraphConfig).remainsValid && e.toGeneralEdgeStatRow(1,trainGraphConfig).isInteresting)
+  val invalidEdges = edges.filter(e => {
+    val row = e.toGeneralEdgeStatRow(1, trainGraphConfig, Set(), Map(), 0)
+    !row.remainsValid && row.isInteresting
+  })
+  println()
+  val analyser = new EdgeAnalyser(edges,trainGraphConfig,1,GLOBAL_CONFIG.nonInformativeValues)
+  val a = analyser.transitionHistogramForTFIDF
+  analyser.toCsvFile(new File("test.csv"))
   println()
 
 }

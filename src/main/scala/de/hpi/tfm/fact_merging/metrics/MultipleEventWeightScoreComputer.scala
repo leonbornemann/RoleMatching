@@ -19,7 +19,7 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
 
   if(transitionHistogramForTFIDF.isDefined)
     assert(lineageCount.isDefined)
-  val totalTransitionCount = (IOService.STANDARD_TIME_FRAME_START.toEpochDay until timeEnd.toEpochDay by TIMESTAMP_GRANULARITY_IN_DAYS).size-1
+  val totalTransitionCount = (IOService.STANDARD_TIME_FRAME_START.toEpochDay to timeEnd.toEpochDay by TIMESTAMP_GRANULARITY_IN_DAYS).size-1
   val WILDCARD_TO_KNOWN_TRANSITION_WEIGHT = -0.1 / totalTransitionCount
   val WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT = -0.5 / totalTransitionCount
   val BOTH_WILDCARD_WEIGHT = 0
@@ -107,7 +107,7 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
       val lastKey = Seq(a.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1,b.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1).maxBy(_.toEpochDay)
       val lastValueA = a.getValueLineage.last._2
       val lastValueB = b.getValueLineage.last._2
-      val countLastInDays = timeEnd.toEpochDay - lastKey.toEpochDay - TIMESTAMP_GRANULARITY_IN_DAYS
+      val countLastInDays = timeEnd.toEpochDay - lastKey.toEpochDay
       assert(countLastInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0)
       val countLast = countLastInDays / TIMESTAMP_GRANULARITY_IN_DAYS
       handleSameValueTransitions(lastValueA,lastValueB,countLast.toInt)
@@ -148,6 +148,9 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
       if(!(totalScore>=0.0 && totalScore<=1.0))
         println()
       assert(totalScore>=0.0 && totalScore<=1.0)
+      if(totalScoreChanges!=totalTransitionCount){
+        println()
+      }
       assert(totalScoreChanges==totalTransitionCount)
     }
     totalScore

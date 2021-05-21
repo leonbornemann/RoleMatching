@@ -16,18 +16,15 @@ object EdgeAnalysisMain extends App with StrictLogging{
   logger.debug(s"called with ${args.toIndexedSeq}")
   val matchFile = new File(args(0))
   val resultFile = new File(args(1))
-  val endDateTrainPhase = LocalDate.parse(args(2))
-  val timestampResolutionInDays = args(3).toInt
-  val edgeType = args(4)
-  val dataset = args(5)
-  if(dataset=="wikipedia"){
-    IOService.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
-    IOService.STANDARD_TIME_FRAME_END = InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP
-  } else {
-    assert(dataset=="socrata")
-  }
+  val timeStart = LocalDate.parse(args(2))
+  val endDateTrainPhase = LocalDate.parse(args(3))
+  val timeEnd = LocalDate.parse(args(4))
+  val timestampResolutionInDays = args(5).toInt
+  val edgeType = args(6)
+  IOService.STANDARD_TIME_FRAME_START = timeStart
+  IOService.STANDARD_TIME_FRAME_END = timeEnd
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
-  val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
+  val graphConfig = GraphConfig(0, timeStart, endDateTrainPhase)
   logger.debug("Beginning to load edges")
   var edges:collection.Seq[GeneralEdge] = IndexedSeq()
   if(edgeType=="general"){

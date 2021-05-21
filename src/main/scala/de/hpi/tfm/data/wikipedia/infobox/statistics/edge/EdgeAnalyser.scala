@@ -16,9 +16,9 @@ class EdgeAnalyser(edges: collection.Seq[GeneralEdge], trainGraphConfig:GraphCon
 
   def toCSVLine(e: GeneralEdge) = {
     val line = e.toGeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig,nonInformativeValues,transitionHistogramForTFIDF,lineageCount)
-    e.printTabularEventLineageString
-    println(line.getSchema)
-    println(line.toCSVLine)
+//    e.printTabularEventLineageString
+//    println(line.getSchema)
+//    println(line.toCSVLine)
     line.toCSVLine
   }
 

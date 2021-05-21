@@ -13,13 +13,18 @@ import java.io.File
 import java.time.LocalDate
 
 object EdgeAnalysisMain extends App with StrictLogging{
-  IOService.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
-  IOService.STANDARD_TIME_FRAME_END = InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP
   val matchFile = new File(args(0))
   val resultFile = new File(args(1))
   val endDateTrainPhase = LocalDate.parse(args(2))
   val timestampResolutionInDays = args(3).toInt
   val edgeType = args(4)
+  val dataset = args(5)
+  if(dataset=="wikipedia"){
+    IOService.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
+    IOService.STANDARD_TIME_FRAME_END = InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP
+  } else {
+    assert(dataset=="socrata")
+  }
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Beginning to load edges")

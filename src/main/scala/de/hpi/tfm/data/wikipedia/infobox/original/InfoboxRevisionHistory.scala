@@ -229,7 +229,6 @@ object InfoboxRevisionHistory extends StrictLogging{
   private def recomputeTimeAxis = {
     val axis = collection.mutable.TreeSet[LocalDate]() ++ EARLIEST_HISTORY_TIMESTAMP.toEpochDay.to(LATEST_HISTORY_TIMESTAMP.toEpochDay).by(lowestGranularityInDays)
       .map(l => LocalDate.ofEpochDay(l))
-    logger.debug(s"Reset time axis to: $axis")
     axis
   }
 

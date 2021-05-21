@@ -13,6 +13,7 @@ import java.io.File
 import java.time.LocalDate
 
 object EdgeAnalysisMain extends App with StrictLogging{
+  logger.debug(s"called with ${args.toIndexedSeq}")
   val matchFile = new File(args(0))
   val resultFile = new File(args(1))
   val endDateTrainPhase = LocalDate.parse(args(2))

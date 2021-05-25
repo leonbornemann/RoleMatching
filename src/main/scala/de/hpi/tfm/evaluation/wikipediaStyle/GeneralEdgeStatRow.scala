@@ -24,10 +24,12 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   val metricsTrain = /*histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity[Any](TIMESTAMP_RESOLUTION_IN_DAYS,m),
     new TransitionMatchScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,m)) )++*/
     Seq(
-      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,None,None),
-      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,Some(transitionHistogramForTFIDF),Some(lineageCount)),
-      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,None,None),
-      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,Some(transitionHistogramForTFIDF),Some(lineageCount)))
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,None,None,None),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(false)),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(true)),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,None,None,None),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(false)),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(true)))
 
 //  val metricsFull = histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS,m),
 //    new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m))) ++ Seq(new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,IOService.STANDARD_TIME_FRAME_END))
@@ -36,11 +38,12 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(v1).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(v2).isDefined
   val v1Train = v1.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
   val v2Train = v2.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
+  val isNumeric = v1Train.isNumeric || v2Train.isNumeric
   def trainMetrics = metricsTrain.map(m => m.compute(v1Train,v2Train))
   //val computedMetricsFull = metricsFull.map(m => m.compute(v1,v2))
 
   def getSchema = {
-    Seq("Vertex1ID,Vertex2ID") ++ Seq("remainsValid","hasChangeAfterTrainPeriod") ++ metricsTrain.map(_.name + "_TrainPeriod") //++ metricsFull.map(_.name + "_FullPeriod")
+    Seq("Vertex1ID,Vertex2ID") ++ Seq("remainsValid","hasChangeAfterTrainPeriod,isNumeric") ++ metricsTrain.map(_.name + "_TrainPeriod") //++ metricsFull.map(_.name + "_FullPeriod")
   }
 
   //Dirty: copied from HoldoutTimeEvaluator
@@ -62,7 +65,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   }
 
   def toCSVLine = {
-    (Seq(edgeString1,edgeString2) ++ Seq(remainsValid,isInteresting) ++ trainMetrics /*++ computedMetricsFull*/).map(CSVUtil.toCleanString(_)).mkString(",")
+    (Seq(edgeString1,edgeString2) ++ Seq(remainsValid,isInteresting,isNumeric) ++ trainMetrics /*++ computedMetricsFull*/).map(CSVUtil.toCleanString(_)).mkString(",")
   }
 
 }

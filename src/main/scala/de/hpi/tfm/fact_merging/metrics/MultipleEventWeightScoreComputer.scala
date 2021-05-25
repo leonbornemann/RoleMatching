@@ -14,7 +14,8 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
                                           nonInformativeValues:Set[A],
                                           nonInformativeValueIsStrict:Boolean, //true if it is enough for one value in a transition to be non-informative to discard it, false if both of them need to be non-informative to discard it
                                           transitionHistogramForTFIDF:Option[Map[ValueTransition[A],Int]],
-                                          lineageCount:Option[Int]
+                                          lineageCount:Option[Int],
+                                          termFrequencyExponential:Option[Boolean]
                                          ) {
 
   if(transitionHistogramForTFIDF.isDefined)
@@ -25,22 +26,35 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
   val BOTH_WILDCARD_WEIGHT = 0
   val SYNCHRONOUS_NON_INFORMATIVE_TRANSITION_WEIGHT = 0
 
-  def SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT(t:ValueTransition[A]) = {
+  def exponentialFrequency(x: Double) = {
+    val a = 0.0000001
+    val y = (Math.pow(a,x)-1) / (a-1).toDouble
+    y
+  }
+
+  def getWeightedTransitionScore(d: Double, t: ValueTransition[A]) = {
     if(transitionHistogramForTFIDF.isDefined){
-      val weightForThis = 1.0 - (transitionHistogramForTFIDF.get(t)-2).toDouble / lineageCount.get
-      weightForThis*(0.5 / totalTransitionCount)
+      val linearFrequency = (transitionHistogramForTFIDF.get(t) - 2).toDouble / lineageCount.get
+      val scaledFrequency = if(termFrequencyExponential.get){
+        exponentialFrequency(linearFrequency)
+      } else {
+        linearFrequency
+      }
+      val weight = 1.0 - scaledFrequency
+      weight*(d / totalTransitionCount)
     } else {
-      0.5 / totalTransitionCount
+      d / totalTransitionCount
     }
+  }
+
+  def SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT(t:ValueTransition[A]) = {
+    getWeightedTransitionScore(0.5,t)
+
   }
   def SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT(t:ValueTransition[A]) = {
-    if(transitionHistogramForTFIDF.isDefined){
-      val weightForThis = 1.0 - (transitionHistogramForTFIDF.get(t)-2).toDouble / lineageCount.get
-      weightForThis*(0.1 / totalTransitionCount)
-    } else {
-      0.1 / totalTransitionCount
-    }
+    getWeightedTransitionScore(0.1,t)
   }
+
   val transitionSetA = a.valueTransitions(true,false)
   val transitionSetB = b.valueTransitions(true,false)
   var totalScore = 0.5

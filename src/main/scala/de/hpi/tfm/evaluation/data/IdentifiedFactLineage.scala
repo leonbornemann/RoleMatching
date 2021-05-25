@@ -6,12 +6,20 @@ import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
+import de.hpi.tfm.evaluation.data.IdentifiedFactLineage.digitRegex
+import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 
 case class IdentifiedFactLineage(id:String, factLineage: FactLineageWithHashMap) extends JsonWritable[IdentifiedFactLineage] {
+
+  def isNumeric = {
+    factLineage.lineage.values.forall(v => FactLineage.isWildcard(v) || GLOBAL_CONFIG.nonInformativeValues.contains(v) || v.toString.matches(digitRegex))
+  }
 
 }
 
 object IdentifiedFactLineage extends JsonReadable[IdentifiedFactLineage] {
+
+  val digitRegex = "[0-9]+"
 
   def toAssociationTable(histories: IndexedSeq[FactLineage], id:AssociationIdentifier,attrID:Int) = {
     //id:String,

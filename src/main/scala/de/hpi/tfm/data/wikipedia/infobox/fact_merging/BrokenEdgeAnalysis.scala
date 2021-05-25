@@ -14,11 +14,11 @@ object BrokenEdgeAnalysis extends App {
   val trainTimeEnd = LocalDate.parse("2020-04-30")
   val edges = GeneralEdge.fromJsonObjectPerLineFile(edgeFile)
   val trainGraphConfig = GraphConfig(0,IOService.STANDARD_TIME_FRAME_START,trainTimeEnd)
-  val invalidEdges = edges.filter(e => {
-    val row = e.toGeneralEdgeStatRow(1, trainGraphConfig, Set(), Map(), 0)
-    !row.remainsValid && row.isInteresting
-  })
-  println()
+//  val invalidEdges = edges.filter(e => {
+//    val row = e.toGeneralEdgeStatRow(1, trainGraphConfig, Set(), Map(), 0)
+//    row.remainsValid && row.isInteresting && row.trainMetrics(0) < 0.1
+//  })
+//  println()
   val analyser = new EdgeAnalyser(edges,trainGraphConfig,1,GLOBAL_CONFIG.nonInformativeValues)
   val a = analyser.transitionHistogramForTFIDF
   analyser.toCsvFile(new File("test.csv"))

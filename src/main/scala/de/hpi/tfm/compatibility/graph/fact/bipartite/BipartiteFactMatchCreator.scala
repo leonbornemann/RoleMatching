@@ -58,7 +58,7 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
     size*size1>50
   }
 
-  def logProgressNow: Boolean = logProgress && numProcessedTopLvlNodes % (totalNumTopLvlNodes / 1000)==0
+  def logProgressNow: Boolean = logProgress && totalNumTopLvlNodes > 1000*2 && numProcessedTopLvlNodes % (totalNumTopLvlNodes / 1000)==0
 
   def buildGraph(originalInputLeft:IndexedSeq[TupleReference[A]],
                  originalInputRight:IndexedSeq[TupleReference[A]],

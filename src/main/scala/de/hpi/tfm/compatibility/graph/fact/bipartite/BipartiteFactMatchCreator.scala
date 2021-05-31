@@ -2,12 +2,16 @@ package de.hpi.tfm.compatibility.graph.fact.bipartite
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.compatibility.graph.fact.{FactMatchCreator, TupleReference}
+import de.hpi.tfm.compatibility.graph.fact.{FactMatchCreator, ParallelBatchExecutor, TupleReference}
 import de.hpi.tfm.compatibility.index.BipartiteTupleIndex
+import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
+import de.hpi.tfm.evaluation.data.GeneralEdge
 import de.hpi.tfm.util.RuntimeMeasurementUtil.executionTimeInSeconds
 
+import java.io.File
 import java.time.LocalDate
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
 
 class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
@@ -17,7 +21,9 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
                                    var tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]]=None,
                                    nonInformativeValues:Set[A] = Set[A](),
                                    logProgress:Boolean=false,
-                                   logRuntimes:Boolean=false) extends FactMatchCreator[A] with StrictLogging{
+                                   logRuntimes:Boolean=false,
+                                   parallelBatchExecutor:ParallelBatchExecutor[A])
+  extends FactMatchCreator[A](parallelBatchExecutor) with StrictLogging{
 
   if(filterByCommonWildcardIgnoreChangeTransition) {
     if(!tupleToNonWcTransitions.isDefined){
@@ -51,6 +57,8 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
       logger.debug(s"Constructed Top-Level Index with ${topLevelPairwiseComputations.size} top-level nodes, total possible match computations: ${topLevelPairwiseComputations.map(_.toLong).sum}")
     }
     buildGraph(tuplesLeft,tuplesRight,index,0)
+    //execute remaining elements
+    //logger.debug(s"Executing remaining elements (${curCandidateBuffer.size}) in batch ")
     reportRunTimes()
   }
 
@@ -145,11 +153,7 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
           val ref1 = tuplesLeft(i)
           val ref2 = tuplesRight(j)
           if(!filterByCommonWildcardIgnoreChangeTransition || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
-            val edge = getTupleMatchOption(ref1, ref2)
-            computedMatches +=1
-            if (edge.isDefined) {
-              facts.add(edge.get)
-            }
+            parallelBatchExecutor.addCandidateAndMaybeCreateBatch(ref1,ref2)
           } else {
             skippedMatchesDueToFilter +=1
           }

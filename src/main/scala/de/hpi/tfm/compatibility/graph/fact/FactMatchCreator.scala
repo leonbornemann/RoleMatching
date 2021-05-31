@@ -1,42 +1,24 @@
 package de.hpi.tfm.compatibility.graph.fact
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
+import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, ValueTransition}
+import de.hpi.tfm.evaluation.data.GeneralEdge
 
+import java.io.{File, PrintWriter}
+import java.time.temporal.TemporalField
+import java.util.UUID
+import java.util.concurrent.Executors
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-trait FactMatchCreator[A] {
+abstract class FactMatchCreator[A](val parallelBatchExecutor:ParallelBatchExecutor[A]) extends StrictLogging{
+
+  var curCandidateBuffer = scala.collection.mutable.ArrayBuffer[(TupleReference[A],TupleReference[A])]()
+  val batchSize = 10000
 
   def getGraphConfig: GraphConfig
-
-  def toFieldLineageMergeabilityGraph(includeEvidenceSet:Boolean=false) = {
-    FactMergeabilityGraph(facts.toIndexedSeq.map(e => {
-      var evidenceSet:Option[collection.IndexedSeq[(ValueTransition[Any],Int)]] = None
-      if(includeEvidenceSet) {
-        val tupA = e.tupleReferenceA.getDataTuple.head
-        val tupB = e.tupleReferenceB.getDataTuple.head
-        evidenceSet = Some(tupA.getOverlapEvidenceMultiSet(tupB).toIndexedSeq.map(t => (t._1.asInstanceOf[ValueTransition[Any]],t._2)))
-        assert(evidenceSet.get.map(_._2).sum==e.evidence)
-      }
-      FactMergeabilityGraphEdge(e.tupleReferenceA.toIDBasedTupleReference,
-        e.tupleReferenceB.toIDBasedTupleReference,
-        e.evidence,
-        evidenceSet)
-    }),getGraphConfig)
-  }
-
-  val facts = mutable.HashSet[FactMatch[A]]()
-
-  def getTupleMatchOption(ref1:TupleReference[A], ref2:TupleReference[A]) = {
-    val left = ref1.getDataTuple.head
-    val right = ref2.getDataTuple.head // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
-    val evidence = left.getOverlapEvidenceCount(right)
-    if (evidence == -1) {
-      None
-    } else {
-      Some(FactMatch(ref1,ref2, evidence))
-    }
-  }
-
 
 }

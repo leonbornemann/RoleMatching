@@ -2,8 +2,10 @@ package de.hpi.tfm.data.wikipedia.infobox.fact_merging
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
+import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.compatibility.graph.fact.internal.InternalFactMatchGraphCreator
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
+import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.wikipedia.infobox.original.InfoboxRevisionHistory
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
@@ -14,7 +16,9 @@ import de.hpi.tfm.io.IOService
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
+import java.util.concurrent.Executors
 import java.util.regex.Pattern
+import scala.concurrent.{ExecutionContext, Future}
 
 object FactMergingByTemplateMain extends App with StrictLogging{
   IOService.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
@@ -22,10 +26,11 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val templates = args(0).split(Pattern.quote(";")).toIndexedSeq
   val templateSetString = templates.mkString("&")
   val byTemplateDir = new File(args(1))
-  val resultFileEdges = new File(args(2))
+  val resultDirEdges = new File(args(2))
   val resultFileStats = new File(args(3))
   val endDateTrainPhase = LocalDate.parse(args(4))
   val timestampResolutionInDays = args(5).toInt
+  val nthreads = args(6).toInt
   GLOBAL_CONFIG.trainTimeEnd=endDateTrainPhase
   GLOBAL_CONFIG.granularityInDays=timestampResolutionInDays
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
@@ -41,16 +46,30 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val table = WikipediaInfoboxValueHistory.toAssociationTable(lineagesTrain, id, attrID)
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Starting compatibility graph creation")
-  val nonInformativeValues:Set[Any] = Set("")
-  val edges = new InternalFactMatchGraphCreator(table.tupleReferences, graphConfig,true,nonInformativeValues)
-    .toFieldLineageMergeabilityGraph(false)
-    .edges
-    .map(e => WikipediaInfoboxValueHistoryMatch(lineagesComplete(e.tupleReferenceA.rowIndex), lineagesComplete(e.tupleReferenceB.rowIndex)))
-  logger.debug(s"Finished compatibility graph creation, found ${edges.size} edges")
-  logger.debug(s"serializing edges to ${resultFileEdges.getAbsolutePath}")
-  val writer = new PrintWriter(resultFileEdges.getAbsolutePath)
-  edges.foreach(m => m.appendToWriter(writer, false, true))
-  writer.close()
-  private val generalEdges: IndexedSeq[GeneralEdge] = edges.map(_.toGeneralEdge)
+  private val service = Executors.newFixedThreadPool(nthreads)
+  val context = ExecutionContext.fromExecutor(service)
+  val futures = new java.util.concurrent.ConcurrentHashMap[Future[String], Boolean]()
+
+  def toGeneralEdgeFunction(a:TupleReference[Any],b:TupleReference[Any]) = {
+    WikipediaInfoboxValueHistoryMatch(lineagesComplete(a.rowIndex), lineagesComplete(b.rowIndex))
+      .toGeneralEdge
+  }
+
+  val collectAfterAndShutdown = true
+  val edges = new InternalFactMatchGraphCreator(table.tupleReferences,
+    graphConfig,
+    true,
+    GLOBAL_CONFIG.nonInformativeValues,
+    futures,
+    context,
+    resultDirEdges,
+    toGeneralEdgeFunction,
+    Some(service)
+  )
+  private val edgeFiles: Array[File] = resultDirEdges.listFiles()
+  logger.debug(s"Finished compatibility graph creation, found ${edgeFiles.size} edge files")
+  private val generalEdges: IndexedSeq[GeneralEdge] =  edgeFiles.flatMap(f => {
+    GeneralEdge.fromJsonObjectPerLineFile(f.getAbsolutePath)
+  })
   new EdgeAnalyser(generalEdges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues).toCsvFile(resultFileStats)
 }

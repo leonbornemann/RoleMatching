@@ -3,15 +3,29 @@ package de.hpi.tfm.compatibility.graph.fact.internal
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.compatibility.graph.fact.bipartite.BipartiteFactMatchCreator
-import de.hpi.tfm.compatibility.graph.fact.{FactMatchCreator, TupleReference}
+import de.hpi.tfm.compatibility.graph.fact.{FactMatchCreator, ParallelBatchExecutor, TupleReference}
 import de.hpi.tfm.compatibility.index.TupleSetIndex
+import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
+import de.hpi.tfm.evaluation.data.GeneralEdge
+
+import java.io.File
+import java.util.concurrent.{ExecutorService, Executors}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
                                        graphConfig:GraphConfig,
                                        filterByCommonWildcardIgnoreChangeTransition:Boolean=true,
-                                       nonInformativeValues:Set[A] = Set[A]()) extends FactMatchCreator[A] with StrictLogging{
+                                       nonInformativeValues:Set[A] = Set[A](),
+                                       futures:java.util.concurrent.ConcurrentHashMap[Future[String], Boolean],
+                                       context:ExecutionContextExecutor,
+                                       resultDir:File,
+                                       toGeneralEdgeFunction:((TupleReference[A],TupleReference[A]) => GeneralEdge),
+                                       service:Option[ExecutorService] // if specified, this will be shut down after everything has terminated
+  ) extends FactMatchCreator[A](new ParallelBatchExecutor[A](futures,context,resultDir,toGeneralEdgeFunction)) {
+
   var tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]] = None
+
   if(filterByCommonWildcardIgnoreChangeTransition){
     tupleToNonWcTransitions = Some(tuples
       .map(t => (t,t.getDataTuple.head
@@ -29,6 +43,16 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
     totalNumTopLevelNodes = if(!index.indexBuildWasSuccessfull) 0 else  index.tupleGroupIterator(true).size
     logger.debug(s"Iterating through $totalNumTopLevelNodes")
     buildGraph(tuples,index,0)
+    logger.debug("Executing remaining elements")
+    parallelBatchExecutor.startCurrentBatchIfNotEmpty()
+    if(service.isDefined){
+      while(!futures.isEmpty){
+        Thread.sleep(10000)
+        logger.debug(s"There are currently ${futures.size()} batches in the queue")
+      }
+      logger.debug("Completed - executor is now shut down")
+      service.get.shutdownNow()
+    }
   }
 
   def buildGraph(originalInput:IndexedSeq[TupleReference[A]], index: TupleSetIndex[A],recurseDepth:Int):Unit = {
@@ -72,8 +96,10 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
           filterByCommonWildcardIgnoreChangeTransition,
           tupleToNonWcTransitions,
           nonInformativeValues,
-          recurseDepth==0)
-        facts ++= bipartiteCreator.facts
+          recurseDepth==0,
+          false,
+          parallelBatchExecutor
+        )
       }
     } else {
       doPairwiseMatching(originalInput)
@@ -90,10 +116,8 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
         val ref1 = tuplesInNodeAsIndexedSeq(i)
         val ref2 = tuplesInNodeAsIndexedSeq(j)
         if(!filterByCommonWildcardIgnoreChangeTransition || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
-          val edge = getTupleMatchOption(ref1, ref2)
-          if (edge.isDefined) {
-            facts.add(edge.get)
-          }
+          //we have a candidate - add it to buffer!
+          parallelBatchExecutor.addCandidateAndMaybeCreateBatch(ref1,ref2)
         }
       }
     }

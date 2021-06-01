@@ -2,7 +2,7 @@ package de.hpi.tfm.data.wikipedia.infobox.fact_merging
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.compatibility.graph.fact.{ConcurrentMatchGraphCreator, TupleReference}
+import de.hpi.tfm.compatibility.graph.fact.{ConcurrentMatchGraphCreator, FactMatchCreator, TupleReference}
 import de.hpi.tfm.compatibility.graph.fact.internal.InternalFactMatchGraphCreator
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
@@ -31,6 +31,8 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val endDateTrainPhase = LocalDate.parse(args(4))
   val timestampResolutionInDays = args(5).toInt
   val nthreads = args(6).toInt
+  val thresholdForFork = args(7).toInt
+  FactMatchCreator.thresholdForFork = thresholdForFork
   GLOBAL_CONFIG.trainTimeEnd=endDateTrainPhase
   GLOBAL_CONFIG.granularityInDays=timestampResolutionInDays
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)

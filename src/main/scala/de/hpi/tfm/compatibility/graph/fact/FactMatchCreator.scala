@@ -20,7 +20,7 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
                                    prOption:Option[PrintWriter],
                                    isAsynch:Boolean=true) extends StrictLogging{
 
-  val thresholdForFork = 2000
+  def thresholdForFork = FactMatchCreator.thresholdForFork
 
   if(!isAsynch && !prOption.isDefined){
     logger.debug("That is weird - we are probably overwriting an existing file")
@@ -75,6 +75,6 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
   }
 }
 object FactMatchCreator {
-
+  var thresholdForFork = 2000
 
 }

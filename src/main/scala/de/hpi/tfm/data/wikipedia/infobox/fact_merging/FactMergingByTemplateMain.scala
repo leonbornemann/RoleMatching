@@ -2,7 +2,7 @@ package de.hpi.tfm.data.wikipedia.infobox.fact_merging
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
-import de.hpi.tfm.compatibility.graph.fact.TupleReference
+import de.hpi.tfm.compatibility.graph.fact.{ConcurrentMatchGraphCreator, TupleReference}
 import de.hpi.tfm.compatibility.graph.fact.internal.InternalFactMatchGraphCreator
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
@@ -46,25 +46,19 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val table = WikipediaInfoboxValueHistory.toAssociationTable(lineagesTrain, id, attrID)
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Starting compatibility graph creation")
-  private val service = Executors.newFixedThreadPool(nthreads)
-  val context = ExecutionContext.fromExecutor(service)
-  val futures = new java.util.concurrent.ConcurrentHashMap[Future[String], Boolean]()
 
   def toGeneralEdgeFunction(a:TupleReference[Any],b:TupleReference[Any]) = {
     WikipediaInfoboxValueHistoryMatch(lineagesComplete(a.rowIndex), lineagesComplete(b.rowIndex))
       .toGeneralEdge
   }
 
-  val collectAfterAndShutdown = true
-  val edges = new InternalFactMatchGraphCreator(table.tupleReferences,
+  new ConcurrentMatchGraphCreator(table.tupleReferences,
     graphConfig,
     true,
     GLOBAL_CONFIG.nonInformativeValues,
-    futures,
-    context,
+    nthreads,
     resultDirEdges,
-    toGeneralEdgeFunction,
-    Some(service)
+    toGeneralEdgeFunction
   )
   private val edgeFiles: Array[File] = resultDirEdges.listFiles()
   logger.debug(s"Finished compatibility graph creation, found ${edgeFiles.size} edge files")

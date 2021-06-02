@@ -19,6 +19,7 @@ import java.time.LocalDate
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
 import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 
 object FactMergingByTemplateMain extends App with StrictLogging{
   IOService.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
@@ -64,8 +65,18 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   )
   private val edgeFiles: Array[File] = resultDirEdges.listFiles()
   logger.debug(s"Finished compatibility graph creation, found ${edgeFiles.size} edge files")
+//
+//  val lines = Source.fromFile(resultDirEdges.getAbsolutePath + "/partition_0.json")
+//    .getLines()
+//    .toIndexedSeq
+//    .zipWithIndex
+//    .foreach(t => {
+//      println(t._2)
+//      GeneralEdge.fromJsonString(t._1)
+//    })
+
   private val generalEdges: IndexedSeq[GeneralEdge] =  edgeFiles.flatMap(f => {
-    GeneralEdge.fromJsonObjectPerLineFile(f.getAbsolutePath)
+      GeneralEdge.fromJsonObjectPerLineFile(f.getAbsolutePath)
   })
   new EdgeAnalyser(generalEdges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues).toCsvFile(resultFileStats)
 }

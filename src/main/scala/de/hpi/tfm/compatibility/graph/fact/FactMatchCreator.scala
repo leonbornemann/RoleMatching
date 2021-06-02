@@ -27,14 +27,13 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
     assert(false)
   }
 
+  var fnameOfWriter:Option[String] = None
+
   val pr = if(prOption.isDefined)
     prOption.get else {
-      val file = new File(resultDir.getAbsolutePath + s"/$fname.json")
-      if(file.exists()){
-        logger.debug("We are definately overwriting an existing file!")
-        assert(false)
-      }
-      new PrintWriter(resultDir.getAbsolutePath + s"/$fname.json")
+      val (writer,fname) = ConcurrentMatchGraphCreator.getOrCreateNewPrintWriter(resultDir)
+    fnameOfWriter = Some(fname)
+      writer
     }
 
   val mySubNodeFutures = scala.collection.mutable.HashMap[String,Future[FactMatchCreator[A]]]()
@@ -47,7 +46,8 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
       logger.debug(s"Created new Asynchronously running process $fname")
     execute()
     if(prOption.isEmpty)
-      pr.close()
+      ConcurrentMatchGraphCreator.releasePrintWriter(pr,fnameOfWriter.get)
+      //pr.close()
   }
 
   def execute():Unit

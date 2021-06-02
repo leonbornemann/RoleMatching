@@ -9,9 +9,9 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.tfm.data.wikipedia.infobox.fact_merging.FactMergingByTemplateMain.nthreads
 import de.hpi.tfm.evaluation.data.GeneralEdge
 
-import java.io.File
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{ConcurrentHashMap, ExecutorService, Executors, Semaphore, atomic}
+import java.io.{File, PrintWriter}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue, ExecutorService, Executors, Semaphore, atomic}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -26,7 +26,7 @@ class ConcurrentMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
 
   logger.debug("Cleanung up old files")
   resultDir.listFiles().foreach(_.delete())
-  logger.debug("Finsihed cleanup")
+  logger.debug("Finished cleanup")
 
   private val service = Executors.newFixedThreadPool(nthreads)
   val context = ExecutionContext.fromExecutor(service)
@@ -46,18 +46,57 @@ class ConcurrentMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
   ConcurrentMatchGraphCreator.lastReportTimestamp = System.currentTimeMillis()
   InternalFactMatchGraphCreator.createAsFuture(futures,tuples,IndexedSeq(),IndexedSeq(),graphConfig,nonInformativeValues,context,resultDir,fname,toGeneralEdgeFunction,tupleToNonWcTransitions)
   allFuturesTerminated.acquire()
-  logger.debug("Finished - shutting down executor service")
+  ConcurrentMatchGraphCreator.closeAllPrintWriters()
+  logger.debug("Finished - closing print writers and shutting down executor service")
+
   assert(futures.size()==0)
   service.shutdownNow()
+
   //now we can shut everything down!
 
 }
 object ConcurrentMatchGraphCreator extends StrictLogging {
 
+  def closeAllPrintWriters() = {
+    availablePrintWriters.synchronized{
+      availablePrintWriters.foreach(t => {
+        t._1.close()
+        println(s"Closed writer for ${t._2}")
+      })
+    }
+  }
+
   var lastReportTimestamp = System.currentTimeMillis()
   val logTimeDistanceInMs = 10000
   val reportInProgress = new AtomicBoolean(false)
+  var outputFileCounter = 0
+  val availablePrintWriters = scala.collection.mutable.ListBuffer[(PrintWriter,String)]()
   val allFuturesTerminated = new Semaphore(0)
+
+  def getOrCreateNewPrintWriter(resultDir:File):(PrintWriter,String) = {
+    availablePrintWriters.synchronized {
+      if(availablePrintWriters.isEmpty){
+//        logger.debug(s"Created new Writer $outputFileCounter")
+        val fname = s"partition_$outputFileCounter.json"
+        val newWriter = new PrintWriter(resultDir.getAbsolutePath + s"/$fname")
+        outputFileCounter += 1
+        (newWriter,fname)
+      } else {
+        val res = availablePrintWriters.remove(0)
+//        logger.debug(s"Acquired new print writer: ${res._2}")
+        res
+      }
+    }
+  }
+
+  def releasePrintWriter(pr:PrintWriter,filename:String) = {
+    availablePrintWriters.synchronized {
+//      logger.debug(s"Released writer $filename")
+//      if(availablePrintWriters.exists(_._2==filename))
+//        logger.debug("Huh?")
+      availablePrintWriters.append((pr,filename))
+    }
+  }
 
   import scala.util.{Success, Failure}
 

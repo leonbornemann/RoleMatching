@@ -2,14 +2,34 @@ package de.hpi.tfm.data.tfmp_input.table
 
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.{CommonPointOfInterestIterator, FactLineage}
+import de.hpi.tfm.evaluation.wikipediaStyle.RemainsValidVariant
+import de.hpi.tfm.evaluation.wikipediaStyle.RemainsValidVariant.RemainsValidVariant
 import de.hpi.tfm.fact_merging.config.UpdateChangeCounter
+import org.joda.time.Duration
 
 import java.time.LocalDate
 import scala.collection.mutable
 
 @SerialVersionUID(3L)
 abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
+
+
+  override def isConsistentWith(v2: TemporalFieldTrait[A], minTimePercentage: Double) = {
+    val commonPointOfInterestIterator = new CommonPointOfInterestIterator[A](this,v2)
+    var validDuration = 0
+    var invalidDuration = 0
+    commonPointOfInterestIterator
+      .foreach(cp => {
+        var durationToAdd = (cp.pointInTime.toEpochDay - cp.prevPointInTime.toEpochDay).toInt
+        if(valuesAreCompatible(cp.curValueA,cp.curValueB)){
+          validDuration +=durationToAdd
+        } else {
+          invalidDuration +=durationToAdd
+        }
+      })
+    validDuration / (validDuration+invalidDuration).toDouble > minTimePercentage
+  }
 
   override def countChanges(changeCounter: UpdateChangeCounter): (Int,Int) = {
     changeCounter.countFieldChanges(this)
@@ -26,7 +46,7 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
     })
   }
 
-  def valuesAreCompatible(myValue: A, otherValue: A):Boolean
+  def valuesAreCompatible(myValue: A, otherValue: A,variant:RemainsValidVariant = RemainsValidVariant.STRICT):Boolean
 
   def getCompatibleValue(myValue: A, otherValue: A): A
 
@@ -42,7 +62,7 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
 
   def fromTimestampToValue[V<:TemporalFieldTrait[A]](asTree: mutable.TreeMap[LocalDate, A]):V
 
-  override def tryMergeWithConsistent[V <: TemporalFieldTrait[A]](other: V): Option[V] = {
+  override def tryMergeWithConsistent[V <: TemporalFieldTrait[A]](other: V,variant:RemainsValidVariant = RemainsValidVariant.STRICT): Option[V] = {
     val myLineage = scala.collection.mutable.ArrayBuffer() ++ this.toIntervalRepresentation
     val otherLineage = scala.collection.mutable.ArrayBuffer() ++ other.toIntervalRepresentation.toBuffer
     if(myLineage.isEmpty){
@@ -61,7 +81,7 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
       assert(myInterval.begin == otherInterval.begin)
       var toAppend:(TimeInterval,A) = null
       if(myInterval==otherInterval){
-        if(!valuesAreCompatible(myValue,otherValue)){
+        if(!valuesAreCompatible(myValue,otherValue,variant)){
           incompatible=true
         } else {
           toAppend = (myInterval, getCompatibleValue(myValue, otherValue))
@@ -69,7 +89,7 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
           otherIndex += 1
         }
       } else if(myInterval<otherInterval){
-        if(!valuesAreCompatible(myLineage(myIndex)._2,otherLineage(otherIndex)._2)){
+        if(!valuesAreCompatible(myLineage(myIndex)._2,otherLineage(otherIndex)._2,variant)){
           incompatible = true
         } else {
           toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex))
@@ -79,7 +99,7 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
         }
       } else{
         assert(otherInterval<myInterval)
-        if(!valuesAreCompatible(myLineage(myIndex)._2,otherLineage(otherIndex)._2)){
+        if(!valuesAreCompatible(myLineage(myIndex)._2,otherLineage(otherIndex)._2,variant)){
           incompatible = true
         } else {
           toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex))

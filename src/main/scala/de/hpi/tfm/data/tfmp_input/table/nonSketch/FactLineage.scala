@@ -6,6 +6,8 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage.WILDCARD_VALUES
 import de.hpi.tfm.data.tfmp_input.table.{AbstractTemporalField, TemporalFieldTrait}
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage.digitRegex
+import de.hpi.tfm.evaluation.wikipediaStyle.RemainsValidVariant
+import de.hpi.tfm.evaluation.wikipediaStyle.RemainsValidVariant.RemainsValidVariant
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.io.IOService
 
@@ -113,9 +115,23 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
 
   def isWildcard(value: Any) = FactLineage.isWildcard(value)
 
-  override def valuesAreCompatible(a: Any, b: Any): Boolean = if(isWildcard(a) || isWildcard(b)) true else a == b
+  override def valuesAreCompatible(a: Any, b: Any,variant:RemainsValidVariant = RemainsValidVariant.STRICT): Boolean = {
+    if(variant==RemainsValidVariant.STRICT)
+      if(isWildcard(a) || isWildcard(b)) true else a == b
+    else {
+      assert(RemainsValidVariant==RemainsValidVariant.CONTAINMENT)
+      if(isWildcard(a) || isWildcard(b) || a==b) true
+      else {
+        val tokensA = a.toString.split("\\s").toSet
+        val tokensB = a.toString.split("\\s").toSet
+        tokensA.union(tokensB).size==Seq(tokensA.size,tokensB.size).max
+      }
+    }
+  }
 
-  override def getCompatibleValue(a: Any, b: Any): Any = if(a==b) a else if(isWildcard(a)) b else a
+  override def getCompatibleValue(a: Any, b: Any): Any = {
+    if(a==b) a else if(isWildcard(a)) b else a
+  }
 
   def valuesInInterval(ti: TimeInterval): IterableOnce[(TimeInterval, Any)] = {
     var toReturn = toIntervalRepresentation

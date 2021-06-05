@@ -34,7 +34,9 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
 //  val metricsFull = histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS,m),
 //    new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m))) ++ Seq(new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,IOService.STANDARD_TIME_FRAME_END))
 
-  val remainsValid = v1.tryMergeWithConsistent(v2).isDefined
+  val remainsValidStrict = v1.tryMergeWithConsistent(v2,RemainsValidVariant.STRICT).isDefined
+  val remainsValidContainment = v1.tryMergeWithConsistent(v2,RemainsValidVariant.CONTAINMENT).isDefined
+  val remainsValid_0_9_PercentageOfTime = v1.isConsistentWith(v2,0.9)
   val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(v1).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(v2).isDefined
   val v1Train = v1.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
   val v2Train = v2.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
@@ -43,7 +45,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   //val computedMetricsFull = metricsFull.map(m => m.compute(v1,v2))
 
   def getSchema = {
-    Seq("Vertex1ID,Vertex2ID") ++ Seq("remainsValid","hasChangeAfterTrainPeriod,isNumeric") ++ metricsTrain.map(_.name + "_TrainPeriod") //++ metricsFull.map(_.name + "_FullPeriod")
+    Seq("Vertex1ID,Vertex2ID") ++ Seq("remainsValid","remainsValidContainment","remainsValid_0_9_PercentageOfTime","hasChangeAfterTrainPeriod,isNumeric") ++ metricsTrain.map(_.name + "_TrainPeriod") //++ metricsFull.map(_.name + "_FullPeriod")
   }
 
   //Dirty: copied from HoldoutTimeEvaluator
@@ -65,7 +67,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   }
 
   def toCSVLine = {
-    (Seq(edgeString1,edgeString2) ++ Seq(remainsValid,isInteresting,isNumeric) ++ trainMetrics /*++ computedMetricsFull*/).map(CSVUtil.toCleanString(_)).mkString(",")
+    (Seq(edgeString1,edgeString2) ++ Seq(remainsValidStrict,remainsValidContainment,remainsValid_0_9_PercentageOfTime,isInteresting,isNumeric) ++ trainMetrics /*++ computedMetricsFull*/).map(CSVUtil.toCleanString(_)).mkString(",")
   }
 
 }

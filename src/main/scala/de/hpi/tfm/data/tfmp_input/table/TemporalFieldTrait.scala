@@ -1,7 +1,9 @@
 package de.hpi.tfm.data.tfmp_input.table
 
 import de.hpi.tfm.data.socrata.change.temporal_tables.time.TimeInterval
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.{CommonPointOfInterestIterator, ValueTransition}
+import de.hpi.tfm.evaluation.wikipediaStyle.RemainsValidVariant
+import de.hpi.tfm.evaluation.wikipediaStyle.RemainsValidVariant.RemainsValidVariant
 import de.hpi.tfm.fact_merging.config.{GLOBAL_CONFIG, UpdateChangeCounter}
 import de.hpi.tfm.fact_merging.metrics.EntropyComputer
 import de.hpi.tfm.io.IOService
@@ -10,6 +12,10 @@ import java.time.LocalDate
 import scala.collection.mutable
 
 trait TemporalFieldTrait[T] {
+
+  //percentage as in 0.9 = 90%
+  def isConsistentWith(v2: TemporalFieldTrait[T], minTimePercentage: Double):Boolean
+
 
   def newScore(other: TemporalFieldTrait[T]):Double = {
     assert(false) // Timestamp granularity needs to be set properly!
@@ -243,7 +249,7 @@ trait TemporalFieldTrait[T] {
 
   def nonWildCardValues: Iterable[T]
 
-  def tryMergeWithConsistent[V <: TemporalFieldTrait[T]](y: V): Option[V]
+  def tryMergeWithConsistent[V <: TemporalFieldTrait[T]](y: V,variant:RemainsValidVariant = RemainsValidVariant.STRICT): Option[V]
 
   def mergeWithConsistent[V <: TemporalFieldTrait[T]](y: V): V
 

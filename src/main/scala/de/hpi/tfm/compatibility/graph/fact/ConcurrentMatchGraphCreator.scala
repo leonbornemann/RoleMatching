@@ -44,7 +44,7 @@ class ConcurrentMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
 
   val fname = "graph"
   ConcurrentMatchGraphCreator.lastReportTimestamp = System.currentTimeMillis()
-  InternalFactMatchGraphCreator.createAsFuture(futures,tuples,IndexedSeq(),IndexedSeq(),graphConfig,nonInformativeValues,context,resultDir,fname,toGeneralEdgeFunction,tupleToNonWcTransitions)
+  InternalFactMatchGraphCreator.createAsFuture(futures,tuples,IndexedSeq(),IndexedSeq(),graphConfig,nonInformativeValues,context,resultDir,fname,toGeneralEdgeFunction,tupleToNonWcTransitions,0)
   allFuturesTerminated.acquire()
   ConcurrentMatchGraphCreator.closeAllPrintWriters()
   logger.debug("Finished - closing print writers and shutting down executor service")

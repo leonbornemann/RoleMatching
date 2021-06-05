@@ -18,7 +18,22 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
                                    val resultDir:File,
                                    val fname:String,
                                    prOption:Option[PrintWriter],
-                                   isAsynch:Boolean=true) extends StrictLogging{
+                                   isAsynch:Boolean=true,
+                                   externalRecurseDepth:Int
+                                  ) extends StrictLogging{
+
+  var totalNumTopLevelNodes = 0
+  var processedTopLvlNodes = 0
+
+  def logProgress: Boolean = externalRecurseDepth==0 && totalNumTopLevelNodes > 1000 && (totalNumTopLevelNodes / processedTopLvlNodes) % (totalNumTopLevelNodes / 1000)==0
+
+  def maybeLogProgress() = {
+    if(logProgress)
+      logger.debug(s"Root Process finished ${100 * processedTopLvlNodes / totalNumTopLevelNodes.toDouble}% of top-lvl nodes")
+  }
+
+  def isRootProcess: Boolean = externalRecurseDepth==0
+
 
   def thresholdForFork = FactMatchCreator.thresholdForFork
 

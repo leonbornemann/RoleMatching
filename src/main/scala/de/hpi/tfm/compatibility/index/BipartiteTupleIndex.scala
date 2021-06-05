@@ -2,6 +2,7 @@ package de.hpi.tfm.compatibility.index
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
+import de.hpi.tfm.compatibility.index.BipartiteTupleIndex.totalCallStackHistory
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 
 import java.time.LocalDate
@@ -10,19 +11,30 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
                           tuplesRightUnfiltered: IndexedSeq[TupleReference[A]],
                           val parentTimestamps:IndexedSeq[LocalDate] = IndexedSeq(),
                           val parentKeyValues:IndexedSeq[A] = IndexedSeq(),
-                          ignoreZeroChangeTuples:Boolean = true) extends TupleIndexUtility[A] with StrictLogging{
+                          ignoreZeroChangeTuples:Boolean = true,
+                           monsterLogging:Boolean=false) extends TupleIndexUtility[A] with StrictLogging{
+  //logger.debug(s"Input: ${tuplesLeftUnfiltered.size} and ${tuplesRightUnfiltered.size}")
+//  private val toAppend: (IndexedSeq[TupleReference[Any]], IndexedSeq[TupleReference[Any]]) =
+//    (tuplesLeftUnfiltered.map(_.asInstanceOf[TupleReference[Any]]), tuplesRightUnfiltered.map(_.asInstanceOf[TupleReference[Any]]))
+//  if(!totalCallStackHistory.isEmpty && totalCallStackHistory.last==toAppend){
+//    println("Whaaat?")
+//  }
+//  val isWeird = !totalCallStackHistory.isEmpty && totalCallStackHistory.last==toAppend
+//  totalCallStackHistory.append(toAppend)
+
+
   def numLeafNodes: Int = {
     leftGroups.keySet.union(rightGroups.keySet)
       .filter(!wildcardValues.contains(_))
       .size
   }
 
-  assert(tuplesLeftUnfiltered.toSet.intersect(tuplesRightUnfiltered.toSet).isEmpty)
-
+  //assert(tuplesLeftUnfiltered.toSet.intersect(tuplesRightUnfiltered.toSet).isEmpty)
   val tuplesLeft = getFilteredTuples(tuplesLeftUnfiltered)
   val tuplesRight = getFilteredTuples(tuplesRightUnfiltered)
   val unusedTimestamps = getRelevantTimestamps(tuplesLeft).union(getRelevantTimestamps(tuplesRight)).diff(parentTimestamps.toSet)
   var indexFailed = false
+  var compressionRation = 0.0
 
   def getPriorEntropy(tuplesLeft: IndexedSeq[TupleReference[A]], tuplesRight: IndexedSeq[TupleReference[A]]) = {
     val pLeft = tuplesLeft.size / (tuplesLeft.size +tuplesRight.size).toDouble
@@ -48,17 +60,32 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
           .map{case (k,tuples) => tuples.size*rightGroups.getOrElse(k,IndexedSeq()).size}
           .sum
         //wildcards left:
-        val wildcardsLeftSum = wildcards.map(wc => leftGroups.getOrElse(wc,IndexedSeq()).size * tuplesRight.size).sum
-        val wildcardsRightSum = wildcards.map(wc => rightGroups.getOrElse(wc,IndexedSeq()).size * tuplesLeft.size).sum
-        val combinationsAfterSplit = nonWildCardCombinations + wildcardsLeftSum + wildcardsRightSum
+        val wildcardCountLeft = wildcards.map(wc => leftGroups.getOrElse(wc,IndexedSeq()).size).sum
+        val wildcardCountRight = wildcards.map(wc => rightGroups.getOrElse(wc,IndexedSeq()).size).sum
+        val wildcardsLeftToRestOfRight = wildcardCountLeft * (tuplesRight.size - wildcardCountRight)
+        val wildcardsRightToRestOfLeft = wildcardCountRight * (tuplesLeft.size - wildcardCountLeft)
+        val wildcardToWildcardCount = wildcardCountLeft*wildcardCountRight
+        val combinationsAfterSplit = nonWildCardCombinations + wildcardsLeftToRestOfRight + wildcardsRightToRestOfLeft + wildcardToWildcardCount
+        if(combinationsAfterSplit>priorCombinations){
+          logger.debug("More combinations after split - That is bad - this should never happen and is an error in indexing")
+          assert(false)
+        }
+//        if(isWeird && combinationsAfterSplit==0)
+//          println()
         (t,combinationsAfterSplit)
       }).toIndexedSeq
       val bestTimestamp = bestTimestampCandidates
         .sortBy(_._2)
         .head
-      if(bestTimestamp._2>=priorCombinations)
+      val compressionRate = 1.0 - bestTimestamp._2 / priorCombinations.toDouble
+      compressionRation = 1.0 - bestTimestamp._2 / priorCombinations.toDouble
+      if(bestTimestamp._2>=priorCombinations || compressionRate < 0.1) {
         None
-      else {
+      } else {
+//        logger.debug(s"Constructed new Index - Compression Rate: $compressionRate")
+//        if(compressionRate<0.2) {
+//          logger.debug(s"Constructed new Index - Compression Rate: $compressionRate")
+//        }
         Some(bestTimestamp)
       }
     }
@@ -115,4 +142,8 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
     }
   }
 
+}
+object BipartiteTupleIndex{
+
+  val totalCallStackHistory = scala.collection.mutable.ArrayBuffer[(IndexedSeq[TupleReference[Any]],IndexedSeq[TupleReference[Any]])]()
 }

@@ -30,12 +30,17 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
                                    prOption:Option[PrintWriter],
                                    toGeneralEdgeFunction:((TupleReference[A],TupleReference[A]) => GeneralEdge),
                                    tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]],
-                                   isAsynch:Boolean=true
-                                  ) extends FactMatchCreator[A](toGeneralEdgeFunction,resultDir, fname,prOption, isAsynch) {
+                                   isAsynch:Boolean=true,
+                                   externalRecurseDepth:Int
+                                  ) extends FactMatchCreator[A](toGeneralEdgeFunction,resultDir, fname,prOption, isAsynch,externalRecurseDepth) {
 
   override def execute() = {
-    val index = new BipartiteTupleIndex[A](tuplesLeft,tuplesRight,parentNodesTimestamps,parentNodesKeys,true)
-    buildGraph(tuplesLeft,tuplesRight,index,0)
+    val index = new BipartiteTupleIndex[A](tuplesLeft,tuplesRight,parentNodesTimestamps,parentNodesKeys,true,isRootProcess)
+    if(isRootProcess) {
+      totalNumTopLevelNodes = if(index.indexFailed) 0 else  index.getBipartiteTupleGroupIterator().size
+      logger.debug(s"Bipartite Root Process about to process $totalNumTopLevelNodes top-lvl nodes")
+    }
+    buildGraph(tuplesLeft,tuplesRight,index)
   }
 
   def productTooBig(size: Int, size1: Int): Boolean = {
@@ -44,22 +49,29 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
 
   def buildGraph(originalInputLeft:IndexedSeq[TupleReference[A]],
                  originalInputRight:IndexedSeq[TupleReference[A]],
-                 index: BipartiteTupleIndex[A],
-                 recurseDepth:Int):Unit = {
+                 index: BipartiteTupleIndex[A]):Unit = {
     if(!index.indexFailed){
       val allTuplesLeft = scala.collection.mutable.ArrayBuffer[TupleReference[A]]()
       val allTuplesRight = scala.collection.mutable.ArrayBuffer[TupleReference[A]]()
       index.getBipartiteTupleGroupIterator().foreach{case g => {
         val tuplesLeft = g.tuplesLeft
         val tuplesRight = g.tuplesRight
-        buildGraphRecursively(g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps, tuplesLeft, tuplesRight,recurseDepth+1)
+        buildGraphRecursively(g.chosenTimestamps.toIndexedSeq,g.valuesAtTimestamps, tuplesLeft, tuplesRight)
         //TODO: process Wildcards to others:
         allTuplesLeft ++= tuplesLeft
         allTuplesRight ++= tuplesRight
+        this.processedTopLvlNodes += 1
+        maybeLogProgress()
       }}
-      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,index.wildcardsRight,recurseDepth+1)
-      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,allTuplesRight.toIndexedSeq,recurseDepth+1)
-      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),allTuplesLeft.toIndexedSeq,index.wildcardsRight,recurseDepth+1)
+      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,index.wildcardsRight)
+      if(isRootProcess)
+        logger.debug("Bipartite Root Process is done with WC Left to WC Right")
+      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),index.wildcardsLeft,allTuplesRight.toIndexedSeq)
+      if(isRootProcess)
+        logger.debug("Bipartite Root Process is done with WC Left to Tuples Right")
+      buildGraphRecursively(index.parentTimestamps ++Seq(index.splitT),index.parentKeyValues ++Seq(index.wildcardValues.head),allTuplesLeft.toIndexedSeq,index.wildcardsRight)
+      if(isRootProcess)
+        logger.debug("Bipartite Root Process is done with Tuples Left to WC Right")
     } else {
       doPairwiseMatching(originalInputLeft,originalInputRight)
     }
@@ -68,8 +80,7 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
   private def buildGraphRecursively(parentTimestamps:IndexedSeq[LocalDate],
                                     parentValues:IndexedSeq[A],
                                     tuplesLeft: IndexedSeq[TupleReference[A]],
-                                    tuplesRight: IndexedSeq[TupleReference[A]],
-                                    newRecurseDepth:Int) = {
+                                    tuplesRight: IndexedSeq[TupleReference[A]]) = {
     if (productTooBig(tuplesLeft.size, tuplesRight.size)) {
       //further index this: new Index
       if(tuplesLeft.size + tuplesRight.size > thresholdForFork){
@@ -85,7 +96,8 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
           resultDir,
           newName,
           toGeneralEdgeFunction,
-          tupleToNonWcTransitions)
+          tupleToNonWcTransitions,
+          externalRecurseDepth+1)
         parallelRecurseCounter += 1
         mySubNodeFutures.put(newName,f)
       } else {
@@ -103,7 +115,8 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
           Some(pr),
           toGeneralEdgeFunction,
           tupleToNonWcTransitions,
-          false)
+          false,
+          externalRecurseDepth+1)
         internalRecurseCounter+=1
       }
     } else {
@@ -141,7 +154,8 @@ object BipartiteFactMatchCreator extends StrictLogging {
                         resultDir: File,
                         fname: String,
                         toGeneralEdgeFunction: (TupleReference[A], TupleReference[A]) => GeneralEdge,
-                        tupleToNonWcTransitions: Option[Map[TupleReference[A], Set[ValueTransition[A]]]]) = {
+                        tupleToNonWcTransitions: Option[Map[TupleReference[A], Set[ValueTransition[A]]]],
+                        externalRecurseDepth:Int) = {
     val f = Future {
       new BipartiteFactMatchCreator[A](
         tuplesLeft,
@@ -156,7 +170,9 @@ object BipartiteFactMatchCreator extends StrictLogging {
         fname,
         None,
         toGeneralEdgeFunction,
-        tupleToNonWcTransitions)
+        tupleToNonWcTransitions,
+        true,
+        externalRecurseDepth)
     }(context)
     ConcurrentMatchGraphCreator.setupFuture(f,fname,futures,context)
     f

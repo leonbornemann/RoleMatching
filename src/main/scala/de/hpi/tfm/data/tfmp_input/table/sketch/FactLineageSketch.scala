@@ -4,6 +4,8 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
 import de.hpi.tfm.data.tfmp_input.table.sketch.FactLineageSketch.WILDCARD
+import de.hpi.tfm.evaluation.wikipediaStyle.RemainsValidVariant
+import de.hpi.tfm.evaluation.wikipediaStyle.RemainsValidVariant.RemainsValidVariant
 import de.hpi.tfm.io.IOService
 
 import java.nio.{ByteBuffer, ByteOrder}
@@ -36,7 +38,8 @@ class FactLineageSketch(val factLineage: FactLineage) extends FieldLineageSketch
 
   override def lastTimestamp: LocalDate = factLineage.lastTimestamp
 
-  def valuesAreCompatible(value1: Int, value2: Int): Boolean = {
+  def valuesAreCompatible(value1: Int, value2: Int,variant:RemainsValidVariant = RemainsValidVariant.STRICT): Boolean = {
+    assert(variant==RemainsValidVariant.STRICT)
     value1 == WILDCARD || value2 == WILDCARD || value1==value2
   }
 

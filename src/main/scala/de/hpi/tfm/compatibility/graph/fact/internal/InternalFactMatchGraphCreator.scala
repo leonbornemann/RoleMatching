@@ -2,6 +2,7 @@ package de.hpi.tfm.compatibility.graph.fact.internal
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.compatibility.GraphConfig
+import de.hpi.tfm.compatibility.graph.fact.FactMatchCreator.maxPairwiseListSizeForSingleThread
 import de.hpi.tfm.compatibility.graph.fact.bipartite.BipartiteFactMatchCreator
 import de.hpi.tfm.compatibility.graph.fact.bipartite.BipartiteFactMatchCreator.logger
 import de.hpi.tfm.compatibility.graph.fact.{ConcurrentMatchGraphCreator, FactMatchCreator, TupleReference}
@@ -22,22 +23,23 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
                                        val parentNodesKeys:IndexedSeq[A],
                                        graphConfig:GraphConfig,
                                        nonInformativeValues:Set[A] = Set[A](),
-                                       futures:java.util.concurrent.ConcurrentHashMap[String,Future[FactMatchCreator[A]]],
+                                       futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
                                        context:ExecutionContextExecutor,
                                        resultDir:File,
-                                       fname:String,
+                                       processName:String,
                                        prOption:Option[PrintWriter],
                                        toGeneralEdgeFunction:((TupleReference[A],TupleReference[A]) => GeneralEdge),
                                        tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]],
                                        isAsynch:Boolean=true,
-                                       externalRecurseDepth:Int
-  ) extends FactMatchCreator[A](toGeneralEdgeFunction,resultDir,fname,prOption,isAsynch,externalRecurseDepth) {
+                                       externalRecurseDepth:Int,
+                                       logProgress:Boolean=false
+  ) extends FactMatchCreator[A](toGeneralEdgeFunction,resultDir,processName,prOption,isAsynch,externalRecurseDepth,logProgress) {
 
   override def execute() = {
     val index = new TupleSetIndex[A](tuples,parentNodesTimestamps,parentNodesKeys,tuples.head.table.wildcardValues.toSet,true)
-    if(externalRecurseDepth==0) {
+    if(loggingIsActive) {
       totalNumTopLevelNodes = if(!index.indexBuildWasSuccessfull) 0 else  index.tupleGroupIterator(true).size
-      logger.debug(s"Root Process about to process $totalNumTopLevelNodes top-lvl nodes")
+      logger.debug(s"Root Process ($processName) about to process $totalNumTopLevelNodes top-lvl nodes")
     }
     buildGraph(tuples,index)
   }
@@ -51,7 +53,7 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
         if(squareProductTooBig(g.tuplesInNode.size)){
           //further index this: new Index
           if(g.tuplesInNode.size>thresholdForFork){
-            val newName = fname + s"_$parallelRecurseCounter.json"
+            val newName = processName + s"_$parallelRecurseCounter.json"
             //do this asynchrounously:
             val f = InternalFactMatchGraphCreator.createAsFuture(futures,
               g.tuplesInNode.toIndexedSeq,
@@ -64,7 +66,8 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
               newName,
               toGeneralEdgeFunction,
               tupleToNonWcTransitions,
-              externalRecurseDepth+1
+              externalRecurseDepth+1,
+              false
             )
             parallelRecurseCounter+=1
             mySubNodeFutures.put(newName,f)
@@ -78,7 +81,7 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
               futures,
               context,
               resultDir,
-              fname + s"_rI_$internalRecurseCounter",
+              processName + s"_rI_$internalRecurseCounter",
               Some(pr),
               toGeneralEdgeFunction,
               tupleToNonWcTransitions,
@@ -94,11 +97,11 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
         maybeLogProgress()
       }}
       //wildcards internally:
-      if(isRootProcess)
-        logger.debug(s"Root Process starting wildcard node (internally)")
+      if(loggingIsActive)
+        logger.debug(s"Root Process ($processName) starting wildcard node (internally)")
       val wildcardBucket = index.getWildcardBucket
       if(squareProductTooBig(wildcardBucket.size)){
-        val newName = fname + s"_$parallelRecurseCounter"
+        val newName = processName + s"_WC$parallelRecurseCounter"
         if(wildcardBucket.size>thresholdForFork){
           val f = InternalFactMatchGraphCreator.createAsFuture(futures,
             wildcardBucket,
@@ -111,7 +114,8 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
             newName,
             toGeneralEdgeFunction,
             tupleToNonWcTransitions,
-            externalRecurseDepth+1)
+            externalRecurseDepth+1,
+            externalRecurseDepth==0)
           parallelRecurseCounter += 1
           mySubNodeFutures.put(newName,f)
         } else {
@@ -128,18 +132,25 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
             toGeneralEdgeFunction,
             tupleToNonWcTransitions,
             false,
-            externalRecurseDepth+1)
+            externalRecurseDepth+1,
+            externalRecurseDepth==0)
         }
       } else {
         doPairwiseMatching(wildcardBucket)
       }
       //wildcards to the rest:
-      if(isRootProcess)
-        logger.debug(s"Root Process starting wildcards to the rest")
+      if(loggingIsActive)
+        logger.debug(s"Root Process ($processName) starting wildcards to the rest")
       if(wildcardBucket.size>0 && nonWildcards.size>0){
-        val newName = fname + s"_bipartite"
+        val newName = processName + s"_bipartite"
+        if(externalRecurseDepth==0){
+          println()
+        }
         if(wildcardBucket.size + nonWildcards.size > thresholdForFork){
           //create future:
+          if(externalRecurseDepth==0){
+            println()
+          }
           val f = BipartiteFactMatchCreator.createAsFuture(futures,
             wildcardBucket,
             nonWildcards.toIndexedSeq,
@@ -181,15 +192,36 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
   }
 
   private def doPairwiseMatching(tuplesInNodeAsIndexedSeq: IndexedSeq[TupleReference[A]]) = {
-    //we construct a graph as an adjacency list:
-    //pairwise matching to find out the edge-weights:
-    for (i <- 0 until tuplesInNodeAsIndexedSeq.size) {
-      for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
-        val ref1 = tuplesInNodeAsIndexedSeq(i)
-        val ref2 = tuplesInNodeAsIndexedSeq(j)
-        if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
-          //we have a candidate - add it to buffer!
-          serializeIfMatch(ref1,ref2,pr)
+    if(tuplesInNodeAsIndexedSeq.size > maxPairwiseListSizeForSingleThread){
+      val border = maxPairwiseListSizeForSingleThread
+      val intervals = partitionToIntervals(tuplesInNodeAsIndexedSeq,border)
+      for (i <- 0 until intervals.size) {
+        for (j <- i until intervals.size) {
+          val i1 = intervals(i)
+          val i2 = intervals(j)
+          FactMatchCreator.startProcessIntervalsFromSameList(tuplesInNodeAsIndexedSeq,
+            i1,
+            i2,
+            resultDir,
+            context,
+            processName + s"PWM($i1,$i2)",
+            futures,
+            toGeneralEdgeFunction,
+            tupleToNonWcTransitions)
+        }
+      }
+    } else {
+      //do it in this process!
+      //we construct a graph as an adjacency list:
+      //pairwise matching to find out the edge-weights:
+      for (i <- 0 until tuplesInNodeAsIndexedSeq.size) {
+        for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
+          val ref1 = tuplesInNodeAsIndexedSeq(i)
+          val ref2 = tuplesInNodeAsIndexedSeq(j)
+          if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
+            //we have a candidate - add it to buffer!
+            serializeIfMatch(ref1,ref2,pr)
+          }
         }
       }
     }
@@ -205,7 +237,7 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
 }
 object InternalFactMatchGraphCreator extends StrictLogging {
 
-  def createAsFuture[A](futures:java.util.concurrent.ConcurrentHashMap[String,Future[FactMatchCreator[A]]],
+  def createAsFuture[A](futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
                         tuples: IndexedSeq[TupleReference[A]],
                         parentNodesTimestamps:IndexedSeq[LocalDate],
                         parentNodesKeys:IndexedSeq[A],
@@ -216,7 +248,8 @@ object InternalFactMatchGraphCreator extends StrictLogging {
                         fname:String,
                         toGeneralEdgeFunction:((TupleReference[A],TupleReference[A]) => GeneralEdge),
                         tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]],
-                        newExternalRecurseDepth:Int) = {
+                        newExternalRecurseDepth:Int,
+                        logProgress:Boolean) = {
     val f = Future {
       new InternalFactMatchGraphCreator[A](tuples,
         parentNodesTimestamps,
@@ -231,7 +264,8 @@ object InternalFactMatchGraphCreator extends StrictLogging {
         toGeneralEdgeFunction,
         tupleToNonWcTransitions,
         true,
-        newExternalRecurseDepth)
+        newExternalRecurseDepth,
+        logProgress)
     }(context)
     ConcurrentMatchGraphCreator.setupFuture(f,fname,futures,context)
     f

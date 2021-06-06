@@ -33,7 +33,9 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val timestampResolutionInDays = args(5).toInt
   val nthreads = args(6).toInt
   val thresholdForFork = args(7).toInt
+  val maxPairwiseListSizeForSingleThread = args(8).toInt
   FactMatchCreator.thresholdForFork = thresholdForFork
+  FactMatchCreator.maxPairwiseListSizeForSingleThread = maxPairwiseListSizeForSingleThread
   GLOBAL_CONFIG.trainTimeEnd=endDateTrainPhase
   GLOBAL_CONFIG.granularityInDays=timestampResolutionInDays
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)

@@ -16,10 +16,11 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 
 abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A],TupleReference[A]) => GeneralEdge),
                                    val resultDir:File,
-                                   val fname:String,
-                                   prOption:Option[PrintWriter],
-                                   isAsynch:Boolean=true,
-                                   externalRecurseDepth:Int
+                                   val processName:String,
+                                   val prOption:Option[PrintWriter],
+                                   val isAsynch:Boolean=true,
+                                   val externalRecurseDepth:Int,
+                                   val loggingActive:Boolean=false
                                   ) extends StrictLogging{
 
   var totalNumTopLevelNodes = 0
@@ -28,11 +29,11 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
   def logProgress: Boolean = externalRecurseDepth==0 && totalNumTopLevelNodes > 1000 && (totalNumTopLevelNodes / processedTopLvlNodes) % (totalNumTopLevelNodes / 1000)==0
 
   def maybeLogProgress() = {
-    if(logProgress)
-      logger.debug(s"Root Process finished ${100 * processedTopLvlNodes / totalNumTopLevelNodes.toDouble}% of top-lvl nodes")
+    if(loggingActive)
+      logger.debug(s"Root Process ($processName) finished ${100 * processedTopLvlNodes / totalNumTopLevelNodes.toDouble}% of top-lvl nodes")
   }
 
-  def isRootProcess: Boolean = externalRecurseDepth==0
+  def loggingIsActive: Boolean = externalRecurseDepth==0 || loggingActive
 
 
   def thresholdForFork = FactMatchCreator.thresholdForFork
@@ -47,18 +48,18 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
   val pr = if(prOption.isDefined)
     prOption.get else {
       val (writer,fname) = ConcurrentMatchGraphCreator.getOrCreateNewPrintWriter(resultDir)
-    fnameOfWriter = Some(fname)
+      fnameOfWriter = Some(fname)
       writer
     }
 
-  val mySubNodeFutures = scala.collection.mutable.HashMap[String,Future[FactMatchCreator[A]]]()
+  val mySubNodeFutures = scala.collection.mutable.HashMap[String,Future[Any]]()
   var parallelRecurseCounter = 0
   var internalRecurseCounter = 0
   init()
 
   def init() = {
     if(isAsynch)
-      logger.debug(s"Created new Asynchronously running process $fname")
+      logger.debug(s"Created new Asynchronously running process $processName")
     execute()
     if(prOption.isEmpty)
       ConcurrentMatchGraphCreator.releasePrintWriter(pr,fnameOfWriter.get)
@@ -69,7 +70,29 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
 
   def getGraphConfig: GraphConfig
 
-  def getTupleMatchOption(ref1:TupleReference[A], ref2:TupleReference[A]) = {
+  def serializeIfMatch(tr1:TupleReference[A],tr2:TupleReference[A],pr:PrintWriter) = {
+    FactMatchCreator.serializeIfMatch(tr1,tr2,pr,toGeneralEdgeFunction)
+  }
+
+  def partitionToIntervals(inputList: IndexedSeq[TupleReference[A]], border: Int) = {
+    if(inputList.size<border){
+      IndexedSeq((0,inputList.size))
+    } else {
+      val indexBordersWithIndex = (0 until inputList.size by border)
+        .zipWithIndex
+      val intervals = indexBordersWithIndex.map{case (index,i) => {
+        if(i!=indexBordersWithIndex.size-1)
+          (index,indexBordersWithIndex(i+1)._1)
+        else
+          (index,inputList.size)
+      }}
+      intervals
+    }
+  }
+}
+object FactMatchCreator {
+
+  def getTupleMatchOption[A](ref1:TupleReference[A], ref2:TupleReference[A]) = {
     val left = ref1.getDataTuple.head
     val right = ref2.getDataTuple.head // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
     val evidence = left.getOverlapEvidenceCount(right)
@@ -80,7 +103,7 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
     }
   }
 
-  def serializeIfMatch(tr1:TupleReference[A],tr2:TupleReference[A],pr:PrintWriter) = {
+  def serializeIfMatch[A](tr1:TupleReference[A],tr2:TupleReference[A],pr:PrintWriter,toGeneralEdgeFunction:((TupleReference[A],TupleReference[A]) => GeneralEdge)) = {
     val option = getTupleMatchOption(tr1,tr2)
     if(option.isDefined){
       val e = option.get
@@ -88,8 +111,57 @@ abstract class FactMatchCreator[A](val toGeneralEdgeFunction:((TupleReference[A]
       edge.appendToWriter(pr,false,true)
     }
   }
-}
-object FactMatchCreator {
+
+  //end borders are exclusive
+  def startProcessIntervalsFromSameList[A](tuplesInNodeAsIndexedSeq: IndexedSeq[TupleReference[A]],
+                                           i1: (Int, Int),
+                                           i2: (Int, Int),
+                                           resultDir:File,
+                                           context:ExecutionContextExecutor,
+                                           processName:String,
+                                           futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
+                                           toGeneralEdgeFunction:((TupleReference[A],TupleReference[A]) => GeneralEdge),
+                                           tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]]
+                                          ) = {
+    val f = Future{
+      val (pr,fname) = ConcurrentMatchGraphCreator.getOrCreateNewPrintWriter(resultDir)
+      val (firstBorderStart,firstBorderEnd) = i1
+      val (secondBorderStart,secondBorderEnd) = i2
+      for(i <- firstBorderStart until firstBorderEnd){
+        for(j <- secondBorderStart until secondBorderEnd){
+          val ref1 = tuplesInNodeAsIndexedSeq(i)
+          val ref2 = tuplesInNodeAsIndexedSeq(j)
+          if(i<j && (!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t)))){
+            serializeIfMatch(ref1,ref2,pr,toGeneralEdgeFunction)
+          }
+        }
+      }
+      ConcurrentMatchGraphCreator.releasePrintWriter(pr,fname)
+    }(context)
+    ConcurrentMatchGraphCreator.setupFuture(f,processName,futures,context)
+  }
+
+  def startProcessIntervalsFromBipariteList[A](tuplesLeft: IndexedSeq[TupleReference[A]], tuplesRight: IndexedSeq[TupleReference[A]], i1: (Int, Int), i2: (Int, Int), resultDir: File, context: ExecutionContextExecutor, processName: String, futures: ConcurrentHashMap[String, Future[Any]], toGeneralEdgeFunction: (TupleReference[A], TupleReference[A]) => GeneralEdge, tupleToNonWcTransitions: Option[Map[TupleReference[A], Set[ValueTransition[A]]]]) = {
+    val f = Future{
+      val (pr,fname) = ConcurrentMatchGraphCreator.getOrCreateNewPrintWriter(resultDir)
+      val (firstBorderStart,firstBorderEnd) = i1
+      val (secondBorderStart,secondBorderEnd) = i2
+      for(i <- firstBorderStart until firstBorderEnd){
+        for(j <- secondBorderStart until secondBorderEnd){
+          val ref1 = tuplesLeft(i)
+          val ref2 = tuplesRight(j)
+          if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
+            serializeIfMatch(ref1,ref2,pr,toGeneralEdgeFunction)
+          }
+        }
+      }
+      ConcurrentMatchGraphCreator.releasePrintWriter(pr,fname)
+    }(context)
+    ConcurrentMatchGraphCreator.setupFuture(f,processName,futures,context)
+  }
+
+
   var thresholdForFork = 2000
+  var maxPairwiseListSizeForSingleThread = 30
 
 }

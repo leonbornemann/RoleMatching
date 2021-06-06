@@ -30,7 +30,7 @@ class ConcurrentMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
 
   private val service = Executors.newFixedThreadPool(nthreads)
   val context = ExecutionContext.fromExecutor(service)
-  val futures = new java.util.concurrent.ConcurrentHashMap[String,Future[FactMatchCreator[A]]]()
+  val futures = new java.util.concurrent.ConcurrentHashMap[String,Future[Any]]()
 
   var tupleToNonWcTransitions:Option[Map[TupleReference[A], Set[ValueTransition[A]]]] = None
   if(filterByCommonWildcardIgnoreChangeTransition){
@@ -44,7 +44,7 @@ class ConcurrentMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
 
   val fname = "graph"
   ConcurrentMatchGraphCreator.lastReportTimestamp = System.currentTimeMillis()
-  InternalFactMatchGraphCreator.createAsFuture(futures,tuples,IndexedSeq(),IndexedSeq(),graphConfig,nonInformativeValues,context,resultDir,fname,toGeneralEdgeFunction,tupleToNonWcTransitions,0)
+  InternalFactMatchGraphCreator.createAsFuture(futures,tuples,IndexedSeq(),IndexedSeq(),graphConfig,nonInformativeValues,context,resultDir,fname,toGeneralEdgeFunction,tupleToNonWcTransitions,0,true)
   allFuturesTerminated.acquire()
   ConcurrentMatchGraphCreator.closeAllPrintWriters()
   logger.debug("Finished - closing print writers and shutting down executor service")
@@ -100,7 +100,7 @@ object ConcurrentMatchGraphCreator extends StrictLogging {
 
   import scala.util.{Success, Failure}
 
-  def maybeReport[A](futures: ConcurrentHashMap[String, Future[FactMatchCreator[A]]]) = {
+  def maybeReport[A](futures: ConcurrentHashMap[String, Future[Any]]) = {
     val timeSinceLastReport = System.currentTimeMillis() - lastReportTimestamp
     if(timeSinceLastReport> logTimeDistanceInMs){
       if(!reportInProgress.get()){
@@ -116,7 +116,7 @@ object ConcurrentMatchGraphCreator extends StrictLogging {
     }
   }
 
-  def checkTermination[A](futures: ConcurrentHashMap[String, Future[FactMatchCreator[A]]]) = {
+  def checkTermination[A](futures: ConcurrentHashMap[String, Future[Any]]) = {
       this.synchronized {
         if(futures.size()==0){
           logger.debug("Overall program terminated - sending termination signal")
@@ -125,9 +125,9 @@ object ConcurrentMatchGraphCreator extends StrictLogging {
     }
   }
 
-  def setupFuture[A](f: Future[FactMatchCreator[A]],
+  def setupFuture[A](f: Future[Any],
                      fname: String,
-                     futures: ConcurrentHashMap[String, Future[FactMatchCreator[A]]],
+                     futures: ConcurrentHashMap[String, Future[Any]],
                      context:ExecutionContextExecutor) = {
     if(futures.contains(fname)){
       logger.debug("ERROR,ERROR!!!")

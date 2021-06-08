@@ -2,6 +2,7 @@ package de.hpi.tfm.fact_merging.metrics
 import de.hpi.tfm.compatibility.graph.fact.TupleReference
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
+import de.hpi.tfm.fact_merging.metrics.TFIDFWeightingVariant.TFIDFWeightingVariant
 
 import java.time.LocalDate
 
@@ -11,12 +12,12 @@ class MultipleEventWeightScore[A](TIMESTAMP_GRANULARITY_IN_DAYS:Int,
                                nonInformativeValueIsStrict:Boolean, //true if it is enough for one value in a transition to be non-informative to discard it, false if both of them need to be non-informative to discard it
                                transitionHistogramForTFIDF:Option[Map[ValueTransition[A],Int]],
                                lineageCount:Option[Int],
-                               exponentialWeighting:Option[Boolean]) extends EdgeScore[A] {
+                               tfidfWeightingOption:Option[TFIDFWeightingVariant]) extends EdgeScore[A] {
   override def name: String = {
     MultipleEventWeightScore.name +
       (if(nonInformativeValueIsStrict) "_NIONE" else "_NITWO") +
       (if(transitionHistogramForTFIDF.isDefined) "_tfwON" else "_tfwOFF") +
-      (if(exponentialWeighting.isDefined && exponentialWeighting.get) "_EXP" else "_LIN")
+      (if(tfidfWeightingOption.isDefined) "_" + tfidfWeightingOption.get else "_LIN")
   }
 
   override def compute(tr1: TupleReference[A], tr2: TupleReference[A]): Double =
@@ -28,7 +29,7 @@ class MultipleEventWeightScore[A](TIMESTAMP_GRANULARITY_IN_DAYS:Int,
       nonInformativeValueIsStrict,
       transitionHistogramForTFIDF,
       lineageCount,
-      exponentialWeighting).score()
+      tfidfWeightingOption).score()
 
   override def compute(tr1: TupleReference[A]): Double =
     MultipleEventWeightScoreComputer.scoreOfSingletonVertex
@@ -42,7 +43,7 @@ class MultipleEventWeightScore[A](TIMESTAMP_GRANULARITY_IN_DAYS:Int,
       nonInformativeValueIsStrict,
       transitionHistogramForTFIDF,
       lineageCount,
-      exponentialWeighting).score()
+      tfidfWeightingOption).score()
 }
 object MultipleEventWeightScore{
   val name = "MultipleEventWeightScore"

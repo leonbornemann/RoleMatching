@@ -3,7 +3,7 @@ package de.hpi.tfm.evaluation.wikipediaStyle
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, ValueTransition}
-import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScore
+import de.hpi.tfm.fact_merging.metrics.{MultipleEventWeightScore, TFIDFWeightingVariant}
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaSimilarity, TransitionHistogramMode, TransitionMatchScore}
 import de.hpi.tfm.io.IOService
 import de.hpi.tfm.util.CSVUtil
@@ -25,11 +25,13 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
     new TransitionMatchScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,m)) )++*/
     Seq(
       new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,None,None,None),
-      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(false)),
-      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(true)),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(TFIDFWeightingVariant.LIN)),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(TFIDFWeightingVariant.EXP)),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,false,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(TFIDFWeightingVariant.DVD)),
       new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,None,None,None),
-      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(false)),
-      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(true)))
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(TFIDFWeightingVariant.LIN)),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(TFIDFWeightingVariant.EXP)),
+      new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig.timeRangeEnd,nonInformativeValues,true,Some(transitionHistogramForTFIDF),Some(lineageCount),Some(TFIDFWeightingVariant.DVD)))
 
 //  val metricsFull = histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity(TIMESTAMP_RESOLUTION_IN_DAYS,m),
 //    new TransitionMatchScore(TIMESTAMP_RESOLUTION_IN_DAYS,m))) ++ Seq(new MultipleEventWeightScore(TIMESTAMP_RESOLUTION_IN_DAYS,IOService.STANDARD_TIME_FRAME_END))

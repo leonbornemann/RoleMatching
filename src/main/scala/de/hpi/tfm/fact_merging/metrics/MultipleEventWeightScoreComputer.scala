@@ -3,6 +3,7 @@ package de.hpi.tfm.fact_merging.metrics
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{CommonPointOfInterestIterator, ValueTransition}
+import de.hpi.tfm.fact_merging.metrics.TFIDFWeightingVariant.TFIDFWeightingVariant
 import de.hpi.tfm.io.IOService
 
 import java.time.LocalDate
@@ -15,7 +16,7 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
                                           nonInformativeValueIsStrict:Boolean, //true if it is enough for one value in a transition to be non-informative to discard it, false if both of them need to be non-informative to discard it
                                           transitionHistogramForTFIDF:Option[Map[ValueTransition[A],Int]],
                                           lineageCount:Option[Int],
-                                          termFrequencyExponential:Option[Boolean]
+                                          tfidfWeightingOption:Option[TFIDFWeightingVariant]
                                          ) {
 
   if(transitionHistogramForTFIDF.isDefined)
@@ -35,12 +36,14 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
   def getWeightedTransitionScore(d: Double, t: ValueTransition[A]) = {
     if(transitionHistogramForTFIDF.isDefined){
       val linearFrequency = (transitionHistogramForTFIDF.get(t) - 2).toDouble / lineageCount.get
-      val scaledFrequency = if(termFrequencyExponential.get){
-        exponentialFrequency(linearFrequency)
+      val weight = if(tfidfWeightingOption.get == TFIDFWeightingVariant.EXP){
+        1.0 - exponentialFrequency(linearFrequency)
+      } else if (tfidfWeightingOption.get == TFIDFWeightingVariant.EXP){
+        1.0 - linearFrequency
       } else {
-        linearFrequency
+        assert(tfidfWeightingOption.get == TFIDFWeightingVariant.DVD)
+        1.0 / (transitionHistogramForTFIDF.get(t) - 1)
       }
-      val weight = 1.0 - scaledFrequency
       weight*(d / totalTransitionCount)
     } else {
       d / totalTransitionCount

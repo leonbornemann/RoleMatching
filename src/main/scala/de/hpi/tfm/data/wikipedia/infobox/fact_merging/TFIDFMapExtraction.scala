@@ -10,10 +10,10 @@ import java.time.LocalDate
 
 object TFIDFMapExtraction extends App with StrictLogging{
   logger.debug(s"called with ${args.toIndexedSeq}")
-  val inputEdgeDir = args(0)
+  val inputEdgeFile = args(0)
   val granularityInDays = args(1).toInt
   val resultFile = new File(args(2))
-  val edgeIterator = GeneralEdge.iterableFromJsonObjectPerLineDir(new File(inputEdgeDir))
+  val edgeIterator = GeneralEdge.iterableFromJsonObjectPerLineFile(inputEdgeFile)
   logger.debug("Finished setting up iterators")
   var count =0
   var nodes = scala.collection.mutable.HashSet[IdentifiedFactLineage]()

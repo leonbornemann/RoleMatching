@@ -25,6 +25,6 @@ object TFIDFMapExtraction extends App with StrictLogging{
       logger.debug(s"Done with $count")
   })
   logger.debug("finished loading nodes")
-  val hist = IdentifiedFactLineage.getTransitionHistogramForTFIDFFromVertices(nodes,granularityInDays)
+  val hist = IdentifiedFactLineage.getTransitionHistogramForTFIDFFromVertices(nodes.toSeq,granularityInDays)
   TFIDFMapStorage(hist.toIndexedSeq).toJsonFile(resultFile)
 }

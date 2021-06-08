@@ -44,12 +44,13 @@ object IdentifiedFactLineage extends JsonReadable[IdentifiedFactLineage] {
     subdomain +"_"+ id.toString
   }
 
-  def getTransitionHistogramForTFIDFFromVertices(vertices:Iterable[IdentifiedFactLineage],granularityInDays:Int) :Map[ValueTransition[Any],Int] = {
-    vertices
+  def getTransitionHistogramForTFIDFFromVertices(vertices:Seq[IdentifiedFactLineage],granularityInDays:Int) :Map[ValueTransition[Any],Int] = {
+    val allTransitions = vertices
       .flatMap( (v:IdentifiedFactLineage) => {
         val transitions = v.factLineage.toFactLineage.getValueTransitionSet(true,granularityInDays).toSeq
         transitions
       })
+    allTransitions
       .groupBy(identity)
       .map(t => (t._1,t._2.size))
   }

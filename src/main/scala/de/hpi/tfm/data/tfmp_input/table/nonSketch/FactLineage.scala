@@ -116,10 +116,10 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
   def isWildcard(value: Any) = FactLineage.isWildcard(value)
 
   override def valuesAreCompatible(a: Any, b: Any,variant:RemainsValidVariant = RemainsValidVariant.STRICT): Boolean = {
-    if(variant==RemainsValidVariant.STRICT)
+    if(variant==RemainsValidVariant.STRICT) {
       if(isWildcard(a) || isWildcard(b)) true else a == b
-    else {
-      assert(RemainsValidVariant==RemainsValidVariant.CONTAINMENT)
+    } else {
+      assert(variant==RemainsValidVariant.CONTAINMENT)
       if(isWildcard(a) || isWildcard(b) || a==b) true
       else {
         val tokensA = a.toString.split("\\s").toSet

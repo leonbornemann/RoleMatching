@@ -38,7 +38,7 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
       val linearFrequency = (transitionHistogramForTFIDF.get(t) - 2).toDouble / lineageCount.get
       val weight = if(tfidfWeightingOption.get == TFIDFWeightingVariant.EXP){
         1.0 - exponentialFrequency(linearFrequency)
-      } else if (tfidfWeightingOption.get == TFIDFWeightingVariant.EXP){
+      } else if (tfidfWeightingOption.get == TFIDFWeightingVariant.LIN){
         1.0 - linearFrequency
       } else {
         assert(tfidfWeightingOption.get == TFIDFWeightingVariant.DVD)
@@ -119,7 +119,6 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
           }
         }
         totalScoreChanges+=1
-
         })
       val lastKey = Seq(a.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1,b.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1).maxBy(_.toEpochDay)
       val lastValueA = a.getValueLineage.last._2

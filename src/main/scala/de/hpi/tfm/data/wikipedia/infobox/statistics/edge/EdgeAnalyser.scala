@@ -19,7 +19,7 @@ class EdgeAnalyser(edges: collection.Seq[GeneralEdge],
   val transitionHistogramForTFIDF:Map[ValueTransition[Any],Int] = {
     if(TFIDFMapStorage.isDefined) TFIDFMapStorage.get.asMap else  GeneralEdge.getTransitionHistogramForTFIDF(edges,TIMESTAMP_RESOLUTION_IN_DAYS)
   }
-  val lineageCount:Int = GeneralEdge.getLineageCount(edges)
+  val lineageCount:Int = transitionHistogramForTFIDF.size
 
   def toCSVLine(e: GeneralEdge) = {
     val line = e.toGeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig,nonInformativeValues,transitionHistogramForTFIDF,lineageCount)
@@ -34,10 +34,11 @@ class EdgeAnalyser(edges: collection.Seq[GeneralEdge],
 
   def toCsvFile(f:File): Unit = {
     val pr = new PrintWriter(f)
-    pr.println(edges.head.toGeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig,nonInformativeValues,transitionHistogramForTFIDF,lineageCount).getSchema.mkString(","))
     logger.debug(s"Found ${edges.size} edges")
+    pr.println(edges.head.toGeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig,nonInformativeValues,transitionHistogramForTFIDF,lineageCount).getSchema.mkString(","))
     var done = 0
     edges.foreach(e => {
+      if(done == 0)
       pr.println(toCSVLine(e))
       done+=1
       if(done%1000==0)

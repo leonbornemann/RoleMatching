@@ -38,7 +38,6 @@ class EdgeAnalyser(edges: collection.Seq[GeneralEdge],
     pr.println(edges.head.toGeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS,trainGraphConfig,nonInformativeValues,transitionHistogramForTFIDF,lineageCount).getSchema.mkString(","))
     var done = 0
     edges.foreach(e => {
-      if(done == 0)
       pr.println(toCSVLine(e))
       done+=1
       if(done%1000==0)

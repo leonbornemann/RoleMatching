@@ -34,6 +34,7 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   val nthreads = args(6).toInt
   val thresholdForFork = args(7).toInt
   val maxPairwiseListSizeForSingleThread = args(8).toInt
+  val runAnalysisAfter = if(args.size==10) args(9).toBoolean else false
   FactMatchCreator.thresholdForFork = thresholdForFork
   FactMatchCreator.maxPairwiseListSizeForSingleThread = maxPairwiseListSizeForSingleThread
   GLOBAL_CONFIG.trainTimeEnd=endDateTrainPhase
@@ -77,8 +78,10 @@ object FactMergingByTemplateMain extends App with StrictLogging{
 //      GeneralEdge.fromJsonString(t._1)
 //    })
 
-  private val generalEdges: IndexedSeq[GeneralEdge] =  edgeFiles.flatMap(f => {
+  if(runAnalysisAfter){
+    val generalEdges: IndexedSeq[GeneralEdge] =  edgeFiles.flatMap(f => {
       GeneralEdge.fromJsonObjectPerLineFile(f.getAbsolutePath)
-  })
-  new EdgeAnalyser(generalEdges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues,None).toCsvFile(resultFileStats)
+    })
+    new EdgeAnalyser(generalEdges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues,None).toCsvFile(resultFileStats)
+  }
 }

@@ -12,7 +12,7 @@ object TFIDFMapExtraction extends App with StrictLogging{
   val inputEdgeDir = args(0)
   val granularityInDays = args(1).toInt
   val resultFile = new File(args(2))
-  val edgeIterator = GeneralEdge.iterableFromJsonObjectPerLineFile(inputEdgeDir)
+  val edgeIterator = GeneralEdge.iterableFromJsonObjectPerLineDir(new File(inputEdgeDir))
   logger.debug("Finished setting up iterators")
   var count =0
   var nodes = scala.collection.mutable.HashSet[IdentifiedFactLineage]()

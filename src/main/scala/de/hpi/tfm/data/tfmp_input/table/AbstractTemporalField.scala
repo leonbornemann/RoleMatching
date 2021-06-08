@@ -50,9 +50,12 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
 
   def getCompatibleValue(myValue: A, otherValue: A): A
 
-  def getOverlapInterval(a: (TimeInterval, A), b: (TimeInterval, A)): (TimeInterval, A) = {
+  def getOverlapInterval(a: (TimeInterval, A), b: (TimeInterval, A),variant:RemainsValidVariant = RemainsValidVariant.STRICT): (TimeInterval, A) = {
     assert(a._1.begin==b._1.begin)
-    assert(valuesAreCompatible(a._2,b._2))
+    if(!valuesAreCompatible(a._2,b._2,variant)) {
+      println()
+    }
+    assert(valuesAreCompatible(a._2,b._2,variant))
     val earliestEnd = Seq(a._1.endOrMax,b._1.endOrMax).minBy(_.toEpochDay)
     val endTime = if(earliestEnd==LocalDate.MAX) None else Some(earliestEnd)
     (TimeInterval(a._1.begin,endTime),getCompatibleValue(a._2,b._2))
@@ -92,7 +95,7 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
         if(!valuesAreCompatible(myLineage(myIndex)._2,otherLineage(otherIndex)._2,variant)){
           incompatible = true
         } else {
-          toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex))
+          toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex),variant)
           //replace old interval with newer interval with begin set to myInterval.end+1
           otherLineage(otherIndex) = (TimeInterval(myInterval.end.get.plusDays(1), otherInterval.`end`), otherValue)
           myIndex += 1
@@ -102,7 +105,7 @@ abstract class AbstractTemporalField[A] extends TemporalFieldTrait[A] {
         if(!valuesAreCompatible(myLineage(myIndex)._2,otherLineage(otherIndex)._2,variant)){
           incompatible = true
         } else {
-          toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex))
+          toAppend = getOverlapInterval(myLineage(myIndex), otherLineage(otherIndex),variant)
           myLineage(myIndex) = (TimeInterval(otherInterval.end.get.plusDays(1), myInterval.`end`), myValue)
           otherIndex += 1
         }

@@ -123,7 +123,7 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
       if(isWildcard(a) || isWildcard(b) || a==b) true
       else {
         val tokensA = a.toString.split("\\s").toSet
-        val tokensB = a.toString.split("\\s").toSet
+        val tokensB = b.toString.split("\\s").toSet
         tokensA.union(tokensB).size==Seq(tokensA.size,tokensB.size).max
       }
     }

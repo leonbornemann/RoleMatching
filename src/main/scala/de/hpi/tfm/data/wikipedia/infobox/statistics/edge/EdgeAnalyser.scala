@@ -6,12 +6,19 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge
 import de.hpi.tfm.evaluation.data.{GeneralEdge, IdentifiedFactLineage}
+import de.hpi.tfm.fact_merging.metrics.TFIDFMapStorage
 
 import java.io.{File, PrintWriter}
 
-class EdgeAnalyser(edges: collection.Seq[GeneralEdge], trainGraphConfig:GraphConfig, TIMESTAMP_RESOLUTION_IN_DAYS:Int,nonInformativeValues:Set[Any]) extends StrictLogging{
+class EdgeAnalyser(edges: collection.Seq[GeneralEdge],
+                   trainGraphConfig:GraphConfig,
+                   TIMESTAMP_RESOLUTION_IN_DAYS:Int,
+                   nonInformativeValues:Set[Any],
+                   TFIDFMapStorage: Option[TFIDFMapStorage]) extends StrictLogging{
 
-  val transitionHistogramForTFIDF:Map[ValueTransition[Any],Int] = GeneralEdge.getTransitionHistogramForTFIDF(edges,TIMESTAMP_RESOLUTION_IN_DAYS)
+  val transitionHistogramForTFIDF:Map[ValueTransition[Any],Int] = {
+    if(TFIDFMapStorage.isDefined) TFIDFMapStorage.get.asMap else  GeneralEdge.getTransitionHistogramForTFIDF(edges,TIMESTAMP_RESOLUTION_IN_DAYS)
+  }
   val lineageCount:Int = GeneralEdge.getLineageCount(edges)
 
   def toCSVLine(e: GeneralEdge) = {

@@ -22,7 +22,7 @@ object BrokenEdgeAnalysis extends App {
   val edgesFiltered = edges.filter(e => e.v1.isNumeric || e.v2.isNumeric)
   println(edges.size)
   println(edgesFiltered.size)
-  val analyser = new EdgeAnalyser(edges,trainGraphConfig,1,GLOBAL_CONFIG.nonInformativeValues)
+  val analyser = new EdgeAnalyser(edges,trainGraphConfig,1,GLOBAL_CONFIG.nonInformativeValues,None)
   val a = analyser.transitionHistogramForTFIDF
   analyser.toCsvFile(new File("test.csv"))
   println()

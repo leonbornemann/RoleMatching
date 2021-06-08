@@ -7,6 +7,7 @@ import de.hpi.tfm.data.wikipedia.infobox.query.WikipediaInfoboxValueHistoryMatch
 import de.hpi.tfm.data.wikipedia.infobox.statistics.edge.EdgeAnalyser
 import de.hpi.tfm.evaluation.data.GeneralEdge
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
+import de.hpi.tfm.fact_merging.metrics.TFIDFMapStorage
 import de.hpi.tfm.io.IOService
 
 import java.io.File
@@ -21,10 +22,13 @@ object EdgeAnalysisMain extends App with StrictLogging{
   val timeEnd = LocalDate.parse(args(4))
   val timestampResolutionInDays = args(5).toInt
   val edgeType = args(6)
+  val tfIDFFile = if(args.size==8)  Some(args(7)) else None
   IOService.STANDARD_TIME_FRAME_START = timeStart
   IOService.STANDARD_TIME_FRAME_END = timeEnd
   InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
   val graphConfig = GraphConfig(0, timeStart, endDateTrainPhase)
+  logger.debug("Beginning to load TF-IDF File")
+  val tfIDF = tfIDFFile.map(f => TFIDFMapStorage.fromJsonFile(f))
   logger.debug("Beginning to load edges")
   var edges:collection.Seq[GeneralEdge] = IndexedSeq()
   if(edgeType=="general"){
@@ -56,5 +60,5 @@ object EdgeAnalysisMain extends App with StrictLogging{
 //      println(computer.computeScore())
 //    }}
   logger.debug("Finsihed loading edges")
-  new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues).toCsvFile(resultFile)
+  new EdgeAnalyser(edges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues,tfIDF).toCsvFile(resultFile)
 }

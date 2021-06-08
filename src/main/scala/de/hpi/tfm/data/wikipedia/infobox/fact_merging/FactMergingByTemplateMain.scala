@@ -80,5 +80,5 @@ object FactMergingByTemplateMain extends App with StrictLogging{
   private val generalEdges: IndexedSeq[GeneralEdge] =  edgeFiles.flatMap(f => {
       GeneralEdge.fromJsonObjectPerLineFile(f.getAbsolutePath)
   })
-  new EdgeAnalyser(generalEdges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues).toCsvFile(resultFileStats)
+  new EdgeAnalyser(generalEdges,graphConfig,timestampResolutionInDays,GLOBAL_CONFIG.nonInformativeValues,None).toCsvFile(resultFileStats)
 }

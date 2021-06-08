@@ -38,16 +38,9 @@ case class GeneralEdge(v1:IdentifiedFactLineage, v2:IdentifiedFactLineage) exten
 
 object GeneralEdge extends JsonReadable[GeneralEdge] {
 
-  def getTransitionHistogramForTFIDF(edges:Iterable[GeneralEdge],granularityInDays:Int) :Map[ValueTransition[Any],Int] = edges
-    .flatMap(ge => Seq(ge.v1,ge.v2))
-    .toSet
-    .toIndexedSeq
-    .flatMap( (v:IdentifiedFactLineage) => {
-      val transitions = v.factLineage.toFactLineage.getValueTransitionSet(true,granularityInDays).toSeq
-      transitions
-    })
-    .groupBy(identity)
-    .map(t => (t._1,t._2.size))
+  def getTransitionHistogramForTFIDF(edges:Iterable[GeneralEdge],granularityInDays:Int) :Map[ValueTransition[Any],Int] = {
+    IdentifiedFactLineage.getTransitionHistogramForTFIDFFromVertices(edges.flatMap(ge => Seq(ge.v1,ge.v2)).toSet,granularityInDays)
+  }
 
   def getLineageCount(edges:Iterable[GeneralEdge]) = edges.map(e => Seq(e.v1.id,e.v2.id)).toSet.size
 

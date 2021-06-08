@@ -33,6 +33,12 @@ trait JsonReadable[T <: AnyRef] {
     new JsonObjectPerLineFileIterator(path)(m)
   }
 
+  def iterableFromJsonObjectPerLineDir(dir:File)(implicit m: Manifest[T]) = {
+    val iterators = dir.listFiles().toIndexedSeq
+      .map(f => iterableFromJsonObjectPerLineFile(f.getAbsolutePath))
+    iterators.foldLeft(Iterator[T]())(_ ++ _)
+  }
+
   def fromJsonObjectPerLineFile(path: String)(implicit m: Manifest[T]): collection.Seq[T] = {
     val result = scala.collection.mutable.ArrayBuffer[T]()
     Source.fromFile(path).getLines()

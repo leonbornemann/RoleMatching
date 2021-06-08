@@ -31,5 +31,5 @@ object EdgeRefiltering extends App {
   val pr = new PrintWriter(outputFile)
   filteredEdges.foreach(_.appendToWriter(pr,false,true))
   pr.close()
-  val analyser = new EdgeAnalyser(edges,GraphConfig(1,timeBegin,trainTimeEnd),timestampResulotionInDays,GLOBAL_CONFIG.nonInformativeValues)
+  val analyser = new EdgeAnalyser(edges,GraphConfig(1,timeBegin,trainTimeEnd),timestampResulotionInDays,GLOBAL_CONFIG.nonInformativeValues,None)
 }

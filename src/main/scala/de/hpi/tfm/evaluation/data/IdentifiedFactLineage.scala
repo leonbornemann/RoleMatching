@@ -4,7 +4,7 @@ import de.hpi.tfm.compatibility.graph.fact.IDBasedTupleReference
 import de.hpi.tfm.data.socrata.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.data.tfmp_input.association.AssociationIdentifier
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow}
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithHashMap, SurrogateBasedSynthesizedTemporalDatabaseTableAssociation, SurrogateBasedTemporalRow, ValueTransition}
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage.digitRegex
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
@@ -42,6 +42,16 @@ object IdentifiedFactLineage extends JsonReadable[IdentifiedFactLineage] {
 
   def getIDString(subdomain:String,id:IDBasedTupleReference) = {
     subdomain +"_"+ id.toString
+  }
+
+  def getTransitionHistogramForTFIDFFromVertices(vertices:Iterable[IdentifiedFactLineage],granularityInDays:Int) :Map[ValueTransition[Any],Int] = {
+    vertices
+      .flatMap( (v:IdentifiedFactLineage) => {
+        val transitions = v.factLineage.toFactLineage.getValueTransitionSet(true,granularityInDays).toSeq
+        transitions
+      })
+      .groupBy(identity)
+      .map(t => (t._1,t._2.size))
   }
 
 }

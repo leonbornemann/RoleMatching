@@ -9,6 +9,7 @@ import java.io.File
 import java.time.LocalDate
 
 object TFIDFMapExtraction extends App with StrictLogging{
+  logger.debug(s"called with ${args.toIndexedSeq}")
   val inputEdgeDir = args(0)
   val granularityInDays = args(1).toInt
   val resultFile = new File(args(2))

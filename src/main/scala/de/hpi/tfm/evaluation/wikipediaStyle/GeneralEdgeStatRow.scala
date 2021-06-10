@@ -2,7 +2,7 @@ package de.hpi.tfm.evaluation.wikipediaStyle
 
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, ValueTransition}
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.{CommonPointOfInterestIterator, FactLineage, ValueTransition}
 import de.hpi.tfm.fact_merging.metrics.{MultipleEventWeightScore, TFIDFWeightingVariant}
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaSimilarity, TransitionHistogramMode, TransitionMatchScore}
 import de.hpi.tfm.io.IOService
@@ -40,6 +40,19 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   val remainsValidContainment = v1.tryMergeWithConsistent(v2,RemainsValidVariant.CONTAINMENT).isDefined
   val remainsValid_0_9_PercentageOfTime = v1.isConsistentWith(v2,0.9)
   val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(v1).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(v2).isDefined
+
+  def hasCommonNonWcIntervalInTestPhase(v1: TemporalFieldTrait[Any], v2: TemporalFieldTrait[Any]) = {
+    val evidence = new CommonPointOfInterestIterator(v1,v2)
+      .withFilter(cp => cp.pointInTime.isAfter(trainGraphConfig.timeRangeEnd))
+      .toIndexedSeq
+      .map{cp => {
+        if(!FactLineage.isWildcard(cp.curValueA) && !FactLineage.isWildcard(cp.curValueB)) 1 else 0
+      }}
+      .sum
+    evidence
+  }
+
+  val interestingnessEvidence = hasCommonNonWcIntervalInTestPhase(v1,v2)
   val v1Train = v1.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
   val v2Train = v2.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
   val isNumeric = v1Train.isNumeric || v2Train.isNumeric
@@ -47,7 +60,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   //val computedMetricsFull = metricsFull.map(m => m.compute(v1,v2))
 
   def getSchema = {
-    Seq("Vertex1ID,Vertex2ID") ++ Seq("remainsValid","remainsValidContainment","remainsValid_0_9_PercentageOfTime","hasChangeAfterTrainPeriod,isNumeric") ++ metricsTrain.map(_.name + "_TrainPeriod") //++ metricsFull.map(_.name + "_FullPeriod")
+    Seq("Vertex1ID,Vertex2ID") ++ Seq("remainsValid","remainsValidContainment","remainsValid_0_9_PercentageOfTime","hasChangeAfterTrainPeriod","interestingnessEvidence","isNumeric") ++ metricsTrain.map(_.name + "_TrainPeriod") //++ metricsFull.map(_.name + "_FullPeriod")
   }
 
   //Dirty: copied from HoldoutTimeEvaluator
@@ -69,7 +82,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   }
 
   def toCSVLine = {
-    (Seq(edgeString1,edgeString2) ++ Seq(remainsValidStrict,remainsValidContainment,remainsValid_0_9_PercentageOfTime,isInteresting,isNumeric) ++ trainMetrics /*++ computedMetricsFull*/).map(CSVUtil.toCleanString(_)).mkString(",")
+    (Seq(edgeString1,edgeString2) ++ Seq(remainsValidStrict,remainsValidContainment,remainsValid_0_9_PercentageOfTime,isInteresting,interestingnessEvidence,isNumeric) ++ trainMetrics /*++ computedMetricsFull*/).map(CSVUtil.toCleanString(_)).mkString(",")
   }
 
 }

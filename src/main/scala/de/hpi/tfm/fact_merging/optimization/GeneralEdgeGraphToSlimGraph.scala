@@ -5,6 +5,7 @@ import de.hpi.tfm.data.wikipedia.infobox.fact_merging.EdgeAnalysisMain.args
 import de.hpi.tfm.evaluation.data.{GeneralEdge, SlimGraph}
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.fact_merging.metrics.{MultipleEventWeightScore, TFIDFMapStorage, TFIDFWeightingVariant}
+import de.hpi.tfm.io.IOService
 
 import java.io.File
 import java.time.LocalDate
@@ -32,9 +33,13 @@ object GeneralEdgeGraphToSlimGraph extends App with StrictLogging{
   val slimGraphFile = args(1)
   val MDMCPInputFile = new File(args(2))
   val TIMESTAMP_RESOLUTION_IN_DAYS = args(3).toInt
-  val trainTimeEnd = LocalDate.parse(args(4))
-  val scoringFunctionThreshold = args(5).toDouble //0.460230 for politics for this score
-  val tfIDFFile = if(args.size==6)  Some(args(6)) else None
+  val timeStart = LocalDate.parse(args(4))
+  val trainTimeEnd = LocalDate.parse(args(5))
+  val timeEnd = LocalDate.parse(args(6))
+  val scoringFunctionThreshold = args(7).toDouble //0.460230 for politics for this score
+  val tfIDFFile = if(args.size==9)  Some(args(8)) else None
+  IOService.STANDARD_TIME_FRAME_START=timeStart
+  IOService.STANDARD_TIME_FRAME_END=timeEnd
   val edges = GeneralEdge.fromJsonObjectPerLineFile(generalEdgeFile)
   val lineageCount = GeneralEdge.getLineageCount(edges)
   logger.debug("Done loading edges")

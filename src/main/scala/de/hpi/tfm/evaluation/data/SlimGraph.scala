@@ -30,6 +30,11 @@ case class SlimGraph(vertices:Set[String], edges:IndexedSeq[SlimEdge]) extends J
     val vertexToEdgesMap = collection.mutable.HashMap[Int,collection.mutable.HashMap[Int,Int]]()
     edges.map(se => {
       val doubleWeightCorrected = se.weight-scoringFunctionThreshold
+      if(!(doubleWeightCorrected >= scoreRangeDoubleMin && doubleWeightCorrected <= scoreRangeDoubleMax)){
+        println(se)
+        println(se.weight)
+        println(doubleWeightCorrected)
+      }
       assert(doubleWeightCorrected >= scoreRangeDoubleMin && doubleWeightCorrected <= scoreRangeDoubleMax)
       val scoreAsInt = scaleInterpolation(doubleWeightCorrected,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
       val v1Index = nameToIndexMap(se.id1)

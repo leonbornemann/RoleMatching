@@ -1,7 +1,7 @@
 package de.hpi.tfm.fact_merging.optimization
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.tfm.evaluation.data.{GeneralEdge, SlimOptimizationGraph}
+import de.hpi.tfm.evaluation.data.{GeneralEdge, SlimGraph}
 import de.hpi.tfm.fact_merging.metrics.{EdgeScore, MultipleEventWeightScore}
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.TransitionHistogramMode.TransitionHistogramMode
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaSimilarity, TransitionHistogramMode}
@@ -27,7 +27,7 @@ object GraphOptimizationMain extends App with StrictLogging{
   var edges = GeneralEdge.fromJsonObjectPerLineFile(args(0)).toIndexedSeq
   logger.debug("Finished loading edges")
   //val histogramMode: TransitionHistogramMode = TransitionHistogramMode.COUNT_NON_CHANGE_ONLY_ONCE //get these as params!
-  val slimGraph = SlimOptimizationGraph.fromIdentifiedEdges(edges,distanceMetric) //or load this directly
+  val slimGraph = SlimGraph.fromIdentifiedEdges(edges,distanceMetric) //or load this directly
   slimGraph.toJsonFile(slimGraphFile)
   edges=null
   logger.debug("Finished transformation to slim graph")

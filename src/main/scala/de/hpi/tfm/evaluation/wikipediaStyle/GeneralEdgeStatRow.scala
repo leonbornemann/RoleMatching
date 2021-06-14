@@ -3,6 +3,7 @@ package de.hpi.tfm.evaluation.wikipediaStyle
 import de.hpi.tfm.compatibility.GraphConfig
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{CommonPointOfInterestIterator, FactLineage, ValueTransition}
+import de.hpi.tfm.evaluation.data.GeneralEdge
 import de.hpi.tfm.fact_merging.metrics.{MultipleEventWeightScore, TFIDFWeightingVariant}
 import de.hpi.tfm.fact_merging.metrics.wildcardIgnore.{RuzickaSimilarity, TransitionHistogramMode, TransitionMatchScore}
 import de.hpi.tfm.io.IOService
@@ -53,6 +54,12 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   }
 
   val interestingnessEvidence = hasCommonNonWcIntervalInTestPhase(v1,v2)
+  if(!isInteresting && interestingnessEvidence>0) {
+    println()
+    GeneralEdge(v1.asInstanceOf[FactLineage].toIdentifiedFactLineage("#1"),v2.asInstanceOf[FactLineage].toIdentifiedFactLineage("#2")).printTabularEventLineageString
+    val evidence = hasCommonNonWcIntervalInTestPhase(v1,v2)
+    println(evidence)
+  }
   val v1Train = v1.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
   val v2Train = v2.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)
   val isNumeric = v1Train.isNumeric || v2Train.isNumeric

@@ -16,7 +16,7 @@ case class MDMCPInputGraph(verticesOrdered: IndexedSeq[String], adjacencyList: c
     verticesOrdered
       .zipWithIndex
       .foreach{case (_,i) => {
-        val neighbors = adjacencyList(i)
+        val neighbors = adjacencyList.getOrElse(i,Map[Int,Int]())
         val weights = (i until verticesOrdered.size).map{ j =>
           val weight = neighbors.getOrElse(j,Integer.MIN_VALUE)
           weight

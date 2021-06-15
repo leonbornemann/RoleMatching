@@ -5,7 +5,7 @@ import de.hpi.tfm.fact_merging.metrics.EdgeScore
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 
-case class SlimGraph(vertices:Set[String], edges:IndexedSeq[SlimEdge]) extends JsonWritable[SlimGraph]{
+case class SlimGraphOld(vertices:Set[String], edges:IndexedSeq[SlimEdge]) extends JsonWritable[SlimGraphOld]{
 
   //Tranfer x from scale [a,b] to y in scale [c,d]
   // (x-a) / (b-a) = (y-c) / (d-c)
@@ -40,7 +40,7 @@ case class SlimGraph(vertices:Set[String], edges:IndexedSeq[SlimEdge]) extends J
       else
         vertexToEdgesMap.getOrElseUpdate(v2Index,scala.collection.mutable.HashMap[Int,Int]()).put(v1Index,scoreAsInt)
     })
-    MDMCPInputGraph(verticesOrdered,vertexToEdgesMap)
+    SLimGraph(verticesOrdered,vertexToEdgesMap)
   }
 
 
@@ -55,14 +55,14 @@ case class SlimGraph(vertices:Set[String], edges:IndexedSeq[SlimEdge]) extends J
 
 }
 
-object SlimGraph extends JsonReadable[SlimGraph]{
+object SlimGraphOld extends JsonReadable[SlimGraphOld]{
 
   def fromIdentifiedEdges(edges:collection.Seq[GeneralEdge],scoringFunction:EdgeScore[Any]) = {
     val vertices = edges.flatMap(e => Seq(e.v1.id,e.v2.id)).toSet
     val slimEdges = edges
       .map(e => SlimEdge(e.v1.id,e.v2.id,scoringFunction.compute(e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)))
       .toIndexedSeq
-    SlimGraph(vertices,slimEdges)
+    SlimGraphOld(vertices,slimEdges)
   }
 
 }

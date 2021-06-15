@@ -20,7 +20,7 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
                                          ) {
 
   if(transitionHistogramForTFIDF.isDefined)
-    assert(lineageCount.isDefined)
+    assert(tfidfWeightingOption.isDefined && (lineageCount.isDefined || tfidfWeightingOption.get==TFIDFWeightingVariant.DVD) )
   val totalTransitionCount = (IOService.STANDARD_TIME_FRAME_START.toEpochDay to timeEnd.toEpochDay by TIMESTAMP_GRANULARITY_IN_DAYS).size-1
   val WILDCARD_TO_KNOWN_TRANSITION_WEIGHT = -0.1 / totalTransitionCount
   val WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT = -0.5 / totalTransitionCount
@@ -35,10 +35,11 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
 
   def getWeightedTransitionScore(d: Double, t: ValueTransition[A]) = {
     if(transitionHistogramForTFIDF.isDefined){
-      val linearFrequency = (transitionHistogramForTFIDF.get(t) - 2).toDouble / lineageCount.get
       val weight = if(tfidfWeightingOption.get == TFIDFWeightingVariant.EXP){
+        val linearFrequency = (transitionHistogramForTFIDF.get(t) - 2).toDouble / lineageCount.get
         1.0 - exponentialFrequency(linearFrequency)
       } else if (tfidfWeightingOption.get == TFIDFWeightingVariant.LIN){
+        val linearFrequency = (transitionHistogramForTFIDF.get(t) - 2).toDouble / lineageCount.get
         1.0 - linearFrequency
       } else {
         assert(tfidfWeightingOption.get == TFIDFWeightingVariant.DVD)

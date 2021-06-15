@@ -2,7 +2,7 @@ package de.hpi.tfm.fact_merging.optimization
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.wikipedia.infobox.fact_merging.EdgeAnalysisMain.args
-import de.hpi.tfm.evaluation.data.{GeneralEdge, SlimGraph}
+import de.hpi.tfm.evaluation.data.{GeneralEdge, SLimGraph, SlimGraphOld}
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.fact_merging.metrics.{MultipleEventWeightScore, TFIDFMapStorage, TFIDFWeightingVariant}
 import de.hpi.tfm.io.IOService
@@ -30,26 +30,25 @@ object GeneralEdgeGraphToSlimGraph extends App with StrictLogging{
 //  println(input == Seq(1) ++ (1 to 500).reverse)
 //  input.foreach(println)
   val generalEdgeFile = args(0)
-  val slimGraphFile = args(1)
+  val SlimGraphFile = args(1)
   val MDMCPInputFile = new File(args(2))
   val TIMESTAMP_RESOLUTION_IN_DAYS = args(3).toInt
   val timeStart = LocalDate.parse(args(4))
   val trainTimeEnd = LocalDate.parse(args(5))
   val timeEnd = LocalDate.parse(args(6))
   val scoringFunctionThreshold = args(7).toDouble //0.460230 for politics for this score
-  val tfIDFFile = if(args.size==9)  Some(args(8)) else None
+  val tfIDFFile = Some(args(8))
   IOService.STANDARD_TIME_FRAME_START=timeStart
   IOService.STANDARD_TIME_FRAME_END=timeEnd
-  val edges = GeneralEdge.fromJsonObjectPerLineFile(generalEdgeFile)
-  val lineageCount = GeneralEdge.getLineageCount(edges)
+  val edges = GeneralEdge.iterableFromJsonObjectPerLineFile(generalEdgeFile)
+  //val lineageCount = GeneralEdge.getLineageCount(edges)
   logger.debug("Done loading edges")
-  val tfIDF = if(tfIDFFile.isDefined) TFIDFMapStorage.fromJsonFile(tfIDFFile.get).asMap else GeneralEdge.getTransitionHistogramForTFIDF(edges,TIMESTAMP_RESOLUTION_IN_DAYS)
+  val tfIDF = TFIDFMapStorage.fromJsonFile(tfIDFFile.get).asMap
   logger.debug("Done loading TF-IDF")
-  val scoringFunction = new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainTimeEnd,GLOBAL_CONFIG.nonInformativeValues,true,Some(tfIDF),Some(lineageCount),Some(TFIDFWeightingVariant.DVD))
-  val graph = SlimGraph.fromIdentifiedEdges(edges,scoringFunction)
-    .toMDMCPGraph(scoringFunctionThreshold)
+  val scoringFunction = new MultipleEventWeightScore[Any](TIMESTAMP_RESOLUTION_IN_DAYS,trainTimeEnd,GLOBAL_CONFIG.nonInformativeValues,true,Some(tfIDF),None,Some(TFIDFWeightingVariant.DVD))
+  val graph = SLimGraph.fromGeneralEdgeIterator(edges,scoringFunction,scoringFunctionThreshold)
   logger.debug("Done Transforming to MDMCP Graph")
-  graph.toJsonFile(new File(slimGraphFile))
+  graph.toJsonFile(new File(SlimGraphFile))
   logger.debug("Done writing slim graph file")
   graph.serializeToMDMCPInputFile(MDMCPInputFile)
 

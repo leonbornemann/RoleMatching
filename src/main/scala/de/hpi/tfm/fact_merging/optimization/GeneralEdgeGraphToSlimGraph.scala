@@ -13,6 +13,7 @@ import scala.io.Source
 import scala.util.Random
 
 object GeneralEdgeGraphToSlimGraph extends App with StrictLogging{
+  logger.debug(s"called with ${args.toIndexedSeq}")
 //  def scaleInterpolation(x: Double, a: Double, b: Double, c: Double, d: Double) = {
 //    val y = (d-c)*(x-a) / (b-a) +c
 //    assert(y >=c && y <= d)

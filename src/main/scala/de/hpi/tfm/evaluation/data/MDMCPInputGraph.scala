@@ -1,5 +1,6 @@
 package de.hpi.tfm.evaluation.data
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 
 import java.io.{File, PrintWriter}
@@ -7,7 +8,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 //adjacency list only contains every edge once (from the lower index to the higher index)! First element of adjacency list is the node index, second is the score
-case class MDMCPInputGraph(verticesOrdered: IndexedSeq[String], adjacencyList: collection.Map[Int, collection.Map[Int, Int]]) extends JsonWritable[MDMCPInputGraph]{
+case class MDMCPInputGraph(verticesOrdered: IndexedSeq[String], adjacencyList: collection.Map[Int, collection.Map[Int, Int]]) extends JsonWritable[MDMCPInputGraph] with StrictLogging{
 
   //serializes this as an adjacencyMatrix file
   def serializeToMDMCPInputFile(f:File) = {
@@ -22,6 +23,9 @@ case class MDMCPInputGraph(verticesOrdered: IndexedSeq[String], adjacencyList: c
           weight
         }
         pr.println(weights.mkString("  "))
+        if(i%1000==0){
+          logger.debug(s"Done with $i (${100*i/verticesOrdered.size.toDouble}%)")
+        }
       }}
     pr.close()
   }

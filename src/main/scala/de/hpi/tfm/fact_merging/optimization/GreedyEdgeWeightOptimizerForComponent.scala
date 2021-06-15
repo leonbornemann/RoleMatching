@@ -5,7 +5,7 @@ import de.hpi.tfm.evaluation.data.IdentifiedTupleMerge
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 
-class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[String, WUnDiEdge],MIN_EDGE_WEIGHT_THRESHOLD:Double) {
+class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[Int, WUnDiEdge]) {
 
   val vertexPairToEdge = subGraph.edges.map(e => {
     val vertexSet = e.nodes.map(_.value).toSet
@@ -14,7 +14,7 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[String, WUnDiEdg
     .toMap
 
   val merges = scala.collection.mutable.HashMap() ++ subGraph.nodes
-    .map(n => (n.value,IdentifiedTupleMerge(Set(n.value),Math.nextDown(MIN_EDGE_WEIGHT_THRESHOLD)))) //every node starts out with the min threshold originally, so that we only merge if we exceed that
+    .map(n => (n.value,IdentifiedTupleMerge(Set(n.value),0.0))) //every node starts out with the min threshold originally, so that we only merge if we exceed that
     .toMap
 
   def vertexPairFromEdge(curEdgeObject: subGraph.EdgeT) = {
@@ -72,7 +72,7 @@ class GreedyEdgeWeightOptimizerForComponent(val subGraph: Graph[String, WUnDiEdg
     var done = false
     while(edges.hasNext && !done){
       val curEdgeObject = edges.next()
-      if(curEdgeObject.weight<MIN_EDGE_WEIGHT_THRESHOLD){
+      if(curEdgeObject.weight<0.0){
         done = true
       } else {
         executeMergeIfPossible(curEdgeObject)

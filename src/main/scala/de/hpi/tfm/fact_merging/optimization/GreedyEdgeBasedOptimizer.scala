@@ -6,13 +6,12 @@ import scalax.collection.edge.WUnDiEdge
 
 import java.io.File
 
-class GreedyEdgeBasedOptimizer(graph: Graph[String, WUnDiEdge],
-                               resultFile:File,
-                               MIN_EDGE_WEIGHT_THRESHOLD:Double) extends ComponentWiseOptimizer(graph,resultFile) {
+class GreedyEdgeBasedOptimizer(graph: Graph[Int, WUnDiEdge],
+                               resultFile:File) extends ComponentWiseOptimizer(graph,resultFile) {
 
 
-  override def mergeComponent(subGraph: Graph[String, WUnDiEdge]): Set[IdentifiedTupleMerge] = {
-    val componentOptimizer = new GreedyEdgeWeightOptimizerForComponent(subGraph,MIN_EDGE_WEIGHT_THRESHOLD)
+  override def mergeComponent(subGraph: Graph[Int, WUnDiEdge]): Set[IdentifiedTupleMerge] = {
+    val componentOptimizer = new GreedyEdgeWeightOptimizerForComponent(subGraph)
     componentOptimizer.mergeGreedily()
   }
 }

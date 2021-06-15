@@ -1,12 +1,13 @@
 package de.hpi.tfm.evaluation.data
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.evaluation.Histogram
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 
 import java.io.{File, PrintWriter}
 
-abstract class ComponentWiseOptimizer(val inputGraph: Graph[String, WUnDiEdge], resultFile:File) extends StrictLogging{
+abstract class ComponentWiseOptimizer(val inputGraph: Graph[Int, WUnDiEdge], resultFile:File) extends StrictLogging{
 
   def componentToGraph(e: inputGraph.Component) = {
     val vertices = e.nodes.map(_.value).toSet
@@ -21,7 +22,17 @@ abstract class ComponentWiseOptimizer(val inputGraph: Graph[String, WUnDiEdge], 
 
   var chosenmerges = scala.collection.mutable.HashSet[IdentifiedTupleMerge]()
 
-  def mergeComponent(subGraph: Graph[String, WUnDiEdge]) :Set[IdentifiedTupleMerge]
+  def mergeComponent(subGraph: Graph[Int, WUnDiEdge]) :Set[IdentifiedTupleMerge]
+
+  def printComponentSizeHistogram() = {
+    val traverser = inputGraph.componentTraverser()
+    val sizes = traverser.toIndexedSeq.map(e => {
+      val subGraph: Graph[Int, WUnDiEdge] = componentToGraph(e)
+      (subGraph.nodes.size,subGraph.edges.size)
+    })
+    val nodeCountHistogram = Histogram(sizes.map(_._1))
+    nodeCountHistogram.printAll()
+  }
 
   def runComponentWiseOptimization() = {
     logger.debug(s"Starting Clique Partitioning Optimization")
@@ -31,7 +42,7 @@ abstract class ComponentWiseOptimizer(val inputGraph: Graph[String, WUnDiEdge], 
     val pr = new PrintWriter(resultFile)
     var i = 0
     traverser.foreach(e => {
-      val subGraph: Graph[String, WUnDiEdge] = componentToGraph(e)
+      val subGraph: Graph[Int, WUnDiEdge] = componentToGraph(e)
       //logger.debug(s"Handling Component with Vertices: ${subGraph.nodes.map(_.value)}")
       //logger.debug(s"Vertex Count: ${subGraph.nodes.size}, edge count: ${subGraph.edges.size}")
       val componentMerges = mergeComponent(subGraph)

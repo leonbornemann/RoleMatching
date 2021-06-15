@@ -7,6 +7,8 @@ import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.evaluation
 import de.hpi.tfm.evaluation.data
 import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScore
+import scalax.collection.Graph
+import scalax.collection.edge.WUnDiEdge
 
 import java.io.{File, PrintWriter}
 import scala.collection.mutable
@@ -14,6 +16,8 @@ import scala.collection.mutable.ArrayBuffer
 
 //adjacency list only contains every edge once (from the lower index to the higher index)! First element of adjacency list is the node index, second is the score
 case class SLimGraph(verticesOrdered: IndexedSeq[String], adjacencyList: collection.Map[Int, collection.Map[Int, Float]]) extends JsonWritable[SLimGraph] with StrictLogging{
+
+  assert(adjacencyList.forall(_._2.forall(!_._2.isNegInfinity)))
 
   val scoreRangeIntMin = Integer.MIN_VALUE / 1000.0
   val scoreRangeIntMax = Integer.MAX_VALUE / 1000.0
@@ -31,8 +35,8 @@ case class SLimGraph(verticesOrdered: IndexedSeq[String], adjacencyList: collect
   }
 
   def getScoreAsInt(weight:Float):Int = {
-    assert( weight.isNegInfinity || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax)
-    val scoreAsInt = if(weight.isNegInfinity) Integer.MIN_VALUE else scaleInterpolation(weight,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
+    assert( weight==Float.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax)
+    val scoreAsInt = if(weight==Float.MinValue) Integer.MIN_VALUE else scaleInterpolation(weight,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
     scoreAsInt
   }
 
@@ -45,7 +49,7 @@ case class SLimGraph(verticesOrdered: IndexedSeq[String], adjacencyList: collect
       .foreach{case (_,i) => {
         val neighbors = adjacencyList.getOrElse(i,Map[Int,Float]())
         val weights = Seq(0) ++ ((i+1) until verticesOrdered.size).map{ j =>
-          val weight:Float = neighbors.getOrElse(j,Float.NegativeInfinity)
+          val weight:Float = neighbors.getOrElse(j,Float.MinValue)
           getScoreAsInt(weight)
         }
         pr.println(weights.mkString("  "))
@@ -54,6 +58,15 @@ case class SLimGraph(verticesOrdered: IndexedSeq[String], adjacencyList: collect
         }
       }}
     pr.close()
+  }
+
+  def transformToOptimizationGraph = {
+    val newVertices = scala.collection.mutable.HashSet[Int]() ++ (0 until verticesOrdered.size)
+    val newEdges = adjacencyList.flatMap{case (v1,adjList) => {
+      adjList.map{case (v2,weight) => WUnDiEdge(v1,v2)(weight)}
+    }}
+    val graph = Graph.from(newVertices,newEdges)
+    graph
   }
 
 }
@@ -67,7 +80,9 @@ object SLimGraph extends JsonReadable[SLimGraph] with StrictLogging {
       vertices.add(e.v1.id)
       vertices.add(e.v2.id)
       val score = scoringFunction.compute(e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)
-      val weight = (score-scoringFunctionThreshold).toFloat
+      var weight = (score-scoringFunctionThreshold).toFloat
+      if(weight==Float.NegativeInfinity)
+        weight = Float.MinValue
       //val scoreAsInt = getScoreAsInt(e,scoringFunction,scoringFunctionThreshold)
       assert(e.v1.id!=e.v2.id)
       if(e.v1.id<e.v2.id)

@@ -38,6 +38,7 @@ object GeneralEdgeGraphToSlimGraph extends App with StrictLogging{
   val timeEnd = LocalDate.parse(args(6))
   val scoringFunctionThreshold = args(7).toDouble //0.460230 for politics for this score
   val tfIDFFile = Some(args(8))
+  val serializeMDMCPInput = args(9).toBoolean
   IOService.STANDARD_TIME_FRAME_START=timeStart
   IOService.STANDARD_TIME_FRAME_END=timeEnd
   val edges = GeneralEdge.iterableFromJsonObjectPerLineFile(generalEdgeFile)
@@ -50,6 +51,7 @@ object GeneralEdgeGraphToSlimGraph extends App with StrictLogging{
   logger.debug("Done Transforming to MDMCP Graph")
   graph.toJsonFile(new File(SlimGraphFile))
   logger.debug("Done writing slim graph file")
-  graph.serializeToMDMCPInputFile(MDMCPInputFile)
+  if(serializeMDMCPInput)
+    graph.serializeToMDMCPInputFile(MDMCPInputFile)
 
 }

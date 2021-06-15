@@ -17,32 +17,6 @@ case class SlimGraphOld(vertices:Set[String], edges:IndexedSeq[SlimEdge]) extend
     y
   }
 
-  def toMDMCPGraph(scoringFunctionThreshold: Double) = {
-    val verticesOrdered = vertices.toIndexedSeq.sorted
-    val nameToIndexMap = verticesOrdered
-      .zipWithIndex
-      .toMap
-    //Idea: encode doubles as int values in the range
-    val scoreRangeIntMin = Integer.MIN_VALUE / 1000.0
-    val scoreRangeIntMax = Integer.MAX_VALUE / 1000.0
-    val scoreRangeDoubleMin = -1.0
-    val scoreRangeDoubleMax = 1.0
-    val vertexToEdgesMap = collection.mutable.HashMap[Int,collection.mutable.HashMap[Int,Int]]()
-    edges.map(se => {
-      val doubleWeightCorrected = se.weight-scoringFunctionThreshold
-      assert( doubleWeightCorrected.isNegInfinity || doubleWeightCorrected >= scoreRangeDoubleMin && doubleWeightCorrected <= scoreRangeDoubleMax)
-      val scoreAsInt = if(doubleWeightCorrected.isNegInfinity) Integer.MIN_VALUE else scaleInterpolation(doubleWeightCorrected,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
-      val v1Index = nameToIndexMap(se.id1)
-      val v2Index = nameToIndexMap(se.id2)
-      assert(v1Index!=v2Index)
-      if(v1Index<v2Index)
-        vertexToEdgesMap.getOrElseUpdate(v1Index,scala.collection.mutable.HashMap[Int,Int]()).put(v2Index,scoreAsInt)
-      else
-        vertexToEdgesMap.getOrElseUpdate(v2Index,scala.collection.mutable.HashMap[Int,Int]()).put(v1Index,scoreAsInt)
-    })
-    SLimGraph(verticesOrdered,vertexToEdgesMap)
-  }
-
 
   def transformToOptimizationGraph = {
     val newVertices = scala.collection.mutable.HashSet[String]() ++ vertices

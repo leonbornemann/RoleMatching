@@ -8,6 +8,11 @@ import java.io.{File, PrintWriter}
 
 class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
 
+  //defined by the smallest vertex
+  def componentName = {
+    graph.nodes.map(_.value).min
+  }
+
   def toMDMCPInputFile(f:File) = {
     val verticesOrdered = graph.nodes.map(_.value).toIndexedSeq.sorted
     val pr = new PrintWriter(f)

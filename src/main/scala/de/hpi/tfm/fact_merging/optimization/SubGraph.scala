@@ -18,19 +18,17 @@ class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
         //val neighbors = adjacencyList.getOrElse(i,Map[Int,Float]())
         val graphNode = graph.find(v).get
         val neighbors = graphNode.incoming
-
         val neighborsSorted = neighbors
           .toIndexedSeq
           .map(e => (e.nodes.filter(_!=graphNode).head.value,e.weight.toFloat))
           .toMap
-        val weights = Seq(0) ++ ((i+1) until verticesOrdered.size).map{ w =>
+        assert(!neighbors.isEmpty)
+        val weights = Seq(0) ++ ((i+1) until verticesOrdered.size).map{ j =>
+          val w = verticesOrdered(j)
           val weight:Float = neighborsSorted.getOrElse(w,Float.MinValue).toFloat
           getScoreAsInt(weight)
         }
         pr.println(weights.mkString("  "))
-        if(i%1000==0){
-          logger.debug(s"Done with $i (${100*i/verticesOrdered.size.toDouble}%)")
-        }
       }}
     pr.close()
   }

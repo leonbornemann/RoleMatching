@@ -17,7 +17,21 @@ object ConnectedComponentSizePrint extends App {
 
   val slimGraphFile = args(0)
   val resultFile = new File(args(1))
+  val componentDir = args(2)
   val graph = SLimGraph.fromJsonFile(slimGraphFile)
   val optimizer = new GreedyEdgeBasedOptimizer(graph.transformToOptimizationGraph,resultFile)
-  optimizer.printComponentSizeHistogram()
+  val components = optimizer.componentIterator()
+  var curComponentID = 0
+  components.foreach(c => {
+    if(c.nVertices<8){
+      //we can do brute-force easily enough
+    } else if(c.nVertices>=8 && c.nVertices<500){
+      //use related work MDMCP approach
+      c.toMDMCPInputFile(new File(componentDir + s"/$curComponentID.txt"))
+    } else {
+      //component is too large -use greedy
+    }
+    curComponentID+=1
+  })
+  //optimizer.printComponentSizeHistogram()
 }

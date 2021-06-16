@@ -8,6 +8,7 @@ import java.io.File
 
 class GreedyEdgeBasedOptimizer(graph: Graph[Int, WUnDiEdge],
                                resultFile:File) extends ComponentWiseOptimizer(graph,resultFile) {
+  def componentIterator() = new ComponentIterator(graph)
 
 
   override def mergeComponent(subGraph: Graph[Int, WUnDiEdge]): Set[IdentifiedTupleMerge] = {

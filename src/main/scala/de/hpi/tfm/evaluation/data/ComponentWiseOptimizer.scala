@@ -2,6 +2,7 @@ package de.hpi.tfm.evaluation.data
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.evaluation.Histogram
+import de.hpi.tfm.fact_merging.optimization.SubGraph
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 
@@ -22,7 +23,7 @@ abstract class ComponentWiseOptimizer(val inputGraph: Graph[Int, WUnDiEdge], res
 
   var chosenmerges = scala.collection.mutable.HashSet[IdentifiedTupleMerge]()
 
-  def mergeComponent(subGraph: Graph[Int, WUnDiEdge]) :Set[IdentifiedTupleMerge]
+  def optimizeComponent(subGraph: SubGraph) :Iterable[IdentifiedTupleMerge]
 
   def printComponentSizeHistogram() = {
     val traverser = inputGraph.componentTraverser()
@@ -42,11 +43,15 @@ abstract class ComponentWiseOptimizer(val inputGraph: Graph[Int, WUnDiEdge], res
     val pr = new PrintWriter(resultFile)
     var i = 0
     traverser.foreach(e => {
-      val subGraph: Graph[Int, WUnDiEdge] = componentToGraph(e)
+      val subGraph = new SubGraph(componentToGraph(e))
       //logger.debug(s"Handling Component with Vertices: ${subGraph.nodes.map(_.value)}")
       //logger.debug(s"Vertex Count: ${subGraph.nodes.size}, edge count: ${subGraph.edges.size}")
-      val componentMerges = mergeComponent(subGraph)
-      assert(componentMerges.toIndexedSeq.flatMap(_.clique).size==subGraph.nodes.size)
+      val componentMerges = optimizeComponent(subGraph)
+      if(!(componentMerges.toIndexedSeq.flatMap(_.clique).size==subGraph.nVertices)) {
+        println()
+        new GreedyComponentOptimizer(subGraph,true).optimize()
+      }
+      assert(componentMerges.toIndexedSeq.flatMap(_.clique).size==subGraph.nVertices)
       componentMerges.foreach(tm => {
         tm.appendToWriter(pr,false,true)
       })

@@ -1,7 +1,7 @@
 package de.hpi.tfm.evaluation.data
 
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
-import de.hpi.tfm.fact_merging.optimization.{GreedyEdgeBasedOptimizer, SubGraph}
+import de.hpi.tfm.fact_merging.optimization.{HybridOptimizer, SubGraph}
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 
@@ -28,20 +28,7 @@ object ConnectedComponentBasedOptimizationMain extends App {
   val resultFile = new File(args(1))
   val componentDir = args(2)
   val graph = SLimGraph.fromJsonFile(slimGraphFile)
-  val optimizer = new GreedyEdgeBasedOptimizer(graph.transformToOptimizationGraph,resultFile)
-  val components = optimizer.componentIterator()
-  var curComponentID = 0
-  components.foreach(c => {
-    val name = c.componentName
-    if(c.nVertices<8){
-      //we can do brute-force easily enough
-    } else if(c.nVertices>=8 && c.nVertices<500){
-      //use related work MDMCP approach
-      c.toMDMCPInputFile(new File(componentDir + s"/$name.txt"))
-    } else {
-      //component is too large - use greedy
-    }
-    curComponentID+=1
-  })
+  val optimizer = new HybridOptimizer(graph.transformToOptimizationGraph,resultFile)
+  optimizer.runComponentWiseOptimization()
   //optimizer.printComponentSizeHistogram()
 }

@@ -7,6 +7,10 @@ import scalax.collection.edge.WUnDiEdge
 import java.io.{File, PrintWriter}
 
 class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
+  def edgeExists(v: Int, w: Int): Boolean = graph.find(v).get.neighbors.exists(u => u.value==w)
+
+  def nEdges = graph.edges.size
+
 
   //defined by the smallest vertex
   def componentName = {

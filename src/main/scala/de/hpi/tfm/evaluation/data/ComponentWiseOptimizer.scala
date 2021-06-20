@@ -49,7 +49,6 @@ abstract class ComponentWiseOptimizer(val inputGraph: Graph[Int, WUnDiEdge], res
       val componentMerges = optimizeComponent(subGraph)
       if(!(componentMerges.toIndexedSeq.flatMap(_.clique).size==subGraph.nVertices)) {
         println()
-        new GreedyComponentOptimizer(subGraph,true).optimize()
       }
       assert(componentMerges.toIndexedSeq.flatMap(_.clique).size==subGraph.nVertices)
       componentMerges.foreach(tm => {

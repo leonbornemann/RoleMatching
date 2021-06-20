@@ -8,6 +8,7 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.{FactLineage, FactLineageWithH
 import de.hpi.tfm.data.wikipedia.infobox.transformed.WikipediaInfoboxValueHistory
 import de.hpi.tfm.evaluation.data.IdentifiedFactLineage.digitRegex
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
+import de.hpi.tfm.util.TableFormatter
 
 case class IdentifiedFactLineage(id:String, factLineage: FactLineageWithHashMap) extends JsonWritable[IdentifiedFactLineage] {
 
@@ -18,6 +19,16 @@ case class IdentifiedFactLineage(id:String, factLineage: FactLineageWithHashMap)
 }
 
 object IdentifiedFactLineage extends JsonReadable[IdentifiedFactLineage] {
+
+  def printTabularEventLineageString(vertices:collection.Seq[IdentifiedFactLineage]) = {
+    val allDates = vertices.flatMap(_.factLineage.lineage.keySet)
+    val header = Seq("") ++ allDates
+    val cellsAll = vertices.map(v => {
+      Seq(v.id) ++ allDates.map(t => v.factLineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
+    }).toSeq
+    TableFormatter.printTable(header,cellsAll)
+  }
+
 
   val digitRegex = "[0-9]+"
 

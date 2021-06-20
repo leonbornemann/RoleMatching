@@ -7,6 +7,23 @@ import scalax.collection.edge.WUnDiEdge
 import java.io.{File, PrintWriter}
 
 class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
+
+  def getEdgeWeight(v: Int, w: Int) = {
+    val edges = graph.find(v).get.incoming.filter(_.nodes.exists(_.value==w))
+    if(edges.size==0){
+      logger.debug("WHAT? Edge was selected that has LARGE NEgative weight - this should never happen")
+    }
+    assert(edges.size==1)
+    edges.head.weight
+  }
+
+  def writePartitionVertexFile(file: File) = {
+    val pr = new PrintWriter(file)
+    val verticesOrdered = graph.nodes.map(_.value).toIndexedSeq.sorted
+      .foreach{case (vertex) => pr.println(s"$vertex")}
+    pr.close()
+  }
+
   def edgeExists(v: Int, w: Int): Boolean = graph.find(v).get.neighbors.exists(u => u.value==w)
 
   def nEdges = graph.edges.size
@@ -42,10 +59,11 @@ class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
     pr.close()
   }
 
-  val scoreRangeIntMin = Integer.MIN_VALUE / 1000.0
-  val scoreRangeIntMax = Integer.MAX_VALUE / 1000.0
+  val scoreRangeIntMin = -1000.0
+  val scoreRangeIntMax = 1000.0
   val scoreRangeDoubleMin = -1.0.toFloat
   val scoreRangeDoubleMax = 1.0.toFloat
+  val edgeNotPResentValue = -10000
 
   //Tranfer x from scale [a,b] to y in scale [c,d]
   // (x-a) / (b-a) = (y-c) / (d-c)
@@ -59,7 +77,7 @@ class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
 
   def getScoreAsInt(weight:Float):Int = {
     assert( weight==Float.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax)
-    val scoreAsInt = if(weight==Float.MinValue) Integer.MIN_VALUE else scaleInterpolation(weight,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
+    val scoreAsInt = if(weight==Float.MinValue) edgeNotPResentValue else scaleInterpolation(weight,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
     scoreAsInt
   }
 

@@ -30,7 +30,7 @@ object GraphFilterMain extends App with StrictLogging {
     .map(ld => (ld,collection.mutable.HashMap[String,IdentifiedFactLineage]()))
     .toMap
   var nProcessed = 0
-  val edges = GeneralEdge.iterableFromJsonObjectPerLineDir(matchFile).foreach(edge => {
+  val edges = GeneralEdge.iterableFromJsonObjectPerLineFile(matchFile.getAbsolutePath).foreach(edge => {
     outputs.foreach{case (trainEnd,pr) => {
       //if still valid serialize this edge!
       val v1Train = edge.v1.factLineage.toFactLineage.projectToTimeRange(timeStart,trainEnd)

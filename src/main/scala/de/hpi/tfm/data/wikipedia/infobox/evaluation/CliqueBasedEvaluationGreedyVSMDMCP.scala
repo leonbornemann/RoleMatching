@@ -1,5 +1,6 @@
 package de.hpi.tfm.data.wikipedia.infobox.evaluation
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.wikipedia.infobox.fact_merging.VerticesOrdered
 import de.hpi.tfm.evaluation.data.{IdentifiedTupleMerge, SLimGraph}
 import de.hpi.tfm.fact_merging.optimization.SubGraph
@@ -8,7 +9,8 @@ import de.hpi.tfm.io.IOService
 import java.io.{File, PrintWriter}
 import scala.io.Source
 
-object CliqueBasedEvaluationGreedyVSMDMCP extends App {
+object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging{
+  logger.debug(s"Called with ${args.toIndexedSeq}")
   val mergeDirGreedy = args(0)
   val mergeDir = new File(args(1))
   val mergeDirMappingDir = new File(args(2))

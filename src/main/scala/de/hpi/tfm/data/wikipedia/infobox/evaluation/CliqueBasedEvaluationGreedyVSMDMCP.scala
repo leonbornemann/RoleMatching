@@ -17,8 +17,13 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging{
   val mergeDirMappingDir = new File(args(2))
   val graphFile = args(3)
   val verticesOrderedFile = args(4)
-  val trainTimeEnd = LocalDate.parse(args(5))
-  val resultFile = args(6)
+  val timeStart = LocalDate.parse(args(5))
+  val trainTimeEnd = LocalDate.parse(args(6))
+  val timeEnd = LocalDate.parse(args(7))
+  IOService.STANDARD_TIME_FRAME_START = timeStart
+  IOService.STANDARD_TIME_FRAME_END = timeEnd
+
+  val resultFile = args(8)
   val slimGraph = SLimGraph.fromJsonFile(graphFile)
   val verticesOrdered = VerticesOrdered.fromJsonFile(verticesOrderedFile)
   val mergeFilesFromMDMCP = mergeDir.listFiles().map(f => (f.getName,f)).toMap

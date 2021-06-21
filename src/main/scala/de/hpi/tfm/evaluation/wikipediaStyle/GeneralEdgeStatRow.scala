@@ -19,7 +19,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
                               v2: TemporalFieldTrait[Any],
                               nonInformativeValues:Set[Any],
                               transitionHistogramForTFIDF:Map[ValueTransition[Any],Int],
-                              lineageCount:Int) {
+                              lineageCount:Int) extends StatComputer{
 
   val histogramModes = Seq(TransitionHistogramMode.NORMAL,TransitionHistogramMode.IGNORE_NON_CHANGE,TransitionHistogramMode.COUNT_NON_CHANGE_ONLY_ONCE)
   val metricsTrain = /*histogramModes.flatMap(m => IndexedSeq(new RuzickaSimilarity[Any](TIMESTAMP_RESOLUTION_IN_DAYS,m),
@@ -42,22 +42,11 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   val remainsValid_0_9_PercentageOfTime = v1.isConsistentWith(v2,0.9)
   val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(v1).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(v2).isDefined
 
-  def hasCommonNonWcIntervalInTestPhase(v1: TemporalFieldTrait[Any], v2: TemporalFieldTrait[Any]) = {
-    val evidence = new CommonPointOfInterestIterator(v1,v2)
-      .withFilter(cp => cp.pointInTime.isAfter(trainGraphConfig.timeRangeEnd))
-      .toIndexedSeq
-      .map{cp => {
-        if(!FactLineage.isWildcard(cp.curValueA) && !FactLineage.isWildcard(cp.curValueB)) 1 else 0
-      }}
-      .sum
-    evidence
-  }
-
-  val interestingnessEvidence = hasCommonNonWcIntervalInTestPhase(v1,v2)
+  val interestingnessEvidence = getEvidenceInTestPhase(v1,v2,trainGraphConfig.timeRangeEnd)
   if(!isInteresting && interestingnessEvidence>0) {
     println()
     GeneralEdge(v1.asInstanceOf[FactLineage].toIdentifiedFactLineage("#1"),v2.asInstanceOf[FactLineage].toIdentifiedFactLineage("#2")).printTabularEventLineageString
-    val evidence = hasCommonNonWcIntervalInTestPhase(v1,v2)
+    val evidence = getEvidenceInTestPhase(v1,v2,trainGraphConfig.timeRangeEnd)
     println(evidence)
   }
   val v1Train = v1.asInstanceOf[FactLineage].projectToTimeRange(trainGraphConfig.timeRangeStart,trainGraphConfig.timeRangeEnd)

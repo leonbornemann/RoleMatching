@@ -7,6 +7,7 @@ import de.hpi.tfm.fact_merging.optimization.SubGraph
 import de.hpi.tfm.io.IOService
 
 import java.io.{File, PrintWriter}
+import java.time.LocalDate
 import scala.io.Source
 
 object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging{
@@ -16,14 +17,15 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging{
   val mergeDirMappingDir = new File(args(2))
   val graphFile = args(3)
   val verticesOrderedFile = args(4)
-  val resultFile = args(5)
+  val trainTimeEnd = LocalDate.parse(args(5))
+  val resultFile = args(6)
   val slimGraph = SLimGraph.fromJsonFile(graphFile)
   val verticesOrdered = VerticesOrdered.fromJsonFile(verticesOrderedFile)
   val mergeFilesFromMDMCP = mergeDir.listFiles().map(f => (f.getName,f)).toMap
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName,f)).toMap
   //assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
   val pr = new PrintWriter(resultFile)
-  val cliqueAnalyser = new CliqueAnalyser(pr,verticesOrdered)
+  val cliqueAnalyser = new CliqueAnalyser(pr,verticesOrdered,trainTimeEnd)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach{case (fname,mf) => {
     val cliquesMDMCP = new MDMCPResult(new SubGraph(slimGraph.transformToOptimizationGraph),mf,partitionVertexFiles(fname)).cliques

@@ -16,11 +16,19 @@ class MDMCPResult(c: SubGraph,
     .zipWithIndex
     .map(t => (t._2,t._1.toInt))
     .toMap
-  val cliqueIdToVertices = Source.fromFile(resultFile).getLines()
+  val resultFileString = Source.fromFile(resultFile).getLines().toIndexedSeq
+  val linesOFResultFile = Source.fromFile(resultFile).getLines()
     .toIndexedSeq
+  val startIndex = linesOFResultFile.indexWhere(_ == "Final Best Solution!!!!:")+1
+  val cliqueIdToVertices = linesOFResultFile
+    .slice(startIndex,linesOFResultFile.size)
     .zipWithIndex
     .map(t => (t._2,t._1))
-    .groupMap(_._2)(t => indexToVertex(t._1))
+    .groupMap(_._2)(t => {
+      if(!indexToVertex.contains(t._1))
+        println()
+      indexToVertex(t._1)
+    })
 
   def getScore(clique: IndexedSeq[Int]): Double = {
     var score = 0.0

@@ -42,7 +42,8 @@ object GraphFilterMain extends App with StrictLogging {
         vertices(trainEnd).put(edge.v2.id,edge.v2)
       }
     }}
-    if(nProcessed%1000000==0){
+    nProcessed+=1
+    if(nProcessed%100000==0){
       logger.debug(s"Finished $nProcessed")
     }
   })

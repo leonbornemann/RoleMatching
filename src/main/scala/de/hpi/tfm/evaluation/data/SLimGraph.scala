@@ -6,7 +6,7 @@ import de.hpi.tfm
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
 import de.hpi.tfm.evaluation
 import de.hpi.tfm.evaluation.data
-import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScore
+import de.hpi.tfm.fact_merging.metrics.{EdgeScore, MultipleEventWeightScore}
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 
@@ -54,30 +54,23 @@ case class SLimGraph(verticesOrdered: IndexedSeq[String], adjacencyList: collect
 }
 object SLimGraph extends JsonReadable[SLimGraph] with StrictLogging {
 
-  def fromGeneralEdgeIterator(edges: hpi.tfm.evaluation.data.GeneralEdge.JsonObjectPerLineFileIterator, scoringFunction: MultipleEventWeightScore[Any], scoringFunctionThreshold: Double) = {
-    val vertices = collection.mutable.HashSet[String]()
-    val adjacencyList = collection.mutable.HashMap[String, mutable.HashMap[String, Float]]()
-    var count = 0
-    edges.foreach(e => {
-      vertices.add(e.v1.id)
-      vertices.add(e.v2.id)
-      val score = scoringFunction.compute(e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)
-      val weight = (score-scoringFunctionThreshold).toFloat
-      if(weight==Float.NegativeInfinity) {
-        //simply skip the edge
+  def getEdgeOption(e:GeneralEdge, scoringFunction: EdgeScore[Any], scoringFunctionThreshold: Double) = {
+    val score = scoringFunction.compute(e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)
+    val weight = (score-scoringFunctionThreshold).toFloat
+    if(weight==Float.NegativeInfinity) {
+      None
+    } else {
+      //val scoreAsInt = getScoreAsInt(e,scoringFunction,scoringFunctionThreshold)
+      assert(e.v1.id!=e.v2.id)
+      if(e.v1.id<e.v2.id) {
+        Some((e.v1.id,e.v2.id,weight))
       } else {
-        //val scoreAsInt = getScoreAsInt(e,scoringFunction,scoringFunctionThreshold)
-        assert(e.v1.id!=e.v2.id)
-        if(e.v1.id<e.v2.id)
-          adjacencyList.getOrElseUpdate(e.v1.id,mutable.HashMap[String,Float]()).put(e.v2.id,weight)
-        else {
-          adjacencyList.getOrElseUpdate(e.v2.id,mutable.HashMap[String,Float]()).put(e.v1.id,weight)
-        }
+        Some((e.v2.id,e.v1.id,weight))
       }
-      count+=1
-      if(count%100000==0)
-        logger.debug(s"Done with $count edges")
-    })
+    }
+  }
+
+  def fromVerticesAndEdges(vertices: collection.Set[String], adjacencyList: collection.Map[String, collection.Map[String, Float]]) = {
     val verticesOrdered = vertices.toIndexedSeq.sorted
     val nameToIndexMap = verticesOrdered
       .zipWithIndex
@@ -86,6 +79,25 @@ object SLimGraph extends JsonReadable[SLimGraph] with StrictLogging {
       (nameToIndexMap(stringKey),stringKeyMap.map{case (k,v) => (nameToIndexMap(k),v)})
     }}
     SLimGraph(verticesOrdered,adjacencyListAsInt)
+  }
+
+  def fromGeneralEdgeIterator(edges: hpi.tfm.evaluation.data.GeneralEdge.JsonObjectPerLineFileIterator, scoringFunction: MultipleEventWeightScore[Any], scoringFunctionThreshold: Double) = {
+    val vertices = collection.mutable.HashSet[String]()
+    val adjacencyList = collection.mutable.HashMap[String, mutable.HashMap[String, Float]]()
+    var count = 0
+    edges.foreach(e => {
+      vertices.add(e.v1.id)
+      vertices.add(e.v2.id)
+      val score = scoringFunction.compute(e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)
+      val edge = getEdgeOption(e,scoringFunction,scoringFunctionThreshold)
+      if(edge.isDefined){
+        adjacencyList.getOrElseUpdate(edge.get._1,mutable.HashMap[String,Float]()).put(edge.get._2,edge.get._3)
+      }
+      count+=1
+      if(count%100000==0)
+        logger.debug(s"Done with $count edges")
+    })
+    fromVerticesAndEdges(vertices,adjacencyList)
   }
 
 }

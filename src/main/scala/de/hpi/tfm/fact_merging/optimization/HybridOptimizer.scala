@@ -7,41 +7,59 @@ import scalax.collection.edge.WUnDiEdge
 import java.io.{File, PrintWriter}
 
 class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
-                      resultFile:File,
+                      resultDir:File,
                       mdmcpExportDir:File,
                       vertexLookupDirForPartitions:File,
                       greedyMergeDir:File
-                     ) extends ComponentWiseOptimizer(graph,resultFile) {
+                     ) extends ComponentWiseOptimizer(graph,resultDir) {
+
+  val prBruteForce = new PrintWriter(s"${resultDir.getAbsolutePath}/bruteForceResult.json")
+  val prGreedyLargeVertexCount = new PrintWriter(s"${resultDir.getAbsolutePath}/greedyLargeVertexCountResult.json")
+
   def componentIterator() = new ComponentIterator(graph)
 
   greedyMergeDir.mkdir()
 
-  override def optimizeComponent(component: SubGraph): Iterable[IdentifiedTupleMerge] = {
+  def serializeMerges(merges: collection.Iterable[IdentifiedTupleMerge], pr: PrintWriter) = {
+    merges.foreach(tm => {
+      tm.appendToWriter(pr,false,true)
+    })
+  }
+
+  def checkMergeIntegrity(merges: collection.Iterable[IdentifiedTupleMerge],component: SubGraph) = {
+    assert(merges.toIndexedSeq.flatMap(_.clique).size==component.nVertices)
+  }
+
+  override def optimizeComponent(component: SubGraph) = {
     val name = component.componentName
     //new File("debug_components/").mkdir()
     if(component.nVertices<8){
       //we can do brute-force easily enough
-      //skipping this
-      //logger.debug(s"Skipping component with ${component.nVertices} vertices")
-      //new GreedyComponentOptimizer(component,true).optimize()
-      component.graph.nodes.map(n => IdentifiedTupleMerge(Set(n.value),0.0))
-      //TODO: plug this in: new BruteForceComponentOptimizer(component,IndexedSeq()).optimize()
+      val merges = new BruteForceComponentOptimizer(component,IndexedSeq()).optimize()
+      serializeMerges(merges,prBruteForce)
+      checkMergeIntegrity(merges,component)
     } else if(component.nVertices>=8 && component.nVertices<500){
-      component.toSerializableComponent.toJsonFile(new File(s"debug_components/$name.json"))
-      logger.debug(s"Handling Component s$name")
+//      component.toSerializableComponent.toJsonFile(new File(s"debug_components/$name.json"))
+//      logger.debug(s"Handling Component s$name")
       //use related work MDMCP approach
       component.toMDMCPInputFile(new File(mdmcpExportDir.getAbsolutePath + s"/$name.txt"))
 //For debug purposes:      component.writePartitionVertexFile(new File(vertexLookupDirForPartitions.getAbsolutePath +  s"/$name.txt"))
-      val greedyRes = new GreedyComponentOptimizer(component,true).optimize()
-      val greedyFileForComponent = new File(greedyMergeDir.getAbsolutePath + s"/$name.json")
-      val pr = new PrintWriter(greedyFileForComponent)
-      greedyRes.foreach(_.appendToWriter(pr,false,true))
-      pr.close()
-      greedyRes
+//      val greedyRes = new GreedyComponentOptimizer(component,true).optimize()
+//      val greedyFileForComponent = new File(greedyMergeDir.getAbsolutePath + s"/$name.json")
+//      val pr = new PrintWriter(greedyFileForComponent)
+//      greedyRes.foreach(_.appendToWriter(pr,false,true))
+//      pr.close()
+//      greedyRes
     } else {
-      logger.debug(s"Skipping component with ${component.nVertices} vertices")
-      //new GreedyComponentOptimizer(component,true).optimize()
-      component.graph.nodes.map(n => IdentifiedTupleMerge(Set(n.value),0.0))
+//      logger.debug(s"Skipping component with ${component.nVertices} vertices")
+      val merges = new GreedyComponentOptimizer(component,true).optimize()
+      serializeMerges(merges,prGreedyLargeVertexCount)
+      checkMergeIntegrity(merges,component)
     }
+  }
+
+  override def closeAllWriters(): Unit = {
+    prBruteForce.close()
+    prGreedyLargeVertexCount.close()
   }
 }

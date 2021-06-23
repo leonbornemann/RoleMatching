@@ -18,12 +18,11 @@ case class CliqueAnalyser(pr: PrintWriter,verticesOrdered: VerticesOrdered,train
     val verticesSorted = c.clique.toIndexedSeq.sorted
     val cliqueID = verticesSorted.head
     val vertices = c.clique.map(i => verticesOrdered.vertices(i)).toIndexedSeq
-    var verticesWithAtLeastOneEdgeWithEvidence = 0
     var evidenceCountTotal = 0
     var validEdges = 0
     var edgesTotal = 0
+    val hasEvidence = collection.mutable.HashMap[Int,Boolean]()
     for(i <- 0 until vertices.size){
-      var foundEvidence = false
       for(j <- (i+1) until vertices.size){
         edgesTotal+=1
         val l1 = vertices(i).factLineage.toFactLineage
@@ -31,17 +30,16 @@ case class CliqueAnalyser(pr: PrintWriter,verticesOrdered: VerticesOrdered,train
         val evidenceInThisEdge = getEvidenceInTestPhase(l1, l2, trainTimeEnd)
         evidenceCountTotal += evidenceInThisEdge
         if(evidenceInThisEdge>0){
-          foundEvidence=true
+          hasEvidence.put(i,true)
+          hasEvidence.put(j,true)
         }
         if(l1.tryMergeWithConsistent(l2).isDefined)
           validEdges+=1
       }
-      if(foundEvidence){
-        verticesWithAtLeastOneEdgeWithEvidence+=1
-      }
     }
     val remainsValidPercentage = validEdges / edgesTotal.toDouble
     val avgEvidencePerEdge = evidenceCountTotal / edgesTotal.toDouble
+    val verticesWithAtLeastOneEdgeWithEvidence = hasEvidence.values.filter(identity).size
     val fractionOfVerticesWithEvidence = verticesWithAtLeastOneEdgeWithEvidence / vertices.size.toDouble
     pr.println(s"$componentID,$method,$cliqueID,${c.clique.size},$remainsValidPercentage,$avgEvidencePerEdge,$fractionOfVerticesWithEvidence,${c.cliqueScore}")
   }

@@ -21,9 +21,10 @@ class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
     if(component.nVertices<8){
       //we can do brute-force easily enough
       //skipping this
-      logger.debug(s"Skipping component with ${component.nVertices} vertices")
+      //logger.debug(s"Skipping component with ${component.nVertices} vertices")
       //new GreedyComponentOptimizer(component,true).optimize()
       component.graph.nodes.map(n => IdentifiedTupleMerge(Set(n.value),0.0))
+      //TODO: plug this in: new BruteForceComponentOptimizer(component,IndexedSeq()).optimize()
     } else if(component.nVertices>=8 && component.nVertices<500){
       //use related work MDMCP approach
       component.toMDMCPInputFile(new File(mdmcpExportDir.getAbsolutePath + s"/$name.txt"))

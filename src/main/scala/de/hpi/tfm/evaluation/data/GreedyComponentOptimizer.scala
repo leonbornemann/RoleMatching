@@ -10,15 +10,7 @@ import scala.util.Random
  * @param c
  * @param seed
  */
-class GreedyComponentOptimizer(c: SubGraph,log:Boolean) extends StrictLogging{
-
-  def getEdgeWeight(v: c.graph.NodeT, y: Int):Double = {
-    val edgeOption = v.incoming.find(_.nodes.exists(_.value==y))
-    if(!edgeOption.isDefined)
-      Double.NegativeInfinity
-    else
-      edgeOption.get.weight
-  }
+class GreedyComponentOptimizer(c: SubGraph,log:Boolean) extends Optimizer(c) with StrictLogging {
 
   def optimize() = {
     val cliqueCover = collection.mutable.HashSet[(collection.Set[Int],Double)]()

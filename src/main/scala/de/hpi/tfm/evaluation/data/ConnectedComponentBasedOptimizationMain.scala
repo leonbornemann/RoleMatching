@@ -1,13 +1,21 @@
 package de.hpi.tfm.evaluation.data
 
 import de.hpi.tfm.data.socrata.{JsonReadable, JsonWritable}
-import de.hpi.tfm.fact_merging.optimization.{HybridOptimizer, SubGraph}
+import de.hpi.tfm.fact_merging.optimization.{BruteForceComponentOptimizer, HybridOptimizer, SubGraph}
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 
 import java.io.File
 
 object ConnectedComponentBasedOptimizationMain extends App {
+//  new BruteForceComponentOptimizer(null,IndexedSeq(0)).optimize()
+//  println("-----------------------------------------------------------------------------------")
+//  new BruteForceComponentOptimizer(null,IndexedSeq(0,1)).optimize()
+//  println("-----------------------------------------------------------------------------------")
+//  new BruteForceComponentOptimizer(null,IndexedSeq(0,1,2)).optimize()
+//  println("-----------------------------------------------------------------------------------")
+  new BruteForceComponentOptimizer(null,IndexedSeq(1,2,3,4,5,6,7,8)).optimize()
+  println("-----------------------------------------------------------------------------------")
 //  case class lol(a:Double) extends JsonWritable[lol]
 //  object lol extends JsonReadable[lol]
 //

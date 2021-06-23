@@ -35,14 +35,6 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging{
     val cliquesMDMCP = new MDMCPResult(new SubGraph(slimGraph.transformToOptimizationGraph),mf,partitionVertexFiles(fname)).cliques
     val componentName = fname.split("\\.")(0)
     val cliquesGreedy = IdentifiedTupleMerge.fromJsonObjectPerLineFile(mergeDirGreedy + s"/$componentName.json")
-    if(cliquesGreedy!=cliquesMDMCP){
-      logger.debug("------------------------------------------------------------------------------------------")
-      logger.debug("------------------------------------------------------------------------------------------")
-      logger.debug("-----------------------Greedy-------------------------------------------------------------")
-      cliquesGreedy.sortBy(_.clique.min).foreach(m => logger.debug(s"$m"))
-      logger.debug("-----------------------MDMCP-------------------------------------------------------------")
-      cliquesMDMCP.sortBy(_.clique.min).foreach(m => logger.debug(s"$m"))
-    }
     cliqueAnalyser.addResultTuples(cliquesGreedy,componentName,"greedy")
     cliqueAnalyser.addResultTuples(cliquesMDMCP,componentName,"MDMCP")
   }}

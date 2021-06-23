@@ -3,9 +3,9 @@ package de.hpi.tfm.fact_merging.optimization
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.evaluation.data.{IdentifiedTupleMerge, Optimizer}
 
-class BruteForceComponentOptimizer(component: SubGraph,verticesOrdered:IndexedSeq[Int]) extends Optimizer(component) with StrictLogging{
+class BruteForceComponentOptimizer(component: SubGraph) extends Optimizer(component) with StrictLogging{
 
-  //val verticesOrdered = component.graph.nodes.map(_.value).toIndexedSeq.sorted
+  val verticesOrdered = component.graph.nodes.map(_.value).toIndexedSeq.sorted
   var allPartitions = collection.mutable.ArrayBuffer[collection.IndexedSeq[collection.IndexedSeq[Int]]]()
 
 

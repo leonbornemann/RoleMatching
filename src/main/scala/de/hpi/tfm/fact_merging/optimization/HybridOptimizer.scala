@@ -41,7 +41,7 @@ class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
       IdentifiedTupleMerge(Set(component.graph.nodes.head.value),0.0).appendToWriter(prSingleVertexComponents,false,true)
     } else if(component.nVertices<8){
       //we can do brute-force easily enough
-      val merges = new BruteForceComponentOptimizer(component,IndexedSeq()).optimize()
+      val merges = new BruteForceComponentOptimizer(component).optimize()
       serializeMerges(merges,prBruteForce)
       checkMergeIntegrity(merges,component)
     } else if(component.nVertices>=8 && component.nVertices<500){

@@ -15,6 +15,7 @@ class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
 
   val prBruteForce = new PrintWriter(s"${resultDir.getAbsolutePath}/bruteForceResult.json")
   val prGreedyLargeVertexCount = new PrintWriter(s"${resultDir.getAbsolutePath}/greedyLargeVertexCountResult.json")
+  val prSingleVertexComponents = new PrintWriter(s"${resultDir.getAbsolutePath}/sinlgeVertexComponents.json")
 
   def componentIterator() = new ComponentIterator(graph)
 
@@ -33,7 +34,9 @@ class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
   override def optimizeComponent(component: SubGraph) = {
     val name = component.componentName
     //new File("debug_components/").mkdir()
-    if(component.nVertices<8){
+    if(component.nVertices==1){
+      IdentifiedTupleMerge(Set(component.graph.nodes.head.value),0.0).appendToWriter(prSingleVertexComponents,false,true)
+    } else if(component.nVertices<8){
       //we can do brute-force easily enough
       val merges = new BruteForceComponentOptimizer(component,IndexedSeq()).optimize()
       serializeMerges(merges,prBruteForce)
@@ -61,5 +64,6 @@ class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
   override def closeAllWriters(): Unit = {
     prBruteForce.close()
     prGreedyLargeVertexCount.close()
+    prSingleVertexComponents.close()
   }
 }

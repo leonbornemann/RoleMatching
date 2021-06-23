@@ -1,8 +1,9 @@
 package de.hpi.tfm.fact_merging.optimization
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.evaluation.data.{IdentifiedTupleMerge, Optimizer}
 
-class BruteForceComponentOptimizer(component: SubGraph,verticesOrdered:IndexedSeq[Int]) extends Optimizer(component){
+class BruteForceComponentOptimizer(component: SubGraph,verticesOrdered:IndexedSeq[Int]) extends Optimizer(component) with StrictLogging{
 
   //val verticesOrdered = component.graph.nodes.map(_.value).toIndexedSeq.sorted
   var allPartitions = collection.mutable.ArrayBuffer[collection.IndexedSeq[collection.IndexedSeq[Int]]]()
@@ -87,8 +88,13 @@ class BruteForceComponentOptimizer(component: SubGraph,verticesOrdered:IndexedSe
 
   def optimize() = {
     val allPartitionings = getAllPartitionings(verticesOrdered)
+    if(allPartitionings.size==0){
+      logger.debug("What?")
+      logger.debug(s"Component:${component.componentName},Vertices: ${component.nVertices},Edges: ${component.nEdges}")
+    }
+    assert(allPartitionings.size>0)
     val (best,score) = allPartitionings
-      .map(partitioning => (partitioning,getScore(partitioning)))
+      .map(partitioning => (partitioning.filter(_.size>0),getScore(partitioning)))
       .sortBy(-_._2)
       .head
     best.map(vertices => IdentifiedTupleMerge(vertices.toSet,getCliqueScore(vertices)))

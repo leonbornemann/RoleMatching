@@ -18,7 +18,7 @@ class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
 
   override def optimizeComponent(component: SubGraph): Iterable[IdentifiedTupleMerge] = {
     val name = component.componentName
-    new File("debug_components/").mkdir()
+    //new File("debug_components/").mkdir()
     if(component.nVertices<8){
       //we can do brute-force easily enough
       //skipping this
@@ -31,7 +31,7 @@ class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
       logger.debug(s"Handling Component s$name")
       //use related work MDMCP approach
       component.toMDMCPInputFile(new File(mdmcpExportDir.getAbsolutePath + s"/$name.txt"))
-      component.writePartitionVertexFile(new File(vertexLookupDirForPartitions.getAbsolutePath +  s"/$name.txt"))
+//For debug purposes:      component.writePartitionVertexFile(new File(vertexLookupDirForPartitions.getAbsolutePath +  s"/$name.txt"))
       val greedyRes = new GreedyComponentOptimizer(component,true).optimize()
       val greedyFileForComponent = new File(greedyMergeDir.getAbsolutePath + s"/$name.json")
       val pr = new PrintWriter(greedyFileForComponent)

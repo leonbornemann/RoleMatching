@@ -19,10 +19,11 @@ class GreedyComponentOptimizer(c: SubGraph,log:Boolean) extends Optimizer(c) wit
       var objective = 0.0
       val curClique = collection.mutable.HashSet(V.head) // IMPORTANT: Algorithm says this should be random, but I don't think that matters here
       val candidates = collection.mutable.HashSet() ++ c.graph.find(curClique.head).get.neighbors.intersect(V)
+      val edgesCovered = scala.collection.mutable.ArrayBuffer[(Int,Int,Double)]()
       while(!candidates.isEmpty){
         val u = candidates.find(v => curClique.map(y => getEdgeWeight(v,y)).sum > 0)
         if(u.isDefined){
-          objective += curClique.map(y => getEdgeWeight(u.get,y)).sum
+          objective += curClique.toIndexedSeq.map(y => getEdgeWeight(u.get,y)).sum
           curClique.add(u.value.get)
           candidates.remove(u.get)
           candidates.union(u.get.neighbors.diff(curClique))

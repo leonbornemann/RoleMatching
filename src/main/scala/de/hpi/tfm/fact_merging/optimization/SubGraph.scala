@@ -1,12 +1,27 @@
 package de.hpi.tfm.fact_merging.optimization
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.tfm.evaluation.data.SLimGraph
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 
-import java.io.{File, PrintWriter}
+import java.io.{File, PrintWriter, Serializable}
 
 class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
+
+  def toSerializableComponent = {
+    val verticesOrdered = graph.nodes.map(_.value).toIndexedSeq.sorted
+    val edges = collection.mutable.HashMap[Int, collection.mutable.HashMap[Int, Float]]()
+
+    graph.edges.foreach(e => {
+      assert(e.nodes.size==2)
+      val list = e.nodes.toIndexedSeq
+      val first = if( list(0).value<list(1).value) list(0).value else list(1).value
+      val second = if( list(0).value<list(1).value) list(1).value else list(0).value
+      edges.getOrElseUpdate(first, collection.mutable.HashMap[Int, Float]()).put(second,e.weight.toFloat)
+    })
+    SLimGraph(verticesOrdered.map(_.toString),edges)
+  }
 
   def getEdgeWeight(v: Int, w: Int) = {
     val edges = graph.find(v).get.incoming.filter(_.nodes.exists(_.value==w))

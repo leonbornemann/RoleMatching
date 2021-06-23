@@ -18,6 +18,9 @@ class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
 
   override def optimizeComponent(component: SubGraph): Iterable[IdentifiedTupleMerge] = {
     val name = component.componentName
+    new File("debug_components/").mkdir()
+    component.toSerializableComponent.toJsonFile(new File(s"debug_components/$name.json"))
+    logger.debug(s"Handling Component s$name")
     if(component.nVertices<8){
       //we can do brute-force easily enough
       //skipping this

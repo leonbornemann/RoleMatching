@@ -40,7 +40,7 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging{
       logger.debug("------------------------------------------------------------------------------------------")
       logger.debug("-----------------------Greedy-------------------------------------------------------------")
       cliquesGreedy.sortBy(_.clique.min).foreach(m => logger.debug(s"$m"))
-      logger.debug("-----------------------Greedy-------------------------------------------------------------")
+      logger.debug("-----------------------MDMCP-------------------------------------------------------------")
       cliquesMDMCP.sortBy(_.clique.min).foreach(m => logger.debug(s"$m"))
     }
     cliqueAnalyser.addResultTuples(cliquesGreedy,componentName,"greedy")

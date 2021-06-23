@@ -43,13 +43,22 @@ class GreedyComponentOptimizer(c: SubGraph,log:Boolean) extends Optimizer(c) wit
     cliqueCover.foreach{case (cc,w) => {
       assert(w>=0)
       val vertices = cc.toIndexedSeq
+      var newWeight = 0.0
       for(i <- 0 until vertices.size){
         val v = vertices(i)
         for(j <- (i+1) until vertices.size){
           val w = vertices(j)
+          newWeight += c.getEdgeWeight(v,w)
           assert(c.edgeExists(v,w))
         }
       }
+      if(!(Math.abs(w - newWeight) < 0.0000001)){
+        logger.debug("Bug found in Greedy:")
+        logger.debug(s"Clique: ${cc.min} ")
+        logger.debug(s"Weight by greedy: ${newWeight} ")
+        logger.debug(s"Weight from edges: ${newWeight} ")
+      }
+      assert(Math.abs(w - newWeight) < 0.0000001)
     }}
     cliqueCover.map{case (cc,objective) => IdentifiedTupleMerge(cc,objective)}
   }

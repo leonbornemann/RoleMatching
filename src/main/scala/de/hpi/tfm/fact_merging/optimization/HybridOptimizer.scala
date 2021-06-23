@@ -34,6 +34,9 @@ class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
   override def optimizeComponent(component: SubGraph) = {
     val name = component.componentName
     //new File("debug_components/").mkdir()
+    if(component.componentName==31408){
+      component.toSerializableComponent.toJsonFile(new File(s"debug_components/$name.json"))
+    }
     if(component.nVertices==1){
       IdentifiedTupleMerge(Set(component.graph.nodes.head.value),0.0).appendToWriter(prSingleVertexComponents,false,true)
     } else if(component.nVertices<8){

@@ -25,24 +25,29 @@ object SlimGraphWithoutWeight extends JsonReadable[SlimGraphWithoutWeight] with 
     val vertices = collection.mutable.HashSet[IdentifiedFactLineage]()
     val adjacencyList = collection.mutable.HashMap[String, mutable.HashMap[String, Seq[Boolean]]]()
     var count = 0
+    var skipped = 0
     edges.foreach(e => {
       vertices.add(e.v1)
       vertices.add(e.v2)
       val fl1 = e.v1.factLineage.toFactLineage
       val fl2 = e.v2.factLineage.toFactLineage
-      assert(fl1.projectToTimeRange(trainTimeStart,smallestTrainTimeEnd).tryMergeWithConsistent(fl2.projectToTimeRange(trainTimeStart,smallestTrainTimeEnd)).isDefined)
-      val edgeIsPresent = trainTimeEnds.map(end => fl1.projectToTimeRange(trainTimeStart,end).tryMergeWithConsistent(fl2.projectToTimeRange(trainTimeStart,end)).isDefined)
-      val id1 = e.v1.id
-      val id2 = e.v2.id
-      if(id1 < id2){
-        adjacencyList.getOrElseUpdate(id1,mutable.HashMap[String, Seq[Boolean]]()).put(id2,edgeIsPresent)
+      if(fl1.projectToTimeRange(trainTimeStart,smallestTrainTimeEnd).tryMergeWithConsistent(fl2.projectToTimeRange(trainTimeStart,smallestTrainTimeEnd)).isDefined){
+        val edgeIsPresent = trainTimeEnds.map(end => fl1.projectToTimeRange(trainTimeStart,end).tryMergeWithConsistent(fl2.projectToTimeRange(trainTimeStart,end)).isDefined)
+        val id1 = e.v1.id
+        val id2 = e.v2.id
+        if(id1 < id2){
+          adjacencyList.getOrElseUpdate(id1,mutable.HashMap[String, Seq[Boolean]]()).put(id2,edgeIsPresent)
+        } else {
+          adjacencyList.getOrElseUpdate(id2,mutable.HashMap[String, Seq[Boolean]]()).put(id1,edgeIsPresent)
+        }
       } else {
-        adjacencyList.getOrElseUpdate(id2,mutable.HashMap[String, Seq[Boolean]]()).put(id1,edgeIsPresent)
+        skipped+=1
       }
       count+=1
       if(count%100000==0)
         logger.debug(s"Done with $count edges")
     })
+    logger.debug(s"Skipped $skipped edges - weird")
     fromVerticesAndEdges(vertices,adjacencyList,smallestTrainTimeEnd,trainTimeEnds)
   }
 

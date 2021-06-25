@@ -3,6 +3,7 @@ package de.hpi.tfm.fact_merging.metrics
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{CommonPointOfInterestIterator, ValueTransition}
+import de.hpi.tfm.evaluation.data.GeneralEdge
 import de.hpi.tfm.fact_merging.metrics.TFIDFWeightingVariant.TFIDFWeightingVariant
 import de.hpi.tfm.io.IOService
 
@@ -175,6 +176,16 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
 
 }
 object MultipleEventWeightScoreComputer extends StrictLogging {
+
+//  def aggregateEventCounts(edges: collection.Seq[GeneralEdge],trainTimeEnd:LocalDate) = {
+//    edges.foreach(e => {
+//      val commonPointOfInterestIterator = new CommonPointOfInterestIterator[Any](e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)
+//      commonPointOfInterestIterator
+//        .withFilter(cp => ! cp.pointInTime.isAfter(trainTimeEnd))
+//        .foreach()
+//    })
+//  }
+
 
   logger.error("This class uses IOService standard dates - make sure those are set correctly!")
 

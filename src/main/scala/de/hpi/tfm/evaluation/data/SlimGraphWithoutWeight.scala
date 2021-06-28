@@ -14,6 +14,13 @@ case class SlimGraphWithoutWeight(smallestTrainTimeEnd:LocalDate,
                                   trainTimeEnds:Seq[LocalDate],
                                   verticesOrdered: IndexedSeq[IdentifiedFactLineage],
                                   adjacencyList: collection.Map[Int, collection.Map[Int,Seq[Boolean]]]) extends JsonWritable[SlimGraphWithoutWeight] with StrictLogging{
+  def getLineage(vertex: Int): IdentifiedFactLineage = {
+    verticesOrdered(vertex)
+  }
+
+  def generalEdgeIterator = {
+    new GeneralEdgeIterator(this)
+  }
 
 }
 object SlimGraphWithoutWeight extends JsonReadable[SlimGraphWithoutWeight] with StrictLogging {

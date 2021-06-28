@@ -2,8 +2,9 @@ package de.hpi.tfm.fact_merging.metrics
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.{CommonPointOfInterestIterator, ValueTransition}
-import de.hpi.tfm.evaluation.data.GeneralEdge
+import de.hpi.tfm.data.tfmp_input.table.nonSketch.{ChangePoint, CommonPointOfInterestIterator, ValueTransition}
+import de.hpi.tfm.evaluation.data.{GeneralEdge, SlimGraphWithoutWeight}
+import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScoreComputer.{getCountPrev, transitionIsNonInformative}
 import de.hpi.tfm.fact_merging.metrics.TFIDFWeightingVariant.TFIDFWeightingVariant
 import de.hpi.tfm.io.IOService
 
@@ -67,13 +68,6 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
 
   computeScore()
 
-
-  def transitionIsNonInformative(value: ValueTransition[A]): Boolean = {
-    val containsPrev = nonInformativeValues.contains(value.prev)
-    val containsAfter = nonInformativeValues.contains(value.after)
-    if(nonInformativeValueIsStrict) containsPrev || containsAfter else containsPrev && containsAfter
-  }
-
   private def computeScore() = {
     if(!a.tryMergeWithConsistent(b).isDefined){
       totalScore = MultipleEventWeightScoreComputer.scoreForInconsistent
@@ -82,45 +76,13 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
       commonPointOfInterestIterator
         .withFilter(cp => !cp.pointInTime.isAfter(timeEnd))
         .foreach(cp => {
-        //handle previous transitions:
-        val countPrevInDays = cp.pointInTime.toEpochDay - cp.prevPointInTime.toEpochDay - TIMESTAMP_GRANULARITY_IN_DAYS
-        if(!(countPrevInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0))
-          println()
-        assert(countPrevInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0)
-        val countPrev = countPrevInDays / TIMESTAMP_GRANULARITY_IN_DAYS
-        val prevValueA = cp.prevValueA
-        val prevValueB = cp.prevValueB
-        handleSameValueTransitions(prevValueA,prevValueB,countPrev.toInt)
-        val values = Set(prevValueA, prevValueB, cp.curValueA, cp.curValueB)
-          //handle transition:
-        val noWildcardInTransition = values.forall(v => !a.isWildcard(v))
-        if(noWildcardInTransition){
-          assert(prevValueA==prevValueB && cp.curValueA==cp.curValueB)
-          if(transitionIsNonInformative(ValueTransition(prevValueA,cp.curValueA))){
-            totalScore+=countPrev*SYNCHRONOUS_NON_INFORMATIVE_TRANSITION_WEIGHT //TODO: is one existence enough or do both parts need to be it? - I think both parts
-          } else {
-            totalScore +=1*SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT(ValueTransition(prevValueA,cp.curValueA))
-          }
-        } else {
-          val aChanged = cp.curValueA!=cp.prevValueA && !a.isWildcard(cp.curValueA) && !a.isWildcard(cp.prevValueA)
-          val bChanged = cp.curValueB!=cp.prevValueB && !a.isWildcard(cp.curValueB) && !a.isWildcard(cp.prevValueB)
-          if (aChanged) {
-            if(transitionSetB.contains(ValueTransition(cp.prevValueA,cp.curValueA))){
-              totalScore+=1*WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
-            } else {
-              totalScore+=1*WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
-            }
-          } else if(bChanged) {
-            if(transitionSetA.contains(ValueTransition(cp.prevValueB,cp.curValueB))){
-              totalScore+=1*WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
-            } else {
-              totalScore+=1*WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
-            }
-          } else {
-            totalScore += 1 * WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
-          }
-        }
-        totalScoreChanges+=1
+          //handle previous transitions:
+          val countPrev = getCountPrev(cp,TIMESTAMP_GRANULARITY_IN_DAYS)
+          val prevValueA = cp.prevValueA
+          val prevValueB = cp.prevValueB
+          handleSameValueTransitions(prevValueA,prevValueB,countPrev.toInt)
+          handleCurrentValueTransition(cp)
+          totalScoreChanges+=1
         })
       val lastKey = Seq(a.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1,b.getValueLineage.maxBefore(timeEnd.plusDays(1)).get._1).maxBy(_.toEpochDay)
       val lastValueA = a.getValueLineage.last._2
@@ -129,6 +91,38 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
       assert(countLastInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0)
       val countLast = countLastInDays / TIMESTAMP_GRANULARITY_IN_DAYS
       handleSameValueTransitions(lastValueA,lastValueB,countLast.toInt)
+    }
+  }
+
+  private def handleCurrentValueTransition(cp: ChangePoint[A]) = {
+    val values = Set(cp.prevValueA, cp.prevValueB, cp.curValueA, cp.curValueB)
+    //handle transition:
+    val noWildcardInTransition = values.forall(v => !a.isWildcard(v))
+    if (noWildcardInTransition) {
+      assert(cp.prevValueA == cp.prevValueB && cp.curValueA == cp.curValueB)
+      if (transitionIsNonInformative(ValueTransition(cp.prevValueA, cp.curValueA), nonInformativeValues, nonInformativeValueIsStrict)) {
+        totalScore += 1 * SYNCHRONOUS_NON_INFORMATIVE_TRANSITION_WEIGHT
+      } else {
+        totalScore += 1 * SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT(ValueTransition(cp.prevValueA, cp.curValueA))
+      }
+    } else {
+      val aChanged = cp.curValueA != cp.prevValueA && !a.isWildcard(cp.curValueA) && !a.isWildcard(cp.prevValueA)
+      val bChanged = cp.curValueB != cp.prevValueB && !a.isWildcard(cp.curValueB) && !a.isWildcard(cp.prevValueB)
+      if (aChanged) {
+        if (transitionSetB.contains(ValueTransition(cp.prevValueA, cp.curValueA))) {
+          totalScore += 1 * WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
+        } else {
+          totalScore += 1 * WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
+        }
+      } else if (bChanged) {
+        if (transitionSetA.contains(ValueTransition(cp.prevValueB, cp.curValueB))) {
+          totalScore += 1 * WILDCARD_TO_KNOWN_TRANSITION_WEIGHT
+        } else {
+          totalScore += 1 * WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
+        }
+      } else {
+        totalScore += 1 * WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT
+      }
     }
   }
 
@@ -151,7 +145,7 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
       } else {
         assert(prevValueA==prevValueB)
         val t = ValueTransition(prevValueA,prevValueB)
-        if(transitionIsNonInformative(t)){
+        if(transitionIsNonInformative(t,nonInformativeValues,nonInformativeValueIsStrict)){
           totalScore+=countPrev*SYNCHRONOUS_NON_INFORMATIVE_TRANSITION_WEIGHT
         } else{
           totalScore+=countPrev*SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT(t)
@@ -177,14 +171,99 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
 }
 object MultipleEventWeightScoreComputer extends StrictLogging {
 
-//  def aggregateEventCounts(edges: collection.Seq[GeneralEdge],trainTimeEnd:LocalDate) = {
-//    edges.foreach(e => {
-//      val commonPointOfInterestIterator = new CommonPointOfInterestIterator[Any](e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)
-//      commonPointOfInterestIterator
-//        .withFilter(cp => ! cp.pointInTime.isAfter(trainTimeEnd))
-//        .foreach()
-//    })
-//  }
+  def getCountPrev[A](cp: ChangePoint[A],TIMESTAMP_GRANULARITY_IN_DAYS:Int) = {
+    val countPrevInDays = cp.pointInTime.toEpochDay - cp.prevPointInTime.toEpochDay - TIMESTAMP_GRANULARITY_IN_DAYS
+    if(!(countPrevInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0))
+      println()
+    assert(countPrevInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0)
+    val countPrev = countPrevInDays / TIMESTAMP_GRANULARITY_IN_DAYS
+    countPrev
+  }
+
+  def getCountForSameValueTransition[A](prevValueA: A,
+                                        prevValueB: A,
+                                        countPrev: Int,
+                                        isWildcard:(A => Boolean),
+                                        transitionSetA:Set[ValueTransition[A]],
+                                        transitionSetB:Set[ValueTransition[A]],
+                                        nonInformativeValues:Set[A],
+                                        nonInformativeValueIsStrict:Boolean
+                                       ) = {
+    val totalScore = new MultipleEventWeightScoreOccurrenceStats(null,null)
+    if(countPrev!=0){
+      if(isWildcard(prevValueA) && isWildcard(prevValueB)){
+        totalScore.neutral += countPrev
+      } else if(isWildcard(prevValueA)){
+        if(transitionSetA.contains(ValueTransition(prevValueB,prevValueB))){
+          totalScore.weakNegative += countPrev
+        } else {
+          totalScore.strongNegative += countPrev
+        }
+      } else if(isWildcard(prevValueB)){
+        if(transitionSetB.contains(ValueTransition(prevValueA,prevValueA))){
+          totalScore.weakNegative += countPrev
+        } else {
+          totalScore.strongNegative += countPrev
+        }
+      } else {
+        assert(prevValueA==prevValueB)
+        val t = ValueTransition(prevValueA,prevValueB)
+        if(transitionIsNonInformative(t,nonInformativeValues,nonInformativeValueIsStrict)){
+          totalScore.neutral += countPrev
+        } else{
+          totalScore.weakPositive += countPrev
+        }
+      }
+    }
+    totalScore
+  }
+
+  def getCountForTransition[A](cp: ChangePoint[A],
+                                                isWildcard:(A => Boolean),
+                                                transitionSetA:Set[ValueTransition[A]],
+                                                transitionSetB:Set[ValueTransition[A]],
+                                                nonInformativeValues:Set[A],
+                                                nonInformativeValueIsStrict:Boolean) = {
+    val values = Set(cp.prevValueA, cp.prevValueB, cp.curValueA, cp.curValueB)
+    //handle transition:
+    val noWildcardInTransition = values.forall(v => !isWildcard(v))
+    val totalScore = new MultipleEventWeightScoreOccurrenceStats(null,null)
+    if (noWildcardInTransition) {
+      assert(cp.prevValueA == cp.prevValueB && cp.curValueA == cp.curValueB)
+      if (transitionIsNonInformative(ValueTransition(cp.prevValueA, cp.curValueA), nonInformativeValues, nonInformativeValueIsStrict)) {
+        totalScore.neutral += 1
+      } else {
+        totalScore.strongPositive += 1
+      }
+    } else {
+      val aChanged = cp.curValueA != cp.prevValueA && !isWildcard(cp.curValueA) && !isWildcard(cp.prevValueA)
+      val bChanged = cp.curValueB != cp.prevValueB && !isWildcard(cp.curValueB) && !isWildcard(cp.prevValueB)
+      if (aChanged) {
+        if (transitionSetB.contains(ValueTransition(cp.prevValueA, cp.curValueA))) {
+          totalScore.weakNegative += 1
+        } else {
+          totalScore.strongNegative += 1
+        }
+      } else if (bChanged) {
+        if (transitionSetA.contains(ValueTransition(cp.prevValueB, cp.curValueB))) {
+          totalScore.weakNegative += 1
+        } else {
+          totalScore.strongNegative += 1
+        }
+      } else {
+        totalScore.strongNegative += 1
+      }
+    }
+    totalScore
+  }
+
+  def transitionIsNonInformative[A](value: ValueTransition[A],
+                                    nonInformativeValues:Set[A],
+                                    nonInformativeValueIsStrict:Boolean): Boolean = {
+    val containsPrev = nonInformativeValues.contains(value.prev)
+    val containsAfter = nonInformativeValues.contains(value.after)
+    if(nonInformativeValueIsStrict) containsPrev || containsAfter else containsPrev && containsAfter
+  }
 
 
   logger.error("This class uses IOService standard dates - make sure those are set correctly!")

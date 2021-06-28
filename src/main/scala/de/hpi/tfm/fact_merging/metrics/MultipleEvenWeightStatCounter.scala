@@ -5,6 +5,9 @@ import de.hpi.tfm.data.tfmp_input.table.nonSketch.{ChangePoint, CommonPointOfInt
 import de.hpi.tfm.evaluation.data.SlimGraphWithoutWeight
 import de.hpi.tfm.fact_merging.config.GLOBAL_CONFIG
 import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScoreComputer
+import de.hpi.tfm.io.IOService
+import de.hpi.tfm.util.LogUtil
+import de.uni_potsdam.hpi.utils.LoggingUtils
 
 import java.time.LocalDate
 
@@ -23,8 +26,8 @@ class MultipleEvenWeightStatCounter(dsName:String,graph:SlimGraphWithoutWeight, 
       transitionSets(vertexIdFirst),transitionSets(vertexIdSecond),nonInformativeValues,nonInformativeValuesIsStrict)
     val countCurrent = MultipleEventWeightScoreComputer.getCountForTransition(cp,isWildcard,
       transitionSets(vertexIdFirst),transitionSets(vertexIdSecond),nonInformativeValues,nonInformativeValuesIsStrict)
-    totalCounts.addAll(countPrevTransiton)
-    totalCounts.addAll(countCurrent)
+    if(countPrevTransiton.isDefined) totalCounts.addAll(countPrevTransiton.get)
+    if(countCurrent.isDefined) totalCounts.addAll(countCurrent.get)
     totalCounts
   }
 
@@ -32,6 +35,7 @@ class MultipleEvenWeightStatCounter(dsName:String,graph:SlimGraphWithoutWeight, 
     val counts = scala.collection.mutable.HashMap[LocalDate, MultipleEventWeightScoreOccurrenceStats]()
     val trainTimeEndsWithIndex = graph.trainTimeEnds.zipWithIndex
     val latestTime = graph.trainTimeEnds.max
+    var processedEdges = 0
     graph.generalEdgeIterator.foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {
       val commonPointOfInterestIterator = new CommonPointOfInterestIterator[Any](e.v1.factLineage.toFactLineage, e.v2.factLineage.toFactLineage)
       commonPointOfInterestIterator
@@ -50,8 +54,11 @@ class MultipleEvenWeightStatCounter(dsName:String,graph:SlimGraphWithoutWeight, 
           }
           }
         })
-    }
-    }
+      processedEdges+=1
+      val toLog = LogUtil.buildLogProgressStrings(processedEdges,100000,None,"edges")
+      if(toLog.isDefined)
+        logger.debug(toLog.get)
+    }}
     counts
   }
 

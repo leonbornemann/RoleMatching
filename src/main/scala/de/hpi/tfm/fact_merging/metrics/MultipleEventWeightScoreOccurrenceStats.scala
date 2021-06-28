@@ -12,7 +12,7 @@ case class MultipleEventWeightScoreOccurrenceStats(val dsName:String,
                                               var weakNegative:Int=0,
                                               var strongNegative:Int=0) extends JsonWritable[MultipleEventWeightScoreOccurrenceStats]{
   def addAll(countPrev: MultipleEventWeightScoreOccurrenceStats) = {
-    strongPositive +=countPrev.strongNegative
+    strongPositive +=countPrev.strongPositive
     weakPositive +=countPrev.weakPositive
     neutral +=countPrev.neutral
     weakNegative +=countPrev.weakNegative

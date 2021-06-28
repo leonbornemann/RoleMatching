@@ -25,6 +25,19 @@ import scala.sys.process._
 
 object IOService extends StrictLogging{
 
+  def setDatesForDataSource(dataSource: String) = {
+    if(dataSource=="wikipedia"){
+      STANDARD_TIME_FRAME_START=LocalDate.parse("2003-01-04")
+      STANDARD_TIME_FRAME_END=LocalDate.parse("2019-09-07")
+    } else if(dataSource=="socrata"){
+      STANDARD_TIME_FRAME_START=LocalDate.parse("2019-11-01")
+      STANDARD_TIME_FRAME_END=LocalDate.parse("2020-11-01")
+    } else {
+      logger.debug("Unknown data source specified!")
+      assert(false)
+    }
+  }
+
   def IDS_TO_FILTER = CUSTOM_METADATA_DIR + "/idsToIgnore/"
 
   def getIdsToFilterOut() = {

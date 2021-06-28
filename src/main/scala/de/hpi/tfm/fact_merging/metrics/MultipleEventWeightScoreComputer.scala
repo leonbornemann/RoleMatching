@@ -190,6 +190,7 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
                                         nonInformativeValueIsStrict:Boolean
                                        ) = {
     val totalScore = new MultipleEventWeightScoreOccurrenceStats(null,null)
+    var isInvalid = false
     if(countPrev!=0){
       if(isWildcard(prevValueA) && isWildcard(prevValueB)){
         totalScore.neutral += countPrev
@@ -214,12 +215,16 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
             totalScore.weakPositive += countPrev
           }
         } else {
-          logger.debug("WHHAT?")
+          isInvalid=true
+          //TODO: investigate this!
           //Nothin happens -- this was an invalid match
         }
       }
     }
-    totalScore
+    if(isInvalid)
+      None
+    else
+      Some(totalScore)
   }
 
   def getCountForTransition[A](cp: ChangePoint[A],
@@ -232,6 +237,7 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
     //handle transition:
     val noWildcardInTransition = values.forall(v => !isWildcard(v))
     val totalScore = new MultipleEventWeightScoreOccurrenceStats(null,null)
+    var invalid=false
     if (noWildcardInTransition) {
       if(cp.prevValueA == cp.prevValueB && cp.curValueA == cp.curValueB){
         if (transitionIsNonInformative(ValueTransition(cp.prevValueA, cp.curValueA), nonInformativeValues, nonInformativeValueIsStrict)) {
@@ -240,6 +246,7 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
           totalScore.strongPositive += 1
         }
       } else {
+        invalid=true
         //nothing happens this was an invalid match
       }
     } else {
@@ -261,7 +268,10 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
         totalScore.strongNegative += 1
       }
     }
-    totalScore
+    if(invalid)
+      None
+    else
+      Some(totalScore)
   }
 
   def transitionIsNonInformative[A](value: ValueTransition[A],

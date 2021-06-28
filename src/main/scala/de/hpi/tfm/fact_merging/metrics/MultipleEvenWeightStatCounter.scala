@@ -31,9 +31,11 @@ class MultipleEvenWeightStatCounter(dsName:String,graph:SlimGraphWithoutWeight, 
   def aggregateEventCounts() = {
     val counts = scala.collection.mutable.HashMap[LocalDate, MultipleEventWeightScoreOccurrenceStats]()
     val trainTimeEndsWithIndex = graph.trainTimeEnds.zipWithIndex
+    val latestTime = graph.trainTimeEnds.max
     graph.generalEdgeIterator.foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {
       val commonPointOfInterestIterator = new CommonPointOfInterestIterator[Any](e.v1.factLineage.toFactLineage, e.v2.factLineage.toFactLineage)
       commonPointOfInterestIterator
+        .withFilter(cp => !cp.pointInTime.isAfter(latestTime))
         .foreach(cp => {
           val eventCounts = getEventCounts(cp, firstNode, secondNode)
           if (!cp.pointInTime.isAfter(graph.smallestTrainTimeEnd)) {

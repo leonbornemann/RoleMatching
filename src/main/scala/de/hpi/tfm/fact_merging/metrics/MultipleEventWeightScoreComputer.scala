@@ -214,6 +214,7 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
             totalScore.weakPositive += countPrev
           }
         } else {
+          logger.debug("WHHAT?")
           //Nothin happens -- this was an invalid match
         }
       }

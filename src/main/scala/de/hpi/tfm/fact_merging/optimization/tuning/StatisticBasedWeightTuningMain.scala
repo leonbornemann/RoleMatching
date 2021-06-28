@@ -2,7 +2,6 @@ package de.hpi.tfm.fact_merging.optimization.tuning
 
 import de.hpi.tfm.evaluation.data.{GeneralEdge, IdentifiedFactLineage, SlimGraphWithoutWeight}
 import de.hpi.tfm.fact_merging.metrics.{MultipleEvenWeightStatCounter, MultipleEventWeightScore, MultipleEventWeightScoreComputer}
-import de.hpi.tfm.fact_merging.optimization.GeneralEdgeGraphToSlimGraph.{timeEnd, timeStart}
 import de.hpi.tfm.io.IOService
 
 import java.io.File

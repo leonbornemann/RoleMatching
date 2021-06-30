@@ -40,7 +40,7 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
   val remainsValidStrict = v1.tryMergeWithConsistent(v2,RemainsValidVariant.STRICT).isDefined
   val remainsValidContainment = v1.tryMergeWithConsistent(v2,RemainsValidVariant.CONTAINMENT).isDefined
   val remainsValid_0_9_PercentageOfTime = v1.isConsistentWith(v2,0.9)
-  val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(v1).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(v2).isDefined
+  val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(v1,trainGraphConfig.timeRangeEnd).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(v2,trainGraphConfig.timeRangeEnd).isDefined
 
   val interestingnessEvidence = getEvidenceInTestPhase(v1,v2,trainGraphConfig.timeRangeEnd)
   if(!isInteresting && interestingnessEvidence>0) {
@@ -57,24 +57,6 @@ case class GeneralEdgeStatRow(TIMESTAMP_RESOLUTION_IN_DAYS:Int,
 
   def getSchema = {
     Seq("Vertex1ID,Vertex2ID") ++ Seq("remainsValid","remainsValidContainment","remainsValid_0_9_PercentageOfTime","hasChangeAfterTrainPeriod","interestingnessEvidence","isNumeric") ++ metricsTrain.map(_.name + "_TrainPeriod") //++ metricsFull.map(_.name + "_FullPeriod")
-  }
-
-  //Dirty: copied from HoldoutTimeEvaluator
-  def getPointInTimeOfRealChangeAfterTrainPeriod(lineage: TemporalFieldTrait[Any]) = {
-    val prevNonWcValue = lineage.getValueLineage.filter(t => !lineage.isWildcard(t._2) && !t._1.isAfter(trainGraphConfig.timeRangeEnd)).lastOption
-    if(prevNonWcValue.isEmpty)
-      None
-    else {
-      val it = lineage.getValueLineage.iteratorFrom(trainGraphConfig.timeRangeEnd)
-      var pointInTime:Option[LocalDate] = None
-      while(it.hasNext && !pointInTime.isDefined){
-        val (curTIme,curValue) = it.next()
-        if(!lineage.isWildcard(curValue) && curValue!=prevNonWcValue.get._2){
-          pointInTime = Some(curTIme)
-        }
-      }
-      pointInTime
-    }
   }
 
   def toCSVLine = {

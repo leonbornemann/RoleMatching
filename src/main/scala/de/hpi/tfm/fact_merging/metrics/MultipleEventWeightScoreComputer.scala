@@ -5,6 +5,8 @@ import de.hpi.tfm.data.tfmp_input.table.TemporalFieldTrait
 import de.hpi.tfm.data.tfmp_input.table.nonSketch.{ChangePoint, CommonPointOfInterestIterator, ValueTransition}
 import de.hpi.tfm.evaluation.data.{GeneralEdge, SlimGraphWithoutWeight}
 import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScoreComputer.{getCountPrev, transitionIsNonInformative}
+import de.hpi.tfm.fact_merging.metrics.MultipleEventWeightScoreOccurrenceStats.{STRONGNEGATIVE, STRONGPOSTIVE,NEUTRAL, WEAKNEGATIVE, WEAKPOSTIVE}
+
 import de.hpi.tfm.fact_merging.metrics.TFIDFWeightingVariant.TFIDFWeightingVariant
 import de.hpi.tfm.io.IOService
 
@@ -77,7 +79,7 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
         .withFilter(cp => !cp.pointInTime.isAfter(timeEnd))
         .foreach(cp => {
           //handle previous transitions:
-          val countPrev = getCountPrev(cp,TIMESTAMP_GRANULARITY_IN_DAYS)
+          val countPrev = getCountPrev(cp,TIMESTAMP_GRANULARITY_IN_DAYS,None)
           val prevValueA = cp.prevValueA
           val prevValueB = cp.prevValueB
           handleSameValueTransitions(prevValueA,prevValueB,countPrev.toInt)
@@ -171,14 +173,18 @@ class MultipleEventWeightScoreComputer[A](a:TemporalFieldTrait[A],
 }
 object MultipleEventWeightScoreComputer extends StrictLogging {
 
-  def getCountPrev[A](cp: ChangePoint[A],TIMESTAMP_GRANULARITY_IN_DAYS:Int) = {
-    val countPrevInDays = cp.pointInTime.toEpochDay - cp.prevPointInTime.toEpochDay - TIMESTAMP_GRANULARITY_IN_DAYS
+  def getCountPrev[A](cp: ChangePoint[A],TIMESTAMP_GRANULARITY_IN_DAYS:Int,trainTimeEnd:Option[LocalDate]) = {
+    assert(trainTimeEnd.isEmpty || !trainTimeEnd.get.isBefore(cp.prevPointInTime))
+    val end = if(trainTimeEnd.isDefined && trainTimeEnd.get.isBefore(cp.pointInTime)) trainTimeEnd.get else cp.pointInTime
+    val countPrevInDays = end.toEpochDay - cp.prevPointInTime.toEpochDay - TIMESTAMP_GRANULARITY_IN_DAYS
     if(!(countPrevInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0))
       println()
     assert(countPrevInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0)
     val countPrev = countPrevInDays / TIMESTAMP_GRANULARITY_IN_DAYS
     countPrev
   }
+
+
 
   def getCountForSameValueTransition[A](prevValueA: A,
                                         prevValueB: A,
@@ -187,32 +193,37 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
                                         transitionSetA:Set[ValueTransition[A]],
                                         transitionSetB:Set[ValueTransition[A]],
                                         nonInformativeValues:Set[A],
-                                        nonInformativeValueIsStrict:Boolean
+                                        nonInformativeValueIsStrict:Boolean,
+                                        transitionHistogramForTFIDF:Option[Map[ValueTransition[A],Int]]=None
                                        ) = {
     val totalScore = new MultipleEventWeightScoreOccurrenceStats(null,null)
     var isInvalid = false
     if(countPrev!=0){
       if(isWildcard(prevValueA) && isWildcard(prevValueB)){
-        totalScore.neutral += countPrev
+        totalScore.addScore(NEUTRAL,countPrev,countPrev)
       } else if(isWildcard(prevValueA)){
         if(transitionSetA.contains(ValueTransition(prevValueB,prevValueB))){
-          totalScore.weakNegative += countPrev
+          totalScore.addScore(WEAKNEGATIVE,countPrev,countPrev)
         } else {
-          totalScore.strongNegative += countPrev
+          totalScore.addScore(STRONGNEGATIVE,countPrev,countPrev)
         }
       } else if(isWildcard(prevValueB)){
         if(transitionSetB.contains(ValueTransition(prevValueA,prevValueA))){
-          totalScore.weakNegative += countPrev
+          totalScore.addScore(WEAKNEGATIVE,countPrev,countPrev)
         } else {
-          totalScore.strongNegative += countPrev
+          totalScore.addScore(STRONGNEGATIVE,countPrev,countPrev)
         }
       } else {
         if(prevValueA==prevValueB){
           val t = ValueTransition(prevValueA,prevValueB)
           if(transitionIsNonInformative(t,nonInformativeValues,nonInformativeValueIsStrict)){
-            totalScore.neutral += countPrev
+            totalScore.addScore(NEUTRAL,countPrev,countPrev)
           } else{
-            totalScore.weakPositive += countPrev
+            if(!transitionHistogramForTFIDF.get.contains(t)){
+              println()
+            }
+            val score = 1.0f / (transitionHistogramForTFIDF.get(t) - 1)
+            totalScore.addScore(WEAKPOSTIVE,1,score)
           }
         } else {
           isInvalid=true
@@ -232,7 +243,8 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
                                                 transitionSetA:Set[ValueTransition[A]],
                                                 transitionSetB:Set[ValueTransition[A]],
                                                 nonInformativeValues:Set[A],
-                                                nonInformativeValueIsStrict:Boolean) = {
+                                                nonInformativeValueIsStrict:Boolean,
+                                                transitionHistogramForTFIDF:Option[Map[ValueTransition[A],Int]]=None) = {
     val values = Set(cp.prevValueA, cp.prevValueB, cp.curValueA, cp.curValueB)
     //handle transition:
     val noWildcardInTransition = values.forall(v => !isWildcard(v))
@@ -241,9 +253,10 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
     if (noWildcardInTransition) {
       if(cp.prevValueA == cp.prevValueB && cp.curValueA == cp.curValueB){
         if (transitionIsNonInformative(ValueTransition(cp.prevValueA, cp.curValueA), nonInformativeValues, nonInformativeValueIsStrict)) {
-          totalScore.neutral += 1
+          totalScore.addScore(NEUTRAL,1,1)
         } else {
-          totalScore.strongPositive += 1
+          val score = 1.0f / (transitionHistogramForTFIDF.get(ValueTransition(cp.prevValueA,cp.curValueA)) - 1)
+          totalScore.addScore(STRONGPOSTIVE,1,score)
         }
       } else {
         invalid=true
@@ -254,18 +267,18 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
       val bChanged = cp.curValueB != cp.prevValueB && !isWildcard(cp.curValueB) && !isWildcard(cp.prevValueB)
       if (aChanged) {
         if (transitionSetB.contains(ValueTransition(cp.prevValueA, cp.curValueA))) {
-          totalScore.weakNegative += 1
+          totalScore.addScore(WEAKNEGATIVE,1,1)
         } else {
-          totalScore.strongNegative += 1
+          totalScore.addScore(STRONGNEGATIVE,1,1)
         }
       } else if (bChanged) {
         if (transitionSetA.contains(ValueTransition(cp.prevValueB, cp.curValueB))) {
-          totalScore.weakNegative += 1
+          totalScore.addScore(WEAKNEGATIVE,1,1)
         } else {
-          totalScore.strongNegative += 1
+          totalScore.addScore(STRONGNEGATIVE,1,1)
         }
       } else {
-        totalScore.strongNegative += 1
+        totalScore.addScore(STRONGNEGATIVE,1,1)
       }
     }
     if(invalid)

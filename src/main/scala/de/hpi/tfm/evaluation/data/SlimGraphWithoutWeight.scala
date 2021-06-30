@@ -22,6 +22,7 @@ case class SlimGraphWithoutWeight(smallestTrainTimeEnd:LocalDate,
     new GeneralEdgeIterator(this)
   }
 
+  def allEndTimes = Set(smallestTrainTimeEnd) ++ trainTimeEnds
 }
 object SlimGraphWithoutWeight extends JsonReadable[SlimGraphWithoutWeight] with StrictLogging {
 

@@ -11,8 +11,9 @@ object ConnectedComponentBasedOptimizationMain extends App {
   val trainTimeEnd = LocalDate.parse(args(1))
   val weightConfig = ScoreConfig.fromCLIArguments(args(2),args(3))
   val runGreedyOnly = args(4).toBoolean
-  val graph = SlimGraphSet.fromJsonFile(inputGraphFile)
+  var graph = SlimGraphSet.fromJsonFile(inputGraphFile)
   val optimizationGraph = graph.transformToOptimizationGraph(trainTimeEnd,weightConfig)
+  graph = null //might help out the garbage collector
   val resultDir = new File(args(5))
   val mdmcpExportDir = new File(args(6))
   val vertexLookupDirForPartitions = new File(args(7))

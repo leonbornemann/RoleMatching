@@ -7,10 +7,10 @@ import de.hpi.role_matching.evaluation.StatComputer
 import java.io.PrintWriter
 import java.time.LocalDate
 
-case class CliqueAnalyser(pr: PrintWriter, verticesOrdered: VerticesOrdered, trainTimeEnd: LocalDate) extends StatComputer {
+case class CliqueAnalyser(pr: PrintWriter, verticesOrdered: VerticesOrdered, trainTimeEnd: LocalDate,alpha:Float) extends StatComputer {
 
   def serializeSchema() = {
-    pr.println("ComponentID,Method,cliqueID,cliqueSize,remainsValidPercentage,avgEvidencePerEdge,fractionOfVerticesWithEvidence,score") //cliqueID is specific per method
+    pr.println("ComponentID,Method,cliqueID,cliqueSize,remainsValidPercentage,avgEvidencePerEdge,fractionOfVerticesWithEvidence,score,alpha") //cliqueID is specific per method
   }
 
   def addResultTuple(c: IdentifiedTupleMerge, componentID: String, method: String) = {
@@ -40,7 +40,7 @@ case class CliqueAnalyser(pr: PrintWriter, verticesOrdered: VerticesOrdered, tra
     val avgEvidencePerEdge = evidenceCountTotal / edgesTotal.toDouble
     val verticesWithAtLeastOneEdgeWithEvidence = hasEvidence.values.filter(identity).size
     val fractionOfVerticesWithEvidence = verticesWithAtLeastOneEdgeWithEvidence / vertices.size.toDouble
-    pr.println(s"$componentID,$method,$cliqueID,${c.clique.size},$remainsValidPercentage,$avgEvidencePerEdge,$fractionOfVerticesWithEvidence,${c.cliqueScore}")
+    pr.println(s"$componentID,$method,$cliqueID,${c.clique.size},$remainsValidPercentage,$avgEvidencePerEdge,$fractionOfVerticesWithEvidence,${c.cliqueScore},$alpha")
   }
 
   def addResultTuples(cliquesGreedy: collection.Seq[IdentifiedTupleMerge], componentID: String, method: String) = {

@@ -19,8 +19,8 @@ object GLOBAL_CONFIG extends StrictLogging{
 
   //val CHANGE_COUNT_METHOD = new DatasetInsertIgnoreFieldChangeCounter()
   val CHANGE_COUNT_METHOD = new UpdateChangeCounter()
-  var STANDARD_TIME_FRAME_START = LocalDate.parse("2019-11-01", Socrata_IOService.dateTimeFormatter)
-  var STANDARD_TIME_FRAME_END = LocalDate.parse("2020-04-30", Socrata_IOService.dateTimeFormatter)
+  var STANDARD_TIME_FRAME_START = LocalDate.parse("2019-11-01")
+  var STANDARD_TIME_FRAME_END = LocalDate.parse("2020-04-30")
   val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
   def STANDARD_TIME_RANGE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay).map(LocalDate.ofEpochDay(_))

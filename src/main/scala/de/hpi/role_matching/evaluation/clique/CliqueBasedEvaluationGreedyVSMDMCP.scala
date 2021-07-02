@@ -24,13 +24,14 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_START = timeStart
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_END = timeEnd
   val resultFile = args(8)
+  val alpha = args(9).toFloat
   val slimGraph = SLimGraph.fromJsonFile(graphFile)
   val verticesOrdered = VerticesOrdered.fromJsonFile(verticesOrderedFile)
   val mergeFilesFromMDMCP = mergeDir.listFiles().map(f => (f.getName, f)).toMap
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
   //assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
   val pr = new PrintWriter(resultFile)
-  val cliqueAnalyser = new CliqueAnalyser(pr, verticesOrdered, trainTimeEnd)
+  val cliqueAnalyser = new CliqueAnalyser(pr, verticesOrdered, trainTimeEnd,alpha)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
     val cliquesMDMCP = new MDMCPResult(new SubGraph(slimGraph.transformToOptimizationGraph), mf, partitionVertexFiles(fname)).cliques

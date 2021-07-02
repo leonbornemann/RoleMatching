@@ -16,6 +16,7 @@ case class SlimGraphSet(verticesOrdered: IndexedSeq[String],
 
   def transformToOptimizationGraph(trainTimeEnd: LocalDate, weightConfig: ScoreConfig) = {
     val newVertices = scala.collection.mutable.HashSet[Int]() ++ (0 until verticesOrdered.size)
+    assert(trainTimeEnds.contains(trainTimeEnd))
     val indexOfTrainTimeEnd = trainTimeEnds.indexOf(trainTimeEnd)
     val newEdges = adjacencyList.flatMap{case (v1,adjListThisNode) => {
       adjListThisNode

@@ -8,7 +8,7 @@
         </layout>
     </appender>
 
-    <logger name="de.hpi.tfm" level="trace" additivity="false">
+    <logger name="de.hpi.role_matching" level="trace" additivity="false">
         <appender-ref ref="CONSOLE"/>
     </logger>
 

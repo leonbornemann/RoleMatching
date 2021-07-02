@@ -1,11 +1,11 @@
-import de.hpi.tfm.data.socrata.change.ChangeExporter
-import de.hpi.tfm.data.socrata.change.temporal_tables.TemporalTable
-import de.hpi.tfm.data.socrata.history.VersionHistoryConstruction
-import de.hpi.tfm.io.IOService
+import de.hpi.socrata.change.ChangeExporter
+import de.hpi.socrata.change.temporal_tables.TemporalTable
+import de.hpi.socrata.history.VersionHistoryConstruction
+import de.hpi.socrata.io.Socrata_IOService
 
 object AttributeLineageTest extends App {
 
-  IOService.socrataDir = "/home/leon/data/dataset_versioning/socrata/testDir/"
+  Socrata_IOService.socrataDir = "/home/leon/data/dataset_versioning/socrata/testDir/"
   val id1 = "AttributeLineageTest"
   val versionHistoryConstruction = new VersionHistoryConstruction()
   versionHistoryConstruction.constructVersionHistoryForSimplifiedFiles()

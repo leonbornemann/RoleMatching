@@ -1,6 +1,6 @@
-import de.hpi.tfm.data.socrata.change.ReservedChangeValues
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.tfm.fact_merging.config.{GLOBAL_CONFIG, UpdateChangeCounter}
+import de.hpi.socrata.change.{ReservedChangeValues, UpdateChangeCounter}
+import de.hpi.socrata.tfmp_input.table.nonSketch.FactLineage
+import de.hpi.role_matching.GLOBAL_CONFIG
 
 import java.time.LocalDate
 import scala.collection.mutable

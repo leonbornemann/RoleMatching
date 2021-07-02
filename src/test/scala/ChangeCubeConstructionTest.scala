@@ -1,5 +1,5 @@
-import de.hpi.tfm.data.socrata.change.{ChangeCube, ChangeExporter, ReservedChangeValues}
-import de.hpi.tfm.io.IOService
+import de.hpi.socrata.change.{ChangeCube, ChangeExporter, ReservedChangeValues}
+import de.hpi.socrata.io.Socrata_IOService
 
 import java.time.LocalDate
 
@@ -34,7 +34,7 @@ object ChangeCubeConstructionTest extends App {
     //TODO: also add a fix that changes from row deleted to dataset deleted to column deleted to row deleted
   }
 
-  IOService.socrataDir = "/home/leon/data/dataset_versioning/socrata/testDir/"
+  Socrata_IOService.socrataDir = "/home/leon/data/dataset_versioning/socrata/testDir/"
   var id = "change-cube-creation-test"
   testChangeCubeCreation()
   id = "change-cube-creation-test-deletes-correct"

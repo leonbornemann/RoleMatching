@@ -1,6 +1,6 @@
 
 
-import de.hpi.tfm.data.tfmp_input.table.sketch.FactLineageSketch
+import de.hpi.socrata.tfmp_input.table.sketch.FactLineageSketch
 
 import java.time.LocalDate
 import scala.collection.mutable

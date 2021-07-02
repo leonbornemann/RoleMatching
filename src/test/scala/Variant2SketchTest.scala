@@ -1,7 +1,7 @@
-import de.hpi.tfm.data.socrata.change.ReservedChangeValues
-import de.hpi.tfm.data.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.tfm.data.tfmp_input.table.sketch.FactLineageSketch
-import de.hpi.tfm.io.IOService
+import de.hpi.socrata.change.ReservedChangeValues
+import de.hpi.socrata.io.Socrata_IOService
+import de.hpi.socrata.tfmp_input.table.nonSketch.FactLineage
+import de.hpi.socrata.tfmp_input.table.sketch.FactLineageSketch
 
 import java.time.LocalDate
 import scala.collection.mutable
@@ -9,7 +9,7 @@ import scala.collection.mutable
 object Variant2SketchTest extends App {
 
   def toDate(i: Int) = {
-   LocalDate.ofEpochDay(IOService.STANDARD_TIME_FRAME_START.toEpochDay + i)
+   LocalDate.ofEpochDay(Socrata_IOService.STANDARD_TIME_FRAME_START.toEpochDay + i)
   }
 
   def toHashAsInt(v: Any) = FactLineageSketch.HASH_FUNCTION_STANDARD(v)

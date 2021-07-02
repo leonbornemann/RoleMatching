@@ -1,4 +1,4 @@
-import de.hpi.tfm.data.socrata.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
+import de.hpi.socrata.change.temporal_tables.time.{TimeInterval, TimeIntervalSequence}
 
 import java.time.LocalDate
 

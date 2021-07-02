@@ -10,6 +10,11 @@ case class ScoreConfig(alpha:Float,
                        weakNegativeWeight:Float,
                        strongNegativeWeight:Float) {
 
+  assert(weakNegativeWeight<0)
+  assert(strongNegativeWeight<0)
+  assert(strongPositiveWeight>0)
+  assert(weakPositiveWeight>0)
+
   def computeScore(eventCounts: EventCountsWithoutWeights) = {
     alpha +
       strongPositiveWeight*eventCounts.strongPositive +

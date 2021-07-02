@@ -7,7 +7,7 @@ import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, 
 import java.io.File
 import java.time.LocalDate
 
-object ConnectedComponentBasedOptimizationMain extends App with StrictLogging{
+object SparseGraphCliquePartitioningMain extends App with StrictLogging{
   logger.debug(s"Called with ${args.toIndexedSeq}")
   val inputGraphFile = args(0)
   val trainTimeEnd = LocalDate.parse(args(1))
@@ -22,7 +22,7 @@ object ConnectedComponentBasedOptimizationMain extends App with StrictLogging{
   val vertexLookupDirForPartitions = new File(args(7) + alphaDirName)
   val greedyMergeDir = new File(args(8) + alphaDirName)
   Seq(resultDir,mdmcpExportDir,vertexLookupDirForPartitions,greedyMergeDir).foreach(_.mkdirs())
-  val optimizer = new HybridOptimizer(optimizationGraph, resultDir, mdmcpExportDir, vertexLookupDirForPartitions, greedyMergeDir,runGreedyOnly)
+  val optimizer = new SGCPOptimizer(optimizationGraph, resultDir, mdmcpExportDir, vertexLookupDirForPartitions, greedyMergeDir,runGreedyOnly)
   optimizer.runComponentWiseOptimization()
   //optimizer.printComponentSizeHistogram()
 }

@@ -1,6 +1,6 @@
 package de.hpi.role_matching.clique_partitioning
 
-import de.hpi.role_matching.clique_partitioning.ConnectedComponentBasedOptimizationMain.args
+import de.hpi.role_matching.clique_partitioning.SparseGraphCliquePartitioningMain.args
 import de.hpi.role_matching.scoring.EventCountsWithoutWeights
 
 case class ScoreConfig(alpha:Float,

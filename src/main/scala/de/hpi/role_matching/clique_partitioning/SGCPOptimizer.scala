@@ -6,12 +6,12 @@ import scalax.collection.edge.WUnDiEdge
 
 import java.io.{File, PrintWriter}
 
-class HybridOptimizer(graph: Graph[Int, WUnDiEdge],
-                      resultDir:File,
-                      mdmcpExportDir:File,
-                      vertexLookupDirForPartitions:File,
-                      greedyMergeDir:File,
-                      useGreedyOnly:Boolean=false
+class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
+                    resultDir:File,
+                    mdmcpExportDir:File,
+                    vertexLookupDirForPartitions:File,
+                    greedyMergeDir:File,
+                    useGreedyOnly:Boolean=false
                      ) extends ComponentWiseOptimizer(graph,resultDir) {
 
   val prBruteForce = new PrintWriter(s"${resultDir.getAbsolutePath}/bruteForceResult.json")

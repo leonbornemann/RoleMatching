@@ -5,8 +5,7 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import de.hpi.role_matching.compatibility.graph.representation.slim.SLimGraph
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
-import de.hpi.role_matching.clique_partitioning.IdentifiedTupleMerge
-import de.hpi.role_matching.evaluation.fromWikipedia.CliqueAnalyser
+import de.hpi.role_matching.clique_partitioning.RoleMerge
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
@@ -36,7 +35,7 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
     val cliquesMDMCP = new MDMCPResult(new SubGraph(slimGraph.transformToOptimizationGraph), mf, partitionVertexFiles(fname)).cliques
     val componentName = fname.split("\\.")(0)
-    val cliquesGreedy = IdentifiedTupleMerge.fromJsonObjectPerLineFile(mergeDirGreedy + s"/$componentName.json")
+    val cliquesGreedy = RoleMerge.fromJsonObjectPerLineFile(mergeDirGreedy + s"/$componentName.json")
     cliqueAnalyser.addResultTuples(cliquesGreedy, componentName, "greedy")
     cliqueAnalyser.addResultTuples(cliquesMDMCP, componentName, "MDMCP")
   }

@@ -20,7 +20,7 @@ abstract class ComponentWiseOptimizer(val inputGraph: Graph[Int, WUnDiEdge], res
     subGraph
   }
 
-  var chosenmerges = scala.collection.mutable.HashSet[IdentifiedTupleMerge]()
+  var chosenmerges = scala.collection.mutable.HashSet[RoleMerge]()
 
   def optimizeComponent(subGraph: SubGraph)
 

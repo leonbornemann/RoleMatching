@@ -60,7 +60,7 @@ class GreedyComponentOptimizer(c: SubGraph,log:Boolean) extends Optimizer(c) wit
       }
       assert(Math.abs(w - newWeight) < 0.0000001)
     }}
-    cliqueCover.map{case (cc,objective) => IdentifiedTupleMerge(cc,objective)}
+    cliqueCover.map{case (cc,objective) => RoleMerge(cc,objective)}
   }
 
 }

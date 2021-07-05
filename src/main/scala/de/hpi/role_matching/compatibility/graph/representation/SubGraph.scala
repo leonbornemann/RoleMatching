@@ -12,7 +12,6 @@ class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
   def toSerializableComponent = {
     val verticesOrdered = graph.nodes.map(_.value).toIndexedSeq.sorted
     val edges = collection.mutable.HashMap[Int, collection.mutable.HashMap[Int, Float]]()
-
     graph.edges.foreach(e => {
       assert(e.nodes.size==2)
       val list = e.nodes.toIndexedSeq
@@ -26,7 +25,7 @@ class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
   def getEdgeWeight(v: Int, w: Int) = {
     val edges = graph.find(v).get.incoming.filter(_.nodes.exists(_.value==w))
     if(edges.size==0){
-      logger.debug("WHAT? Edge was selected that has LARGE NEgative weight - this should never happen")
+      logger.debug("Edge was selected that does not exist - this should never happen")
     }
     assert(edges.size==1)
     edges.head.weight
@@ -34,7 +33,7 @@ class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
 
   def writePartitionVertexFile(file: File) = {
     val pr = new PrintWriter(file)
-    val verticesOrdered = graph.nodes.map(_.value).toIndexedSeq.sorted
+    graph.nodes.map(_.value).toIndexedSeq.sorted
       .foreach{case (vertex) => pr.println(s"$vertex")}
     pr.close()
   }

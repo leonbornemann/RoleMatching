@@ -97,7 +97,7 @@ class BruteForceComponentOptimizer(component: SubGraph) extends Optimizer(compon
       .map(partitioning => (partitioning.filter(_.size>0),getScore(partitioning)))
       .sortBy(-_._2)
       .head
-    best.map(vertices => IdentifiedTupleMerge(vertices.toSet,getCliqueScore(vertices)))
+    best.map(vertices => RoleMerge(vertices.toSet,getCliqueScore(vertices)))
   }
 
 }

@@ -5,8 +5,7 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, SlimGraphSet}
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
-import de.hpi.role_matching.clique_partitioning.IdentifiedTupleMerge
-import de.hpi.role_matching.evaluation.fromWikipedia.CliqueAnalyser
+import de.hpi.role_matching.clique_partitioning.RoleMerge
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
@@ -27,7 +26,7 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
   //assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
   val pr = new PrintWriter(resultFile)
-  val verticesOrdered = null
+  val verticesOrdered:VerticesOrdered = null//TODO:fix this
   val cliqueAnalyser = new CliqueAnalyser(pr, verticesOrdered, trainTimeEnd, alpha)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
@@ -38,7 +37,7 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
   }
   }
   new File(mergeDirScala).listFiles().foreach(f => {
-    val cliquesThisFile = IdentifiedTupleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath)
+    val cliquesThisFile = RoleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath)
     val componentName = "-"
     cliqueAnalyser.addResultTuples(cliquesThisFile, componentName, f.getName.split("\\.")(0))
   })

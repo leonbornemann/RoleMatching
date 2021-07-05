@@ -1,5 +1,6 @@
 package de.hpi.role_matching.clique_partitioning
 
+import de.hpi.role_matching.clique_partitioning.asad.SmartLargeComponentOptimizer
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
@@ -22,13 +23,13 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
 
   greedyMergeDir.mkdir()
 
-  def serializeMerges(merges: collection.Iterable[IdentifiedTupleMerge], pr: PrintWriter) = {
+  def serializeMerges(merges: collection.Iterable[RoleMerge], pr: PrintWriter) = {
     merges.foreach(tm => {
       tm.appendToWriter(pr,false,true)
     })
   }
 
-  def checkMergeIntegrity(merges: collection.Iterable[IdentifiedTupleMerge],component: SubGraph) = {
+  def checkMergeIntegrity(merges: collection.Iterable[RoleMerge], component: SubGraph) = {
     assert(merges.toIndexedSeq.flatMap(_.clique).size==component.nVertices)
   }
 
@@ -44,7 +45,7 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
       checkMergeIntegrity(merges,component)
     } else {
       if(component.nVertices==1){
-        IdentifiedTupleMerge(Set(component.graph.nodes.head.value),0.0).appendToWriter(prSingleVertexComponents,false,true)
+        RoleMerge(Set(component.graph.nodes.head.value),0.0).appendToWriter(prSingleVertexComponents,false,true)
       } else if(component.nVertices<8){
         //we can do brute-force easily enough
         val merges = new BruteForceComponentOptimizer(component).optimize()
@@ -65,6 +66,7 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
       } else {
         //      logger.debug(s"Skipping component with ${component.nVertices} vertices")
         val merges = new GreedyComponentOptimizer(component,true).optimize()
+        val newOptimizer = new SmartLargeComponentOptimizer(component)
         serializeMerges(merges,prGreedyLargeVertexCount)
         checkMergeIntegrity(merges,component)
       }

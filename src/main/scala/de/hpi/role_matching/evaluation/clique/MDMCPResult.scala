@@ -1,7 +1,7 @@
 package de.hpi.role_matching.evaluation.clique
 
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
-import de.hpi.role_matching.clique_partitioning.IdentifiedTupleMerge
+import de.hpi.role_matching.clique_partitioning.RoleMerge
 
 import java.io.File
 import scala.io.Source
@@ -45,6 +45,6 @@ class MDMCPResult(c: SubGraph,
   val cliques = cliqueIdToVertices
     .values
     .toIndexedSeq
-    .map(cc => IdentifiedTupleMerge(cc.toSet,getScore(cc)))
+    .map(cc => RoleMerge(cc.toSet,getScore(cc)))
 
 }

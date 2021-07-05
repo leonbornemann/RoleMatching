@@ -13,6 +13,8 @@ case class MultipleEventWeightScoreOccurrenceStats(val dsName:String,
                                               var neutral:Int=0,
                                               var weakNegative:Int=0,
                                               var strongNegative:Int=0) extends JsonWritable[MultipleEventWeightScoreOccurrenceStats]{
+  def totalCount = strongPositive+weakPositive+neutral+weakNegative+strongNegative
+
 
   def addScore(kind:String,count:Int,scoreSum:Float) = {
     kind match {

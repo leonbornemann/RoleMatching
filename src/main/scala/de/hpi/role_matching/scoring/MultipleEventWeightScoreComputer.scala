@@ -221,7 +221,7 @@ object MultipleEventWeightScoreComputer extends StrictLogging {
               println()
             }
             val score = 1.0f / (transitionHistogramForTFIDF.get(t) - 1)
-            totalScore.addScore(WEAKPOSTIVE,1,score)
+            totalScore.addScore(WEAKPOSTIVE,countPrev,score)
           }
         } else {
           isInvalid=true

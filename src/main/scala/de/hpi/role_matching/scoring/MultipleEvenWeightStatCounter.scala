@@ -37,12 +37,28 @@ class MultipleEvenWeightStatCounter(dsName:String,
     if(countPrev>0){
       val countPrevTransiton = MultipleEventWeightScoreComputer.getCountForSameValueTransition(cp.prevValueA,cp.prevValueB,countPrev,isWildcard,
         transitionSets(vertexIdFirst),transitionSets(vertexIdSecond),nonInformativeValues,nonInformativeValuesIsStrict,Some(tfIDFTableAsMap(trainTimeEnd)))
-      if(countPrevTransiton.isDefined) totalCounts.addAll(countPrevTransiton.get)
+      if(countPrevTransiton.isDefined)
+        totalCounts.addAll(countPrevTransiton.get)
     }
     if(!cp.pointInTime.isAfter(trainTimeEnd)){
       val countCurrent = MultipleEventWeightScoreComputer.getCountForTransition(cp,isWildcard,
         transitionSets(vertexIdFirst),transitionSets(vertexIdSecond),nonInformativeValues,nonInformativeValuesIsStrict,Some(tfIDFTableAsMap(trainTimeEnd)))
-      if(countCurrent.isDefined) totalCounts.addAll(countCurrent.get)
+      //assert(countCurrent.isDefined)
+      if(countCurrent.isDefined) {
+        totalCounts.addAll(countCurrent.get)
+      }
+      //if this is the last one we have more same value transitions until the end of trainTimeEnd
+      if(cp.isLast && countCurrent.isDefined && cp.pointInTime.isBefore(trainTimeEnd)){
+        val countAfterInDays = trainTimeEnd.toEpochDay - cp.pointInTime.toEpochDay - TIMESTAMP_GRANULARITY_IN_DAYS
+        if(!(countAfterInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0))
+          println()
+        assert(countAfterInDays % TIMESTAMP_GRANULARITY_IN_DAYS == 0)
+        val countAfter = countAfterInDays / TIMESTAMP_GRANULARITY_IN_DAYS
+        val result = MultipleEventWeightScoreComputer.getCountForSameValueTransition(cp.curValueA,cp.curValueB,countAfter.toInt,isWildcard,
+          transitionSets(vertexIdFirst),transitionSets(vertexIdSecond),nonInformativeValues,nonInformativeValuesIsStrict,Some(tfIDFTableAsMap(trainTimeEnd)))
+        if(result.isDefined)
+          totalCounts.addAll(result.get)
+      }
     }
     totalCounts
   }
@@ -60,6 +76,7 @@ class MultipleEvenWeightStatCounter(dsName:String,
       commonPointOfInterestIterator
         .withFilter(cp => !cp.prevPointInTime.isAfter(latestTime))
         .foreach(cp => {
+          true==true
           //val eventCounts = getEventCounts(cp, firstNode, secondNode)
           if (!cp.prevPointInTime.isAfter(graph.smallestTrainTimeEnd)) {
             val eventCountsSmallestTimeEnd = getEventCounts(cp, firstNode, secondNode,graph.smallestTrainTimeEnd)
@@ -84,6 +101,7 @@ class MultipleEvenWeightStatCounter(dsName:String,
       assert(firstNode<secondNode)
       val countsSorted = totalCountsThisEdge.toIndexedSeq.sortBy(_._1.toEpochDay)
         .map(t => EventCountsWithoutWeights.from(t._2))
+      val totalCountsDebug = totalCountsThisEdge.toIndexedSeq.sortBy(_._1.toEpochDay)
       val map = adjacencyList.getOrElseUpdate(firstNode,collection.mutable.HashMap[Int, Seq[EventCountsWithoutWeights]]())
       map.put(secondNode,countsSorted)
       processedEdges+=1

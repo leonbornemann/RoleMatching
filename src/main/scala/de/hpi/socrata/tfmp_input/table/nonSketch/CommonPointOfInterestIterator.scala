@@ -36,7 +36,7 @@ class CommonPointOfInterestIterator[A](a: TemporalFieldTrait[A], b: TemporalFiel
   override def next(): ChangePoint[A] = {
     //val curValueA = if(!curElemA.isDefined) prevElemA else curElemA.get._2
     //val curValueB = if(!curElemB.isDefined) prevElemB else curElemB.get._2
-    val toReturn = nonSketch.ChangePoint(prevElemA,prevElemB,curValueA,curValueB,curTimepoint,prevTimepoint)
+    val toReturn = nonSketch.ChangePoint(prevElemA,prevElemB,curValueA,curValueB,curTimepoint,prevTimepoint,true)
     prevTimepoint = curTimepoint
     if(curElemA.isDefined && prevTimepoint == curElemA.get._1){
       //advance A
@@ -46,6 +46,10 @@ class CommonPointOfInterestIterator[A](a: TemporalFieldTrait[A], b: TemporalFiel
       //advance B
       advanceB()
     }
+    if(!hasNext)
+      toReturn.isLast = true
+    else
+      toReturn.isLast = false
     toReturn
   }
 

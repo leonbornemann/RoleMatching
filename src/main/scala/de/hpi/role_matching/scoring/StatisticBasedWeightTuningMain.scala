@@ -18,6 +18,7 @@ object StatisticBasedWeightTuningMain extends App with StrictLogging {
   //  res.sortBy(_._1.toEpochDay).foreach(println(_))
   val TIMESTAMP_GRANULARITY_IN_DAYS = args(3).toInt
   val dataSource = args(4)
+  val statSampleSize = 1000000
   val dsName = inputFile.getName.split("\\.")(0)
   val resultFileStats = new File(resultDir.getAbsolutePath + s"/${dsName}_stats.csv")
   val resultFileGraph = new File(resultDir.getAbsolutePath + s"/${dsName}_graphSet.json")
@@ -30,7 +31,7 @@ object StatisticBasedWeightTuningMain extends App with StrictLogging {
   println(graph.adjacencyList.size)
   println(graph.adjacencyList.map(_._2.size).sum)
   val aggregator = new MultipleEvenWeightStatCounter(dsName, graph, tfIDf, TIMESTAMP_GRANULARITY_IN_DAYS, resultFileStats, resultFileGraph)
-  val counts = aggregator.aggregateEventCounts()
+  val counts = aggregator.aggregateEventCounts(statSampleSize)
   counts.values.foreach(c => {
     val dir = new File(resultDir.getAbsolutePath + s"/$dsName/")
     dir.mkdir()

@@ -10,6 +10,7 @@ import de.hpi.util.LogUtil
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import scala.collection.mutable
+import scala.util.Random
 
 class MultipleEvenWeightStatCounter(dsName:String,
                                     graph:SlimGraphWithoutWeight,
@@ -63,13 +64,14 @@ class MultipleEvenWeightStatCounter(dsName:String,
     totalCounts
   }
 
-  def aggregateEventCounts() = {
+  def aggregateEventCounts(approxStatSampleSize:Int) = {
     val totalCounts = scala.collection.mutable.HashMap[LocalDate, MultipleEventWeightScoreOccurrenceStats]()
     val trainTimeEndsWithIndex = graph.trainTimeEnds.zipWithIndex
     val latestTime = graph.trainTimeEnds.max
     var processedEdges = 0
     val statPr = new PrintWriter(statFile)
     val adjacencyList = collection.mutable.HashMap[Int, collection.mutable.HashMap[Int, Seq[EventCountsWithoutWeights]]]()
+    val nEdges = graph.adjacencyList.map(_._2.size).sum
     graph.generalEdgeIterator.foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {
       val totalCountsThisEdge = scala.collection.mutable.HashMap[LocalDate, MultipleEventWeightScoreOccurrenceStats]()
       val commonPointOfInterestIterator = new CommonPointOfInterestIterator[Any](e.v1.factLineage.toFactLineage, e.v2.factLineage.toFactLineage)
@@ -93,15 +95,20 @@ class MultipleEvenWeightStatCounter(dsName:String,
           }
         })
       //add to stats:
-      val statRows = totalCountsThisEdge.values.toIndexedSeq.map(v => edge.NewEdgeStatRow(e,v))
-      if(processedEdges==0)
-        statPr.println(statRows.head.getSchema.mkString(","))
-      statRows.sortBy(_.scoreStats.trainTimeEnd.toEpochDay).foreach(sr => statPr.println(sr.getStatRow.mkString(",")))
+      if(processedEdges==0){
+        val statRow = edge.NewEdgeStatRow(e,totalCountsThisEdge.head._2)
+        statPr.println(statRow.getSchema.mkString(","))
+      }
+      if(nEdges < approxStatSampleSize || Random.nextDouble() < approxStatSampleSize / nEdges.toDouble){
+        val statRows = totalCountsThisEdge.values.toIndexedSeq.map(v => edge.NewEdgeStatRow(e,v))
+        if(processedEdges==0)
+          statPr.println(statRows.head.getSchema.mkString(","))
+        statRows.sortBy(_.scoreStats.trainTimeEnd.toEpochDay).foreach(sr => statPr.println(sr.getStatRow.mkString(",")))
+      }
       //add to SlimGraphSet:
       assert(firstNode<secondNode)
       val countsSorted = totalCountsThisEdge.toIndexedSeq.sortBy(_._1.toEpochDay)
         .map(t => EventCountsWithoutWeights.from(t._2))
-      val totalCountsDebug = totalCountsThisEdge.toIndexedSeq.sortBy(_._1.toEpochDay)
       val map = adjacencyList.getOrElseUpdate(firstNode,collection.mutable.HashMap[Int, Seq[EventCountsWithoutWeights]]())
       map.put(secondNode,countsSorted)
       processedEdges+=1

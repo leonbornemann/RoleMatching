@@ -64,7 +64,7 @@ class MultipleEvenWeightStatCounter(dsName:String,
     totalCounts
   }
 
-  def aggregateEventCounts(approxStatSampleSize:Int) = {
+  def aggregateEventCounts(evaluationStepDurationInDays:Int,approxStatSampleSize:Int) = {
     val totalCounts = scala.collection.mutable.HashMap[LocalDate, MultipleEventWeightScoreOccurrenceStats]()
     val trainTimeEndsWithIndex = graph.trainTimeEnds.zipWithIndex
     val latestTime = graph.trainTimeEnds.max
@@ -96,13 +96,11 @@ class MultipleEvenWeightStatCounter(dsName:String,
         })
       //add to stats:
       if(processedEdges==0){
-        val statRow = edge.NewEdgeStatRow(e,totalCountsThisEdge.head._2)
+        val statRow = edge.NewEdgeStatRow(e,totalCountsThisEdge.head._2,evaluationStepDurationInDays)
         statPr.println(statRow.getSchema.mkString(","))
       }
       if(nEdges < approxStatSampleSize || Random.nextDouble() < approxStatSampleSize / nEdges.toDouble){
-        val statRows = totalCountsThisEdge.values.toIndexedSeq.map(v => edge.NewEdgeStatRow(e,v))
-        if(processedEdges==0)
-          statPr.println(statRows.head.getSchema.mkString(","))
+        val statRows = totalCountsThisEdge.values.toIndexedSeq.map(v => edge.NewEdgeStatRow(e,v,evaluationStepDurationInDays))
         statRows.sortBy(_.scoreStats.trainTimeEnd.toEpochDay).foreach(sr => statPr.println(sr.getStatRow.mkString(",")))
       }
       //add to SlimGraphSet:

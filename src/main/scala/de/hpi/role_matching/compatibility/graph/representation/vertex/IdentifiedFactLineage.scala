@@ -11,6 +11,8 @@ import de.hpi.util.TableFormatter
 
 case class IdentifiedFactLineage(id:String, factLineage: FactLineageWithHashMap) extends JsonWritable[IdentifiedFactLineage] {
 
+  def csvSafeID = id.replace('\r',' ').replace('\n',' ').replace(',',' ')
+
   def isNumeric = {
     factLineage.lineage.values.forall(v => FactLineage.isWildcard(v) || GLOBAL_CONFIG.nonInformativeValues.contains(v) || v.toString.matches(digitRegex))
   }

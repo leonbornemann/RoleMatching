@@ -16,8 +16,8 @@ case class GeneralEdge(v1:IdentifiedFactLineage, v2:IdentifiedFactLineage) exten
                            lineageCount:Int) = {
     edge.GeneralEdgeStatRow(granularityInDays,
       trainGraphConfig,
-      v1.id,
-      v2.id,
+      v1.csvSafeID,
+      v2.csvSafeID,
       v1.factLineage.toFactLineage,
       v2.factLineage.toFactLineage,
       nonInformativeValues,

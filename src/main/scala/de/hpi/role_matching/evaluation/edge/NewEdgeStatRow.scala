@@ -35,7 +35,7 @@ case class NewEdgeStatRow(e: GeneralEdge,
   }
 
   def getStatRow = {
-    Seq(e.v1.id, e.v2.id,
+    Seq(e.v1.csvSafeID, e.v2.csvSafeID,
       scoreStats.trainTimeEnd, remainsValidFullTimeSpan, isInteresting, interestingnessEvidence,
       evalEndDateOneTimeUnitAfterTrain,remainsValidOneTimeUnitAfterTrain,isInterestingOneTimeUnitAfterTrain,interestingnessEvidenceOneTimeUnitAfterTrain,
       scoreStats.strongPositive, scoreStats.weakPositive, scoreStats.neutral, scoreStats.weakNegative, scoreStats.strongNegative) ++ scoreStats.summedScores.get

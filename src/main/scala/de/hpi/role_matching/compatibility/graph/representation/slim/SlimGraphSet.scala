@@ -14,6 +14,27 @@ case class SlimGraphSet(verticesOrdered: IndexedSeq[String],
                         trainTimeEnds: Seq[LocalDate],
                         adjacencyList: collection.Map[Int, collection.Map[Int, Seq[EventCountsWithoutWeights]]]) extends JsonWritable[SLimGraph] with StrictLogging {
 
+  def isValidEdge(v1: Int, v2: Int, vertexLookupMap: VertexLookupMap): Boolean = {
+    vertexLookupMap.posToFactLineage(v1).tryMergeWithConsistent(vertexLookupMap.posToFactLineage(v2)).isDefined
+  }
+
+  def getMaxRecallSettingOptimizationGraph(trainTimeEnd: LocalDate, vertexLookupMap:VertexLookupMap) = {
+    val newVertices = scala.collection.mutable.HashSet[Int]() ++ (0 until verticesOrdered.size)
+    assert(trainTimeEnds.contains(trainTimeEnd))
+    val indexOfTrainTimeEnd = trainTimeEnds.indexOf(trainTimeEnd)
+    val newEdges = adjacencyList.flatMap{case (v1,adjListThisNode) => {
+      adjListThisNode
+        .withFilter{case (_,eventCounts) => eventCounts.size>indexOfTrainTimeEnd}
+        .map{case (v2,_) => {
+          val score = if(isValidEdge(v1,v2,vertexLookupMap)) 1.0f else 0.0f
+          WUnDiEdge(v1,v2)(score)
+        }}
+    }}
+    val graph = Graph.from(newVertices,newEdges)
+    graph
+  }
+
+
   def transformToOptimizationGraph(trainTimeEnd: LocalDate, weightConfig: ScoreConfig) = {
     val newVertices = scala.collection.mutable.HashSet[Int]() ++ (0 until verticesOrdered.size)
     assert(trainTimeEnds.contains(trainTimeEnd))

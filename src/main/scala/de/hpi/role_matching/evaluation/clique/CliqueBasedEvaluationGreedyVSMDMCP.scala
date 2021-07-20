@@ -5,7 +5,7 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import de.hpi.role_matching.compatibility.graph.representation.slim.SLimGraph
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
-import de.hpi.role_matching.clique_partitioning.RoleMerge
+import de.hpi.role_matching.clique_partitioning.{RoleMerge, ScoreConfig}
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
@@ -23,14 +23,14 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_START = timeStart
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_END = timeEnd
   val resultFile = args(8)
-  val alpha = args(9).toFloat
+  val scoreConfig = ScoreConfig.fromJsonFile(args(9))
   val slimGraph = SLimGraph.fromJsonFile(graphFile)
   val verticesOrdered = VerticesOrdered.fromJsonFile(verticesOrderedFile)
   val mergeFilesFromMDMCP = mergeDir.listFiles().map(f => (f.getName, f)).toMap
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
   //assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
   val pr = new PrintWriter(resultFile)
-  val cliqueAnalyser = new CliqueAnalyser(pr, verticesOrdered, trainTimeEnd,alpha)
+  val cliqueAnalyser = new CliqueAnalyser(pr, verticesOrdered, trainTimeEnd,scoreConfig)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
     val cliquesMDMCP = new MDMCPResult(new SubGraph(slimGraph.transformToOptimizationGraph), mf, partitionVertexFiles(fname)).cliques

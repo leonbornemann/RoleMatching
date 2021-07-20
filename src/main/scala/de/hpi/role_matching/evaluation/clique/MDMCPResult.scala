@@ -6,7 +6,7 @@ import de.hpi.role_matching.clique_partitioning.RoleMerge
 import java.io.File
 import scala.io.Source
 
-class MDMCPResult(c: SubGraph,
+class MDMCPResult(subGraph: SubGraph,
                   resultFile: File,
                   partitionVertexFile: File) {
 
@@ -35,7 +35,7 @@ class MDMCPResult(c: SubGraph,
       val v = clique(i)
       for (j <- (i+1) until clique.size){
         val w = clique(j)
-        val weight = c.getEdgeWeight(v,w)
+        val weight = subGraph.getEdgeWeight(v,w)
         score+=weight
       }
     }

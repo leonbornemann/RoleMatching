@@ -5,7 +5,7 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, SlimGraphSet}
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
-import de.hpi.role_matching.clique_partitioning.RoleMerge
+import de.hpi.role_matching.clique_partitioning.{RoleMerge, ScoreConfig}
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
@@ -18,22 +18,22 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
   val graphFile = args(3)
   val source = args(5)
   val trainTimeEnd = LocalDate.parse(args(6))
-  val alpha = args(7).toFloat
+  val scoreConfig = ScoreConfig.fromJsonFile(args(7))
   GLOBAL_CONFIG.setDatesForDataSource(source)
   val resultFile = args(8)
   val graphSet = SlimGraphSet.fromJsonFile(graphFile)
+  val optimizationGraph = graphSet.transformToOptimizationGraph(trainTimeEnd,scoreConfig)
   val mergeFilesFromMDMCP = mergeDirMDMCP.listFiles().map(f => (f.getName, f)).toMap
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
   //assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
   val pr = new PrintWriter(resultFile)
   val verticesOrdered:VerticesOrdered = null//TODO:fix this
-  val cliqueAnalyser = new CliqueAnalyser(pr, verticesOrdered, trainTimeEnd, alpha)
+  val cliqueAnalyser = new CliqueAnalyser(pr, verticesOrdered, trainTimeEnd, scoreConfig)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
-    assert(false) //TODO: fix this!
-//    val cliquesMDMCP = new MDMCPResult(new SubGraph(slimGraph.transformToOptimizationGraph), mf, partitionVertexFiles(fname)).cliques
-//    val componentName = fname.split("\\.")(0)
-//    cliqueAnalyser.addResultTuples(cliquesMDMCP, componentName, "MDMCP")
+    val cliquesMDMCP = new MDMCPResult(new SubGraph(optimizationGraph), mf, partitionVertexFiles(fname)).cliques
+    val componentName = fname.split("\\.")(0)
+    cliqueAnalyser.addResultTuples(cliquesMDMCP, componentName, "MDMCP")
   }
   }
   new File(mergeDirScala).listFiles().foreach(f => {

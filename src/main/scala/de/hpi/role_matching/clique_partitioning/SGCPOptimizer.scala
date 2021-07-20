@@ -66,7 +66,7 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
       } else {
         //      logger.debug(s"Skipping component with ${component.nVertices} vertices")
         val merges = new GreedyComponentOptimizer(component,true).optimize()
-        val newOptimizer = new SmartLargeComponentOptimizer(component)
+        //val newOptimizer = new SmartLargeComponentOptimizer(component)
         serializeMerges(merges,prGreedyLargeVertexCount)
         checkMergeIntegrity(merges,component)
       }

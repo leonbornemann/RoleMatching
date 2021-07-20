@@ -2,13 +2,14 @@ package de.hpi.role_matching.clique_partitioning
 
 import de.hpi.role_matching.clique_partitioning.SparseGraphCliquePartitioningMain.args
 import de.hpi.role_matching.scoring.EventCountsWithoutWeights
+import de.hpi.socrata.{JsonReadable, JsonWritable}
 
 case class ScoreConfig(alpha:Float,
                        strongPositiveWeight:Float,
                        weakPositiveWeight:Float,
                        neutralWeight:Float=0.0f,
                        weakNegativeWeight:Float,
-                       strongNegativeWeight:Float) {
+                       strongNegativeWeight:Float) extends JsonWritable[ScoreConfig]{
 
   assert(weakNegativeWeight<0)
   assert(strongNegativeWeight<0)
@@ -26,7 +27,7 @@ case class ScoreConfig(alpha:Float,
 
 }
 
-object ScoreConfig {
+object ScoreConfig extends JsonReadable[ScoreConfig]{
   def fromCLIArguments(weighStr: String,alpahStr:String) = {
     val weights = weighStr.split(";").map(_.toFloat)
     assert(weights.size==5)

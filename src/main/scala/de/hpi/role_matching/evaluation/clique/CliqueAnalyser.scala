@@ -1,13 +1,13 @@
 package de.hpi.role_matching.evaluation.clique
 
-import de.hpi.role_matching.clique_partitioning.RoleMerge
+import de.hpi.role_matching.clique_partitioning.{RoleMerge, ScoreConfig}
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
 import de.hpi.role_matching.evaluation.StatComputer
 
 import java.io.PrintWriter
 import java.time.LocalDate
 
-case class CliqueAnalyser(pr: PrintWriter, verticesOrdered: VerticesOrdered, trainTimeEnd: LocalDate, alpha: Float) extends StatComputer {
+case class CliqueAnalyser(pr: PrintWriter, verticesOrdered: VerticesOrdered, trainTimeEnd: LocalDate, scoreConfig: ScoreConfig) extends StatComputer {
 
   def serializeSchema() = {
     pr.println("ComponentID,Method,cliqueID,cliqueSize,remainsValidPercentage,avgEvidencePerEdge,fractionOfVerticesWithEvidence,score,alpha") //cliqueID is specific per method
@@ -40,7 +40,7 @@ case class CliqueAnalyser(pr: PrintWriter, verticesOrdered: VerticesOrdered, tra
     val avgEvidencePerEdge = evidenceCountTotal / edgesTotal.toDouble
     val verticesWithAtLeastOneEdgeWithEvidence = hasEvidence.values.filter(identity).size
     val fractionOfVerticesWithEvidence = verticesWithAtLeastOneEdgeWithEvidence / vertices.size.toDouble
-    pr.println(s"$componentID,$method,$cliqueID,${c.clique.size},$remainsValidPercentage,$avgEvidencePerEdge,$fractionOfVerticesWithEvidence,${c.cliqueScore},$alpha")
+    pr.println(s"$componentID,$method,$cliqueID,${c.clique.size},$remainsValidPercentage,$avgEvidencePerEdge,$fractionOfVerticesWithEvidence,${c.cliqueScore},${scoreConfig.alpha}")
   }
 
   def addResultTuples(cliquesGreedy: collection.Seq[RoleMerge], componentID: String, method: String) = {

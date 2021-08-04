@@ -19,7 +19,7 @@ object SparseGraphCliquePartitioningMain extends App with StrictLogging{
   val roleMergeResultDir = new File(resultRootDir + resultDirName)
   val weightConfigDir = new File(resultRootDir + s"/weightSettings/")
   val mdmcpExportDir = new File(args(7) + resultDirName)
-  val vertexLookupDirForPartitions = new File(args(7) + resultDirName)
+  //val vertexLookupDirForPartitions = new File(args(7) + resultDirName)
   val greedyMergeDir = new File(args(8) + resultDirName)
   val vertexLookupMap = if(maxRecallSetting) Some(VertexLookupMap.fromJsonFile(args(9))) else None
   var graph = SlimGraphSet.fromJsonFile(inputGraphFile)
@@ -31,9 +31,9 @@ object SparseGraphCliquePartitioningMain extends App with StrictLogging{
   }
   graph = null //might help out the garbage collector
 
-  Seq(roleMergeResultDir,mdmcpExportDir,vertexLookupDirForPartitions,greedyMergeDir,weightConfigDir).foreach(_.mkdirs())
+  Seq(roleMergeResultDir,mdmcpExportDir,greedyMergeDir,weightConfigDir).foreach(_.mkdirs())
   weightConfig.toJsonFile(new File(weightConfigDir.getAbsolutePath + s"/$resultDirName.json"))
-  val optimizer = new SGCPOptimizer(optimizationGraph, roleMergeResultDir, mdmcpExportDir, vertexLookupDirForPartitions, greedyMergeDir,runGreedyOnly)
+  val optimizer = new SGCPOptimizer(optimizationGraph, roleMergeResultDir, mdmcpExportDir, greedyMergeDir,runGreedyOnly)
   optimizer.runComponentWiseOptimization()
   //optimizer.printComponentSizeHistogram()
 }

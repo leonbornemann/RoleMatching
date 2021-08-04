@@ -10,7 +10,7 @@ import java.io.{File, PrintWriter}
 class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
                     resultDir:File,
                     mdmcpExportDir:File,
-                    vertexLookupDirForPartitions:File,
+                    //vertexLookupDirForPartitions:File,
                     greedyMergeDir:File,
                     useGreedyOnly:Boolean=false
                      ) extends ComponentWiseOptimizer(graph,resultDir) {

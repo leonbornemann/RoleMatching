@@ -3,6 +3,7 @@ package de.hpi.role_matching.scoring
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.socrata.tfmp_input.table.nonSketch.{ChangePoint, CommonPointOfInterestIterator}
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.compatibility.graph.representation.simple.GeneralEdge
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SlimGraphSet, SlimGraphWithoutWeight}
 import de.hpi.role_matching.evaluation.edge
 import de.hpi.util.LogUtil

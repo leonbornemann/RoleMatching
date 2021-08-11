@@ -10,7 +10,7 @@ import java.io.{File, PrintWriter}
 class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
                     resultDir:File,
                     mdmcpExportDir:File,
-                    //vertexLookupDirForPartitions:File,
+                    vertexLookupDirForPartitions:File,
                     greedyMergeDir:File,
                     useGreedyOnly:Boolean=false
                      ) extends ComponentWiseOptimizer(graph,resultDir) {
@@ -56,7 +56,7 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
         //      logger.debug(s"Handling Component s$name")
         //use related work MDMCP approach
         component.toMDMCPInputFile(new File(mdmcpExportDir.getAbsolutePath + s"/$name.txt"))
-        //For debug purposes:      component.writePartitionVertexFile(new File(vertexLookupDirForPartitions.getAbsolutePath +  s"/$name.txt"))
+        component.writePartitionVertexFile(new File(vertexLookupDirForPartitions.getAbsolutePath +  s"/$name.txt"))
         //      val greedyRes = new GreedyComponentOptimizer(component,true).optimize()
         //      val greedyFileForComponent = new File(greedyMergeDir.getAbsolutePath + s"/$name.json")
         //      val pr = new PrintWriter(greedyFileForComponent)

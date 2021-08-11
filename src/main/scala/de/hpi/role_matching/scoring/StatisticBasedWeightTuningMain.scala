@@ -19,7 +19,7 @@ object StatisticBasedWeightTuningMain extends App with StrictLogging {
   val TIMESTAMP_GRANULARITY_IN_DAYS = args(3).toInt
   val dataSource = args(4)
   val statSampleSize = 1000000
-  val evaluationStepDurationInDays:Int = if(dataSource=="wikipedia") 364 else 30
+  val evaluationStepDurationInDays:Int = GLOBAL_CONFIG.getEvaluationStepDurationInDays(dataSource)
   val dsName = inputFile.getName.split("\\.")(0)
   val resultFileStats = new File(resultDir.getAbsolutePath + s"/${dsName}_stats.csv")
   val resultFileGraph = new File(resultDir.getAbsolutePath + s"/${dsName}_graphSet.json")

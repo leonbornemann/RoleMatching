@@ -3,7 +3,7 @@ package de.hpi.role_matching.evaluation.clique
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
-import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, SlimGraphSet}
+import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, SlimGraphSet, VertexLookupMap}
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
 import de.hpi.role_matching.clique_partitioning.{RoleMerge, ScoreConfig}
 
@@ -16,19 +16,21 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
   val mergeDirMDMCP = new File(args(1))
   val mergeDirMappingDir = new File(args(2))
   val graphFile = args(3)
+  val lookupMapFile = new File(args(4))
   val source = args(5)
   val trainTimeEnd = LocalDate.parse(args(6))
   val scoreConfig = ScoreConfig.fromJsonFile(args(7))
   GLOBAL_CONFIG.setDatesForDataSource(source)
-  val resultFile = args(8)
+  val resultDir = args(8)
   val graphSet = SlimGraphSet.fromJsonFile(graphFile)
   val optimizationGraph = graphSet.transformToOptimizationGraph(trainTimeEnd,scoreConfig)
   val mergeFilesFromMDMCP = mergeDirMDMCP.listFiles().map(f => (f.getName, f)).toMap
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
-  //assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
-  val pr = new PrintWriter(resultFile)
-  val verticesOrdered:VerticesOrdered = null//TODO:fix this
-  val cliqueAnalyser = new CliqueAnalyser(pr, verticesOrdered, trainTimeEnd, scoreConfig)
+  assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
+  val vertexLookupMap = VertexLookupMap.fromJsonFile(lookupMapFile.getAbsolutePath)
+  val pr = new PrintWriter(resultDir + "/cliques.csv")
+  val prEdges = new PrintWriter(resultDir + "/edges.csv")
+  val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexLookupMap, trainTimeEnd, scoreConfig)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
     val cliquesMDMCP = new MDMCPResult(new SubGraph(optimizationGraph), mf, partitionVertexFiles(fname)).cliques
@@ -42,4 +44,5 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
     cliqueAnalyser.addResultTuples(cliquesThisFile, componentName, f.getName.split("\\.")(0))
   })
   pr.close()
+  prEdges.close()
 }

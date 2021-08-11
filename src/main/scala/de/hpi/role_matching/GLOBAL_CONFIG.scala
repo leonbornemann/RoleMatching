@@ -8,6 +8,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 object GLOBAL_CONFIG extends StrictLogging{
+  def getEvaluationStepDurationInDays(dataSource: String): Int = if(dataSource=="wikipedia") 364 else 30
 
   var nonInformativeValues: Set[Any] = Set("", null)
 

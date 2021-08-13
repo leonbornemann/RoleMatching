@@ -47,7 +47,7 @@ case class CliqueAnalyser(prCliques: PrintWriter,
           validEdges += 1
           remainsValid=true
         }
-        prEdges.println(s"$componentID,$method,$cliqueID,${c.clique.size},$i,$j,$remainsValid,$evidenceInThisEdge") //TODO: compute score?
+        prEdges.println(s"$componentID,$method,$cliqueID,${c.clique.size},${identifiedVertices(i).csvSafeID},${identifiedVertices(i).csvSafeID},$remainsValid,$evidenceInThisEdge") //TODO: compute score?
       }
     }
     val verticesWithAtLeastOneEdgeWithEvidence = hasEvidence.values.filter(identity).size

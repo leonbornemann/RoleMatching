@@ -40,7 +40,7 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
 //      component.toSerializableComponent.toJsonFile(new File(s"debug_components/$name.json"))
 //    }
     if(useGreedyOnly){
-      val merges = new GreedyComponentOptimizer(component,true).optimize()
+      val merges = new GreedyComponentOptimizer(component,false).optimize()
       serializeMerges(merges,prGreedyLargeVertexCount)
       checkMergeIntegrity(merges,component)
     } else {
@@ -65,7 +65,7 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
         //      greedyRes
       } else {
         //      logger.debug(s"Skipping component with ${component.nVertices} vertices")
-        val merges = new GreedyComponentOptimizer(component,true).optimize()
+        val merges = new GreedyComponentOptimizer(component,false).optimize()
         //val newOptimizer = new SmartLargeComponentOptimizer(component)
         serializeMerges(merges,prGreedyLargeVertexCount)
         checkMergeIntegrity(merges,component)

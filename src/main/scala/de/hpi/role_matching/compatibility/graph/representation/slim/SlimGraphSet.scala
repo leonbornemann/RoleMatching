@@ -34,7 +34,6 @@ case class SlimGraphSet(verticesOrdered: IndexedSeq[String],
     graph
   }
 
-
   def transformToOptimizationGraph(trainTimeEnd: LocalDate, weightConfig: ScoreConfig) = {
     val newVertices = scala.collection.mutable.HashSet[Int]() ++ (0 until verticesOrdered.size)
     assert(trainTimeEnds.contains(trainTimeEnd))

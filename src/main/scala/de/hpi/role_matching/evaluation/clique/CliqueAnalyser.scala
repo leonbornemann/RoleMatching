@@ -15,7 +15,7 @@ case class CliqueAnalyser(prCliques: PrintWriter,
                           prEdges:PrintWriter,
                           vertexLookupMap: VertexLookupMap,
                           trainTimeEnd: LocalDate,
-                          scoreConfig: ScoreConfig) extends StatComputer {
+                          scoreConfig: Option[ScoreConfig]) extends StatComputer {
 
   def serializeSchema() = {
     prCliques.println("ComponentID,Method,cliqueID,cliqueSize,edgesTotal,validEdges,totalEvidence,fractionOfVerticesWithEvidence,score,alpha") //cliqueID is specific per method
@@ -52,7 +52,7 @@ case class CliqueAnalyser(prCliques: PrintWriter,
     }
     val verticesWithAtLeastOneEdgeWithEvidence = hasEvidence.values.filter(identity).size
     val fractionOfVerticesWithEvidence = verticesWithAtLeastOneEdgeWithEvidence / vertices.size.toDouble
-    prCliques.println(s"$componentID,$method,$cliqueID,${c.clique.size},$edgesTotal,$validEdges,$evidenceCountTotal,$fractionOfVerticesWithEvidence,${c.cliqueScore},${scoreConfig.alpha}")
+    prCliques.println(s"$componentID,$method,$cliqueID,${c.clique.size},$edgesTotal,$validEdges,$evidenceCountTotal,$fractionOfVerticesWithEvidence,${c.cliqueScore},${scoreConfig.map(_.alpha).getOrElse(0.0f)}")
   }
 
   def addResultTuples(cliquesGreedy: collection.Seq[RoleMerge], componentID: String, method: String) = {

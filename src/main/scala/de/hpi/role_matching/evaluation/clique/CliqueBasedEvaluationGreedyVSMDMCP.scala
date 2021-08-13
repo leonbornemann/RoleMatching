@@ -6,11 +6,14 @@ import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, VertexLookupMap}
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
 import de.hpi.role_matching.clique_partitioning.{RoleMerge, ScoreConfig}
+import de.hpi.role_matching.evaluation.clique.CliqueBasedEvaluationMain.args
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
+  ScoreConfig(0.1f,1.0f,0.1f,0,-0.1f,-1.0f).toJsonFile(new File("lol.txt"))
+  assert(false) //still uses slim graph instead of the new data structures
   logger.debug(s"Called with ${args.toIndexedSeq}")
   val mergeDirGreedy = args(0)
   val mergeDir = new File(args(1))
@@ -23,7 +26,7 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_START = timeStart
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_END = timeEnd
   val resultDir = args(8)
-  val scoreConfig = ScoreConfig.fromJsonFile(args(9))
+  val scoreConfig = if(args(9) == "maxRecall") None else Some(ScoreConfig.fromJsonFile(args(9)))
   val slimGraph = SLimGraph.fromJsonFile(graphFile)
   val vertexlookupMap = VertexLookupMap.fromJsonFile(vertexLookupFile)
   val mergeFilesFromMDMCP = mergeDir.listFiles().map(f => (f.getName, f)).toMap

@@ -11,7 +11,7 @@ object SparseGraphCliquePartitioningMain extends App with StrictLogging{
   logger.debug(s"Called with ${args.toIndexedSeq}")
   val inputGraphFile = args(0)
   val trainTimeEnd = LocalDate.parse(args(1))
-  val weightConfig = if(args(2)=="max_recall") Some(ScoreConfig.fromJsonFile(args(2))) else None
+  val weightConfig = if(args(2)=="max_recall") None else Some(ScoreConfig.fromJsonFile(args(2)))
   val runGreedyOnly = args(3).toBoolean
   val maxRecallSetting = args(2)=="max_recall"
   private val resultDirName = if(!maxRecallSetting) s"/alpha_${weightConfig.get.alpha}/" else "max_recall"

@@ -73,11 +73,11 @@ class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
     pr.close()
   }
 
-  val scoreRangeIntMin = -1000.0
-  val scoreRangeIntMax = 1000.0
-  val scoreRangeDoubleMin = -1.0.toFloat
-  val scoreRangeDoubleMax = 1.0.toFloat
-  val edgeNotPResentValue = -10000
+  val scoreRangeIntMin = -10000.0
+  val scoreRangeIntMax = 10000.0
+  val scoreRangeDoubleMin = -10.0.toFloat
+  val scoreRangeDoubleMax = 10.0.toFloat
+  val edgeNotPResentValue = -1000000
 
   //Tranfer x from scale [a,b] to y in scale [c,d]
   // (x-a) / (b-a) = (y-c) / (d-c)

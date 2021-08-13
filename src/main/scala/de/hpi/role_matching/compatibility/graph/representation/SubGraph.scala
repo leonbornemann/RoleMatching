@@ -90,6 +90,8 @@ class SubGraph(val graph: Graph[Int, WUnDiEdge]) extends StrictLogging{
   }
 
   def getScoreAsInt(weight:Float):Int = {
+    if(!(weight==Float.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax))
+      println(weight)
     assert( weight==Float.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax)
     val scoreAsInt = if(weight==Float.MinValue) edgeNotPResentValue else scaleInterpolation(weight,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
     scoreAsInt

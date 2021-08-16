@@ -9,7 +9,8 @@ case class ScoreConfig(alpha:Float,
                        weakPositiveWeight:Float,
                        neutralWeight:Float=0.0f,
                        weakNegativeWeight:Float,
-                       strongNegativeWeight:Float) extends JsonWritable[ScoreConfig]{
+                       strongNegativeWeight:Float,
+                       eventCountInLineage:Int) extends JsonWritable[ScoreConfig]{
 
   assert(weakNegativeWeight<0)
   assert(strongNegativeWeight<0)
@@ -17,21 +18,20 @@ case class ScoreConfig(alpha:Float,
   assert(weakPositiveWeight>0)
 
   def computeScore(eventCounts: EventCountsWithoutWeights) = {
-    alpha +
-      strongPositiveWeight*eventCounts.strongPositive +
-      weakPositiveWeight*eventCounts.weakPositive +
-      neutralWeight*eventCounts.neutral +
-      weakNegativeWeight*eventCounts.weakNegative +
-      strongNegativeWeight*eventCounts.strongNegative
+    val res = alpha +
+      strongPositiveWeight*eventCounts.strongPositive / eventCountInLineage +
+      weakPositiveWeight*eventCounts.weakPositive / eventCountInLineage +
+      neutralWeight*eventCounts.neutral / eventCountInLineage +
+      weakNegativeWeight*eventCounts.weakNegative / eventCountInLineage +
+      strongNegativeWeight*eventCounts.strongNegative / eventCountInLineage
+    if(res >10 || res < -10) {
+      println()
+    }
+    res
   }
 
 }
 
 object ScoreConfig extends JsonReadable[ScoreConfig]{
-  def fromCLIArguments(weighStr: String,alpahStr:String) = {
-    val weights = weighStr.split(";").map(_.toFloat)
-    assert(weights.size==5)
-    ScoreConfig(alpahStr.toFloat,weights(0),weights(1),weights(2),weights(3),weights(4))
-  }
 
 }

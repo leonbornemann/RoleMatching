@@ -12,7 +12,7 @@ import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
-  ScoreConfig(0.1f,1.0f,0.1f,0,-0.1f,-1.0f).toJsonFile(new File("lol.txt"))
+  ScoreConfig(0.1f,1.0f,0.1f,0,-0.1f,-1.0f,364).toJsonFile(new File("lol.txt"))
   assert(false) //still uses slim graph instead of the new data structures
   logger.debug(s"Called with ${args.toIndexedSeq}")
   val mergeDirGreedy = args(0)

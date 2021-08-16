@@ -38,7 +38,8 @@ class NewSubgraph(val graph: Graph[Int, DefaultWeightedEdge]) extends EdgeWeight
         val weights = Seq(0) ++ ((i+1) until verticesOrdered.size).map{ j =>
           val w = verticesOrdered(j)
           val weight:Double = neighbours.getOrElse(w,Double.MinValue)
-          getScoreAsInt(weight)
+          val newWeight = getScoreAsInt(weight)
+          newWeight
         }
         pr.println(weights.mkString("  "))
       }}
@@ -49,6 +50,7 @@ class NewSubgraph(val graph: Graph[Int, DefaultWeightedEdge]) extends EdgeWeight
 
   def componentName = {
     val s = graph.vertexSet().asScala.min
+    s
   }
 
 }

@@ -3,9 +3,11 @@ package de.hpi.role_matching.clique_partitioning
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 
-class BruteForceComponentOptimizer(component: SubGraph) extends Optimizer(component) with StrictLogging{
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-  val verticesOrdered = component.graph.nodes.map(_.value).toIndexedSeq.sorted
+class BruteForceComponentOptimizer(component: NewSubgraph) extends Optimizer(component) with StrictLogging{
+
+  val verticesOrdered = component.graph.vertexSet().asScala.toIndexedSeq.sorted
   var allPartitions = collection.mutable.ArrayBuffer[collection.IndexedSeq[collection.IndexedSeq[Int]]]()
 
 

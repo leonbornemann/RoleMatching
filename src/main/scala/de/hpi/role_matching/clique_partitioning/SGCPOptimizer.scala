@@ -2,12 +2,12 @@ package de.hpi.role_matching.clique_partitioning
 
 import de.hpi.role_matching.clique_partitioning.asad.SmartLargeComponentOptimizer
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
-import scalax.collection.Graph
-import scalax.collection.edge.WUnDiEdge
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultWeightedEdge
 
 import java.io.{File, PrintWriter}
 
-class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
+class SGCPOptimizer(graph: Graph[Int, DefaultWeightedEdge],
                     resultDir:File,
                     mdmcpExportDir:File,
                     vertexLookupDirForPartitions:File,
@@ -19,8 +19,6 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
   val prGreedyLargeVertexCount = new PrintWriter(s"${resultDir.getAbsolutePath}/greedyLargeVertexCountResult.json")
   val prSingleVertexComponents = new PrintWriter(s"${resultDir.getAbsolutePath}/sinlgeVertexComponents.json")
 
-  def componentIterator() = new ComponentIterator(graph)
-
   greedyMergeDir.mkdir()
 
   def serializeMerges(merges: collection.Iterable[RoleMerge], pr: PrintWriter) = {
@@ -29,11 +27,11 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
     })
   }
 
-  def checkMergeIntegrity(merges: collection.Iterable[RoleMerge], component: SubGraph) = {
+  def checkMergeIntegrity(merges: collection.Iterable[RoleMerge], component: NewSubgraph) = {
     assert(merges.toIndexedSeq.flatMap(_.clique).size==component.nVertices)
   }
 
-  override def optimizeComponent(component: SubGraph) = {
+  override def optimizeComponent(component:NewSubgraph) = {
     val name = component.componentName
     //new File("debug_components/").mkdir()
 //    if(component.componentName==31408){
@@ -45,7 +43,7 @@ class SGCPOptimizer(graph: Graph[Int, WUnDiEdge],
       checkMergeIntegrity(merges,component)
     } else {
       if(component.nVertices==1){
-        RoleMerge(Set(component.graph.nodes.head.value),0.0).appendToWriter(prSingleVertexComponents,false,true)
+        RoleMerge(Set(component.graph.vertexSet().iterator.next()),0.0).appendToWriter(prSingleVertexComponents,false,true)
       } else if(component.nVertices<8){
         //we can do brute-force easily enough
         val merges = new BruteForceComponentOptimizer(component).optimize()

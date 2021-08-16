@@ -3,9 +3,9 @@ package de.hpi.role_matching.evaluation.clique
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
-import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, VertexLookupMap}
+import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, SlimGraphSet, VertexLookupMap}
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
-import de.hpi.role_matching.clique_partitioning.{RoleMerge, ScoreConfig}
+import de.hpi.role_matching.clique_partitioning.{NewSubgraph, RoleMerge, ScoreConfig}
 import de.hpi.role_matching.evaluation.clique.CliqueBasedEvaluationMain.args
 
 import java.io.{File, PrintWriter}
@@ -27,7 +27,7 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_END = timeEnd
   val resultDir = args(8)
   val scoreConfig = if(args(9) == "maxRecall") None else Some(ScoreConfig.fromJsonFile(args(9)))
-  val slimGraph = SLimGraph.fromJsonFile(graphFile)
+  val slimGraph = SlimGraphSet.fromJsonFile(graphFile)
   val vertexlookupMap = VertexLookupMap.fromJsonFile(vertexLookupFile)
   val mergeFilesFromMDMCP = mergeDir.listFiles().map(f => (f.getName, f)).toMap
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
@@ -37,7 +37,7 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
   val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexlookupMap, trainTimeEnd,scoreConfig)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
-    val cliquesMDMCP = new MDMCPResult(new SubGraph(slimGraph.transformToOptimizationGraph), mf, partitionVertexFiles(fname)).cliques
+    val cliquesMDMCP = new MDMCPResult(new NewSubgraph(slimGraph.transformToOptimizationGraph(trainTimeEnd,scoreConfig.get)), mf, partitionVertexFiles(fname)).cliques
     val componentName = fname.split("\\.")(0)
     val cliquesGreedy = RoleMerge.fromJsonObjectPerLineFile(mergeDirGreedy + s"/$componentName.json")
     cliqueAnalyser.addResultTuples(cliquesGreedy, componentName, "greedy")

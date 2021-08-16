@@ -1,12 +1,12 @@
 package de.hpi.role_matching.evaluation.clique
 
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
-import de.hpi.role_matching.clique_partitioning.RoleMerge
+import de.hpi.role_matching.clique_partitioning.{NewSubgraph, RoleMerge}
 
 import java.io.File
 import scala.io.Source
 
-class MDMCPResult(subGraph: SubGraph,
+class MDMCPResult(subGraph: NewSubgraph,
                   resultFile: File,
                   partitionVertexFile: File) {
 

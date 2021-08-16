@@ -31,6 +31,7 @@ libraryDependencies += "org.scala-graph" %% "graph-core" % "1.13.2"
 //libraryDependencies += "org.tukaani" % "xz" % "1.9"
 // https://mvnrepository.com/artifact/org.json4s/json4s-ext
 libraryDependencies += "org.json4s" %% "json4s-ext" % "3.7.0-M4"
-
+// https://mvnrepository.com/artifact/org.jgrapht/jgrapht-core
+libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.5.1"
 
 

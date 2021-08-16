@@ -5,7 +5,7 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, SlimGraphSet, VertexLookupMap}
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
-import de.hpi.role_matching.clique_partitioning.{RoleMerge, ScoreConfig}
+import de.hpi.role_matching.clique_partitioning.{NewSubgraph, RoleMerge, ScoreConfig}
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
@@ -34,7 +34,7 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
   val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexLookupMap, trainTimeEnd, scoreConfig)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
-    val cliquesMDMCP = new MDMCPResult(new SubGraph(optimizationGraph), mf, partitionVertexFiles(fname)).cliques
+    val cliquesMDMCP = new MDMCPResult(new NewSubgraph(optimizationGraph), mf, partitionVertexFiles(fname)).cliques
     val componentName = fname.split("\\.")(0)
     cliqueAnalyser.addResultTuples(cliquesMDMCP, componentName, "MDMCP")
   }

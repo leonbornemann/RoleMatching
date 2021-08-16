@@ -2,22 +2,14 @@ package de.hpi.role_matching.clique_partitioning
 
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 
-abstract class Optimizer(c: SubGraph) {
-
-  def getEdgeWeight(v: c.graph.NodeT, y: Int):Double = {
-    val edgeOption = v.incoming.find(_.nodes.exists(_.value==y))
-    if(!edgeOption.isDefined)
-      Double.NegativeInfinity
-    else
-      edgeOption.get.weight
-  }
+abstract class Optimizer(c: NewSubgraph) {
 
   def getEdgeWeight(v:Int,w:Int):Double = {
-    val edgeOption = c.graph.find(v).get.incoming.find(_.nodes.exists(_.value==w))
-    if(!edgeOption.isDefined)
+    val edge = c.graph.getEdge(v,w)
+    if(edge==null)
       Double.NegativeInfinity
     else
-      edgeOption.get.weight
+      c.graph.getEdgeWeight(edge)
   }
 
   def getCliqueScore(vertices:collection.IndexedSeq[Int]) = {

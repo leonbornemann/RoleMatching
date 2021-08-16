@@ -18,11 +18,11 @@ trait EdgeWeightedSubGraph {
     y
   }
 
-  def getScoreAsInt(weight:Float):Int = {
-    if(!(weight==Float.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax))
+  def getScoreAsInt(weight:Double):Int = {
+    if(!(weight==Double.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax))
       println(weight)
-    assert( weight==Float.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax)
-    val scoreAsInt = if(weight==Float.MinValue) edgeNotPResentValue else scaleInterpolation(weight,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
+    assert( weight==Double.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax)
+    val scoreAsInt = if(weight==Double.MinValue) edgeNotPResentValue else scaleInterpolation(weight,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
     scoreAsInt
   }
 

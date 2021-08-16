@@ -37,7 +37,7 @@ class NewSubgraph(val graph: Graph[Int, DefaultWeightedEdge]) extends EdgeWeight
         assert(!neighbours.isEmpty)
         val weights = Seq(0) ++ ((i+1) until verticesOrdered.size).map{ j =>
           val w = verticesOrdered(j)
-          val weight:Float = neighbours.getOrElse(w,Double.MinValue).toFloat
+          val weight:Double = neighbours.getOrElse(w,Double.MinValue)
           getScoreAsInt(weight)
         }
         pr.println(weights.mkString("  "))

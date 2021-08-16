@@ -25,7 +25,7 @@ abstract class ComponentWiseOptimizer(val inputGraph: Graph[Int, DefaultWeighted
   def runComponentWiseOptimization() = {
     logger.debug(s"Starting Clique Partitioning Optimization")
     val components = getComponents(inputGraph)
-    logger.debug(s"Input Graph has ${inputGraph.vertexSet().size()} vertices and ${inputGraph.edgeSet().size()} edges and $components connected components")
+    logger.debug(s"Input Graph has ${inputGraph.vertexSet().size()} vertices and ${inputGraph.edgeSet().size()} edges and ${components.size()} connected components")
     var i = 0
     val componentIterator = components.iterator()
     while(componentIterator.hasNext){

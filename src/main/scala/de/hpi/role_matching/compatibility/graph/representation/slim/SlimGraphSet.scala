@@ -5,7 +5,7 @@ import de.hpi.role_matching.clique_partitioning.ScoreConfig
 import de.hpi.socrata.{JsonReadable, JsonWritable}
 import de.hpi.role_matching.scoring.EventCountsWithoutWeights
 import org.jgrapht.Graph
-import org.jgrapht.graph.{DefaultWeightedEdge, SimpleGraph}
+import org.jgrapht.graph.{DefaultWeightedEdge, SimpleGraph, SimpleWeightedGraph}
 
 import java.time.LocalDate
 
@@ -22,7 +22,7 @@ case class SlimGraphSet(verticesOrdered: IndexedSeq[String],
     val newVertices = scala.collection.mutable.HashSet[Int]() ++ (0 until verticesOrdered.size)
     assert(trainTimeEnds.contains(trainTimeEnd))
     val indexOfTrainTimeEnd = trainTimeEnds.indexOf(trainTimeEnd)
-    val graph:Graph[Int,DefaultWeightedEdge] = new SimpleGraph[Int,DefaultWeightedEdge](classOf[DefaultWeightedEdge])
+    val graph:Graph[Int,DefaultWeightedEdge] = new SimpleWeightedGraph[Int,DefaultWeightedEdge](classOf[DefaultWeightedEdge])
     newVertices.foreach(v => graph.addVertex(v))
     adjacencyList.foreach{case (v1,adjListThisNode) => {
       adjListThisNode
@@ -40,7 +40,7 @@ case class SlimGraphSet(verticesOrdered: IndexedSeq[String],
     val newVertices = scala.collection.mutable.HashSet[Int]() ++ (0 until verticesOrdered.size)
     assert(trainTimeEnds.contains(trainTimeEnd))
     val indexOfTrainTimeEnd = trainTimeEnds.indexOf(trainTimeEnd)
-    val graph = new SimpleGraph[Int,DefaultWeightedEdge](classOf[DefaultWeightedEdge])
+    val graph = new SimpleWeightedGraph[Int,DefaultWeightedEdge](classOf[DefaultWeightedEdge])
     newVertices.foreach(v => graph.addVertex(v))
     adjacencyList.foreach{case (v1,adjListThisNode) => {
       adjListThisNode

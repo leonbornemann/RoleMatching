@@ -95,10 +95,10 @@ class BruteForceComponentOptimizer(component: NewSubgraph) extends Optimizer(com
       logger.debug(s"Component:${component.componentName},Vertices: ${component.nVertices},Edges: ${component.nEdges}")
     }
     assert(allPartitionings.size>0)
-    val (best,score) = allPartitionings
-      .map(partitioning => (partitioning.filter(_.size>0),getScore(partitioning)))
-      .sortBy(-_._2)
-      .head
+    val sortedList = allPartitionings
+      .map(partitioning => (partitioning.filter(_.size > 0), getScore(partitioning)))
+      .sortBy(e => (-e._2,-e._1.size))
+    val (best,score) = sortedList.head
     best.map(vertices => RoleMerge(vertices.toSet,getCliqueScore(vertices)))
   }
 

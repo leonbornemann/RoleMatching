@@ -8,7 +8,12 @@ import java.io.{File, PrintWriter}
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 
 class NewSubgraph(val graph: Graph[Int, DefaultWeightedEdge]) extends EdgeWeightedSubGraph{
-  def getEdgeWeight(v: Int, w: Int) = graph.getEdgeWeight(graph.getEdge(v,w))
+  def getEdgeWeight(v: Int, w: Int) = {
+    val e = graph.getEdge(v,w)
+    if(e==null)
+      println()
+    graph.getEdgeWeight(graph.getEdge(v,w))
+  }
 
   def neighborsOf(head: Int) = Graphs.neighborListOf(graph,head).asScala.toSet
 

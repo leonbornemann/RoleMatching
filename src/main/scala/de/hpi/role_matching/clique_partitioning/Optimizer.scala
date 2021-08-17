@@ -18,7 +18,7 @@ abstract class Optimizer(c: NewSubgraph) {
     var score = 0.0
     while(i<vertices.size && !invalid){
       val v = vertices(i)
-      var j = 0+1
+      var j = i+1
       while(j<vertices.size && !invalid) {
         val w = vertices(j)
         val weight = getEdgeWeight(v,w)

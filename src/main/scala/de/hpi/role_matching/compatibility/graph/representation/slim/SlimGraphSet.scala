@@ -29,6 +29,9 @@ case class SlimGraphSet(verticesOrdered: IndexedSeq[String],
         .withFilter{case (_,eventCounts) => eventCounts.size>indexOfTrainTimeEnd}
         .foreach{case (v2,_) => {
           val score = if(isValidEdge(v1,v2,vertexLookupMap)) 1.0f else 0.0f
+          if(score == Float.NegativeInfinity){
+            println()
+          }
           val e = graph.addEdge(v1,v2)
           graph.setEdgeWeight(e,score)
         }}

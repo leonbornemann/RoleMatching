@@ -38,8 +38,8 @@ case class CliqueAnalyser(prCliques: PrintWriter,
   def addResultTuple(c: RoleMerge, componentID: String, method: String) = {
     val verticesSorted = c.clique.toIndexedSeq.sorted
     val cliqueID = verticesSorted.head
-    val vertices = c.clique.map(i => vertexLookupMap.posToFactLineage(i)).toIndexedSeq
-    val identifiedVertices = c.clique.map(i => vertexLookupMap.posToLineage(i)).toIndexedSeq
+    val vertices = verticesSorted.map(i => vertexLookupMap.posToFactLineage(i))
+    val identifiedVertices = verticesSorted.map(i => vertexLookupMap.posToLineage(i))
     var evidenceCountTotal = 0
     var validEdges = 0
     var edgesTotal = 0
@@ -61,6 +61,8 @@ case class CliqueAnalyser(prCliques: PrintWriter,
           validEdges += 1
           remainsValid=true
         }
+        assert(i<j)
+        assert(verticesSorted(i)<verticesSorted(j))
         assert(identifiedVertices(i).csvSafeID<identifiedVertices(j).csvSafeID)
         prEdges.println(s"$componentID,$method,$cliqueID,${c.clique.size},${identifiedVertices(i).csvSafeID},${identifiedVertices(j).csvSafeID},$remainsValid,$evidenceInThisEdge,$scoreThisEdge") //TODO: compute score?
       }

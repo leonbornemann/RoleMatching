@@ -31,6 +31,12 @@ object SparseGraphCliquePartitioningMain extends App with StrictLogging{
   }
   graph = null //might help out the garbage collector
   Seq(roleMergeResultDir,mdmcpExportDir,greedyMergeDir,weightConfigDir,vertexLookupDirForPartitions).foreach(_.mkdirs())
+  logger.debug("Deleting old result files")
+  Seq(roleMergeResultDir,mdmcpExportDir,greedyMergeDir,vertexLookupDirForPartitions).foreach(d => {
+    logger.debug(s"Deleting all files in ${d.getAbsolutePath}")
+    d.listFiles().foreach(_.delete())
+  })
+  logger.debug("Finished Deleting old result files")
   //weightConfig.toJsonFile(new File(weightConfigDir.getAbsolutePath + s"/$resultDirName.json"))
   val optimizer = new SGCPOptimizer(optimizationGraph, roleMergeResultDir, mdmcpExportDir,vertexLookupDirForPartitions, greedyMergeDir,runGreedyOnly)
   optimizer.runComponentWiseOptimization()

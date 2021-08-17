@@ -27,17 +27,17 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_END = timeEnd
   val resultDir = args(8)
   val scoreConfig = if(args(9) == "maxRecall") None else Some(ScoreConfig.fromJsonFile(args(9)))
-  val slimGraph = SlimGraphSet.fromJsonFile(graphFile)
+  val slimGraphSet = SlimGraphSet.fromJsonFile(graphFile)
   val vertexlookupMap = VertexLookupMap.fromJsonFile(vertexLookupFile)
   val mergeFilesFromMDMCP = mergeDir.listFiles().map(f => (f.getName, f)).toMap
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
   //assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
   val pr = new PrintWriter(resultDir + "/cliques.csv")
   val prEdges = new PrintWriter(resultDir + "/edges.csv")
-  val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexlookupMap, trainTimeEnd,scoreConfig)
+  val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexlookupMap, trainTimeEnd,slimGraphSet,scoreConfig)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
-    val cliquesMDMCP = new MDMCPResult(new NewSubgraph(slimGraph.transformToOptimizationGraph(trainTimeEnd,scoreConfig.get)), mf, partitionVertexFiles(fname)).cliques
+    val cliquesMDMCP = new MDMCPResult(new NewSubgraph(slimGraphSet.transformToOptimizationGraph(trainTimeEnd,scoreConfig.get)), mf, partitionVertexFiles(fname)).cliques
     val componentName = fname.split("\\.")(0)
     val cliquesGreedy = RoleMerge.fromJsonObjectPerLineFile(mergeDirGreedy + s"/$componentName.json")
     cliqueAnalyser.addResultTuples(cliquesGreedy, componentName, "greedy")

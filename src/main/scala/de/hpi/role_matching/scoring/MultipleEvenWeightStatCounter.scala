@@ -1,7 +1,7 @@
 package de.hpi.role_matching.scoring
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.socrata.tfmp_input.table.nonSketch.{ChangePoint, CommonPointOfInterestIterator}
+import de.hpi.socrata.tfmp_input.table.nonSketch.{ChangePoint, CommonPointOfInterestIterator, FactLineage}
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.compatibility.graph.representation.simple.GeneralEdge
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SlimGraphSet, SlimGraphWithoutWeight}
@@ -128,4 +128,7 @@ class MultipleEvenWeightStatCounter(dsName:String,
     totalCounts.getOrElseUpdate(date, new MultipleEventWeightScoreOccurrenceStats(dsName, date))
       .addAll(eventCounts)
   }
+}
+object MultipleEvenWeightStatCounter {
+
 }

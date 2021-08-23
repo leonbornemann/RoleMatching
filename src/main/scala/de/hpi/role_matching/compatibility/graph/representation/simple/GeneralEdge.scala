@@ -26,15 +26,21 @@ case class GeneralEdge(v1:IdentifiedFactLineage, v2:IdentifiedFactLineage) exten
   }
 
   def printTabularEventLineageString = {
+    println(getTabularEventLineageString)
+  }
+
+  def getTabularEventLineageString = {
     val dates = v1.factLineage.toFactLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
     val dates2 = v2.factLineage.toFactLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
     val allDates = dates.union(dates2).toIndexedSeq.sorted
-    val header = Seq("") ++ allDates
-    val cells1 = Seq(v1.id) ++ allDates.map(t => v1.factLineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
-    val cells2 = Seq(v2.id) ++ allDates.map(t => v2.factLineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
-    TableFormatter.printTable(header,Seq(cells1,cells2))
+    val cells1 = IndexedSeq(v1.id) ++ allDates.map(t => v1.factLineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
+    val cells2 = IndexedSeq(v2.id) ++ allDates.map(t => v2.factLineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
+    val valuesMatch = (1 until cells1.size).map(i => {
+      cells1(i)=="_" || cells2(i)=="_" || cells1(i)==cells2(i)
+    })
+    val header = Seq("") ++ allDates.zip(valuesMatch).map(t => t._1.toString + (if(t._2) "" else " (!)") )
+    TableFormatter.format(Seq(header) ++ Seq(cells1,cells2))
   }
-
 }
 
 object GeneralEdge extends JsonReadable[GeneralEdge] {

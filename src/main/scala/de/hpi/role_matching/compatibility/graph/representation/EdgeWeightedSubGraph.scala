@@ -2,10 +2,10 @@ package de.hpi.role_matching.compatibility.graph.representation
 
 trait EdgeWeightedSubGraph {
 
-  val scoreRangeIntMin = -10000.0
-  val scoreRangeIntMax = 10000.0
-  val scoreRangeDoubleMin = -10.0.toFloat
-  val scoreRangeDoubleMax = 10.0.toFloat
+  val scoreRangeIntMin = -500.0
+  val scoreRangeIntMax = 500.0
+  var scoreRangeDoubleMin = -10.0.toFloat
+  var scoreRangeDoubleMax = 10.0.toFloat
   val edgeNotPResentValue = -1000000
 
   //Tranfer x from scale [a,b] to y in scale [c,d]
@@ -14,6 +14,8 @@ trait EdgeWeightedSubGraph {
   //y = (d-c)*(x-a) / (b-a) +c
   def scaleInterpolation(x: Double, a: Double, b: Double, c: Double, d: Double) = {
     val y = (d-c)*(x-a) / (b-a) +c
+    if(!(y >=c && y <= d))
+      println()
     assert(y >=c && y <= d)
     y
   }
@@ -22,7 +24,15 @@ trait EdgeWeightedSubGraph {
     if(!(weight==Double.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax))
       println(weight)
     assert( weight==Double.MinValue || weight >= scoreRangeDoubleMin && weight <= scoreRangeDoubleMax)
-    val scoreAsInt = if(weight==Double.MinValue) edgeNotPResentValue else scaleInterpolation(weight,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax).round.toInt
+    val scoreAsInt = if(weight==Double.MinValue) edgeNotPResentValue else {
+      val interpolated = scaleInterpolation(weight,scoreRangeDoubleMin,scoreRangeDoubleMax,scoreRangeIntMin,scoreRangeIntMax)
+      if(interpolated<1.0 && interpolated>0.0)
+        interpolated.ceil.toInt
+      else if(interpolated> -1.0 && interpolated < 0.0)
+        interpolated.floor.toInt
+      else
+        interpolated.round.toInt
+    }
     scoreAsInt
   }
 

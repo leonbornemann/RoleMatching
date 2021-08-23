@@ -30,6 +30,19 @@ class NewSubgraph(val graph: Graph[Int, DefaultWeightedEdge]) extends EdgeWeight
   def toMDMCPInputFile(f: File) = {
     val verticesOrdered = graph.vertexSet().asScala.toIndexedSeq.sorted
     val pr = new PrintWriter(f)
+    val edgeIterator = graph.edgeSet().iterator()
+    var min = Double.MaxValue
+    var max =Double.MinValue
+    while(edgeIterator.hasNext){
+      val curEdge = edgeIterator.next()
+      val curEdgeWeight = graph.getEdgeWeight(curEdge)
+      if(curEdgeWeight<min)
+        min = curEdgeWeight-1
+      if(curEdgeWeight>max)
+        max = curEdgeWeight+1
+    }
+    scoreRangeDoubleMin=min.toFloat
+    scoreRangeDoubleMax=max.toFloat
     pr.println(s" ${verticesOrdered.size}")
     verticesOrdered
       .zipWithIndex

@@ -4,6 +4,11 @@ import de.hpi.role_matching.compatibility.graph.representation.vertex.Identified
 import de.hpi.socrata.{JsonReadable, JsonWritable}
 
 case class VertexLookupMap(vertexNamesOrdered: IndexedSeq[String], posToLineage:Map[Int,IdentifiedFactLineage]) extends JsonWritable[VertexLookupMap]{
+
+  def getStringToLineageMap = {
+    posToLineage.map{case (i,l) => (vertexNamesOrdered(i),l)}
+  }
+
   vertexNamesOrdered.zipWithIndex.foreach(t => assert(posToLineage(t._2).id==t._1))
 
   val posToFactLineage = posToLineage.map(t => (t._1,t._2.factLineage.toFactLineage))

@@ -33,8 +33,7 @@ object CompatibilityGraphByTemplateCreationMain extends App with StrictLogging {
   val roleSamplingRate = args(10).toDouble
   val timestampSamplingRate = args(11).toDouble
   val dsName = args(12)
-  resultDirStats.mkdir()
-  resultDirTime.mkdir()
+  Seq(resultDirEdges,resultDirStats,resultDirTime).foreach(_.mkdirs())
   private val config: IndexingConfig = IndexingConfig(roleSamplingRate, timestampSamplingRate, 50)
   GLOBAL_CONFIG.INDEXING_CONFIG=config
   FactMatchCreator.thresholdForFork = thresholdForFork

@@ -4,10 +4,16 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.socrata.change.UpdateChangeCounter
 import de.hpi.socrata.io.Socrata_IOService
 
+import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 object GLOBAL_CONFIG extends StrictLogging{
+
+  var INDEXING_CONFIG = IndexingConfig(0.9,0.9,50)
+
+  var INDEXING_STATS_RESULT_DIR: File = new File("stats/")
+
   def getEvaluationStepDurationInDays(dataSource: String): Int = if(dataSource=="wikipedia") 364 else 30
 
   var nonInformativeValues: Set[Any] = Set("", null)
@@ -40,4 +46,6 @@ object GLOBAL_CONFIG extends StrictLogging{
       assert(false)
     }
   }
+
+  var random = new scala.util.Random(12)
 }

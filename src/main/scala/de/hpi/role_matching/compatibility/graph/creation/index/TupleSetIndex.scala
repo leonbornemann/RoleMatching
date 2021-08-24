@@ -23,26 +23,27 @@ class TupleSetIndex[A](private var tuples: IndexedSeq[TupleReference[A]],
   var indexedTimestamps:ArrayBuffer[LocalDate] = null
 
   if(!indexableTimestamps.isEmpty){
-    val (bestIndexTimestamp,numValues) = getBestTimestamp(indexableTimestamps)
-    if(numValues>1) {
-      indexTimestamp = bestIndexTimestamp
-      index = tuples
-        .groupBy(getField(_).valueAt(indexTimestamp))
-      iterableKeys = index.keySet.diff(wildcardKeyValues)
-      indexedTimestamps = ArrayBuffer() ++ parentNodesTimestamps ++ Seq(indexTimestamp)
-    } else{
-      //no point in indexing
+    if(tuples.size>1){
+      val (bestIndexTimestamp,numValues) = getBestTimestamp(indexableTimestamps)
+      if(numValues>=1) {
+        indexTimestamp = bestIndexTimestamp
+        index = tuples
+          .groupBy(getField(_).valueAt(indexTimestamp))
+        iterableKeys = index.keySet.diff(wildcardKeyValues)
+        indexedTimestamps = ArrayBuffer() ++ parentNodesTimestamps ++ Seq(indexTimestamp)
+      }
     }
   }
 
   def indexBuildWasSuccessfull = indexTimestamp!=null
 
   def getBestTimestamp(relevantTimestamps: Set[LocalDate]) = {
-    relevantTimestamps.map(ts => {
-      val values = tuples.map(getField(_).valueAt(ts)).toSet
+    val tupleSample:IndexedSeq[TupleReference[A]] = getRandomSample(tuples,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateRoles)
+    val timestampSample:IndexedSeq[LocalDate] = getRandomSample(relevantTimestamps.toIndexedSeq,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateTimestamps)
+    timestampSample.map(ts => {
+      val values = tupleSample.map(getField(_).valueAt(ts)).toSet
       (ts,values.size)
-    }).toIndexedSeq
-      .sortBy(-_._2)
+    }).sortBy(-_._2)
       .head
   }
 

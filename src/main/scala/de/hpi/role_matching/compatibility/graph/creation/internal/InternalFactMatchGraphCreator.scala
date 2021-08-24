@@ -1,6 +1,7 @@
 package de.hpi.role_matching.compatibility.graph.creation.internal
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.socrata.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.role_matching.compatibility.GraphConfig
 import de.hpi.role_matching.compatibility.graph.creation.FactMatchCreator.maxPairwiseListSizeForSingleThread
@@ -209,6 +210,7 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
       //do it in this process!
       //we construct a graph as an adjacency list:
       //pairwise matching to find out the edge-weights:
+      var  matchChecks = 0
       for (i <- 0 until tuplesInNodeAsIndexedSeq.size) {
         for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
           val ref1 = tuplesInNodeAsIndexedSeq(i)
@@ -217,8 +219,10 @@ class InternalFactMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
             //we have a candidate - add it to buffer!
             serializeIfMatch(ref1,ref2,pr)
           }
+          matchChecks+=1
         }
       }
+      FactMatchCreator.serializeMatchChecks(matchChecks)
     }
   }
 

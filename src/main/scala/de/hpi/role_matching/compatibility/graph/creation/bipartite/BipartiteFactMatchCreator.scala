@@ -1,6 +1,7 @@
 package de.hpi.role_matching.compatibility.graph.creation.bipartite
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.socrata.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.role_matching.compatibility.GraphConfig
 import de.hpi.role_matching.compatibility.graph.creation.FactMatchCreator.maxPairwiseListSizeForSingleThread
@@ -152,6 +153,7 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
       }
     } else {
       if (tuplesLeft.size > 0 && tuplesRight.size > 0) {
+        var matchChecks=0
         for (i <- 0 until tuplesLeft.size) {
           for (j <- 0 until tuplesRight.size) {
             val ref1 = tuplesLeft(i)
@@ -159,8 +161,10 @@ class BipartiteFactMatchCreator[A](tuplesLeft: IndexedSeq[TupleReference[A]],
             if (!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))) {
               serializeIfMatch(ref1, ref2, pr)
             }
+            matchChecks+=1
           }
         }
+        FactMatchCreator.serializeMatchChecks(matchChecks)
       }
     }
   }

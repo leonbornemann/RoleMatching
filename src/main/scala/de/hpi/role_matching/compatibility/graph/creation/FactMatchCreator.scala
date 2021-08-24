@@ -1,6 +1,7 @@
 package de.hpi.role_matching.compatibility.graph.creation
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.socrata.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.role_matching.compatibility.GraphConfig
 import de.hpi.role_matching.compatibility.graph.creation.internal.ConcurrentMatchGraphCreator
@@ -123,6 +124,7 @@ object FactMatchCreator {
       val (pr,fname) = ConcurrentMatchGraphCreator.getOrCreateNewPrintWriter(resultDir)
       val (firstBorderStart,firstBorderEnd) = i1
       val (secondBorderStart,secondBorderEnd) = i2
+      var matchChecks = 0
       for(i <- firstBorderStart until firstBorderEnd){
         for(j <- secondBorderStart until secondBorderEnd){
           val ref1 = tuplesInNodeAsIndexedSeq(i)
@@ -130,11 +132,21 @@ object FactMatchCreator {
           if(i<j && (!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t)))){
             serializeIfMatch(ref1,ref2,pr,toGeneralEdgeFunction)
           }
+          matchChecks+=1
         }
       }
+      serializeMatchChecks(matchChecks)
       ConcurrentMatchGraphCreator.releasePrintWriter(pr,fname)
     }(context)
     ConcurrentMatchGraphCreator.setupFuture(f,processName,futures,context)
+  }
+
+  def serializeMatchChecks[A](matchChecks: Int) = {
+    if (matchChecks != 0) {
+      val (prStats, fnameStats) = ConcurrentMatchGraphCreator.getOrCreateNewStatsPrintWriter(GLOBAL_CONFIG.INDEXING_STATS_RESULT_DIR)
+      prStats.println(matchChecks)
+      ConcurrentMatchGraphCreator.releaseStatPrintWriter(prStats, fnameStats)
+    }
   }
 
   def startProcessIntervalsFromBipariteList[A](tuplesLeft: IndexedSeq[TupleReference[A]], tuplesRight: IndexedSeq[TupleReference[A]], i1: (Int, Int), i2: (Int, Int), resultDir: File, context: ExecutionContextExecutor, processName: String, futures: ConcurrentHashMap[String, Future[Any]], toGeneralEdgeFunction: (TupleReference[A], TupleReference[A]) => GeneralEdge, tupleToNonWcTransitions: Option[Map[TupleReference[A], Set[ValueTransition[A]]]]) = {
@@ -142,6 +154,7 @@ object FactMatchCreator {
       val (pr,fname) = ConcurrentMatchGraphCreator.getOrCreateNewPrintWriter(resultDir)
       val (firstBorderStart,firstBorderEnd) = i1
       val (secondBorderStart,secondBorderEnd) = i2
+      var matchChecks = 0
       for(i <- firstBorderStart until firstBorderEnd){
         for(j <- secondBorderStart until secondBorderEnd){
           val ref1 = tuplesLeft(i)
@@ -149,13 +162,14 @@ object FactMatchCreator {
           if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
             serializeIfMatch(ref1,ref2,pr,toGeneralEdgeFunction)
           }
+          matchChecks+=1
         }
       }
+      serializeMatchChecks(matchChecks)
       ConcurrentMatchGraphCreator.releasePrintWriter(pr,fname)
     }(context)
     ConcurrentMatchGraphCreator.setupFuture(f,processName,futures,context)
   }
-
 
   var thresholdForFork = 2000
   var maxPairwiseListSizeForSingleThread = 30

@@ -91,7 +91,10 @@ class BipartiteTupleIndex[A](tuplesLeftUnfiltered: IndexedSeq[TupleReference[A]]
   }
 
   //just a single layer for now:
-  var curBestSplitTimestamp = getBestSplitTimestamp(tuplesLeft,tuplesRight,unusedTimestamps)
+  val sampleLeft = getRandomSample(tuplesLeft,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateRoles)
+  val sampleRight = getRandomSample(tuplesRight,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateRoles)
+  val sampledTimestamps = getRandomSample(unusedTimestamps.toIndexedSeq,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateTimestamps)
+  var curBestSplitTimestamp = getBestSplitTimestamp(sampleLeft,sampleRight,sampledTimestamps.toSet)
 
   //init index:
   var splitT:LocalDate = null

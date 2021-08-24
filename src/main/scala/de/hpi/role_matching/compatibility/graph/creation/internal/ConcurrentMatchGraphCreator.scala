@@ -17,7 +17,7 @@ class ConcurrentMatchGraphCreator[A](tuples: IndexedSeq[TupleReference[A]],
                                   nonInformativeValues:Set[A] = Set[A](),
                                   nthreads:Int,
                                   resultDir:File,
-                                  toGeneralEdgeFunction:((TupleReference[A],TupleReference[A]) => GeneralEdge),
+                                  toGeneralEdgeFunction:((TupleReference[A],TupleReference[A]) => GeneralEdge)
                              ) extends StrictLogging {
 
   logger.debug("Cleanung up old files")
@@ -60,13 +60,21 @@ object ConcurrentMatchGraphCreator extends StrictLogging {
         println(s"Closed writer for ${t._2}")
       })
     }
+    availablePrintWritersStats.synchronized{
+      availablePrintWritersStats.foreach(t => {
+        t._1.close()
+        println(s"Closed Stat writer for ${t._2}")
+      })
+    }
   }
 
   var lastReportTimestamp = System.currentTimeMillis()
   val logTimeDistanceInMs = 10000
   val reportInProgress = new AtomicBoolean(false)
   var outputFileCounter = 0
+  var statFileCounter = 0
   val availablePrintWriters = scala.collection.mutable.ListBuffer[(PrintWriter,String)]()
+  val availablePrintWritersStats = scala.collection.mutable.ListBuffer[(PrintWriter,String)]()
   val allFuturesTerminated = new Semaphore(0)
 
   def getOrCreateNewPrintWriter(resultDir:File):(PrintWriter,String) = {
@@ -85,12 +93,37 @@ object ConcurrentMatchGraphCreator extends StrictLogging {
     }
   }
 
+  def getOrCreateNewStatsPrintWriter(resultDirStats:File):(PrintWriter,String) = {
+    availablePrintWritersStats.synchronized {
+      if(availablePrintWritersStats.isEmpty){
+        //        logger.debug(s"Created new Writer $outputFileCounter")
+        val fname = s"partition_$statFileCounter.json"
+        val newWriter = new PrintWriter(resultDirStats.getAbsolutePath + s"/$fname")
+        statFileCounter += 1
+        (newWriter,fname)
+      } else {
+        val res = availablePrintWritersStats.remove(0)
+        //        logger.debug(s"Acquired new print writer: ${res._2}")
+        res
+      }
+    }
+  }
+
   def releasePrintWriter(pr:PrintWriter,filename:String) = {
     availablePrintWriters.synchronized {
 //      logger.debug(s"Released writer $filename")
 //      if(availablePrintWriters.exists(_._2==filename))
 //        logger.debug("Huh?")
       availablePrintWriters.append((pr,filename))
+    }
+  }
+
+  def releaseStatPrintWriter(pr:PrintWriter,filename:String) = {
+    availablePrintWritersStats.synchronized {
+      //      logger.debug(s"Released writer $filename")
+      //      if(availablePrintWriters.exists(_._2==filename))
+      //        logger.debug("Huh?")
+      availablePrintWritersStats.append((pr,filename))
     }
   }
 

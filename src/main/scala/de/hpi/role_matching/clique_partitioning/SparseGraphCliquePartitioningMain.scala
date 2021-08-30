@@ -28,7 +28,7 @@ object SparseGraphCliquePartitioningMain extends App with StrictLogging{
     if(maxRecallSetting)
       graph.getMaxRecallSettingOptimizationGraph(trainTimeEnd,vertexLookupMap.get)
     else if(baselineNoWeightSetting)
-      graph.getBaselineNoWeightSetting(trainTimeEnd,vertexLookupMap.get)
+      graph.getBaselineNoWeightSetting(trainTimeEnd)
     else
       graph.transformToOptimizationGraph(trainTimeEnd,weightConfig.get)
   }

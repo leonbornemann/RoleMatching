@@ -13,6 +13,24 @@ import java.time.LocalDate
 case class SlimGraphSet(verticesOrdered: IndexedSeq[String],
                         trainTimeEnds: Seq[LocalDate],
                         adjacencyList: collection.Map[Int, collection.Map[Int, Seq[EventCountsWithoutWeights]]]) extends JsonWritable[SLimGraph] with StrictLogging {
+  def getBaselineNoWeightSetting(trainTimeEnd: LocalDate, vertexLookupMap: VertexLookupMap) = {
+    val newVertices = scala.collection.mutable.HashSet[Int]() ++ (0 until verticesOrdered.size)
+    assert(trainTimeEnds.contains(trainTimeEnd))
+    val indexOfTrainTimeEnd = trainTimeEnds.indexOf(trainTimeEnd)
+    val graph:Graph[Int,DefaultWeightedEdge] = new SimpleWeightedGraph[Int,DefaultWeightedEdge](classOf[DefaultWeightedEdge])
+    newVertices.foreach(v => graph.addVertex(v))
+    adjacencyList.foreach{case (v1,adjListThisNode) => {
+      adjListThisNode
+        .withFilter{case (_,eventCounts) => eventCounts.size>indexOfTrainTimeEnd}
+        .foreach{case (v2,_) => {
+          val score = 1.0f
+          val e = graph.addEdge(v1,v2)
+          graph.setEdgeWeight(e,score)
+        }}
+    }}
+    graph
+  }
+
 
   def isValidEdge(v1: Int, v2: Int, vertexLookupMap: VertexLookupMap): Boolean = {
     vertexLookupMap.posToFactLineage(v1).tryMergeWithConsistent(vertexLookupMap.posToFactLineage(v2)).isDefined

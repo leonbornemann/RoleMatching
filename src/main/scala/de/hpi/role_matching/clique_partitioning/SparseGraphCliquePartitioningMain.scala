@@ -11,9 +11,10 @@ object SparseGraphCliquePartitioningMain extends App with StrictLogging{
   logger.debug(s"Called with ${args.toIndexedSeq}")
   val inputGraphFile = args(0)
   val trainTimeEnd = LocalDate.parse(args(1))
-  val weightConfig = if(args(2)=="max_recall") None else Some(ScoreConfig.fromJsonFile(args(2)))
+  val weightConfig = if(args(2)=="max_recall" || args(2) == "baselineNoWeight") None else Some(ScoreConfig.fromJsonFile(args(2)))
   val runGreedyOnly = args(3).toBoolean
   val maxRecallSetting = args(2)=="max_recall"
+  val baselineNoWeightSetting = args(2) == "baselineNoWeight"
   private val resultDirName = if(!maxRecallSetting) s"/alpha_${weightConfig.get.alpha}/" else "max_recall"
   private val resultRootDir = args(4)
   val roleMergeResultDir = new File(resultRootDir + resultDirName)
@@ -26,6 +27,8 @@ object SparseGraphCliquePartitioningMain extends App with StrictLogging{
   val optimizationGraph = {
     if(maxRecallSetting)
       graph.getMaxRecallSettingOptimizationGraph(trainTimeEnd,vertexLookupMap.get)
+    else if(baselineNoWeightSetting)
+      graph.getBaselineNoWeightSetting(trainTimeEnd,vertexLookupMap.get)
     else
       graph.transformToOptimizationGraph(trainTimeEnd,weightConfig.get)
   }

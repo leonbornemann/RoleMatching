@@ -1,0 +1,21 @@
+package tmp_for_asad
+
+case class ColumnHistoryPairStatics(filename1:String,
+                                    filename2:String,
+                                    tableID1:String,
+                                    tableID2:String,
+                                    columnID1:String,
+                                    columnID2:String,
+                                    humanReadableColumnName1:String,
+                                    humanReadableColumnName2:String,
+                                    column1SetBasedCardinality:Int,
+                                    column2SetBasedCardinality:Int,
+                                    column1MultiSetBasedCardinality:Int,
+                                    column2MultiSetBasedCardinality:Int,
+                                    setBasedIntersectionSize:Int,
+                                    setBased1Diff2Size:Int,
+                                    setBased2Diff1Size:Int,
+                                    multisetBasedIntersectionSize:Int,
+                                    multiSetBased1Diff2Size:Int,
+                                    multiSetBased2Diff1Size:Int,
+                                   )

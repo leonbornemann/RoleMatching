@@ -15,7 +15,7 @@ object SparseGraphCliquePartitioningMain extends App with StrictLogging{
   val runGreedyOnly = args(3).toBoolean
   val maxRecallSetting = args(2)=="max_recall"
   val baselineNoWeightSetting = args(2) == "baselineNoWeight"
-  private val resultDirName = if(!maxRecallSetting) s"/alpha_${weightConfig.get.alpha}/" else "max_recall"
+  private val resultDirName = if(maxRecallSetting) "max_recall" else if (baselineNoWeightSetting) "baselineNoWeight" else s"/alpha_${weightConfig.get.alpha}/"
   private val resultRootDir = args(4)
   val roleMergeResultDir = new File(resultRootDir + resultDirName)
   val weightConfigDir = new File(resultRootDir + s"/weightSettings/")

@@ -2,6 +2,7 @@ package de.hpi.role_matching.evaluation.clique
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.clique_partitioning.SparseGraphCliquePartitioningMain.args
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, SlimGraphSet, VertexLookupMap}
 import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
@@ -19,12 +20,16 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
   val lookupMapFile = new File(args(4))
   val source = args(5)
   val trainTimeEnd = LocalDate.parse(args(6))
-  val scoreConfig = if(args(7) == "max_recall") None else Some(ScoreConfig.fromJsonFile(args(7)))
+  val scoreConfig = if(args(7)=="max_recall" || args(7) == "baselineNoWeight") None else Some(ScoreConfig.fromJsonFile(args(7)))
+  val maxRecallSetting = args(7)=="max_recall"
+  val baselineNoWeightSetting = args(7) == "baselineNoWeight"
   GLOBAL_CONFIG.setDatesForDataSource(source)
   val resultDir = args(8)
   val graphSet = SlimGraphSet.fromJsonFile(graphFile)
   val vertexLookupMap = VertexLookupMap.fromJsonFile(lookupMapFile.getAbsolutePath)
-  val optimizationGraph = if(scoreConfig.isDefined) graphSet.transformToOptimizationGraph(trainTimeEnd,scoreConfig.get) else graphSet.getMaxRecallSettingOptimizationGraph(trainTimeEnd,vertexLookupMap)
+  val optimizationGraph = (if(scoreConfig.isDefined) graphSet.transformToOptimizationGraph(trainTimeEnd,scoreConfig.get)
+    else if(maxRecallSetting) graphSet.getMaxRecallSettingOptimizationGraph(trainTimeEnd,vertexLookupMap)
+    else graphSet.getBaselineNoWeightSetting(trainTimeEnd))
   val mergeFilesFromMDMCP = mergeDirMDMCP.listFiles().map(f => (f.getName, f)).toMap
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
   assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)

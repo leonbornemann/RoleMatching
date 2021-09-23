@@ -4,7 +4,7 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.clique_partitioning.{RoleMerge, ScoreConfig}
 import de.hpi.role_matching.compatibility.graph.representation.simple.GeneralEdge
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SlimGraphSet, VertexLookupMap}
-import de.hpi.role_matching.compatibility.graph.representation.vertex.VerticesOrdered
+import de.hpi.role_matching.compatibility.graph.representation.vertex.{IdentifiedFactLineage, VerticesOrdered}
 import de.hpi.role_matching.evaluation.StatComputer
 import de.hpi.role_matching.evaluation.edge.NewEdgeStatRow
 import de.hpi.socrata.tfmp_input.table.nonSketch.FactLineage
@@ -16,10 +16,10 @@ case class CliqueAnalyser(prCliques: PrintWriter,
                           prEdges:PrintWriter,
                           vertexLookupMap: VertexLookupMap,
                           trainTimeEnd: LocalDate,
-                          slimGraphSet:SlimGraphSet,
+                          slimGraphSet:Option[SlimGraphSet],
                           scoreConfig: Option[ScoreConfig]) extends StatComputer {
 
-  val indexOfTrainTimeEnd =slimGraphSet.trainTimeEnds.indexOf(trainTimeEnd)
+  val indexOfTrainTimeEnd = slimGraphSet.map(_.trainTimeEnds.indexOf(trainTimeEnd))
 
   def serializeSchema() = {
     prCliques.println("ComponentID,Method,cliqueID,cliqueSize,edgesTotal,validEdges,totalEvidence,fractionOfVerticesWithEvidence,score,alpha") //cliqueID is specific per method
@@ -28,7 +28,7 @@ case class CliqueAnalyser(prCliques: PrintWriter,
 
   def getScore(i: Int, j: Int) = {
     if(scoreConfig.isDefined){
-      val score = scoreConfig.get.computeScore(slimGraphSet.adjacencyList(i)(j)(indexOfTrainTimeEnd))
+      val score = scoreConfig.get.computeScore(slimGraphSet.get.adjacencyList(i)(j)(indexOfTrainTimeEnd.get))
       score
     } else {
       Float.NaN
@@ -51,7 +51,7 @@ case class CliqueAnalyser(prCliques: PrintWriter,
         val l2 = vertices(j)
         val evidenceInThisEdge = getEvidenceInTestPhase(l1, l2, trainTimeEnd)
         evidenceCountTotal += evidenceInThisEdge
-        val scoreThisEdge = getScore(verticesSorted(i),verticesSorted(j))
+        val scoreThisEdge = if(slimGraphSet.isDefined) getScore(verticesSorted(i),verticesSorted(j)) else -1.0
         if (evidenceInThisEdge > 0) {
           hasEvidence.put(i, true)
           hasEvidence.put(j, true)

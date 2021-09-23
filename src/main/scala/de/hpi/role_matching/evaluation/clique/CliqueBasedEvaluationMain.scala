@@ -36,7 +36,7 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
   new File(resultDir).mkdirs()
   val pr = new PrintWriter(resultDir + "/cliques.csv")
   val prEdges = new PrintWriter(resultDir + "/edges.csv")
-  val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexLookupMap, trainTimeEnd,graphSet, scoreConfig)
+  val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexLookupMap, trainTimeEnd,Some(graphSet), scoreConfig)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
     val cliquesMDMCP = new MDMCPResult(new NewSubgraph(optimizationGraph), mf, partitionVertexFiles(fname)).cliques

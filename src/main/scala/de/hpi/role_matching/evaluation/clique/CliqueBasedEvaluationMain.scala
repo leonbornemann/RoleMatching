@@ -49,6 +49,7 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
     val componentName = "-"
     cliqueAnalyser.addResultTuples(cliquesThisFile, componentName, f.getName.split("\\.")(0))
   })
+  cliqueAnalyser.printResults()
   pr.close()
   prEdges.close()
 }

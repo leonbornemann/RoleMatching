@@ -11,6 +11,7 @@ import de.hpi.role_matching.evaluation.clique.CliqueBasedEvaluationMain.resultDi
 
 import java.io.PrintWriter
 import java.time.LocalDate
+import scala.io.Source
 
 object ValueSetBaselineMain extends App with StrictLogging{
   logger.debug(s"Called with ${args.toIndexedSeq}")
@@ -19,12 +20,19 @@ object ValueSetBaselineMain extends App with StrictLogging{
   GLOBAL_CONFIG.setDatesForDataSource(dataSource)
   val trainTimeEnd = LocalDate.parse(args(2))
   val resultDir = args(3)
+  val maxRecallEdgeSetFile = args(4)
   val prCliques = new PrintWriter(resultDir + "/cliques.csv")
   val prEdges = new PrintWriter(resultDir + "/edges.csv")
   val grouped = vertexLookupMap.posToLineage.groupMap(ifl => {
     ifl._2.factLineage.toFactLineage.nonWildcardValueSetBefore(trainTimeEnd)
   })(_._1)
-  val analyzer = new CliqueAnalyser(prCliques,prEdges,vertexLookupMap,trainTimeEnd,None,None)
+  val edgesInMaxRecall = Source.fromFile(maxRecallEdgeSetFile)
+    .getLines()
+    .toIndexedSeq
+    .tail
+    .map(s => s.split(",")(1))
+    .toSet
+  val analyzer = new CliqueAnalyser(prCliques,prEdges,vertexLookupMap,trainTimeEnd,None,None,Some(edgesInMaxRecall))
   analyzer.serializeSchema()
   var groupsDone = 0
   grouped.values.foreach(matched => {
@@ -41,6 +49,7 @@ object ValueSetBaselineMain extends App with StrictLogging{
       logger.debug(s"Finished $groupsDone (${100*groupsDone / grouped.size.toDouble}%)")
     }
   })
+  analyzer.printResults()
   prEdges.close()
   prCliques.close()
 

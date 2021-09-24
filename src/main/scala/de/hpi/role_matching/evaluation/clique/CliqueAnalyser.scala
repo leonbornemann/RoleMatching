@@ -17,7 +17,14 @@ case class CliqueAnalyser(prCliques: PrintWriter,
                           vertexLookupMap: VertexLookupMap,
                           trainTimeEnd: LocalDate,
                           slimGraphSet:Option[SlimGraphSet],
-                          scoreConfig: Option[ScoreConfig]) extends StatComputer {
+                          scoreConfig: Option[ScoreConfig],
+                          maxRecalEdgeIds:Option[Set[String]]=None) extends StatComputer {
+
+  var totalValidEdges = 0
+  var totalValidEdgesThatAlsoAreInMaxRecallSet = 0
+  var totalInvalidEdges = 0
+  var correctCliques = 0
+  var incorrectCliques = 0
 
   val indexOfTrainTimeEnd = slimGraphSet.map(_.trainTimeEnds.indexOf(trainTimeEnd))
 
@@ -62,9 +69,30 @@ case class CliqueAnalyser(prCliques: PrintWriter,
           remainsValid=true
         }
         assert(i<j)
+        val vertexID1 = identifiedVertices(i).csvSafeID
+        val vertexID2 = identifiedVertices(j).csvSafeID
         assert(verticesSorted(i)<verticesSorted(j))
-        assert(identifiedVertices(i).csvSafeID<identifiedVertices(j).csvSafeID)
-        prEdges.println(s"$componentID,$method,$cliqueID,${c.clique.size},${identifiedVertices(i).csvSafeID},${identifiedVertices(j).csvSafeID},$remainsValid,$evidenceInThisEdge,$scoreThisEdge") //TODO: compute score?
+        assert(vertexID1<vertexID2)
+        //    df['edgeID'] = df['vertex1ID'] + '_' + df['vertex2ID']
+        if(maxRecalEdgeIds.isDefined){
+          val edgeID = vertexID1 + "_" + vertexID2
+          if(evidenceInThisEdge>0){
+            if(remainsValid ) {
+              totalValidEdges+=1
+              if(maxRecalEdgeIds.get.contains(edgeID))
+                totalValidEdgesThatAlsoAreInMaxRecallSet+=1
+            } else
+              totalInvalidEdges+=1
+          }
+        }
+        prEdges.println(s"$componentID,$method,$cliqueID,${c.clique.size},$vertexID1,$vertexID2,$remainsValid,$evidenceInThisEdge,$scoreThisEdge") //TODO: compute score?
+      }
+    }
+    if(evidenceCountTotal>0){
+      if(validEdges == edgesTotal){
+        correctCliques+=1
+      } else{
+        incorrectCliques+=1
       }
     }
     val verticesWithAtLeastOneEdgeWithEvidence = hasEvidence.values.filter(identity).size
@@ -74,6 +102,19 @@ case class CliqueAnalyser(prCliques: PrintWriter,
 
   def addResultTuples(cliquesGreedy: collection.Seq[RoleMerge], componentID: String, method: String) = {
     cliquesGreedy.foreach(c => addResultTuple(c, componentID, method))
+  }
+
+  def printResults() = {
+    println(s"totalValidEdges: $totalValidEdges")
+    println(s"totalInvalidEdges: $totalInvalidEdges")
+
+    if(maxRecalEdgeIds.isDefined){
+      println(s"totalValidEdgesThatAlsoAreInMaxRecallSet: $totalValidEdgesThatAlsoAreInMaxRecallSet")
+      println(s"maxRecallSetSize: ${maxRecalEdgeIds.get.size}")
+    }
+
+    println(s"correctCliques: $correctCliques")
+    println(s"incorrectCliques: $incorrectCliques")
   }
 
 

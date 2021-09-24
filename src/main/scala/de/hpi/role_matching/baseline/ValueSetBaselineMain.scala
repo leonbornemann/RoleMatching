@@ -35,7 +35,9 @@ object ValueSetBaselineMain extends App with StrictLogging{
   val analyzer = new CliqueAnalyser(prCliques,prEdges,vertexLookupMap,trainTimeEnd,None,None,Some(edgesInMaxRecall))
   analyzer.serializeSchema()
   var groupsDone = 0
-  grouped.values.foreach(matched => {
+  grouped.values
+    .withFilter(_.size>1)
+    .foreach(matched => {
     val rm = RoleMerge(matched.toSet,Double.MinValue)
     if(matched.size*matched.size>100000){
       logger.debug(s"Processing large group with ${matched.size} vertices")

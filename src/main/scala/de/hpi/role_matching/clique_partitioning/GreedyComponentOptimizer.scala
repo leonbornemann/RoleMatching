@@ -21,12 +21,14 @@ class GreedyComponentOptimizer(c: NewSubgraph,log:Boolean) extends Optimizer(c) 
       val candidates = collection.mutable.HashSet() ++ c.neighborsOf(curClique.head).intersect(V)
       val edgesCovered = scala.collection.mutable.ArrayBuffer[(Int,Int,Double)]()
       while(!candidates.isEmpty){
-        val u = candidates.find(v => curClique.map(y => getEdgeWeight(v,y)).sum > 0)
-        if(u.isDefined){
-          objective += curClique.toIndexedSeq.map(y => getEdgeWeight(u.get,y)).sum
-          curClique.add(u.get)
-          candidates.remove(u.get)
-          candidates.union(c.neighborsOf(u.get).diff(curClique))
+        //val u = candidates.find(v => curClique.map(y => getEdgeWeight(v,y)).sum > 0)
+        val withGain = candidates.toIndexedSeq.map(v => (v,curClique.map(y => getEdgeWeight(v,y)).sum))
+        val (u,gain) = withGain.sortBy(-_._2).head
+        if(gain>0){
+          objective += gain
+          curClique.add(u)
+          candidates.remove(u)
+          candidates.union(c.neighborsOf(u).diff(curClique))
         } else {
           //no more remaining candidates - we are done!
           candidates.clear()

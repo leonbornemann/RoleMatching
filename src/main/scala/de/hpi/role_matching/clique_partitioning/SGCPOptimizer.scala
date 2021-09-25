@@ -63,9 +63,15 @@ class SGCPOptimizer(graph: Graph[Int, DefaultWeightedEdge],
       serializeMerges(merges,prGreedyLargeVertexCount)
       checkMergeIntegrity(merges,component)
     } else {
-      //should never get here
-      logger.debug("Error in switch-case - we should never get here")
-      assert(false)
+      if(rerunGreedyOnly){
+        //just skip
+      } else {
+        println(component.nVertices)
+        println(rerunGreedyOnly)
+        //should never get here
+        logger.debug("Error in switch-case - we should never get here")
+        assert(false)
+      }
     }
   }
 

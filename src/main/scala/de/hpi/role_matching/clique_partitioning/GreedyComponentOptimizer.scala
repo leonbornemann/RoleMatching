@@ -60,7 +60,7 @@ class GreedyComponentOptimizer(c: NewSubgraph,log:Boolean) extends Optimizer(c) 
         logger.debug(s"Bug found in Greedy: Clique: ${cc.min}, size: ${cc.size}, Weight by greedy: ${w} Weight from edges: ${newWeight}  ")
       }
       //assert(Math.abs(w - newWeight) < 0.0000001)
-      assert(newWeight>0)
+      assert(newWeight>=0)
     }}
     cliqueCover.map{case (cc,objective) => {
       RoleMerge(cc,objective)

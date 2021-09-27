@@ -25,31 +25,45 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
   val baselineNoWeightSetting = args(7) == "baselineNoWeight"
   GLOBAL_CONFIG.setDatesForDataSource(source)
   val resultDir = args(8)
+  val redoGreedyOnly = args(9).toBoolean
   val graphSet = SlimGraphSet.fromJsonFile(graphFile)
   val vertexLookupMap = VertexLookupMap.fromJsonFile(lookupMapFile.getAbsolutePath)
-  val optimizationGraph = (if(scoreConfig.isDefined) graphSet.transformToOptimizationGraph(trainTimeEnd,scoreConfig.get)
+  if(!redoGreedyOnly){
+    val optimizationGraph = (if(scoreConfig.isDefined) graphSet.transformToOptimizationGraph(trainTimeEnd,scoreConfig.get)
     else if(maxRecallSetting) graphSet.getMaxRecallSettingOptimizationGraph(trainTimeEnd,vertexLookupMap)
     else graphSet.getBaselineNoWeightSetting(trainTimeEnd))
-  val mergeFilesFromMDMCP = mergeDirMDMCP.listFiles().map(f => (f.getName, f)).toMap
-  val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
-  assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
-  new File(resultDir).mkdirs()
-  val pr = new PrintWriter(resultDir + "/cliques.csv")
-  val prEdges = new PrintWriter(resultDir + "/edges.csv")
-  val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexLookupMap, trainTimeEnd,Some(graphSet), scoreConfig)
-  cliqueAnalyser.serializeSchema()
-  val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
-    val cliquesMDMCP = new MDMCPResult(new NewSubgraph(optimizationGraph), mf, partitionVertexFiles(fname)).cliques
-    val componentName = fname.split("\\.")(0)
-    cliqueAnalyser.addResultTuples(cliquesMDMCP, componentName, "MDMCP")
-  }
-  }
-  new File(mergeDirScala).listFiles().foreach(f => {
+    val mergeFilesFromMDMCP = mergeDirMDMCP.listFiles().map(f => (f.getName, f)).toMap
+    val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
+    assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
+    new File(resultDir).mkdirs()
+    val pr = new PrintWriter(resultDir + "/cliques.csv")
+    val prEdges = new PrintWriter(resultDir + "/edges.csv")
+    val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexLookupMap, trainTimeEnd,Some(graphSet), scoreConfig)
+    cliqueAnalyser.serializeSchema()
+    val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
+      val cliquesMDMCP = new MDMCPResult(new NewSubgraph(optimizationGraph), mf, partitionVertexFiles(fname)).cliques
+      val componentName = fname.split("\\.")(0)
+      cliqueAnalyser.addResultTuples(cliquesMDMCP, componentName, "MDMCP")
+    }
+    }
+    new File(mergeDirScala).listFiles().foreach(f => {
+      val cliquesThisFile = RoleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath)
+      val componentName = "-"
+      cliqueAnalyser.addResultTuples(cliquesThisFile, componentName, f.getName.split("\\.")(0))
+    })
+    cliqueAnalyser.printResults()
+    pr.close()
+    prEdges.close()
+  } else {
+    val pr = new PrintWriter(resultDir + "/cliquesGreedyNew.csv")
+    val prEdges = new PrintWriter(resultDir + "/edgesGreedyNew.csv")
+    val f = new File(mergeDirScala + "/greedyLargeVertexCountResult.json")
     val cliquesThisFile = RoleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath)
     val componentName = "-"
+    val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexLookupMap, trainTimeEnd,Some(graphSet), scoreConfig)
     cliqueAnalyser.addResultTuples(cliquesThisFile, componentName, f.getName.split("\\.")(0))
-  })
-  cliqueAnalyser.printResults()
-  pr.close()
-  prEdges.close()
+    pr.close()
+    prEdges.close()
+  }
+
 }

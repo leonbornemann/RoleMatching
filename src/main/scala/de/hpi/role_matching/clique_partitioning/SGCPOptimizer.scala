@@ -37,40 +37,50 @@ class SGCPOptimizer(graph: Graph[Int, DefaultWeightedEdge],
 //    if(component.componentName==31408){
 //      component.toSerializableComponent.toJsonFile(new File(s"debug_components/$name.json"))
 //    }
-    if(component.nVertices==1 && !rerunGreedyOnly){
-      RoleMerge(Set(component.graph.vertexSet().iterator.next()),0.0).appendToWriter(prSingleVertexComponents,false,true)
-    } else if(component.nVertices<8  && !rerunGreedyOnly){
-      //we can do brute-force easily enough
-      val merges = new BruteForceComponentOptimizer(component).optimize()
-      serializeMerges(merges,prBruteForce)
-      checkMergeIntegrity(merges,component)
-    } else if(component.nVertices>=8 && component.nVertices<500  && !rerunGreedyOnly){
-      //      component.toSerializableComponent.toJsonFile(new File(s"debug_components/$name.json"))
-      //      logger.debug(s"Handling Component s$name")
-      //use related work MDMCP approach
-      component.toMDMCPInputFile(new File(mdmcpExportDir.getAbsolutePath + s"/$name.txt"))
-      component.writePartitionVertexFile(new File(vertexLookupDirForPartitions.getAbsolutePath +  s"/$name.txt"))
-      //      val greedyRes = new GreedyComponentOptimizer(component,true).optimize()
-      //      val greedyFileForComponent = new File(greedyMergeDir.getAbsolutePath + s"/$name.json")
-      //      val pr = new PrintWriter(greedyFileForComponent)
-      //      greedyRes.foreach(_.appendToWriter(pr,false,true))
-      //      pr.close()
-      //      greedyRes
-    } else if(component.nVertices>=500){
-      //      logger.debug(s"Skipping component with ${component.nVertices} vertices")
-      val merges = new GreedyComponentOptimizer(component,false).optimize()
-      //val newOptimizer = new SmartLargeComponentOptimizer(component)
-      serializeMerges(merges,prGreedyLargeVertexCount)
-      checkMergeIntegrity(merges,component)
+    if(rerunGreedyOnly){
+      if(component.nVertices>=500){
+        //      logger.debug(s"Skipping component with ${component.nVertices} vertices")
+        val merges = new GreedyComponentOptimizer(component,false).optimize()
+        //val newOptimizer = new SmartLargeComponentOptimizer(component)
+        serializeMerges(merges,prGreedyLargeVertexCount)
+        checkMergeIntegrity(merges,component)
+      }
     } else {
-      if(rerunGreedyOnly){
-        //just skip
+      if(component.nVertices==1 && !rerunGreedyOnly){
+        RoleMerge(Set(component.graph.vertexSet().iterator.next()),0.0).appendToWriter(prSingleVertexComponents,false,true)
+      } else if(component.nVertices<8  && !rerunGreedyOnly){
+        //we can do brute-force easily enough
+        val merges = new BruteForceComponentOptimizer(component).optimize()
+        serializeMerges(merges,prBruteForce)
+        checkMergeIntegrity(merges,component)
+      } else if(component.nVertices>=8 && component.nVertices<500  && !rerunGreedyOnly){
+        //      component.toSerializableComponent.toJsonFile(new File(s"debug_components/$name.json"))
+        //      logger.debug(s"Handling Component s$name")
+        //use related work MDMCP approach
+        component.toMDMCPInputFile(new File(mdmcpExportDir.getAbsolutePath + s"/$name.txt"))
+        component.writePartitionVertexFile(new File(vertexLookupDirForPartitions.getAbsolutePath +  s"/$name.txt"))
+        //      val greedyRes = new GreedyComponentOptimizer(component,true).optimize()
+        //      val greedyFileForComponent = new File(greedyMergeDir.getAbsolutePath + s"/$name.json")
+        //      val pr = new PrintWriter(greedyFileForComponent)
+        //      greedyRes.foreach(_.appendToWriter(pr,false,true))
+        //      pr.close()
+        //      greedyRes
+      } else if(component.nVertices>=500){
+        //      logger.debug(s"Skipping component with ${component.nVertices} vertices")
+        val merges = new GreedyComponentOptimizer(component,false).optimize()
+        //val newOptimizer = new SmartLargeComponentOptimizer(component)
+        serializeMerges(merges,prGreedyLargeVertexCount)
+        checkMergeIntegrity(merges,component)
       } else {
-        println(component.nVertices)
-        println(rerunGreedyOnly)
-        //should never get here
-        logger.debug("Error in switch-case - we should never get here")
-        assert(false)
+        if(rerunGreedyOnly){
+          //just skip
+        } else {
+          println(component.nVertices)
+          println(rerunGreedyOnly)
+          //should never get here
+          logger.debug("Error in switch-case - we should never get here")
+          assert(false)
+        }
       }
     }
   }

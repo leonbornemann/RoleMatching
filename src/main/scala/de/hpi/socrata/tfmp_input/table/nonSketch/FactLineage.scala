@@ -23,7 +23,7 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     val valueSequence = collection.mutable.ArrayBuffer[Any]()
     while(curElem.isDefined && curElem.get._1.isBefore(trainTimeEnd)){
       val value = curElem.get._2
-      if(valueSequence.last != value && !isWildcard(value))
+      if((valueSequence.isEmpty || valueSequence.last != value) && !isWildcard(value))
         valueSequence += value
       curElem = iterator.nextOption()
     }

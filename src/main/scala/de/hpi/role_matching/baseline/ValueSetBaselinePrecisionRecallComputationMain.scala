@@ -3,7 +3,7 @@ package de.hpi.role_matching.baseline
 import scala.io.Source
 
 object ValueSetBaselinePrecisionRecallComputationMain extends App{
-  val file = "/home/leon/data/dataset_versioning/valueSetBaselineResult/result.txt"
+  val file = "/home/leon/data/dataset_versioning/valueSequenceBaseline/result.txt"
   val lines = Source.fromFile(file).getLines().toIndexedSeq
     .zipWithIndex
 

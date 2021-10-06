@@ -16,6 +16,20 @@ import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends AbstractTemporalField[Any] with Serializable{
+
+  def nonWildcardValueSequenceBefore(trainTimeEnd: LocalDate) = {
+    val iterator = lineage.iterator
+    var curElem = iterator.nextOption()
+    val valueSequence = collection.mutable.ArrayBuffer[Any]()
+    while(curElem.isDefined && curElem.get._1.isBefore(trainTimeEnd)){
+      val value = curElem.get._2
+      if(valueSequence.last != value && !isWildcard(value))
+        valueSequence += value
+      curElem = iterator.nextOption()
+    }
+    valueSequence
+  }
+
   def nonWildcardValueSetBefore(trainTimeEnd: LocalDate) = {
     val iterator = lineage.iterator
     var curElem = iterator.nextOption()

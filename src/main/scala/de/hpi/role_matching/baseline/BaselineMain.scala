@@ -13,18 +13,24 @@ import java.io.PrintWriter
 import java.time.LocalDate
 import scala.io.Source
 
-object ValueSetBaselineMain extends App with StrictLogging{
+object BaselineMain extends App with StrictLogging{
   logger.debug(s"Called with ${args.toIndexedSeq}")
   val vertexLookupMap = VertexLookupMap.fromJsonFile(args(0))
   val dataSource = args(1)
   GLOBAL_CONFIG.setDatesForDataSource(dataSource)
   val trainTimeEnd = LocalDate.parse(args(2))
   val resultDir = args(3)
-  val maxRecallEdgeSetFile = args(4)
+  val methodIsValueSet = args(4) == "valueSet"
+  if(!methodIsValueSet)
+    assert(args(4) == "valueSequence")
+  val maxRecallEdgeSetFile = args(5)
   val prCliques = new PrintWriter(resultDir + "/cliques.csv")
   val prEdges = new PrintWriter(resultDir + "/edges.csv")
   val grouped = vertexLookupMap.posToLineage.groupMap(ifl => {
-    ifl._2.factLineage.toFactLineage.nonWildcardValueSetBefore(trainTimeEnd)
+    if(methodIsValueSet)
+      ifl._2.factLineage.toFactLineage.nonWildcardValueSetBefore(trainTimeEnd)
+    else
+      ifl._2.factLineage.toFactLineage.nonWildcardValueSequenceBefore(trainTimeEnd)
   })(_._1)
   val edgesInMaxRecall = Source.fromFile(maxRecallEdgeSetFile)
     .getLines()
@@ -35,6 +41,7 @@ object ValueSetBaselineMain extends App with StrictLogging{
   val analyzer = new CliqueAnalyser(prCliques,prEdges,vertexLookupMap,trainTimeEnd,None,None,Some(edgesInMaxRecall))
   analyzer.serializeSchema()
   var groupsDone = 0
+  val method = if(methodIsValueSet) "valueSetBaseline" else "valueSequenceBaseline"
   grouped.values
     .withFilter(_.size>1)
     .foreach(matched => {
@@ -42,7 +49,7 @@ object ValueSetBaselineMain extends App with StrictLogging{
     if(matched.size*matched.size>100000){
       logger.debug(s"Processing large group with ${matched.size} vertices")
     }
-    analyzer.addResultTuple(rm,"NA","valueSetBaseline")
+      analyzer.addResultTuple(rm,"NA",method)
     if(matched.size*matched.size>100000){
       logger.debug(s"Done with large group with ${matched.size} vertices")
     }

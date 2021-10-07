@@ -4,6 +4,18 @@ import scala.io.Source
 
 object ValueSetBaselinePrecisionRecallComputationMain extends App{
   val file = "/home/leon/data/dataset_versioning/valueSequenceBaseline/result.txt"
+  val recallDict = Map(
+    "utah" -> 6315,
+    "tv_and_film"-> 4695997,
+    "politics"-> 126571,
+    "oregon"-> 17034,
+    "military"-> 538885,
+    "gov.maryland"-> 14597,
+    "football"-> 5757728,
+    "education"-> 2248158,
+    "chicago"-> 49178,
+    "austintexas"-> 160891
+  )
   val lines = Source.fromFile(file).getLines().toIndexedSeq
     .zipWithIndex
 
@@ -19,8 +31,11 @@ object ValueSetBaselinePrecisionRecallComputationMain extends App{
     val cliquePrecision = getScaledDoubleString(getCount(value(4)) / (getCount(value(4)) + getCount(value(5))).toDouble)
     val precision = getCount(value(0)) / (getCount(value(0)) + getCount(value(1))).toDouble
     val recall = getCount(value(2)) / (getCount(value(2)) + getCount(value(3))).toDouble
+    val normalRecall = getCount(value(0)) / recallDict(dsName).toDouble
     val f1 = getScaledDoubleString(2*recall*precision/(recall+precision).toDouble)
-    println(s"$dsName,$cliquePrecision,${getScaledDoubleString(precision)},${getScaledDoubleString(recall)},$f1")
+    val normalF1 = getScaledDoubleString(2*normalRecall*precision/(normalRecall+precision).toDouble)
+    //println(s"$dsName,$cliquePrecision,${getScaledDoubleString(precision)},${getScaledDoubleString(recall)},$f1")
+    println(s"$dsName,$cliquePrecision,${getScaledDoubleString(precision)},${getScaledDoubleString(normalRecall)},$normalF1")
   }
 
   lines.foreach{case (l,i) => {

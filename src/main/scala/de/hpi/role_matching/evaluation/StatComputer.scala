@@ -18,6 +18,17 @@ abstract class StatComputer {
     evidence
   }
 
+  def getEvidenceInTrainPhase(v1: TemporalFieldTrait[Any], v2: TemporalFieldTrait[Any], trainTimeEnd:LocalDate) = {
+    val evidence = new CommonPointOfInterestIterator(v1,v2)
+      .withFilter(cp => cp.pointInTime.isBefore(trainTimeEnd))
+      .toIndexedSeq
+      .map{cp => {
+        if(!FactLineage.isWildcard(cp.curValueA) && !FactLineage.isWildcard(cp.curValueB)) 1 else 0
+      }}
+      .sum
+    evidence
+  }
+
   //Dirty: copied from HoldoutTimeEvaluator
   def getPointInTimeOfRealChangeAfterTrainPeriod(lineage: TemporalFieldTrait[Any],trainTimeEnd:LocalDate) = {
     val prevNonWcValue = lineage.getValueLineage.filter(t => !lineage.isWildcard(t._2) && !t._1.isAfter(trainTimeEnd)).lastOption

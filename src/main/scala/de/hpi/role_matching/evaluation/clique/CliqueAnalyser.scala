@@ -76,7 +76,8 @@ case class CliqueAnalyser(prCliques: PrintWriter,
         //    df['edgeID'] = df['vertex1ID'] + '_' + df['vertex2ID']
         if(maxRecalEdgeIds.isDefined){
           val edgeID = vertexID1 + "_" + vertexID2
-          if(evidenceInThisEdge>0){
+          val evidenceInTrainPhase = getEvidenceInTrainPhase(l1, l2, trainTimeEnd)
+          if(evidenceInThisEdge>0 && evidenceInTrainPhase>0){
             if(remainsValid ) {
               totalValidEdges+=1
               if(maxRecalEdgeIds.get.contains(edgeID))

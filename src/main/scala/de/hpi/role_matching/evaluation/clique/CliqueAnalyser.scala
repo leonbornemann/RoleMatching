@@ -13,12 +13,16 @@ import java.io.PrintWriter
 import java.time.LocalDate
 
 case class CliqueAnalyser(prCliques: PrintWriter,
+                          prCliquesTruePositivesToReview: PrintWriter,
+                          prCliquesRestToReview: PrintWriter,
                           prEdges:PrintWriter,
                           vertexLookupMap: VertexLookupMap,
                           trainTimeEnd: LocalDate,
                           slimGraphSet:Option[SlimGraphSet],
                           scoreConfig: Option[ScoreConfig],
                           maxRecalEdgeIds:Option[Set[String]]=None) extends StatComputer {
+
+  //    val vertexLookupMap = VertexLookupMap.fromJsonFile(args(1) + s"/education.json").getStringToLineageMap
 
   var totalValidEdges = 0
   var totalValidEdgesThatAlsoAreInMaxRecallSet = 0
@@ -31,6 +35,8 @@ case class CliqueAnalyser(prCliques: PrintWriter,
   def serializeSchema() = {
     prCliques.println("ComponentID,Method,cliqueID,cliqueSize,edgesTotal,validEdges,totalEvidence,fractionOfVerticesWithEvidence,score,alpha") //cliqueID is specific per method
     prEdges.println("ComponentID,Method,cliqueID,cliqueSize,vertex1ID,vertex2ID,remainsValid,evidence,score")
+    prCliquesTruePositivesToReview.println("ComponentID,Method,cliqueID,cliqueRoleIDs,remainsValid,evidence,score")
+    prCliquesRestToReview.println("ComponentID,Method,cliqueID,cliqueRoleIDs,remainsValid,evidence,score")
   }
 
   def getScore(i: Int, j: Int) = {
@@ -99,6 +105,13 @@ case class CliqueAnalyser(prCliques: PrintWriter,
     val verticesWithAtLeastOneEdgeWithEvidence = hasEvidence.values.filter(identity).size
     val fractionOfVerticesWithEvidence = verticesWithAtLeastOneEdgeWithEvidence / vertices.size.toDouble
     prCliques.println(s"$componentID,$method,$cliqueID,${c.clique.size},$edgesTotal,$validEdges,$evidenceCountTotal,$fractionOfVerticesWithEvidence,${c.cliqueScore},${scoreConfig.map(_.alpha).getOrElse(0.0f)}")
+    if(identifiedVertices.size>1 && identifiedVertices.size<=25 && validEdges==edgesTotal && evidenceCountTotal>1){
+      val idsInClique = identifiedVertices.map(id => id.csvSafeID).mkString(";")
+      prCliquesTruePositivesToReview.println(s"$componentID,$method,$cliqueID,$evidenceCountTotal,$idsInClique")
+    } else {
+      val idsInClique = identifiedVertices.map(id => id.csvSafeID).mkString(";")
+      prCliquesRestToReview.println(s"$componentID,$method,$cliqueID,$evidenceCountTotal,$idsInClique")
+    }
   }
 
   def addResultTuples(cliquesGreedy: collection.Seq[RoleMerge], componentID: String, method: String) = {

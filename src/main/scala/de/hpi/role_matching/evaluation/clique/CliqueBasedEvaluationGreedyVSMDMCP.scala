@@ -33,8 +33,10 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
   val partitionVertexFiles = mergeDirMappingDir.listFiles().map(f => (f.getName, f)).toMap
   //assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
   val pr = new PrintWriter(resultDir + "/cliques.csv")
+  val prCliquesTruePositivesToReview = new PrintWriter(resultDir + "/cliques_To_Review_True_positives.csv")
+  val prCliquesRestToReview = new PrintWriter(resultDir + "/cliques_To_Review_Rest.csv")
   val prEdges = new PrintWriter(resultDir + "/edges.csv")
-  val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexlookupMap, trainTimeEnd,Some(slimGraphSet),scoreConfig)
+  val cliqueAnalyser = new CliqueAnalyser(pr,prCliquesTruePositivesToReview,prCliquesRestToReview,prEdges, vertexlookupMap, trainTimeEnd,Some(slimGraphSet),scoreConfig)
   cliqueAnalyser.serializeSchema()
   val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
     val cliquesMDMCP = new MDMCPResult(new NewSubgraph(slimGraphSet.transformToOptimizationGraph(trainTimeEnd,scoreConfig.get)), mf, partitionVertexFiles(fname)).cliques

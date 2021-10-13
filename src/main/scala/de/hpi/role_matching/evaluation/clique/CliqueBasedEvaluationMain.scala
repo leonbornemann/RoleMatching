@@ -2,6 +2,7 @@ package de.hpi.role_matching.evaluation.clique
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.baseline.BaselineMain.resultDir
 import de.hpi.role_matching.clique_partitioning.SparseGraphCliquePartitioningMain.args
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, SlimGraphSet, VertexLookupMap}
@@ -37,8 +38,10 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
     assert(mergeFilesFromMDMCP.keySet==partitionVertexFiles.keySet)
     new File(resultDir).mkdirs()
     val pr = new PrintWriter(resultDir + "/cliques.csv")
+    val prCliquesTruePositivesToReview = new PrintWriter(resultDir + "/cliques_To_Review_True_positives.csv")
+    val prCliquesRestToReview = new PrintWriter(resultDir + "/cliques_To_Review_Rest.csv")
     val prEdges = new PrintWriter(resultDir + "/edges.csv")
-    val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexLookupMap, trainTimeEnd,Some(graphSet), scoreConfig)
+    val cliqueAnalyser = new CliqueAnalyser(pr,prCliquesTruePositivesToReview,prCliquesRestToReview,prEdges, vertexLookupMap, trainTimeEnd,Some(graphSet), scoreConfig)
     cliqueAnalyser.serializeSchema()
     val mdmcpMerges = mergeFilesFromMDMCP.foreach { case (fname, mf) => {
       val cliquesMDMCP = new MDMCPResult(new NewSubgraph(optimizationGraph), mf, partitionVertexFiles(fname)).cliques
@@ -56,11 +59,13 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
     prEdges.close()
   } else {
     val pr = new PrintWriter(resultDir + "/cliquesGreedyNew.csv")
+    val prCliquesTruePositivesToReview = new PrintWriter(resultDir + "/cliques_To_Review_True_positives.csv")
+    val prCliquesRestToReview = new PrintWriter(resultDir + "/cliques_To_Review_Rest.csv")
     val prEdges = new PrintWriter(resultDir + "/edgesGreedyNew.csv")
     val f = new File(mergeDirScala + "/greedyLargeVertexCountResult.json")
     val cliquesThisFile = RoleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath)
     val componentName = "-"
-    val cliqueAnalyser = new CliqueAnalyser(pr,prEdges, vertexLookupMap, trainTimeEnd,Some(graphSet), scoreConfig)
+    val cliqueAnalyser = new CliqueAnalyser(pr,prCliquesTruePositivesToReview,prCliquesRestToReview,prEdges, vertexLookupMap, trainTimeEnd,Some(graphSet), scoreConfig)
     cliqueAnalyser.addResultTuples(cliquesThisFile, componentName, f.getName.split("\\.")(0))
     pr.close()
     prEdges.close()

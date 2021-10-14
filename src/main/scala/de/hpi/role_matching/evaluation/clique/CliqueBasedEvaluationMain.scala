@@ -57,6 +57,8 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
     cliqueAnalyser.printResults()
     pr.close()
     prEdges.close()
+    prCliquesTruePositivesToReview.close()
+    prCliquesRestToReview.close()
   } else {
     val pr = new PrintWriter(resultDir + "/cliquesGreedyNew.csv")
     val prCliquesTruePositivesToReview = new PrintWriter(resultDir + "/cliques_To_Review_True_positives.csv")
@@ -66,9 +68,12 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
     val cliquesThisFile = RoleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath)
     val componentName = "-"
     val cliqueAnalyser = new CliqueAnalyser(pr,prCliquesTruePositivesToReview,prCliquesRestToReview,prEdges, vertexLookupMap, trainTimeEnd,Some(graphSet), scoreConfig)
+    cliqueAnalyser.serializeSchema()
     cliqueAnalyser.addResultTuples(cliquesThisFile, componentName, f.getName.split("\\.")(0))
     pr.close()
     prEdges.close()
+    prCliquesTruePositivesToReview.close()
+    prCliquesRestToReview.close()
   }
 
 }

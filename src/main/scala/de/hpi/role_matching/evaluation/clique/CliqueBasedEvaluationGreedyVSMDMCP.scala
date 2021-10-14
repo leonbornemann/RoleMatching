@@ -48,4 +48,6 @@ object CliqueBasedEvaluationGreedyVSMDMCP extends App with StrictLogging {
   }
   pr.close()
   prEdges.close()
+  prCliquesTruePositivesToReview.close()
+  prCliquesRestToReview.close()
 }

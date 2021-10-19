@@ -1,9 +1,12 @@
 package de.hpi.role_matching.baseline
 
+import java.io.PrintWriter
 import scala.io.Source
 
 object ValueSetBaselinePrecisionRecallComputationMain extends App{
-  val file = "/home/leon/data/dataset_versioning/valueSequenceBaseline/result.txt"
+  val baselineName = "valueSetBaselineResult"
+  val file = s"/home/leon/data/dataset_versioning/$baselineName/result2.txt"
+  val resultFile = new PrintWriter(s"/home/leon/data/dataset_versioning/$baselineName/result2.csv")
   val recallDict = Map(
     "utah" -> 6315,
     "tv_and_film"-> 4695997,
@@ -35,7 +38,9 @@ object ValueSetBaselinePrecisionRecallComputationMain extends App{
     val f1 = getScaledDoubleString(2*recall*precision/(recall+precision).toDouble)
     val normalF1 = getScaledDoubleString(2*normalRecall*precision/(normalRecall+precision).toDouble)
     //println(s"$dsName,$cliquePrecision,${getScaledDoubleString(precision)},${getScaledDoubleString(recall)},$f1")
-    println(s"$dsName,$cliquePrecision,${getScaledDoubleString(precision)},${getScaledDoubleString(normalRecall)},$normalF1")
+    val csvString = s"$dsName,$cliquePrecision,${getScaledDoubleString(precision)},${getScaledDoubleString(normalRecall)},$normalF1"
+    println(csvString)
+    resultFile.println(csvString)
   }
 
   lines.foreach{case (l,i) => {
@@ -44,5 +49,6 @@ object ValueSetBaselinePrecisionRecallComputationMain extends App{
       printCSVString(lines.slice(i+1,i+7),dsName)
     }
   }}
+  resultFile.close()
 
 }

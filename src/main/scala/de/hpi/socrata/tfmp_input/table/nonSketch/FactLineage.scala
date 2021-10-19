@@ -10,6 +10,8 @@ import de.hpi.role_matching.compatibility.graph.representation.vertex.Identified
 import de.hpi.role_matching.compatibility.graph.representation.vertex.IdentifiedFactLineage.digitRegex
 import de.hpi.role_matching.evaluation.edge.RemainsValidVariant
 import de.hpi.role_matching.evaluation.edge.RemainsValidVariant.RemainsValidVariant
+import de.hpi.socrata.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
+import de.hpi.socrata.tfmp_input.association.AssociationIdentifier
 
 import java.time.{LocalDate, Period}
 import scala.collection.mutable
@@ -184,6 +186,26 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
   override def WILDCARDVALUES: Set[Any] = WILDCARD_VALUES
 }
 object FactLineage{
+
+  def toAssociationTable(histories: IndexedSeq[FactLineage], id:AssociationIdentifier,attrID:Int) = {
+    //id:String,
+    //                                                                unionedOriginalTables:mutable.HashSet[AssociationIdentifier],
+    //                                                                key: collection.IndexedSeq[SurrogateAttributeLineage],
+    //                                                                nonKeyAttribute:AttributeLineage,
+    //                                                                foreignKeys:collection.IndexedSeq[SurrogateAttributeLineage],
+    //                                                                val surrogateBasedTemporalRows:collection.mutable.ArrayBuffer[SurrogateBasedTemporalRow] = collection.mutable.ArrayBuffer(),
+    //                                                                uniqueSynthTableID:Int = SynthesizedDatabaseTableRegistry.getNextID()
+    val rows = collection.mutable.ArrayBuffer() ++ histories.zipWithIndex.map{case (vh,i) => new SurrogateBasedTemporalRow(IndexedSeq(i),vh,IndexedSeq())}
+    val pk = SurrogateAttributeLineage(0,attrID)
+    val attributeLineage = new AttributeLineage(attrID,collection.mutable.TreeMap())
+    new SurrogateBasedSynthesizedTemporalDatabaseTableAssociation(id.compositeID,
+      collection.mutable.HashSet(id),
+      IndexedSeq[SurrogateAttributeLineage](pk),
+      attributeLineage,
+      IndexedSeq[SurrogateAttributeLineage](),
+      rows)
+  }
+
 
   def WILDCARD_VALUES:Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_DATASET,ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_ROW,ReservedChangeValues.NOT_EXISTANT_CELL,ReservedChangeValues.NOT_KNOWN_DUE_TO_NO_VISIBLE_CHANGE)
 

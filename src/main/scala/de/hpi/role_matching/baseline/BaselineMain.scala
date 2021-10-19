@@ -27,6 +27,7 @@ object BaselineMain extends App with StrictLogging{
   val prCliques = new PrintWriter(resultDir + "/cliques.csv")
   val prCliquesTruePositivesToReview = new PrintWriter(resultDir + "/cliques_To_Review_True_positives.csv")
   val prCliquesRestToReview = new PrintWriter(resultDir + "/cliques_To_Review_Rest.csv")
+  val tableStringPr = new PrintWriter(resultDir + "/tableStrings.txt")
   val prEdges = new PrintWriter(resultDir + "/edges.csv")
   val grouped = vertexLookupMap.posToLineage.groupMap(ifl => {
     if(methodIsValueSet)
@@ -40,7 +41,7 @@ object BaselineMain extends App with StrictLogging{
     .tail
     .map(s => s.split(",")(1))
     .toSet
-  val analyzer = new CliqueAnalyser(prCliques,prCliquesTruePositivesToReview,prCliquesRestToReview,prEdges,vertexLookupMap,trainTimeEnd,None,None,Some(edgesInMaxRecall))
+  val analyzer = new CliqueAnalyser(prCliques,prCliquesTruePositivesToReview,prCliquesRestToReview,tableStringPr,prEdges,vertexLookupMap,trainTimeEnd,None,None,Some(edgesInMaxRecall))
   analyzer.serializeSchema()
   var groupsDone = 0
   val method = if(methodIsValueSet) "valueSetBaseline" else "valueSequenceBaseline"

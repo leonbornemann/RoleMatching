@@ -15,6 +15,7 @@ import java.time.LocalDate
 case class CliqueAnalyser(prCliques: PrintWriter,
                           prCliquesTruePositivesToReview: PrintWriter,
                           prCliquesRestToReview: PrintWriter,
+                          prTableStrings: PrintWriter,
                           prEdges:PrintWriter,
                           vertexLookupMap: VertexLookupMap,
                           trainTimeEnd: LocalDate,
@@ -35,8 +36,8 @@ case class CliqueAnalyser(prCliques: PrintWriter,
   def serializeSchema() = {
     prCliques.println("ComponentID,Method,cliqueID,cliqueSize,edgesTotal,validEdges,totalEvidence,fractionOfVerticesWithEvidence,score,alpha") //cliqueID is specific per method
     prEdges.println("ComponentID,Method,cliqueID,cliqueSize,vertex1ID,vertex2ID,remainsValid,evidence,score")
-    prCliquesTruePositivesToReview.println("ComponentID,Method,cliqueID,cliqueRoleIDs,remainsValid,evidence,score")
-    prCliquesRestToReview.println("ComponentID,Method,cliqueID,cliqueRoleIDs,remainsValid,evidence,score")
+    prCliquesTruePositivesToReview.println("ComponentID,Method,cliqueID,cliqueRoleIDs,evidence,commonValues")
+    prCliquesRestToReview.println("ComponentID,Method,cliqueID,cliqueRoleIDs,evidence,commonValues")
   }
 
   def getScore(i: Int, j: Int) = {
@@ -46,6 +47,21 @@ case class CliqueAnalyser(prCliques: PrintWriter,
     } else {
       Float.NaN
     }
+  }
+
+  def toCSVSafe(head: Any) = head.toString.replace("\r"," ").replace("\n"," ").replace(","," ")
+
+  def getCommonValuesAsSemicolonSeparatedString(vertices: IndexedSeq[IdentifiedFactLineage]) = {
+    val allDates = vertices.flatMap(_.factLineage.lineage.keySet)
+    val valuesAtDate = allDates.map(ld => {
+      (ld,vertices.map(_.factLineage.toFactLineage.valueAt(ld)))
+    })
+    val values = valuesAtDate
+      .filter{case (ld,values) => values.filter(v => !FactLineage.isWildcard(v)).size>1}
+      .sortBy(-_._2.size)
+      .take(10)
+      .map(t => toCSVSafe(t._2.head))
+    values.mkString(";")
   }
 
   def addResultTuple(c: RoleMerge, componentID: String, method: String) = {
@@ -105,12 +121,15 @@ case class CliqueAnalyser(prCliques: PrintWriter,
     val verticesWithAtLeastOneEdgeWithEvidence = hasEvidence.values.filter(identity).size
     val fractionOfVerticesWithEvidence = verticesWithAtLeastOneEdgeWithEvidence / vertices.size.toDouble
     prCliques.println(s"$componentID,$method,$cliqueID,${c.clique.size},$edgesTotal,$validEdges,$evidenceCountTotal,$fractionOfVerticesWithEvidence,${c.cliqueScore},${scoreConfig.map(_.alpha).getOrElse(0.0f)}")
+    val commonValues = getCommonValuesAsSemicolonSeparatedString(identifiedVertices)
     if(identifiedVertices.size>1 && identifiedVertices.size<=25 && validEdges==edgesTotal && evidenceCountTotal>1){
       val idsInClique = identifiedVertices.map(id => id.csvSafeID).mkString(";")
-      prCliquesTruePositivesToReview.println(s"$componentID,$method,$cliqueID,$evidenceCountTotal,$idsInClique")
+      val tableString = IdentifiedFactLineage.getTabularEventLineageString(identifiedVertices)
+      prCliquesTruePositivesToReview.println(s"$componentID,$method,$cliqueID,$evidenceCountTotal,$idsInClique,$commonValues")
+      prTableStrings.println(tableString)
     } else {
       val idsInClique = identifiedVertices.map(id => id.csvSafeID).mkString(";")
-      prCliquesRestToReview.println(s"$componentID,$method,$cliqueID,$evidenceCountTotal,$idsInClique")
+      prCliquesRestToReview.println(s"$componentID,$method,$cliqueID,$evidenceCountTotal,$idsInClique,$commonValues")
     }
   }
 

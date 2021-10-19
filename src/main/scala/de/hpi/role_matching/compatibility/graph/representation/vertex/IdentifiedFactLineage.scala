@@ -22,12 +22,16 @@ case class IdentifiedFactLineage(id:String, factLineage: FactLineageWithHashMap)
 object IdentifiedFactLineage extends JsonReadable[IdentifiedFactLineage] {
 
   def printTabularEventLineageString(vertices:collection.Seq[IdentifiedFactLineage]) = {
+    println(getTabularEventLineageString(vertices))
+  }
+
+  def getTabularEventLineageString(vertices:collection.Seq[IdentifiedFactLineage]):String = {
     val allDates = vertices.flatMap(_.factLineage.lineage.keySet)
     val header = Seq("") ++ allDates
     val cellsAll = vertices.map(v => {
       Seq(v.id) ++ allDates.map(t => v.factLineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
     }).toSeq
-    TableFormatter.printTable(header,cellsAll)
+    TableFormatter.format(Seq(header) ++ cellsAll)
   }
 
 

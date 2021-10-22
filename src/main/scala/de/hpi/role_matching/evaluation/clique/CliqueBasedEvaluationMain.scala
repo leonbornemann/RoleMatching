@@ -2,7 +2,6 @@ package de.hpi.role_matching.evaluation.clique
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.baseline.BaselineMain.{resultDir, tableStringPr}
 import de.hpi.role_matching.clique_partitioning.SparseGraphCliquePartitioningMain.args
 import de.hpi.role_matching.compatibility.graph.representation.SubGraph
 import de.hpi.role_matching.compatibility.graph.representation.slim.{SLimGraph, SlimGraphSet, VertexLookupMap}
@@ -65,6 +64,7 @@ object CliqueBasedEvaluationMain extends App with StrictLogging {
     val pr = new PrintWriter(resultDir + "/cliquesGreedyNew.csv")
     val prCliquesTruePositivesToReview = new PrintWriter(resultDir + "/cliques_To_Review_True_positives.csv")
     val prCliquesRestToReview = new PrintWriter(resultDir + "/cliques_To_Review_Rest.csv")
+    val tableStringPr = new PrintWriter(resultDir + "/tableStrings.txt")
     val prEdges = new PrintWriter(resultDir + "/edgesGreedyNew.csv")
     val f = new File(mergeDirScala + "/greedyLargeVertexCountResult.json")
     val cliquesThisFile = RoleMerge.fromJsonObjectPerLineFile(f.getAbsolutePath)

@@ -26,7 +26,7 @@ object IdentifiedFactLineage extends JsonReadable[IdentifiedFactLineage] {
   }
 
   def getTabularEventLineageString(vertices:collection.Seq[IdentifiedFactLineage]):String = {
-    val allDates = vertices.flatMap(_.factLineage.lineage.keySet)
+    val allDates = vertices.flatMap(_.factLineage.lineage.keySet).sortBy(_.toEpochDay)
     val header = Seq("") ++ allDates
     val cellsAll = vertices.map(v => {
       Seq(v.id) ++ allDates.map(t => v.factLineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)

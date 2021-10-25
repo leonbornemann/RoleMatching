@@ -21,7 +21,7 @@ case class WikipediaInfoboxValueHistory(template:Option[String],
     val statLine = toWikipediaInfoboxStatisticsLine
     val nonWildcardPeriod = lineage.toFactLineage.nonWildcardDuration(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)
     val hasRealChange = statLine.totalRealChanges >= 1
-    val hasEnoughNonWildcard = nonWildcardPeriod.getDays >= Period.ofYears(1).getDays
+    val hasEnoughNonWildcard = nonWildcardPeriod >= 0
     hasRealChange && hasEnoughNonWildcard
   }
 

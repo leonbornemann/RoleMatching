@@ -13,6 +13,7 @@ import de.hpi.role_matching.evaluation.edge.RemainsValidVariant.RemainsValidVari
 import de.hpi.socrata.change.temporal_tables.attribute.{AttributeLineage, SurrogateAttributeLineage}
 import de.hpi.socrata.tfmp_input.association.AssociationIdentifier
 
+import java.time.temporal.ChronoUnit
 import java.time.{LocalDate, Period}
 import scala.collection.mutable
 
@@ -48,21 +49,21 @@ case class FactLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     lineage.values.forall(v => FactLineage.isWildcard(v) || GLOBAL_CONFIG.nonInformativeValues.contains(v) || v.toString.matches(digitRegex))
   }
 
-
-  def nonWildcardDuration(timeRangeEnd:LocalDate) = {
+  //returns duration in days
+  def nonWildcardDuration(timeRangeEnd:LocalDate/*,begin:Option[LocalDate]=None*/) = {
     val withIndex = lineage
       .zipWithIndex
       .toIndexedSeq
-    var period = Period.ZERO
+    var period:Long = 0
+    //if(begin.isDefined) period += Period.between(begin.get,withIndex.head._1)
     withIndex.map{case ((ld,v),i) => {
-      val begin = ld
+      val curBegin = ld
       val end = if(i!=withIndex.size-1) withIndex(i+1)._1._1 else timeRangeEnd
-      if(!isWildcard(begin))
-        period = period.plus(Period.between(begin,end))
+      if(!isWildcard(v))
+        period = period + (ChronoUnit.DAYS.between(curBegin,end))
     }}
     period
   }
-
 
   def toShortString: String = {
     val withoutWIldcard = lineage

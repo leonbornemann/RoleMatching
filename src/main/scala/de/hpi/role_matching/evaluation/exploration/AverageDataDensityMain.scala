@@ -8,7 +8,7 @@ import java.time.temporal.ChronoUnit
 
 object AverageDataDensityMain extends App {
 
-  val vertexLookupDir = "/home/leon/data/dataset_versioning/vertexLookupMaps"
+  val vertexLookupDir = args(0)
   val dsNames = Seq("politics","military","education","football","tv_and_film")
   GLOBAL_CONFIG.setDatesForDataSource("wikipedia")
   val totalDurationDays = ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,GLOBAL_CONFIG.STANDARD_TIME_FRAME_END)

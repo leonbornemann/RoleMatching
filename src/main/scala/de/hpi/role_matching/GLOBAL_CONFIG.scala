@@ -1,8 +1,9 @@
 package de.hpi.role_matching
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.socrata.change.UpdateChangeCounter
-import de.hpi.socrata.io.Socrata_IOService
+import de.hpi.data_preparation.socrata.change.UpdateChangeCounter
+import de.hpi.data_preparation.socrata.io.Socrata_IOService
+import de.hpi.role_matching.cbrm.compatibility_graph.CompatibilityGraphCreationConfig
 
 import java.io.File
 import java.time.LocalDate
@@ -10,7 +11,7 @@ import java.time.format.DateTimeFormatter
 
 object GLOBAL_CONFIG extends StrictLogging{
 
-  var INDEXING_CONFIG = IndexingConfig(0.9,0.9,50)
+  var INDEXING_CONFIG = CompatibilityGraphCreationConfig(0.9,0.9,50)
 
   var INDEXING_STATS_RESULT_DIR: File = new File("stats/")
 

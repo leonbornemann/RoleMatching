@@ -1,8 +1,8 @@
 package de.hpi.role_matching.evaluation.exploration
 
-import de.hpi.role_matching.clique_partitioning.ScoreConfig
-import de.hpi.role_matching.compatibility.graph.representation.simple.GeneralEdge
-import de.hpi.role_matching.compatibility.graph.representation.slim.VertexLookupMap
+import de.hpi.role_matching.cbrm.sgcp.ScoreConfig
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
+import de.hpi.role_matching.cbrm.data.Roleset
 
 import java.io.PrintWriter
 import scala.io.Source
@@ -10,66 +10,33 @@ import scala.io.Source
 object DataCleaningCaseStudyMain extends App {
   //normal()
 
-  def educationSeries() = {
-    val csvFile = args(0) + s"/educationSeriesEdges_invalid.csv"
-    val vertexLookupMap = VertexLookupMap.fromJsonFile(args(1) + s"/education.json").getStringToLineageMap
-    val resultDir = "/home/leon/data/dataset_versioning/cliqueEvaluation/InvalidExamples"
-    val edges = Source
-      .fromFile(csvFile)
-      .getLines()
-      .toIndexedSeq
-      .tail
-      .map(l => {
-        val tokens = l.split(",")
-        val id = tokens(5)
-        val id2 = tokens(6)
-        if (!vertexLookupMap.contains(id) || !vertexLookupMap.contains(id2))
-          None
-        else {
-          val l1 = vertexLookupMap(id)
-          val l2 = vertexLookupMap(id2)
-          Some(GeneralEdge(l1, l2))
-        }
-      })
-      .flatten
-    val resultPr = new PrintWriter(resultDir + s"/educationSeriesData.txt")
-    edges.foreach(ge => {
-      val str = ge.getTabularEventLineageString
-      resultPr.println(str)
+  private val invalidRoleMatchingExamplesDir = args(0)
+  val fileName = args(1)
+  val resultDir = args(2)
+  val csvFile = invalidRoleMatchingExamplesDir + s"/${fileName}_invalid.csv"
+  val vertexLookupMap = Roleset.fromJsonFile(args(1) + s"/$fileName.json").getStringToLineageMap
+  val edges = Source
+    .fromFile(csvFile)
+    .getLines()
+    .toIndexedSeq
+    .tail
+    .map(l => {
+      val tokens = l.split(",")
+      val id = tokens(5)
+      val id2 = tokens(6)
+      if (!vertexLookupMap.contains(id) || !vertexLookupMap.contains(id2))
+        None
+      else {
+        val l1 = vertexLookupMap(id)
+        val l2 = vertexLookupMap(id2)
+        Some(SimpleCompatbilityGraphEdge(l1, l2))
+      }
     })
-    resultPr.close()
-  }
-
-  educationSeries()
-
-  private def normal() = {
-    val dsName = "football"
-    val csvFile = args(0) + s"/${dsName}_invalid.csv"
-    val vertexLookupMap = VertexLookupMap.fromJsonFile(args(1) + s"/$dsName.json").getStringToLineageMap
-    val resultDir = "/home/leon/data/dataset_versioning/cliqueEvaluation/InvalidExamples"
-    val edges = Source
-      .fromFile(csvFile)
-      .getLines()
-      .toIndexedSeq
-      .tail
-      .map(l => {
-        val tokens = l.split(",")
-        val id = tokens(5)
-        val id2 = tokens(6)
-        if (!vertexLookupMap.contains(id) || !vertexLookupMap.contains(id2))
-          None
-        else {
-          val l1 = vertexLookupMap(id)
-          val l2 = vertexLookupMap(id2)
-          Some(GeneralEdge(l1, l2))
-        }
-      })
-      .flatten
-    val resultPr = new PrintWriter(resultDir + s"/$dsName.txt")
-    edges.foreach(ge => {
-      val str = ge.getTabularEventLineageString
-      resultPr.println(str)
-    })
-    resultPr.close()
-  }
+    .flatten
+  val resultPr = new PrintWriter(resultDir + s"/$fileName.txt")
+  edges.foreach(ge => {
+    val str = ge.getTabularEventLineageString
+    resultPr.println(str)
+  })
+  resultPr.close()
 }

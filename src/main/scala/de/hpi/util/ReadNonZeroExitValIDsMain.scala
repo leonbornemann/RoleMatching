@@ -2,6 +2,9 @@ package de.hpi.util
 
 import scala.io.Source
 
+/***
+ * Reads the output log file of the linux parallel command and can be used to search for processes that did not terminate successfully
+ */
 object ReadNonZeroExitValIDsMain extends App {
 
   val file = args(0)

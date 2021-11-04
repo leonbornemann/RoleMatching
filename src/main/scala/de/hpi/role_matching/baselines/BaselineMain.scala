@@ -2,10 +2,9 @@ package de.hpi.role_matching.baselines
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.cbrm.data.Roleset
 import de.hpi.role_matching.cbrm.sgcp.RoleMerge
-import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
 import de.hpi.role_matching.evaluation.matching.RoleMatchinEvaluator
-import de.hpi.role_matching.evaluation.matching.RoleMatchingEvaluationMain.resultDir
 
 import java.io.PrintWriter
 import java.time.LocalDate
@@ -32,9 +31,9 @@ object BaselineMain extends App with StrictLogging{
   val prEdges = new PrintWriter(resultDir + "/edges.csv")
   val grouped = vertexLookupMap.positionToRoleLineage.groupMap(ifl => {
     if(methodIsValueSet)
-      ifl._2.factLineage.toFactLineage.nonWildcardValueSetBefore(trainTimeEnd)
+      ifl._2.roleLineage.toRoleLineage.nonWildcardValueSetBefore(trainTimeEnd)
     else
-      ifl._2.factLineage.toFactLineage.nonWildcardValueSequenceBefore(trainTimeEnd)
+      ifl._2.roleLineage.toRoleLineage.nonWildcardValueSequenceBefore(trainTimeEnd)
   })(_._1)
   val edgesInMaxRecall = Source.fromFile(maxRecallEdgeSetFile)
     .getLines()

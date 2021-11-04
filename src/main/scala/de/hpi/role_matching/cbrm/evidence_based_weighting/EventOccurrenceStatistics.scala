@@ -1,8 +1,7 @@
 package de.hpi.role_matching.cbrm.evidence_based_weighting
 
-import de.hpi.data_preparation.socrata.{JsonReadable, JsonWritable}
-import de.hpi.socrata.JsonReadable
-import EventOccurrenceStatistics.{NEUTRAL, STRONGNEGATIVE, STRONGPOSTIVE, WEAKNEGATIVE, WEAKPOSTIVE}
+import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
+import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics.{NEUTRAL, STRONGNEGATIVE, STRONGPOSTIVE, WEAKNEGATIVE, WEAKPOSTIVE}
 
 import java.time.LocalDate
 

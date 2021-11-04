@@ -1,13 +1,9 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.representation.slim
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.{JsonReadable, JsonWritable}
-import de.hpi.role_matching.cbrm.sgcp.ScoreConfig
-import de.hpi.socrata.JsonReadable
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatibilityGraphEdgeIterator}
 import de.hpi.role_matching.cbrm.data.RoleLineageWithID
-import scalax.collection.Graph
-import scalax.collection.edge.WUnDiEdge
+import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
 
 import java.time.LocalDate
 import scala.collection.mutable
@@ -42,8 +38,8 @@ object MemoryEfficientCompatiblityGraphWithoutEdgeWeight extends JsonReadable[Me
     edges.foreach(e => {
       vertices.add(e.v1)
       vertices.add(e.v2)
-      val fl1 = e.v1.factLineage.toFactLineage
-      val fl2 = e.v2.factLineage.toFactLineage
+      val fl1 = e.v1.roleLineage.toRoleLineage
+      val fl2 = e.v2.roleLineage.toRoleLineage
       if(fl1.projectToTimeRange(trainTimeStart,smallestTrainTimeEnd).tryMergeWithConsistent(fl2.projectToTimeRange(trainTimeStart,smallestTrainTimeEnd)).isDefined){
         val edgeIsPresent = trainTimeEnds.map(end => fl1.projectToTimeRange(trainTimeStart,end).tryMergeWithConsistent(fl2.projectToTimeRange(trainTimeStart,end)).isDefined)
         val id1 = e.v1.id

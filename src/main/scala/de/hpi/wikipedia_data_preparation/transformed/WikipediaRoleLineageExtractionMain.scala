@@ -1,17 +1,15 @@
-package de.hpi.data_preparation.wikipedia.data.transformed
+package de.hpi.wikipedia_data_preparation.transformed
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.wikipedia.data.original.{InfoboxRevision, InfoboxRevisionHistory, WikipediaLineageCreationMode}
-import de.hpi.data_preparation.wikipedia.statistics.WikipediaInfoboxStatistiicsGatherer
+import de.hpi.wikipedia_data_preparation.original_infobox_data.{InfoboxRevision, InfoboxRevisionHistory, WikipediaLineageCreationMode}
 
 import java.io.{File, PrintWriter}
 
-object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
+object WikipediaRoleLineageExtractionMain extends App with StrictLogging {
   val file = args(0)
   val resultDir = new File(args(1))
   val granularityInDays = args(2).toInt
-  val statGatherer = new WikipediaInfoboxStatistiicsGatherer(new File(args(3)))
-  val mode = WikipediaLineageCreationMode.withName(args(4))
+  val mode = WikipediaLineageCreationMode.withName(args(3))
   InfoboxRevisionHistory.setGranularityInDays(granularityInDays)
   val objects = InfoboxRevision.fromJsonObjectPerLineFile(file)
   objects.foreach(_.checkIntegrity())
@@ -21,7 +19,7 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
   logger.debug(s"Running granularity (days) $granularityInDays")
   logger.debug(s"Found ${revisionHistories.size} infobox histories to process")
   var finished = 0
-  val resultFile = resultDir.getAbsolutePath + "/" + WikipediaInfoboxValueHistory.getFilenameForBucket(new File(file).getName)
+  val resultFile = resultDir.getAbsolutePath + "/" + WikipediaRoleLineage.getFilenameForBucket(new File(file).getName)
   val pr = new PrintWriter(resultFile)
   var filtered = 0
   var total = 0
@@ -37,7 +35,6 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
       filtered += (res.size - retained.size)
       total += res.size
       retained.foreach(_.appendToWriter(pr,false,true))
-      statGatherer.addToFile(retained)
       finished += 1
       if (finished % 100 == 0) {
         logger.debug(s"Finished $finished infobox histories leading to ${total} num facts of which we discarded ${filtered} (${100*filtered / total.toDouble}%)")
@@ -45,6 +42,5 @@ object WikipediaInfoboxValueHistoryCreationMain extends App with StrictLogging {
     })
   pr.close()
   //try reading:
-  val res = WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(resultFile)
-  statGatherer.closeFile()
+  val res = WikipediaRoleLineage.fromJsonObjectPerLineFile(resultFile)
 }

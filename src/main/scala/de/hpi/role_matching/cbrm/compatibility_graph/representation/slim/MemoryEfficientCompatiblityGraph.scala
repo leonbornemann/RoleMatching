@@ -1,11 +1,9 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.representation.slim
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.{JsonReadable, JsonWritable}
-import de.hpi.role_matching.cbrm.evidence_based_weighting.{EdgeScore, EvidenceBasedWeighingScore}
-import de.hpi.socrata.JsonReadable
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
-import de.hpi.role_matching.evidence_based_weighting.EdgeScore
+import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
+import de.hpi.role_matching.cbrm.evidence_based_weighting.{EdgeScore, EvidenceBasedWeighingScore}
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 
@@ -51,8 +49,8 @@ case class MemoryEfficientCompatiblityGraph(verticesOrdered: IndexedSeq[String],
 }
 object MemoryEfficientCompatiblityGraph extends JsonReadable[MemoryEfficientCompatiblityGraph] with StrictLogging {
 
-  def getEdgeOption(e:SimpleCompatbilityGraphEdge, scoringFunction: EdgeScore[Any], scoringFunctionThreshold: Double) = {
-    val score = scoringFunction.compute(e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)
+  def getEdgeOption(e:SimpleCompatbilityGraphEdge, scoringFunction: EdgeScore, scoringFunctionThreshold: Double) = {
+    val score = scoringFunction.compute(e.v1.roleLineage.toRoleLineage,e.v2.roleLineage.toRoleLineage)
     val weight = (score-scoringFunctionThreshold).toFloat
     if(weight==Float.NegativeInfinity) {
       None
@@ -78,14 +76,14 @@ object MemoryEfficientCompatiblityGraph extends JsonReadable[MemoryEfficientComp
     MemoryEfficientCompatiblityGraph(verticesOrdered,adjacencyListAsInt)
   }
 
-  def fromGeneralEdgeIterator(edges: SimpleCompatbilityGraphEdge.JsonObjectPerLineFileIterator, scoringFunction: EvidenceBasedWeighingScore[Any], scoringFunctionThreshold: Double) = {
+  def fromGeneralEdgeIterator(edges: SimpleCompatbilityGraphEdge.JsonObjectPerLineFileIterator, scoringFunction: EvidenceBasedWeighingScore, scoringFunctionThreshold: Double) = {
     val vertices = collection.mutable.HashSet[String]()
     val adjacencyList = collection.mutable.HashMap[String, mutable.HashMap[String, Float]]()
     var count = 0
     edges.foreach(e => {
       vertices.add(e.v1.id)
       vertices.add(e.v2.id)
-      val score = scoringFunction.compute(e.v1.factLineage.toFactLineage,e.v2.factLineage.toFactLineage)
+      val score = scoringFunction.compute(e.v1.roleLineage.toRoleLineage,e.v2.roleLineage.toRoleLineage)
       val edge = getEdgeOption(e,scoringFunction,scoringFunctionThreshold)
       if(edge.isDefined){
         adjacencyList.getOrElseUpdate(edge.get._1,mutable.HashMap[String,Float]()).put(edge.get._2,edge.get._3)

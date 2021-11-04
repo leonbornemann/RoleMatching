@@ -1,14 +1,13 @@
-package de.hpi.data_preparation.wikipedia.data.compatiblity_graph
+package de.hpi.wikipedia_data_preparation.compatiblity_graph
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.tfmp_input.association.AssociationIdentifier
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.{GraphConfig, CompatibilityGraphCreationConfig}
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
-import de.hpi.role_matching.evaluation.tuning.EdgeStatisticsGatherer
-import de.hpi.data_preparation.wikipedia.data.original.InfoboxRevisionHistory
-import de.hpi.data_preparation.wikipedia.data.transformed.WikipediaInfoboxValueHistory
-import de.hpi.role_matching.cbrm.compatibility_graph.role_tree.{ConcurrentCompatiblityGraphCreator, RoleReference}
+import de.hpi.role_matching.cbrm.compatibility_graph.role_tree.{AbstractAsynchronousRoleTree, ConcurrentCompatiblityGraphCreator}
+import de.hpi.role_matching.cbrm.compatibility_graph.{CompatibilityGraphCreationConfig, GraphConfig}
+import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, RoleReference}
+import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory
+import de.hpi.wikipedia_data_preparation.transformed.WikipediaRoleLineage
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
@@ -45,23 +44,22 @@ object CompatibilityGraphByTemplateCreationMain extends App with StrictLogging {
   val infoboxHistoryFiles = templates.map(t => new File(byTemplateDir.getAbsolutePath + s"/$t.json"))
   val lineagesComplete = infoboxHistoryFiles.flatMap(f => {
     logger.debug(s"Loading lineages in $f")
-    WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(f.getAbsolutePath)
+    WikipediaRoleLineage.fromJsonObjectPerLineFile(f.getAbsolutePath)
   })
   val lineagesTrain = lineagesComplete
     .map(h => h.projectToTimeRange(InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase))
-  val id = new AssociationIdentifier("wikipedia", templateSetString, 0, Some(0))
-  val attrID = 0
-  val table = WikipediaInfoboxValueHistory.toAssociationTable(lineagesTrain, id, attrID)
+
+  val references = RoleLineageWithID.toReferences(lineagesTrain.map(_.toIdentifiedFactLineage))
+
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Starting compatibility graph creation")
 
-  def toGeneralEdgeFunction(a: RoleReference[Any], b: RoleReference[Any]) = {
-    WikipediaInfoboxValueHistoryMatch(lineagesComplete(a.rowIndex), lineagesComplete(b.rowIndex))
-      .toGeneralEdge
+  def toGeneralEdgeFunction(a: RoleReference, b: RoleReference) = {
+    SimpleCompatbilityGraphEdge(lineagesComplete(a.rowIndex).toIdentifiedFactLineage,lineagesComplete(b.rowIndex).toIdentifiedFactLineage)
   }
 
   val timeNow = System.currentTimeMillis()
-  new ConcurrentCompatiblityGraphCreator(table.tupleReferences,
+  new ConcurrentCompatiblityGraphCreator(references,
     graphConfig,
     true,
     GLOBAL_CONFIG.nonInformativeValues,

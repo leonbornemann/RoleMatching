@@ -1,11 +1,9 @@
 package de.hpi.role_matching.cbrm.evidence_based_weighting
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.{ChangePoint, CommonPointOfInterestIterator}
-import de.hpi.socrata.tfmp_input.table.nonSketch.ChangePoint
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.{MemoryEfficientCompatiblityGraphSet, MemoryEfficientCompatiblityGraphWithoutEdgeWeight}
+import de.hpi.role_matching.cbrm.data.{ChangePoint, CommonPointOfInterestIterator}
 import de.hpi.role_matching.cbrm.evidence_based_weighting.isf.ISFMapStorage
 import de.hpi.role_matching.evaluation.tuning
 import de.hpi.util.LogUtil
@@ -28,13 +26,13 @@ class EvidenceBasedWeightingEventCounter(dsName:String,
   //for the sake of simplicity for now: change this later
   val tfIDFTableAsMap = tfIDF.map(t => (t._1,t._2.asMap))
 
-  val isWildcard:(Any => Boolean) = graph.verticesOrdered.head.factLineage.toFactLineage.isWildcard
+  val isWildcard:(Any => Boolean) = graph.verticesOrdered.head.roleLineage.toRoleLineage.isWildcard
   val transitionSets = graph.verticesOrdered.zipWithIndex
-    .map(il => (il._2,il._1.factLineage.toFactLineage.valueTransitions(true,false)))
+    .map(il => (il._2,il._1.roleLineage.toRoleLineage.valueTransitions(true,false)))
     .toMap
   val nonInformativeValues = GLOBAL_CONFIG.nonInformativeValues
 
-  def getEventCounts(cp: ChangePoint[Any],vertexIdFirst:Int,vertexIdSecond:Int,trainTimeEnd:LocalDate) = {
+  def getEventCounts(cp: ChangePoint,vertexIdFirst:Int,vertexIdSecond:Int,trainTimeEnd:LocalDate) = {
     assert(!cp.prevPointInTime.isAfter(trainTimeEnd))
     val totalCounts = new EventOccurrenceStatistics(null,null)
     val countPrev = EvidenceBasedWeightingScoreComputer.getCountPrev(cp,TIMESTAMP_GRANULARITY_IN_DAYS,Some(trainTimeEnd)).toInt
@@ -77,7 +75,7 @@ class EvidenceBasedWeightingEventCounter(dsName:String,
     val nEdges = graph.adjacencyList.map(_._2.size).sum
     graph.generalEdgeIterator.foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {
       val totalCountsThisEdge = scala.collection.mutable.HashMap[LocalDate, EventOccurrenceStatistics]()
-      val commonPointOfInterestIterator = new CommonPointOfInterestIterator[Any](e.v1.factLineage.toFactLineage, e.v2.factLineage.toFactLineage)
+      val commonPointOfInterestIterator = new CommonPointOfInterestIterator(e.v1.roleLineage.toRoleLineage, e.v2.roleLineage.toRoleLineage)
       commonPointOfInterestIterator
         .withFilter(cp => !cp.prevPointInTime.isAfter(latestTime))
         .foreach(cp => {

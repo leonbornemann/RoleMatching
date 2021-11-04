@@ -13,13 +13,13 @@ object AverageDataDensityMain extends App {
   val totalDurationDays = ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, GLOBAL_CONFIG.STANDARD_TIME_FRAME_END)
   val finalRes = dsNames.flatMap(dsName => {
     val map = Roleset.fromJsonFile(vertexLookupDir + s"/$dsName.json")
-    val densities = map.posToFactLineage.values
+    val densities = map.posToRoleLineage.values
       .map(fl => {
         val nonWildcardDuration = fl.nonWildcardDuration(GLOBAL_CONFIG.STANDARD_TIME_FRAME_END)
         nonWildcardDuration / totalDurationDays.toDouble
       })
     val sumOfDensity = densities.sum
-    val res = sumOfDensity / map.posToFactLineage.size
+    val res = sumOfDensity / map.posToRoleLineage.size
     println(s"$dsName: $res")
     densities
   })

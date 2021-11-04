@@ -1,7 +1,7 @@
-package de.hpi.data_preparation.wikipedia.data.transformed
+package de.hpi.wikipedia_data_preparation.transformed
 
-import de.hpi.data_preparation.socrata.change.ReservedChangeValues
-import de.hpi.data_preparation.wikipedia.data.original.InfoboxRevisionHistory
+import de.hpi.role_matching.cbrm.data.ReservedChangeValues
+import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory
 
 import java.time.{Duration, LocalDate, LocalDateTime, ZoneOffset}
 import scala.collection.mutable

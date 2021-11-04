@@ -1,6 +1,6 @@
 package de.hpi.role_matching.cbrm.compatibility_graph
 
-import de.hpi.data_preparation.socrata.io.Socrata_Synthesis_IOService.dateToStr
+import de.hpi.role_matching.GLOBAL_CONFIG.dateToStr
 
 import java.time.LocalDate
 

@@ -1,7 +1,8 @@
 package de.hpi.role_matching.cbrm.sgcp
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.{MemoryEfficientCompatiblityGraph, MemoryEfficientCompatiblityGraphSet, MemoryEfficientCompatiblityGraphWithoutEdgeWeight}
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.MemoryEfficientCompatiblityGraphSet
+import de.hpi.role_matching.cbrm.data.Roleset
 
 import java.io.File
 import java.time.LocalDate
@@ -21,7 +22,7 @@ object SparseGraphCliquePartitioningMain extends App with StrictLogging{
   val mdmcpExportDir = new File(args(5) + resultDirName)
   val vertexLookupDirForPartitions = new File(args(6) + resultDirName)
   val greedyMergeDir = new File(args(7) + resultDirName)
-  val vertexLookupMap = if(maxRecallSetting) Some(VertexLookupMap.fromJsonFile(args(8))) else None
+  val vertexLookupMap = if(maxRecallSetting) Some(Roleset.fromJsonFile(args(8))) else None
   var graph = MemoryEfficientCompatiblityGraphSet.fromJsonFile(inputGraphFile)
   val optimizationGraph = {
     if(maxRecallSetting)

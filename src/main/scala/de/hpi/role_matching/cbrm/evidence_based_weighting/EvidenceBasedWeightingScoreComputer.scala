@@ -1,27 +1,24 @@
 package de.hpi.role_matching.cbrm.evidence_based_weighting
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.io.Socrata_IOService
-import de.hpi.data_preparation.socrata.tfmp_input.table.TemporalFieldTrait
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.{ChangePoint, CommonPointOfInterestIterator, ValueTransition}
-import de.hpi.socrata.tfmp_input.table.nonSketch.ChangePoint
-import EvidenceBasedWeightingScoreComputer.{getCountPrev, transitionIsNonInformative}
-import EventOccurrenceStatistics.{NEUTRAL, STRONGNEGATIVE, STRONGPOSTIVE, WEAKNEGATIVE, WEAKPOSTIVE}
-import .TFIDFWeightingVariant
+import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.cbrm.data.{ChangePoint, CommonPointOfInterestIterator, RoleLineage, ValueTransition}
+import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics.{NEUTRAL, STRONGNEGATIVE, STRONGPOSTIVE, WEAKNEGATIVE, WEAKPOSTIVE}
+import de.hpi.role_matching.cbrm.evidence_based_weighting.EvidenceBasedWeightingScoreComputer.{getCountPrev, transitionIsNonInformative}
 
 import java.time.LocalDate
 
-class EvidenceBasedWeightingScoreComputer[A](a:TemporalFieldTrait[A],
-                                             b:TemporalFieldTrait[A],
+class EvidenceBasedWeightingScoreComputer(a:RoleLineage,
+                                             b:RoleLineage,
                                              val TIMESTAMP_GRANULARITY_IN_DAYS:Int,
                                              timeEnd:LocalDate, // this should be the end of train time!
-                                             nonInformativeValues:Set[A],
+                                             nonInformativeValues:Set[Any],
                                              nonInformativeValueIsStrict:Boolean, //true if it is enough for one value in a transition to be non-informative to discard it, false if both of them need to be non-informative to discard it
-                                             transitionHistogramForTFIDF:Option[Map[ValueTransition[A],Int]],
+                                             transitionHistogramForTFIDF:Option[Map[ValueTransition,Int]],
                                              lineageCount:Option[Int]
                                          ) {
 
-  val totalTransitionCount = (Socrata_IOService.STANDARD_TIME_FRAME_START.toEpochDay to timeEnd.toEpochDay by TIMESTAMP_GRANULARITY_IN_DAYS).size-1
+  val totalTransitionCount = (GLOBAL_CONFIG.STANDARD_TIME_FRAME_START.toEpochDay to timeEnd.toEpochDay by TIMESTAMP_GRANULARITY_IN_DAYS).size-1
   val WILDCARD_TO_KNOWN_TRANSITION_WEIGHT = -0.1 / totalTransitionCount
   val WILDCARD_TO_UNKNOWN_TRANSITION_WEIGHT = -0.5 / totalTransitionCount
   val BOTH_WILDCARD_WEIGHT = 0
@@ -33,7 +30,7 @@ class EvidenceBasedWeightingScoreComputer[A](a:TemporalFieldTrait[A],
     y
   }
 
-  def getWeightedTransitionScore(d: Double, t: ValueTransition[A]) = {
+  def getWeightedTransitionScore(d: Double, t: ValueTransition) = {
     if(transitionHistogramForTFIDF.isDefined){
       val weight = 1.0 / (transitionHistogramForTFIDF.get(t) - 1)
       weight*(d / totalTransitionCount)
@@ -42,11 +39,11 @@ class EvidenceBasedWeightingScoreComputer[A](a:TemporalFieldTrait[A],
     }
   }
 
-  def SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT(t:ValueTransition[A]) = {
+  def SYNCHRONOUS_NON_WILDCARD_CHANGE_TRANSITION_WEIGHT(t:ValueTransition) = {
     getWeightedTransitionScore(0.5,t)
 
   }
-  def SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT(t:ValueTransition[A]) = {
+  def SYNCHRONOUS_NON_WILDCARD_NON_CHANGE_TRANSITION_WEIGHT(t:ValueTransition) = {
     getWeightedTransitionScore(0.1,t)
   }
 
@@ -61,7 +58,7 @@ class EvidenceBasedWeightingScoreComputer[A](a:TemporalFieldTrait[A],
     if(!a.tryMergeWithConsistent(b).isDefined){
       totalScore = EvidenceBasedWeightingScoreComputer.scoreForInconsistent
     } else {
-      val commonPointOfInterestIterator = new CommonPointOfInterestIterator[A](a,b)
+      val commonPointOfInterestIterator = new CommonPointOfInterestIterator(a,b)
       commonPointOfInterestIterator
         .withFilter(cp => !cp.pointInTime.isAfter(timeEnd))
         .foreach(cp => {
@@ -83,7 +80,7 @@ class EvidenceBasedWeightingScoreComputer[A](a:TemporalFieldTrait[A],
     }
   }
 
-  private def handleCurrentValueTransition(cp: ChangePoint[A]) = {
+  private def handleCurrentValueTransition(cp: ChangePoint) = {
     val values = Set(cp.prevValueA, cp.prevValueB, cp.curValueA, cp.curValueB)
     //handle transition:
     val noWildcardInTransition = values.forall(v => !a.isWildcard(v))
@@ -115,7 +112,7 @@ class EvidenceBasedWeightingScoreComputer[A](a:TemporalFieldTrait[A],
     }
   }
 
-  def handleSameValueTransitions(prevValueA: A, prevValueB: A, countPrev: Int) = {
+  def handleSameValueTransitions(prevValueA: Any, prevValueB: Any, countPrev: Int) = {
     if(countPrev!=0){
       if(a.isWildcard(prevValueA) && a.isWildcard(prevValueB)){
         totalScore += countPrev*BOTH_WILDCARD_WEIGHT
@@ -160,7 +157,7 @@ class EvidenceBasedWeightingScoreComputer[A](a:TemporalFieldTrait[A],
 }
 object EvidenceBasedWeightingScoreComputer extends StrictLogging {
 
-  def getCountPrev[A](cp: ChangePoint[A],TIMESTAMP_GRANULARITY_IN_DAYS:Int,trainTimeEnd:Option[LocalDate]) = {
+  def getCountPrev(cp: ChangePoint,TIMESTAMP_GRANULARITY_IN_DAYS:Int,trainTimeEnd:Option[LocalDate]) = {
     assert(trainTimeEnd.isEmpty || !trainTimeEnd.get.isBefore(cp.prevPointInTime))
     val end = if(trainTimeEnd.isDefined && trainTimeEnd.get.isBefore(cp.pointInTime)) trainTimeEnd.get else cp.pointInTime
     val countPrevInDays = end.toEpochDay - cp.prevPointInTime.toEpochDay - TIMESTAMP_GRANULARITY_IN_DAYS
@@ -173,15 +170,15 @@ object EvidenceBasedWeightingScoreComputer extends StrictLogging {
 
 
 
-  def getCountForSameValueTransition[A](prevValueA: A,
-                                        prevValueB: A,
+  def getCountForSameValueTransition(prevValueA: Any,
+                                        prevValueB: Any,
                                         countPrev: Int,
-                                        isWildcard:(A => Boolean),
-                                        transitionSetA:Set[ValueTransition[A]],
-                                        transitionSetB:Set[ValueTransition[A]],
-                                        nonInformativeValues:Set[A],
+                                        isWildcard:(Any => Boolean),
+                                        transitionSetA:Set[ValueTransition],
+                                        transitionSetB:Set[ValueTransition],
+                                        nonInformativeValues:Set[Any],
                                         nonInformativeValueIsStrict:Boolean,
-                                        transitionHistogramForTFIDF:Option[Map[ValueTransition[A],Int]]=None
+                                        transitionHistogramForTFIDF:Option[Map[ValueTransition,Int]]=None
                                        ) = {
     val totalScore = new EventOccurrenceStatistics(null,null)
     var isInvalid = false
@@ -225,13 +222,13 @@ object EvidenceBasedWeightingScoreComputer extends StrictLogging {
       Some(totalScore)
   }
 
-  def getCountForTransition[A](cp: ChangePoint[A],
-                                                isWildcard:(A => Boolean),
-                                                transitionSetA:Set[ValueTransition[A]],
-                                                transitionSetB:Set[ValueTransition[A]],
-                                                nonInformativeValues:Set[A],
-                                                nonInformativeValueIsStrict:Boolean,
-                                                transitionHistogramForTFIDF:Option[Map[ValueTransition[A],Int]]=None) = {
+  def getCountForTransition(cp: ChangePoint,
+                            isWildcard:(Any => Boolean),
+                            transitionSetA:Set[ValueTransition],
+                            transitionSetB:Set[ValueTransition],
+                            nonInformativeValues:Set[Any],
+                            nonInformativeValueIsStrict:Boolean,
+                            transitionHistogramForTFIDF:Option[Map[ValueTransition,Int]]=None) = {
     val values = Set(cp.prevValueA, cp.prevValueB, cp.curValueA, cp.curValueB)
     //handle transition:
     val noWildcardInTransition = values.forall(v => !isWildcard(v))
@@ -274,8 +271,8 @@ object EvidenceBasedWeightingScoreComputer extends StrictLogging {
       Some(totalScore)
   }
 
-  def transitionIsNonInformative[A](value: ValueTransition[A],
-                                    nonInformativeValues:Set[A],
+  def transitionIsNonInformative(value: ValueTransition,
+                                    nonInformativeValues:Set[Any],
                                     nonInformativeValueIsStrict:Boolean): Boolean = {
     val containsPrev = nonInformativeValues.contains(value.prev)
     val containsAfter = nonInformativeValues.contains(value.after)

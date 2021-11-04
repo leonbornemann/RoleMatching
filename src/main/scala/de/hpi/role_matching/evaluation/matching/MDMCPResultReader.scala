@@ -1,8 +1,6 @@
 package de.hpi.role_matching.evaluation.matching
 
 import de.hpi.role_matching.cbrm.sgcp.{NewSubgraph, RoleMerge}
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.SubGraph
-import de.hpi.role_matching.clique_partitioning.RoleMerge
 
 import java.io.File
 import scala.io.Source

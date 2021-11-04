@@ -1,13 +1,11 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.tfmp_input.association.AssociationIdentifier
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.data_preparation.wikipedia.data.original.InfoboxRevisionHistory
-import de.hpi.role_matching.cbrm.compatibility_graph.{GraphConfig, CompatibilityGraphCreationConfig}
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
-import de.hpi.role_matching.cbrm.data.Roleset
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
+import de.hpi.role_matching.cbrm.compatibility_graph.{CompatibilityGraphCreationConfig, GraphConfig}
+import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, RoleReference, Roleset}
+import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
@@ -41,18 +39,20 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
     .toIndexedSeq
     .sortBy(_._1)
   val lineages = identifiedLineages
-    .map(_._2.factLineage.toFactLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, endDateTrainPhase))
-  val id = new AssociationIdentifier(dsName, "all", 0, Some(0))
-  val attrID = 0
-  val table = FactLineage.toAssociationTable(lineages, id, attrID)
+    .map(t => {
+      val newLineage = t._2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, endDateTrainPhase)
+      RoleLineageWithID(t._2.id,newLineage.toSerializationHelper)
+    })
   val timeNow = System.currentTimeMillis()
   val graphConfig = GraphConfig(1: Int, GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, endDateTrainPhase)
 
-  def toGeneralEdgeFunction(a: RoleReference[Any], b: RoleReference[Any]) = {
+  val references = RoleLineageWithID.toReferences(lineages)
+
+  def toGeneralEdgeFunction(a: RoleReference, b: RoleReference) = {
     SimpleCompatbilityGraphEdge(identifiedLineages(a.rowIndex)._2, identifiedLineages(b.rowIndex)._2)
   }
 
-  new ConcurrentCompatiblityGraphCreator(table.tupleReferences,
+  new ConcurrentCompatiblityGraphCreator(references,
     graphConfig,
     true,
     GLOBAL_CONFIG.nonInformativeValues,

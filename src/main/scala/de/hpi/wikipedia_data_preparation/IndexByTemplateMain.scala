@@ -1,8 +1,8 @@
-package de.hpi.data_preparation.wikipedia.data
+package de.hpi.wikipedia_data_preparation
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.wikipedia.data.original.InfoboxRevisionHistory
-import de.hpi.data_preparation.wikipedia.data.transformed.WikipediaInfoboxValueHistory
+import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory
+import de.hpi.wikipedia_data_preparation.transformed.WikipediaRoleLineage
 
 import java.io.{File, PrintWriter}
 import scala.io.Source
@@ -21,7 +21,7 @@ object IndexByTemplateMain extends App with StrictLogging {
 
   val fulfillsFilter = files.toIndexedSeq.foreach(f => {
     logger.debug(s"processing ${f.getAbsolutePath}")
-    val res = WikipediaInfoboxValueHistory.fromJsonObjectPerLineFile(f.getAbsolutePath)
+    val res = WikipediaRoleLineage.fromJsonObjectPerLineFile(f.getAbsolutePath)
       .withFilter(wiwh => wiwh.template.isDefined && templateNames.contains(wiwh.template.get) && wiwh.isOfInterest) //all query strings need to be matched in at least one value
       .foreach(wiwh => wiwh.appendToWriter(templateFileWriters(wiwh.template.get), false, true))
     processed += 1

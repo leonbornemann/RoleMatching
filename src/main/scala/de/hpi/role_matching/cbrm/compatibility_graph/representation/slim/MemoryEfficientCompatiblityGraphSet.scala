@@ -1,13 +1,12 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.representation.slim
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.{JsonReadable, JsonWritable}
 import de.hpi.role_matching.cbrm.data.Roleset
+import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
 import de.hpi.role_matching.cbrm.evidence_based_weighting.EventCounts
 import de.hpi.role_matching.cbrm.sgcp.ScoreConfig
-import de.hpi.socrata.JsonReadable
 import org.jgrapht.Graph
-import org.jgrapht.graph.{DefaultWeightedEdge, SimpleGraph, SimpleWeightedGraph}
+import org.jgrapht.graph.{DefaultWeightedEdge, SimpleWeightedGraph}
 
 import java.time.LocalDate
 
@@ -36,7 +35,7 @@ case class MemoryEfficientCompatiblityGraphSet(verticesOrdered: IndexedSeq[Strin
 
 
   def isValidEdge(v1: Int, v2: Int, vertexLookupMap: Roleset): Boolean = {
-    vertexLookupMap.posToFactLineage(v1).tryMergeWithConsistent(vertexLookupMap.posToFactLineage(v2)).isDefined
+    vertexLookupMap.posToRoleLineage(v1).tryMergeWithConsistent(vertexLookupMap.posToRoleLineage(v2)).isDefined
   }
 
   def getMaxRecallSettingOptimizationGraph(trainTimeEnd: LocalDate, vertexLookupMap:Roleset) = {

@@ -1,10 +1,7 @@
-package de.hpi.data_preparation.wikipedia.data.original
+package de.hpi.wikipedia_data_preparation.original_infobox_data
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.json.custom_serializer.{LocalDateKeySerializer, LocalDateSerializer}
-import de.hpi.data_preparation.socrata.{JsonReadable, JsonWritable}
-import de.hpi.socrata.json.custom_serializer.LocalDateSerializer
-import de.hpi.socrata.JsonReadable
+import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable, LocalDateKeySerializer, LocalDateSerializer}
 import org.json4s.FieldSerializer.{renameFrom, renameTo}
 import org.json4s.{DefaultFormats, FieldSerializer}
 

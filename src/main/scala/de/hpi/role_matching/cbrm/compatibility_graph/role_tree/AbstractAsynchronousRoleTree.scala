@@ -1,17 +1,16 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
-import de.hpi.role_matching.cbrm.compatibility_graph.creation.CompatibilityGraphEdge
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
+import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
 
 import java.io.{File, PrintWriter}
 import java.util.concurrent.ConcurrentHashMap
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-abstract class AbstractAsynchronousRoleTree[A](val toGeneralEdgeFunction:((RoleReference[A],RoleReference[A]) => SimpleCompatbilityGraphEdge),
+abstract class AbstractAsynchronousRoleTree(val toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge),
                                                val resultDir:File,
                                                val processName:String,
                                                val prOption:Option[PrintWriter],
@@ -67,11 +66,11 @@ abstract class AbstractAsynchronousRoleTree[A](val toGeneralEdgeFunction:((RoleR
 
   def getGraphConfig: GraphConfig
 
-  def serializeIfMatch(tr1:RoleReference[A], tr2:RoleReference[A], pr:PrintWriter) = {
+  def serializeIfMatch(tr1:RoleReference, tr2:RoleReference, pr:PrintWriter) = {
     AbstractAsynchronousRoleTree.serializeIfMatch(tr1,tr2,pr,toGeneralEdgeFunction)
   }
 
-  def partitionToIntervals(inputList: IndexedSeq[RoleReference[A]], border: Int) = {
+  def partitionToIntervals(inputList: IndexedSeq[RoleReference], border: Int) = {
     if(inputList.size<border){
       IndexedSeq((0,inputList.size))
     } else {
@@ -89,9 +88,9 @@ abstract class AbstractAsynchronousRoleTree[A](val toGeneralEdgeFunction:((RoleR
 }
 object AbstractAsynchronousRoleTree {
 
-  def getTupleMatchOption[A](ref1:RoleReference[A], ref2:RoleReference[A]) = {
-    val left = ref1.getDataTuple.head
-    val right = ref2.getDataTuple.head // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
+  def getTupleMatchOption(ref1:RoleReference, ref2:RoleReference) = {
+    val left = ref1.getDataTuple
+    val right = ref2.getDataTuple // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
     val evidence = left.getOverlapEvidenceCount(right)
     if (evidence == -1) {
       None
@@ -100,7 +99,7 @@ object AbstractAsynchronousRoleTree {
     }
   }
 
-  def serializeIfMatch[A](tr1:RoleReference[A], tr2:RoleReference[A], pr:PrintWriter, toGeneralEdgeFunction:((RoleReference[A],RoleReference[A]) => SimpleCompatbilityGraphEdge)) = {
+  def serializeIfMatch(tr1:RoleReference, tr2:RoleReference, pr:PrintWriter, toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge)) = {
     val option = getTupleMatchOption(tr1,tr2)
     if(option.isDefined){
       val e = option.get
@@ -110,15 +109,15 @@ object AbstractAsynchronousRoleTree {
   }
 
   //end borders are exclusive
-  def startProcessIntervalsFromSameList[A](tuplesInNodeAsIndexedSeq: IndexedSeq[RoleReference[A]],
+  def startProcessIntervalsFromSameList(tuplesInNodeAsIndexedSeq: IndexedSeq[RoleReference],
                                            i1: (Int, Int),
                                            i2: (Int, Int),
                                            resultDir:File,
                                            context:ExecutionContextExecutor,
                                            processName:String,
                                            futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
-                                           toGeneralEdgeFunction:((RoleReference[A],RoleReference[A]) => SimpleCompatbilityGraphEdge),
-                                           tupleToNonWcTransitions:Option[Map[RoleReference[A], Set[ValueTransition[A]]]]
+                                           toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge),
+                                           tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]]
                                           ) = {
     val f = Future{
       val (pr,fname) = ConcurrentCompatiblityGraphCreator.getOrCreateNewPrintWriter(resultDir)
@@ -141,7 +140,7 @@ object AbstractAsynchronousRoleTree {
     ConcurrentCompatiblityGraphCreator.setupFuture(f,processName,futures,context)
   }
 
-  def serializeMatchChecks[A](matchChecks: Int) = {
+  def serializeMatchChecks(matchChecks: Int) = {
     if (matchChecks != 0) {
       val (prStats, fnameStats) = ConcurrentCompatiblityGraphCreator.getOrCreateNewStatsPrintWriter(GLOBAL_CONFIG.INDEXING_STATS_RESULT_DIR)
       prStats.println(matchChecks)
@@ -149,7 +148,7 @@ object AbstractAsynchronousRoleTree {
     }
   }
 
-  def startProcessIntervalsFromBipariteList[A](tuplesLeft: IndexedSeq[RoleReference[A]], tuplesRight: IndexedSeq[RoleReference[A]], i1: (Int, Int), i2: (Int, Int), resultDir: File, context: ExecutionContextExecutor, processName: String, futures: ConcurrentHashMap[String, Future[Any]], toGeneralEdgeFunction: (RoleReference[A], RoleReference[A]) => SimpleCompatbilityGraphEdge, tupleToNonWcTransitions: Option[Map[RoleReference[A], Set[ValueTransition[A]]]]) = {
+  def startProcessIntervalsFromBipariteList(tuplesLeft: IndexedSeq[RoleReference], tuplesRight: IndexedSeq[RoleReference], i1: (Int, Int), i2: (Int, Int), resultDir: File, context: ExecutionContextExecutor, processName: String, futures: ConcurrentHashMap[String, Future[Any]], toGeneralEdgeFunction: (RoleReference, RoleReference) => SimpleCompatbilityGraphEdge, tupleToNonWcTransitions: Option[Map[RoleReference, Set[ValueTransition]]]) = {
     val f = Future{
       val (pr,fname) = ConcurrentCompatiblityGraphCreator.getOrCreateNewPrintWriter(resultDir)
       val (firstBorderStart,firstBorderEnd) = i1

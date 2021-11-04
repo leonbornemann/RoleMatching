@@ -1,12 +1,11 @@
-package de.hpi.data_preparation.wikipedia.data.original
+package de.hpi.wikipedia_data_preparation.original_infobox_data
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.change.ReservedChangeValues
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.data_preparation.wikipedia.data.original.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, lowestGranularityInDays}
-import de.hpi.data_preparation.wikipedia.data.original.WikipediaLineageCreationMode.{WILDCARD_BETWEEN_ALL_CONFIRMATIONS, WILDCARD_BETWEEN_CHANGE, WILDCARD_OUTSIDE_OF_GRACE_PERIOD, WikipediaLineageCreationMode}
-import de.hpi.data_preparation.wikipedia.data.transformed.{TimeRangeToSingleValueReducer, WikipediaInfoboxValueHistory}
+import de.hpi.role_matching.cbrm.data.{ReservedChangeValues, RoleLineage}
 import de.hpi.role_matching.cbrm.sgcp.Histogram
+import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, lowestGranularityInDays}
+import de.hpi.wikipedia_data_preparation.original_infobox_data.WikipediaLineageCreationMode.{WILDCARD_BETWEEN_ALL_CONFIRMATIONS, WILDCARD_BETWEEN_CHANGE, WILDCARD_OUTSIDE_OF_GRACE_PERIOD, WikipediaLineageCreationMode}
+import de.hpi.wikipedia_data_preparation.transformed.{TimeRangeToSingleValueReducer, WikipediaRoleLineage}
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util.regex.Pattern
@@ -135,7 +134,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
         .foreach(t => {
           assert(t._2==0 || lineage(t._2-1)._2 != t._1._2 && lineage(t._2-1)._1.isBefore(t._1._1))
         })
-      (k,FactLineage(collection.mutable.TreeMap[LocalDate,Any]() ++ lineage))
+      (k,RoleLineage(collection.mutable.TreeMap[LocalDate,Any]() ++ lineage))
     }}
     factLineages
   }
@@ -194,10 +193,10 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     extractExtraLinkHistories()
     integrityCheckHistories()
     val lineages = transformGranularityAndExpandTimeRange(mode)
-      .withFilter(_._2.lineage.values.exists(v => !FactLineage.isWildcard(v)))
+      .withFilter(_._2.lineage.values.exists(v => !RoleLineage.isWildcard(v)))
       .map(t => {
         (t._1,t._2.toSerializationHelper)
-        WikipediaInfoboxValueHistory(revisions.head.template,revisions.head.pageID,revisions.head.key,t._1,t._2.toSerializationHelper)
+        WikipediaRoleLineage(revisions.head.template,revisions.head.pageID,revisions.head.key,t._1,t._2.toSerializationHelper)
       })
     lineages
   }

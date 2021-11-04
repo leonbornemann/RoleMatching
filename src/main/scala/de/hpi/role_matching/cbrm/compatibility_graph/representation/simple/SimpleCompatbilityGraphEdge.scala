@@ -1,11 +1,8 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.representation.simple
 
-import de.hpi.data_preparation.socrata.{JsonReadable, JsonWritable}
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.{FactLineage, ValueTransition}
-import de.hpi.socrata.tfmp_input.table.nonSketch.ValueTransition
-import de.hpi.socrata.JsonReadable
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
-import de.hpi.role_matching.cbrm.data.RoleLineageWithID
+import de.hpi.role_matching.cbrm.data._
+import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
 import de.hpi.role_matching.evaluation.tuning
 import de.hpi.util.TableFormatter
 
@@ -14,14 +11,14 @@ case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithI
   def toGeneralEdgeStatRow(granularityInDays: Int,
                            trainGraphConfig: GraphConfig,
                            nonInformativeValues:Set[Any],
-                           transitionHistogramForTFIDF:Map[ValueTransition[Any],Int],
+                           transitionHistogramForTFIDF:Map[ValueTransition,Int],
                            lineageCount:Int) = {
     tuning.EdgeStatRow(granularityInDays,
       trainGraphConfig,
       v1.csvSafeID,
       v2.csvSafeID,
-      v1.factLineage.toFactLineage,
-      v2.factLineage.toFactLineage,
+      v1.roleLineage.toRoleLineage,
+      v2.roleLineage.toRoleLineage,
       nonInformativeValues,
       transitionHistogramForTFIDF,
       lineageCount)
@@ -32,11 +29,11 @@ case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithI
   }
 
   def getTabularEventLineageString = {
-    val dates = v1.factLineage.toFactLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
-    val dates2 = v2.factLineage.toFactLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
+    val dates = v1.roleLineage.toRoleLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
+    val dates2 = v2.roleLineage.toRoleLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
     val allDates = dates.union(dates2).toIndexedSeq.sorted
-    val cells1 = IndexedSeq(v1.id) ++ allDates.map(t => v1.factLineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
-    val cells2 = IndexedSeq(v2.id) ++ allDates.map(t => v2.factLineage.toFactLineage.valueAt(t)).map(v => if(FactLineage.isWildcard(v)) "_" else v)
+    val cells1 = IndexedSeq(v1.id) ++ allDates.map(t => v1.roleLineage.toRoleLineage.valueAt(t)).map(v => if(RoleLineage.isWildcard(v)) "_" else v)
+    val cells2 = IndexedSeq(v2.id) ++ allDates.map(t => v2.roleLineage.toRoleLineage.valueAt(t)).map(v => if(RoleLineage.isWildcard(v)) "_" else v)
     val valuesMatch = (1 until cells1.size).map(i => {
       cells1(i)=="_" || cells2(i)=="_" || cells1(i)==cells2(i)
     })
@@ -47,7 +44,7 @@ case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithI
 
 object SimpleCompatbilityGraphEdge extends JsonReadable[SimpleCompatbilityGraphEdge] {
 
-  def getTransitionHistogramForTFIDF(edges:Iterable[SimpleCompatbilityGraphEdge], granularityInDays:Int) :Map[ValueTransition[Any],Int] = {
+  def getTransitionHistogramForTFIDF(edges:Iterable[SimpleCompatbilityGraphEdge], granularityInDays:Int) :Map[ValueTransition,Int] = {
     RoleLineageWithID.getTransitionHistogramForTFIDFFromVertices(edges.flatMap(ge => Seq(ge.v1,ge.v2)).toSet.toSeq,granularityInDays)
   }
 

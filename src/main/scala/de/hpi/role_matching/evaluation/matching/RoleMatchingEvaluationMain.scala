@@ -6,9 +6,7 @@ import de.hpi.role_matching.cbrm.sgcp.{NewSubgraph, RoleMerge, ScoreConfig}
 import de.hpi.role_matching.cbrm.sgcp.SparseGraphCliquePartitioningMain.args
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.SubGraph
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.{MemoryEfficientCompatiblityGraph, MemoryEfficientCompatiblityGraphSet}
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.vertex.VerticesOrdered
 import de.hpi.role_matching.cbrm.data.Roleset
-import de.hpi.role_matching.clique_partitioning.RoleMerge
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate

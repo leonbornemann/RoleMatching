@@ -1,9 +1,9 @@
 package de.hpi.role_matching.evaluation.tuning
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
+import de.hpi.role_matching.cbrm.data.ValueTransition
 import de.hpi.role_matching.cbrm.evidence_based_weighting.isf.ISFMapStorage
 
 import java.io.{File, PrintWriter}
@@ -14,7 +14,7 @@ class EdgeStatisticsGatherer(edges: collection.Seq[SimpleCompatbilityGraphEdge],
                              nonInformativeValues:Set[Any],
                              TFIDFMapStorage: Option[ISFMapStorage]) extends StrictLogging{
 
-  val transitionHistogramForTFIDF:Map[ValueTransition[Any],Int] = {
+  val transitionHistogramForTFIDF:Map[ValueTransition,Int] = {
     if(TFIDFMapStorage.isDefined) TFIDFMapStorage.get.asMap else  SimpleCompatbilityGraphEdge.getTransitionHistogramForTFIDF(edges,TIMESTAMP_RESOLUTION_IN_DAYS)
   }
   val lineageCount:Int = transitionHistogramForTFIDF.size

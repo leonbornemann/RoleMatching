@@ -1,22 +1,22 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
+import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
 
 import java.io.{File, PrintWriter}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{ConcurrentHashMap, Executors, Semaphore}
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-class ConcurrentCompatiblityGraphCreator[A](tuples: IndexedSeq[RoleReference[A]],
+class ConcurrentCompatiblityGraphCreator(tuples: IndexedSeq[RoleReference],
                                             graphConfig:GraphConfig,
                                             filterByCommonWildcardIgnoreChangeTransition:Boolean=true,
-                                            nonInformativeValues:Set[A] = Set[A](),
+                                            nonInformativeValues:Set[Any] = Set(),
                                             nthreads:Int,
                                             resultDir:File,
-                                            toGeneralEdgeFunction:((RoleReference[A],RoleReference[A]) => SimpleCompatbilityGraphEdge)
+                                            toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge)
                              ) extends StrictLogging {
 
   logger.debug("Cleanung up old files")
@@ -27,10 +27,10 @@ class ConcurrentCompatiblityGraphCreator[A](tuples: IndexedSeq[RoleReference[A]]
   val context = ExecutionContext.fromExecutor(service)
   val futures = new java.util.concurrent.ConcurrentHashMap[String,Future[Any]]()
 
-  var tupleToNonWcTransitions:Option[Map[RoleReference[A], Set[ValueTransition[A]]]] = None
+  var tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]] = None
   if(filterByCommonWildcardIgnoreChangeTransition){
     tupleToNonWcTransitions = Some(tuples
-      .map(t => (t,t.getDataTuple.head
+      .map(t => (t,t.getDataTuple
         .valueTransitions(false,true)
         .filter(t => !nonInformativeValues.contains(t.prev) && !nonInformativeValues.contains(t.after))
       ))
@@ -128,7 +128,7 @@ object ConcurrentCompatiblityGraphCreator extends StrictLogging {
 
   import scala.util.{Failure, Success}
 
-  def maybeReport[A](futures: ConcurrentHashMap[String, Future[Any]]) = {
+  def maybeReport(futures: ConcurrentHashMap[String, Future[Any]]) = {
     val timeSinceLastReport = System.currentTimeMillis() - lastReportTimestamp
     if(timeSinceLastReport> logTimeDistanceInMs){
       if(!reportInProgress.get()){
@@ -144,7 +144,7 @@ object ConcurrentCompatiblityGraphCreator extends StrictLogging {
     }
   }
 
-  def checkTermination[A](futures: ConcurrentHashMap[String, Future[Any]]) = {
+  def checkTermination(futures: ConcurrentHashMap[String, Future[Any]]) = {
       this.synchronized {
         if(futures.size()==0){
           logger.debug("Overall program terminated - sending termination signal")
@@ -153,7 +153,7 @@ object ConcurrentCompatiblityGraphCreator extends StrictLogging {
     }
   }
 
-  def setupFuture[A](f: Future[Any],
+  def setupFuture(f: Future[Any],
                      fname: String,
                      futures: ConcurrentHashMap[String, Future[Any]],
                      context:ExecutionContextExecutor) = {

@@ -1,10 +1,11 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.cbrm.data.RoleReference
 
-trait RoleTreeUtility[A] {
+trait RoleTreeUtility {
 
-  def getRelevantTimestamps(tuples: IndexedSeq[RoleReference[A]]) = {
+  def getRelevantTimestamps(tuples: IndexedSeq[RoleReference]) = {
     tuples
       .map(r => {
         val a = getField(r)
@@ -22,7 +23,6 @@ trait RoleTreeUtility[A] {
     }
   }
 
-  def getField(tupleReference: RoleReference[A]) = tupleReference.table
-    .getDataTuple(tupleReference.rowIndex).head
+  def getField(tupleReference: RoleReference) = tupleReference.getDataTuple
 
 }

@@ -1,4 +1,4 @@
-package de.hpi.data_preparation.wikipedia.data.original
+package de.hpi.wikipedia_data_preparation.original_infobox_data
 
 object WikipediaLineageCreationMode extends Enumeration {
   type WikipediaLineageCreationMode = Value

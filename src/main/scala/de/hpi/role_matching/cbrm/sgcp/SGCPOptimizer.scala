@@ -1,7 +1,5 @@
 package de.hpi.role_matching.cbrm.sgcp
 
-import de.hpi.role_matching.clique_partitioning.asad.SmartLargeComponentOptimizer
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.SubGraph
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultWeightedEdge
 

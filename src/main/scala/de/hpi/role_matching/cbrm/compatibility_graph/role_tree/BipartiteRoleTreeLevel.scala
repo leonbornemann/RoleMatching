@@ -2,16 +2,16 @@ package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.creation.role_tree
 import de.hpi.role_matching.cbrm.compatibility_graph.role_tree
+import de.hpi.role_matching.cbrm.data.RoleReference
 
 import java.time.LocalDate
 
-class BipartiteRoleTreeLevel[A](tuplesLeftUnfiltered: IndexedSeq[RoleReference[A]],
-                                tuplesRightUnfiltered: IndexedSeq[RoleReference[A]],
+class BipartiteRoleTreeLevel(tuplesLeftUnfiltered: IndexedSeq[RoleReference],
+                                tuplesRightUnfiltered: IndexedSeq[RoleReference],
                                 val parentTimestamps:IndexedSeq[LocalDate] = IndexedSeq(),
-                                val parentKeyValues:IndexedSeq[A] = IndexedSeq(),
-                                ignoreZeroChangeTuples:Boolean = true) extends RoleTreeUtility[A] with StrictLogging{
+                                val parentKeyValues:IndexedSeq[Any] = IndexedSeq(),
+                                ignoreZeroChangeTuples:Boolean = true) extends RoleTreeUtility with StrictLogging{
 
 
   def numLeafNodes: Int = {
@@ -27,7 +27,7 @@ class BipartiteRoleTreeLevel[A](tuplesLeftUnfiltered: IndexedSeq[RoleReference[A
   var indexFailed = false
   var compressionRation = 0.0
 
-  def getPriorEntropy(tuplesLeft: IndexedSeq[RoleReference[A]], tuplesRight: IndexedSeq[RoleReference[A]]) = {
+  def getPriorEntropy(tuplesLeft: IndexedSeq[RoleReference], tuplesRight: IndexedSeq[RoleReference]) = {
     val pLeft = tuplesLeft.size / (tuplesLeft.size +tuplesRight.size).toDouble
     val pRight = tuplesRight.size / (tuplesLeft.size + tuplesRight.size).toDouble
     -(pLeft*log2(pLeft) + pRight*log2(pRight))
@@ -35,17 +35,17 @@ class BipartiteRoleTreeLevel[A](tuplesLeftUnfiltered: IndexedSeq[RoleReference[A
 
   def log2(a: Double) = math.log(a) / math.log(2)
 
-  def getBestSplitTimestamp(tuplesLeft:IndexedSeq[RoleReference[A]],
-                            tuplesRight:IndexedSeq[RoleReference[A]],
+  def getBestSplitTimestamp(tuplesLeft:IndexedSeq[RoleReference],
+                            tuplesRight:IndexedSeq[RoleReference],
                             timestampsToConsider:Set[LocalDate]) = {
     if(timestampsToConsider.size==0)
       None
     else {
       val priorCombinations = tuplesLeft.size * tuplesRight.size
       val bestTimestampCandidates = timestampsToConsider.map(t => {
-        val leftGroups = tuplesLeft.groupBy(_.getDataTuple.head.valueAt(t))
-        val rightGroups = tuplesRight.groupBy(_.getDataTuple.head.valueAt(t))
-        val wildcards = tuplesLeft.head.table.wildcardValues.toSet
+        val leftGroups = tuplesLeft.groupBy(_.getDataTuple.valueAt(t))
+        val rightGroups = tuplesRight.groupBy(_.getDataTuple.valueAt(t))
+        val wildcards = tuplesLeft.head.roles.wildcardValues.toSet
         val nonWildCardCombinations = leftGroups
           .withFilter(t => !wildcards.contains(t._1))
           .map{case (k,tuples) => tuples.size*rightGroups.getOrElse(k,IndexedSeq()).size}
@@ -90,29 +90,29 @@ class BipartiteRoleTreeLevel[A](tuplesLeftUnfiltered: IndexedSeq[RoleReference[A
 
   //init index:
   var splitT:LocalDate = null
-  var wildcardValues:Set[A] = null
-  var leftGroups:Map[A, IndexedSeq[RoleReference[A]]] = null
-  var rightGroups:Map[A, IndexedSeq[RoleReference[A]]] = null
-  var wildcardsLeft: IndexedSeq[RoleReference[A]] = null
-  var wildcardsRight: IndexedSeq[RoleReference[A]] = null
+  var wildcardValues:Set[Any] = null
+  var leftGroups:Map[Any, IndexedSeq[RoleReference]] = null
+  var rightGroups:Map[Any, IndexedSeq[RoleReference]] = null
+  var wildcardsLeft: IndexedSeq[RoleReference] = null
+  var wildcardsRight: IndexedSeq[RoleReference] = null
   if(curBestSplitTimestamp.isEmpty)
     indexFailed = true
   else {
     indexFailed=false
     splitT = curBestSplitTimestamp.get._1
-    wildcardValues = tuplesLeft.head.table.wildcardValues.toSet
-    leftGroups = tuplesLeft.groupBy(_.getDataTuple.head.valueAt(splitT))
-    rightGroups = tuplesRight.groupBy(_.getDataTuple.head.valueAt(splitT))
+    wildcardValues = tuplesLeft.head.roles.wildcardValues.toSet
+    leftGroups = tuplesLeft.groupBy(_.getDataTuple.valueAt(splitT))
+    rightGroups = tuplesRight.groupBy(_.getDataTuple.valueAt(splitT))
     wildcardsLeft = wildcardValues.flatMap(wc => leftGroups.getOrElse(wc,IndexedSeq())).toIndexedSeq
     wildcardsRight = wildcardValues.flatMap(wc => rightGroups.getOrElse(wc,IndexedSeq())).toIndexedSeq
   }
   val chosenTimestamps = scala.collection.mutable.ArrayBuffer() ++ parentTimestamps ++ Seq(splitT)
 
-  private def getFilteredTuples(tuples:IndexedSeq[RoleReference[A]]) = {
-    tuples.filter(tr => !ignoreZeroChangeTuples || tr.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1>0)
+  private def getFilteredTuples(tuples:IndexedSeq[RoleReference]) = {
+    tuples.filter(tr => !ignoreZeroChangeTuples || tr.getDataTuple.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1>0)
   }
 
-  def getBipartiteTupleGroupIterator():Iterator[BipartiteRolePartition[A]] = {
+  def getBipartiteTupleGroupIterator():Iterator[BipartiteRolePartition] = {
     if(indexFailed)
       throw new AssertionError("No groups to iterate over")
     else {
@@ -120,7 +120,7 @@ class BipartiteRoleTreeLevel[A](tuplesLeftUnfiltered: IndexedSeq[RoleReference[A
     }
   }
 
-  case class BipartiteTupleGroupIterator() extends Iterator[BipartiteRolePartition[A]]{
+  case class BipartiteTupleGroupIterator() extends Iterator[BipartiteRolePartition]{
     val keys = leftGroups.keySet.union(rightGroups.keySet)
     val keysWithOutWCIt = keys
       .filter(!wildcardValues.contains(_))
@@ -128,16 +128,16 @@ class BipartiteRoleTreeLevel[A](tuplesLeftUnfiltered: IndexedSeq[RoleReference[A
 
     override def hasNext: Boolean = keysWithOutWCIt.hasNext
 
-    override def next(): BipartiteRolePartition[A] = {
+    override def next(): BipartiteRolePartition = {
       val k = keysWithOutWCIt.next()
       val left = leftGroups.getOrElse(k,IndexedSeq())
       val right = rightGroups.getOrElse(k,IndexedSeq())
-      role_tree.BipartiteRolePartition[A](chosenTimestamps,parentKeyValues ++ IndexedSeq(k),wildcardsLeft,wildcardsRight,left,right)
+      role_tree.BipartiteRolePartition(chosenTimestamps,parentKeyValues ++ IndexedSeq(k),wildcardsLeft,wildcardsRight,left,right)
     }
   }
 
 }
 object BipartiteRoleTreeLevel{
 
-  val totalCallStackHistory = scala.collection.mutable.ArrayBuffer[(IndexedSeq[RoleReference[Any]],IndexedSeq[RoleReference[Any]])]()
+  val totalCallStackHistory = scala.collection.mutable.ArrayBuffer[(IndexedSeq[RoleReference],IndexedSeq[RoleReference])]()
 }

@@ -1,34 +1,34 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
-import de.hpi.role_matching.cbrm.compatibility_graph.creation.AbstractAsynchronousRoleTree.maxPairwiseListSizeForSingleThread
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
+import de.hpi.role_matching.cbrm.compatibility_graph.role_tree.AbstractAsynchronousRoleTree.maxPairwiseListSizeForSingleThread
+import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-class AsynchronousRoleTree[A](tuples: IndexedSeq[RoleReference[A]],
+class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
                               val parentNodesTimestamps:IndexedSeq[LocalDate],
-                              val parentNodesKeys:IndexedSeq[A],
+                              val parentNodesKeys:IndexedSeq[Any],
                               graphConfig:GraphConfig,
-                              nonInformativeValues:Set[A] = Set[A](),
+                              nonInformativeValues:Set[Any] = Set[Any](),
                               futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
                               context:ExecutionContextExecutor,
                               resultDir:File,
                               processName:String,
                               prOption:Option[PrintWriter],
-                              toGeneralEdgeFunction:((RoleReference[A],RoleReference[A]) => SimpleCompatbilityGraphEdge),
-                              tupleToNonWcTransitions:Option[Map[RoleReference[A], Set[ValueTransition[A]]]],
+                              toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge),
+                              tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]],
                               isAsynch:Boolean=true,
                               externalRecurseDepth:Int,
                               logProgress:Boolean=false
-  ) extends AbstractAsynchronousRoleTree[A](toGeneralEdgeFunction,resultDir,processName,prOption,isAsynch,externalRecurseDepth,logProgress) {
+  ) extends AbstractAsynchronousRoleTree(toGeneralEdgeFunction,resultDir,processName,prOption,isAsynch,externalRecurseDepth,logProgress) {
 
   override def execute() = {
-    val index = new RoleTreeLevel[A](tuples,parentNodesTimestamps,parentNodesKeys,tuples.head.table.wildcardValues.toSet,true)
+    val index = new RoleTreeLevel(tuples,parentNodesTimestamps,parentNodesKeys,tuples.head.roles.wildcardValues.toSet,true)
     if(loggingIsActive) {
       totalNumTopLevelNodes = if(!index.indexBuildWasSuccessfull) 0 else  index.tupleGroupIterator(true).size
       logger.debug(s"Root Process ($processName) about to process $totalNumTopLevelNodes top-lvl nodes")
@@ -36,10 +36,10 @@ class AsynchronousRoleTree[A](tuples: IndexedSeq[RoleReference[A]],
     buildGraph(tuples,index)
   }
 
-  def buildGraph(originalInput:IndexedSeq[RoleReference[A]], index: RoleTreeLevel[A]):Unit = {
+  def buildGraph(originalInput:IndexedSeq[RoleReference], index: RoleTreeLevel):Unit = {
     //if(externalRecurseDepth ==0)
     if(index.indexBuildWasSuccessfull){
-      val nonWildcards = collection.mutable.ArrayBuffer[RoleReference[A]]()
+      val nonWildcards = collection.mutable.ArrayBuffer[RoleReference]()
       index.tupleGroupIterator(true).foreach{case g => {
         nonWildcards ++= g.nonWildcardRoles
         if(squareProductTooBig(g.nonWildcardRoles.size)){
@@ -65,7 +65,7 @@ class AsynchronousRoleTree[A](tuples: IndexedSeq[RoleReference[A]],
             mySubNodeFutures.put(newName,f)
           } else {
             //do it in this thread:
-            new AsynchronousRoleTree[A](g.nonWildcardRoles.toIndexedSeq,
+            new AsynchronousRoleTree(g.nonWildcardRoles.toIndexedSeq,
               index.indexedTimestamps.toIndexedSeq,
               g.valuesAtTimestamps,
               graphConfig,
@@ -111,7 +111,7 @@ class AsynchronousRoleTree[A](tuples: IndexedSeq[RoleReference[A]],
           parallelRecurseCounter += 1
           mySubNodeFutures.put(newName,f)
         } else {
-          new AsynchronousRoleTree[A](wildcardBucket,
+          new AsynchronousRoleTree(wildcardBucket,
             index.indexedTimestamps.toIndexedSeq,
             index.parentNodesKeys ++ Seq(index.wildcardKeyValues.head),
             graphConfig,
@@ -147,7 +147,7 @@ class AsynchronousRoleTree[A](tuples: IndexedSeq[RoleReference[A]],
             wildcardBucket,
             nonWildcards.toIndexedSeq,
             index.indexedTimestamps.toIndexedSeq,
-            index.parentNodesKeys ++ Seq(wildcardBucket.head.table.wildcardValues.head),
+            index.parentNodesKeys ++ Seq(wildcardBucket.head.roles.wildcardValues.head),
             graphConfig,
             nonInformativeValues,
             context,
@@ -160,10 +160,10 @@ class AsynchronousRoleTree[A](tuples: IndexedSeq[RoleReference[A]],
           mySubNodeFutures.put(newName,f)
         } else {
           //do it in this thread
-          val bipartiteCreator = new AsynchronousBipartiteRoleTree[A](wildcardBucket,
+          val bipartiteCreator = new AsynchronousBipartiteRoleTree(wildcardBucket,
             nonWildcards.toIndexedSeq,
             index.indexedTimestamps.toIndexedSeq,
-            index.parentNodesKeys ++ Seq(wildcardBucket.head.table.wildcardValues.head),
+            index.parentNodesKeys ++ Seq(wildcardBucket.head.roles.wildcardValues.head),
             graphConfig,
             nonInformativeValues,
             futures,
@@ -183,8 +183,8 @@ class AsynchronousRoleTree[A](tuples: IndexedSeq[RoleReference[A]],
     }
   }
 
-  private def doPairwiseMatching(tuplesInNodeAsIndexedSeq: IndexedSeq[RoleReference[A]]) = {
-    if(tuplesInNodeAsIndexedSeq.size > maxPairwiseListSizeForSingleThread){
+  private def doPairwiseMatching(tuplesInNodeAsIndexedSeq: IndexedSeq[RoleReference]) = {
+    if(tuplesInNodeAsIndexedSeq.size > AbstractAsynchronousRoleTree.maxPairwiseListSizeForSingleThread){
       val border = maxPairwiseListSizeForSingleThread
       val intervals = partitionToIntervals(tuplesInNodeAsIndexedSeq,border)
       for (i <- 0 until intervals.size) {
@@ -232,21 +232,21 @@ class AsynchronousRoleTree[A](tuples: IndexedSeq[RoleReference[A]],
 }
 object AsynchronousRoleTree extends StrictLogging {
 
-  def createAsFuture[A](futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
-                        tuples: IndexedSeq[RoleReference[A]],
+  def createAsFuture(futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
+                        tuples: IndexedSeq[RoleReference],
                         parentNodesTimestamps:IndexedSeq[LocalDate],
-                        parentNodesKeys:IndexedSeq[A],
+                        parentNodesKeys:IndexedSeq[Any],
                         graphConfig:GraphConfig,
-                        nonInformativeValues:Set[A] = Set[A](),
+                        nonInformativeValues:Set[Any] = Set[Any](),
                         context:ExecutionContextExecutor,
                         resultDir:File,
                         fname:String,
-                        toGeneralEdgeFunction:((RoleReference[A],RoleReference[A]) => SimpleCompatbilityGraphEdge),
-                        tupleToNonWcTransitions:Option[Map[RoleReference[A], Set[ValueTransition[A]]]],
+                        toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge),
+                        tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]],
                         newExternalRecurseDepth:Int,
                         logProgress:Boolean) = {
     val f = Future {
-      new AsynchronousRoleTree[A](tuples,
+      new AsynchronousRoleTree(tuples,
         parentNodesTimestamps,
         parentNodesKeys,
         graphConfig,

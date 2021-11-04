@@ -1,10 +1,10 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.ValueTransition
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
-import de.hpi.role_matching.cbrm.compatibility_graph.creation.AbstractAsynchronousRoleTree.maxPairwiseListSizeForSingleThread
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
+import de.hpi.role_matching.cbrm.compatibility_graph.role_tree.AbstractAsynchronousRoleTree.maxPairwiseListSizeForSingleThread
+import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
@@ -12,29 +12,29 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
 
-class AsynchronousBipartiteRoleTree[A](tuplesLeft: IndexedSeq[RoleReference[A]],
-                                       tuplesRight: IndexedSeq[RoleReference[A]],
+class AsynchronousBipartiteRoleTree(tuplesLeft: IndexedSeq[RoleReference],
+                                       tuplesRight: IndexedSeq[RoleReference],
                                        val parentNodesTimestamps:IndexedSeq[LocalDate],
-                                       val parentNodesKeys:IndexedSeq[A],
+                                       val parentNodesKeys:IndexedSeq[Any],
                                        graphConfig:GraphConfig,
-                                       nonInformativeValues:Set[A] = Set[A](),
+                                       nonInformativeValues:Set[Any] = Set[Any](),
                                        futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
                                        context:ExecutionContextExecutor,
                                        resultDir:File,
                                        processName:String,
                                        prOption:Option[PrintWriter],
-                                       toGeneralEdgeFunction:((RoleReference[A],RoleReference[A]) => SimpleCompatbilityGraphEdge),
-                                       tupleToNonWcTransitions:Option[Map[RoleReference[A], Set[ValueTransition[A]]]],
+                                       toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge),
+                                       tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]],
                                        isAsynch:Boolean=true,
                                        externalRecurseDepth:Int,
                                        logProgress:Boolean=false
-                                  ) extends AbstractAsynchronousRoleTree[A](toGeneralEdgeFunction,resultDir, processName,prOption, isAsynch,externalRecurseDepth,logProgress) {
+                                  ) extends AbstractAsynchronousRoleTree(toGeneralEdgeFunction,resultDir, processName,prOption, isAsynch,externalRecurseDepth,logProgress) {
 
   override def execute() = {
     if(externalRecurseDepth==0){
       println()
     }
-    val index = new BipartiteRoleTreeLevel[A](tuplesLeft,tuplesRight,parentNodesTimestamps,parentNodesKeys,true,loggingIsActive)
+    val index = new BipartiteRoleTreeLevel(tuplesLeft,tuplesRight,parentNodesTimestamps,parentNodesKeys,true)
     if(loggingIsActive) {
       totalNumTopLevelNodes = if(index.indexFailed) 0 else  index.getBipartiteTupleGroupIterator().size
       logger.debug(s"Bipartite Root ($processName) indexFailed status: ${index.indexFailed}")
@@ -47,12 +47,12 @@ class AsynchronousBipartiteRoleTree[A](tuplesLeft: IndexedSeq[RoleReference[A]],
     size*size1>50
   }
 
-  def buildGraph(originalInputLeft:IndexedSeq[RoleReference[A]],
-                 originalInputRight:IndexedSeq[RoleReference[A]],
-                 index: BipartiteRoleTreeLevel[A]):Unit = {
+  def buildGraph(originalInputLeft:IndexedSeq[RoleReference],
+                 originalInputRight:IndexedSeq[RoleReference],
+                 index: BipartiteRoleTreeLevel):Unit = {
     if(!index.indexFailed){
-      val allTuplesLeft = scala.collection.mutable.ArrayBuffer[RoleReference[A]]()
-      val allTuplesRight = scala.collection.mutable.ArrayBuffer[RoleReference[A]]()
+      val allTuplesLeft = scala.collection.mutable.ArrayBuffer[RoleReference]()
+      val allTuplesRight = scala.collection.mutable.ArrayBuffer[RoleReference]()
       index.getBipartiteTupleGroupIterator().foreach{case g => {
         val tuplesLeft = g.tuplesLeft
         val tuplesRight = g.tuplesRight
@@ -78,9 +78,9 @@ class AsynchronousBipartiteRoleTree[A](tuplesLeft: IndexedSeq[RoleReference[A]],
   }
 
   private def buildGraphRecursively(parentTimestamps:IndexedSeq[LocalDate],
-                                    parentValues:IndexedSeq[A],
-                                    tuplesLeft: IndexedSeq[RoleReference[A]],
-                                    tuplesRight: IndexedSeq[RoleReference[A]]) = {
+                                    parentValues:IndexedSeq[Any],
+                                    tuplesLeft: IndexedSeq[RoleReference],
+                                    tuplesRight: IndexedSeq[RoleReference]) = {
     if (productTooBig(tuplesLeft.size, tuplesRight.size)) {
       //further index this: new Index
       if(tuplesLeft.size + tuplesRight.size > thresholdForFork){
@@ -101,7 +101,7 @@ class AsynchronousBipartiteRoleTree[A](tuplesLeft: IndexedSeq[RoleReference[A]],
         parallelRecurseCounter += 1
         mySubNodeFutures.put(newName,f)
       } else {
-        new AsynchronousBipartiteRoleTree[A](
+        new AsynchronousBipartiteRoleTree(
           tuplesLeft,
           tuplesRight,
           parentTimestamps,
@@ -124,7 +124,7 @@ class AsynchronousBipartiteRoleTree[A](tuplesLeft: IndexedSeq[RoleReference[A]],
     }
   }
 
-  private def doPairwiseMatching(tuplesLeft: IndexedSeq[RoleReference[A]], tuplesRight:IndexedSeq[RoleReference[A]]) = {
+  private def doPairwiseMatching(tuplesLeft: IndexedSeq[RoleReference], tuplesRight:IndexedSeq[RoleReference]) = {
     //we construct a graph as an adjacency list:
     //pairwise matching to find out the edge-weights:
     if(tuplesLeft.size*tuplesRight.size > maxPairwiseListSizeForSingleThread*maxPairwiseListSizeForSingleThread){
@@ -168,21 +168,21 @@ class AsynchronousBipartiteRoleTree[A](tuplesLeft: IndexedSeq[RoleReference[A]],
   override def getGraphConfig: GraphConfig = graphConfig
 }
 object AsynchronousBipartiteRoleTree extends StrictLogging {
-  def createAsFuture[A](futures: ConcurrentHashMap[String,Future[Any]],
-                        tuplesLeft: IndexedSeq[RoleReference[A]],
-                        tuplesRight: IndexedSeq[RoleReference[A]],
+  def createAsFuture(futures: ConcurrentHashMap[String,Future[Any]],
+                        tuplesLeft: IndexedSeq[RoleReference],
+                        tuplesRight: IndexedSeq[RoleReference],
                         parentTimestamps: IndexedSeq[LocalDate],
-                        parentValues: IndexedSeq[A],
+                        parentValues: IndexedSeq[Any],
                         graphConfig: GraphConfig,
-                        nonInformativeValues: Set[A],
+                        nonInformativeValues: Set[Any],
                         context: ExecutionContextExecutor,
                         resultDir: File,
                         fname: String,
-                        toGeneralEdgeFunction: (RoleReference[A], RoleReference[A]) => SimpleCompatbilityGraphEdge,
-                        tupleToNonWcTransitions: Option[Map[RoleReference[A], Set[ValueTransition[A]]]],
+                        toGeneralEdgeFunction: (RoleReference, RoleReference) => SimpleCompatbilityGraphEdge,
+                        tupleToNonWcTransitions: Option[Map[RoleReference, Set[ValueTransition]]],
                         externalRecurseDepth:Int) = {
     val f = Future {
-      new AsynchronousBipartiteRoleTree[A](
+      new AsynchronousBipartiteRoleTree(
         tuplesLeft,
         tuplesRight,
         parentTimestamps,

@@ -1,14 +1,8 @@
 package de.hpi.role_matching.evaluation.matching
 
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.FactLineage
-import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.sgcp.{RoleMerge, ScoreConfig}
-import de.hpi.role_matching.clique_partitioning.RoleMerge
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.MemoryEfficientCompatiblityGraphSet
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.vertex.VerticesOrdered
-import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
-import de.hpi.role_matching.evaluation.tuning.EdgeStatRowForTuning
+import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithID, Roleset}
+import de.hpi.role_matching.cbrm.sgcp.{RoleMerge, ScoreConfig}
 
 import java.io.PrintWriter
 import java.time.LocalDate
@@ -53,12 +47,12 @@ case class RoleMatchinEvaluator(prCliques: PrintWriter,
   def toCSVSafe(head: Any) = head.toString.replace("\r"," ").replace("\n"," ").replace(","," ")
 
   def getCommonValuesAsSemicolonSeparatedString(vertices: IndexedSeq[RoleLineageWithID]) = {
-    val allDates = vertices.flatMap(_.factLineage.lineage.keySet)
+    val allDates = vertices.flatMap(_.roleLineage.lineage.keySet)
     val valuesAtDate = allDates.map(ld => {
-      (ld,vertices.map(_.factLineage.toFactLineage.valueAt(ld)))
+      (ld,vertices.map(_.roleLineage.toRoleLineage.valueAt(ld)))
     })
     val values = valuesAtDate
-      .filter{case (ld,values) => values.filter(v => !FactLineage.isWildcard(v)).size>1}
+      .filter{case (ld,values) => values.filter(v => !RoleLineage.isWildcard(v)).size>1}
       .sortBy(-_._2.size)
       .take(10)
       .map(t => toCSVSafe(t._2.head))
@@ -68,7 +62,7 @@ case class RoleMatchinEvaluator(prCliques: PrintWriter,
   def addResultTuple(c: RoleMerge, componentID: String, method: String) = {
     val verticesSorted = c.clique.toIndexedSeq.sorted
     val cliqueID = verticesSorted.head
-    val vertices = verticesSorted.map(i => vertexLookupMap.posToFactLineage(i))
+    val vertices = verticesSorted.map(i => vertexLookupMap.posToRoleLineage(i))
     val identifiedVertices = verticesSorted.map(i => vertexLookupMap.positionToRoleLineage(i))
     var evidenceCountTotal = 0
     var validEdges = 0

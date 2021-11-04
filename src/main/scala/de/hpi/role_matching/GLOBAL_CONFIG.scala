@@ -1,9 +1,8 @@
 package de.hpi.role_matching
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.data_preparation.socrata.change.UpdateChangeCounter
-import de.hpi.data_preparation.socrata.io.Socrata_IOService
 import de.hpi.role_matching.cbrm.compatibility_graph.CompatibilityGraphCreationConfig
+import de.hpi.role_matching.cbrm.data.UpdateChangeCounter
 
 import java.io.File
 import java.time.LocalDate
@@ -47,6 +46,8 @@ object GLOBAL_CONFIG extends StrictLogging{
       assert(false)
     }
   }
+
+  def dateToStr(date: LocalDate) = GLOBAL_CONFIG.dateTimeFormatter.format(date)
 
   var random = new scala.util.Random(12)
 }

@@ -1,26 +1,26 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.creation.role_tree
 import de.hpi.role_matching.cbrm.compatibility_graph.role_tree
+import de.hpi.role_matching.cbrm.data.RoleReference
 
 import java.time.LocalDate
 import scala.collection.mutable.ArrayBuffer
 
-class RoleTreeLevel[A](private var tuples: IndexedSeq[RoleReference[A]],
+class RoleTreeLevel(private var tuples: IndexedSeq[RoleReference],
                        val parentNodesTimestamps:IndexedSeq[LocalDate],
-                       val parentNodesKeys:IndexedSeq[A],
-                       val wildcardKeyValues:Set[A],
-                       val ignoreTuplesWithNoChanges:Boolean) extends IterableRoleIndex[A]{
+                       val parentNodesKeys:IndexedSeq[Any],
+                       val wildcardKeyValues:Set[Any],
+                       val ignoreTuplesWithNoChanges:Boolean) extends IterableRoleIndex{
 
   if(ignoreTuplesWithNoChanges)
-    tuples = tuples.filter(a => a.getDataTuple.head.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1 > 0)
+    tuples = tuples.filter(a => a.getDataTuple.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1 > 0)
 
   val indexableTimestamps = getRelevantTimestamps(tuples).diff(parentNodesTimestamps.toSet)
 
   var indexTimestamp:LocalDate = null
-  var index:Map[A, IndexedSeq[RoleReference[A]]] = null
-  var iterableKeys:Set[A] = null
+  var index:Map[Any, IndexedSeq[RoleReference]] = null
+  var iterableKeys:Set[Any] = null
   var indexedTimestamps:ArrayBuffer[LocalDate] = null
 
   if(!indexableTimestamps.isEmpty){
@@ -39,7 +39,7 @@ class RoleTreeLevel[A](private var tuples: IndexedSeq[RoleReference[A]],
   def indexBuildWasSuccessfull = indexTimestamp!=null
 
   def getBestTimestamp(relevantTimestamps: Set[LocalDate]) = {
-    val tupleSample:IndexedSeq[RoleReference[A]] = getRandomSample(tuples,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateRoles)
+    val tupleSample:IndexedSeq[RoleReference] = getRandomSample(tuples,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateRoles)
     val timestampSample:IndexedSeq[LocalDate] = getRandomSample(relevantTimestamps.toIndexedSeq,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateTimestamps)
     timestampSample.map(ts => {
       val values = tupleSample.map(getField(_).valueAt(ts)).toSet
@@ -52,15 +52,15 @@ class RoleTreeLevel[A](private var tuples: IndexedSeq[RoleReference[A]],
     .map(k => index.getOrElse(k,IndexedSeq()))
     .flatten
 
-  override def tupleGroupIterator(skipWildCardBuckets: Boolean):Iterator[RoleTreePartition[A]] = new TupleGroupIterator(skipWildCardBuckets)
+  override def tupleGroupIterator(skipWildCardBuckets: Boolean):Iterator[RoleTreePartition] = new TupleGroupIterator(skipWildCardBuckets)
 
-  class TupleGroupIterator(skipWildCardBuckets: Boolean) extends Iterator[RoleTreePartition[A]] {
+  class TupleGroupIterator(skipWildCardBuckets: Boolean) extends Iterator[RoleTreePartition] {
     assert(skipWildCardBuckets)
     val indexNodeIterator = iterableKeys.iterator
 
     override def hasNext: Boolean = indexNodeIterator.hasNext
 
-    override def next(): RoleTreePartition[A] = {
+    override def next(): RoleTreePartition = {
       val key = indexNodeIterator.next()
       val tuples = index(key)
       val wildcards = getWildcardBucket
@@ -68,9 +68,9 @@ class RoleTreeLevel[A](private var tuples: IndexedSeq[RoleReference[A]],
     }
   }
 
-  override def wildcardBuckets: IndexedSeq[RoleTreePartition[A]] = wildcardKeyValues
+  override def wildcardBuckets: IndexedSeq[RoleTreePartition] = wildcardKeyValues
     .map(k => role_tree.RoleTreePartition(indexedTimestamps,parentNodesKeys ++ Seq(k),IndexedSeq(),index.getOrElse(k,IndexedSeq())))
     .toIndexedSeq
 
-  override def getParentKeyValues: IndexedSeq[A] = parentNodesKeys
+  override def getParentKeyValues: IndexedSeq[Any] = parentNodesKeys
 }

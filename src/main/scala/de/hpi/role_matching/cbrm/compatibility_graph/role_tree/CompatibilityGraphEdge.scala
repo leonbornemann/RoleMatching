@@ -1,18 +1,12 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
-import de.hpi.data_preparation.socrata.io.Socrata_Synthesis_IOService
-import de.hpi.data_preparation.socrata.tfmp_input.table.nonSketch.ValueTransition
-import de.hpi.data_preparation.socrata.{JsonReadable, JsonWritable}
+import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
+import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
 
-import java.io.File
-
-case class CompatibilityGraphEdge(tupleReferenceA: IDBasedRoleReference,
-                                  tupleReferenceB: IDBasedRoleReference,
+case class CompatibilityGraphEdge(tupleReferenceA: RoleReference,
+                                  tupleReferenceB: RoleReference,
                                   var evidence: Int,
-                                  evidenceSet: Option[collection.IndexedSeq[(ValueTransition[Any], Int)]] = None) extends JsonWritable[CompatibilityGraphEdge]{
-  def toWikipediaStyleStatRow() = {
-
-  }
+                                  evidenceSet: Option[collection.IndexedSeq[(ValueTransition, Int)]] = None) extends JsonWritable[CompatibilityGraphEdge]{
 
   if (evidenceSet.isDefined) {
     if (evidence != evidenceSet.get.map(_._2).sum) {
@@ -24,7 +18,4 @@ case class CompatibilityGraphEdge(tupleReferenceA: IDBasedRoleReference,
 
 object CompatibilityGraphEdge extends JsonReadable[CompatibilityGraphEdge]{
 
-  def getEdgeCandidateJsonPerLineFile(subdomain:String) = {
-    Socrata_Synthesis_IOService.createParentDirs(new File(Socrata_Synthesis_IOService.COMPATIBILITY_GRAPH_DIR(subdomain) + s"/$subdomain.json"))
-  }
 }

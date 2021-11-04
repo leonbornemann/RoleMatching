@@ -1,6 +1,7 @@
 package de.hpi.role_matching.cbrm.data
 
-import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
+import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable, LocalDateKeySerializer, LocalDateSerializer}
+import org.json4s.DefaultFormats
 
 /***
  * Representation of a set of roles
@@ -19,4 +20,6 @@ case class Roleset(rolesSortedByID: IndexedSeq[String], positionToRoleLineage:Ma
 
   val posToRoleLineage = positionToRoleLineage.map(t => (t._1,t._2.roleLineage.toRoleLineage))
 }
-object Roleset extends JsonReadable[Roleset]
+object Roleset extends JsonReadable[Roleset]{
+
+}

@@ -11,6 +11,7 @@ import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 object CompatibilityGraphCreationMain extends App with StrictLogging {
+  println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource(args(0))
   val rolsetFile = args(1)
   val resultDirEdges = new File(args(2))

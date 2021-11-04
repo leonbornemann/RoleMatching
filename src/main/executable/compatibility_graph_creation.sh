@@ -13,12 +13,11 @@ nThreads=16
 #settinng up logging:
 mkdir logs/
 
-
 for i in "${!datasetNames[@]}";
 do
         datasetName=${datasetNames[i]}
         #setting up result directories:
-        currentResultDir="$resultDirGraph/$datasetName/"
+        currentResultDir="$resultDir/$datasetName/"
         graphDir="$currentResultDir/graph/"
         statDir="$currentResultDir/stats/"
         timeMeasurementDir="$currentResultDir/timeMeasurement/"
@@ -33,6 +32,6 @@ do
         dataSource=${dataSources[i]}
         #starting the process
         echo "Running $datasetName with nThreads $nThreads"
-        java -ea -Xmx96g -cp $jarFile de.hpi.role_matching.cbrm.compatibility_graph.role_tree.CompatibilityGraphCreationMain $dataSource $rolesetFile $graphDir $statDir $timeStatDir $matchingEndTime $nThreads delta_fork delta_pair $samplingRateRoles $samplingRateTimestamps $datasetName > $logFile 2<&1
+        java -ea -Xmx96g -cp $jarFile de.hpi.role_matching.cbrm.compatibility_graph.role_tree.CompatibilityGraphCreationMain $dataSource $rolesetFile $graphDir $statDir $timeMeasurementDir $matchingEndTime $nThreads $delta_fork $delta_pair $samplingRateRoles $samplingRateTimestamps > $logFile 2<&1
         echo "Finished with exit code $?"
 done

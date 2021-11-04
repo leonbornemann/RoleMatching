@@ -25,10 +25,6 @@ libraryDependencies += "org.apache.commons" % "commons-csv" % "1.8"
 libraryDependencies += "org.json" % "json" % "20200518"
 // https://mvnrepository.com/artifact/org.scala-graph/graph-core
 libraryDependencies += "org.scala-graph" %% "graph-core" % "1.13.2"
-// https://mvnrepository.com/artifact/org.apache.commons/commons-compress
-//libraryDependencies += "org.apache.commons" % "commons-compress" % "1.20"
-// https://mvnrepository.com/artifact/org.tukaani/xz
-//libraryDependencies += "org.tukaani" % "xz" % "1.9"
 // https://mvnrepository.com/artifact/org.json4s/json4s-ext
 libraryDependencies += "org.json4s" %% "json4s-ext" % "3.7.0-M4"
 // https://mvnrepository.com/artifact/org.jgrapht/jgrapht-core

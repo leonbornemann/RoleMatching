@@ -10,7 +10,7 @@ We evaluate our method on datasets from the Socrata open government data portal,
 
 # Usage
 
-The repository contains several Main classes, that can start different parts of the Compatibility Based Role Matching by themselves:
+The repository contains several Main classes, that can start different parts of the Compatibility Based Role Matching by themselves. There is typically an executable .sh script for every Main class that will execute the experiments that we report on in the paper:
 
 
 * [CompatibilityGraphCreationMain](src/main/scala/de/hpi/role_matching/cbrm/compatibility_graph/role_tree/CompatibilityGraphCreationMain.scala) - Creation of the unweighted compatiblity graph from a set of vertices (also see [here](src/main/executable/compatibility_graph_creation.sh) for an executable linux shell script that repeats our expermients as presented in the paper)

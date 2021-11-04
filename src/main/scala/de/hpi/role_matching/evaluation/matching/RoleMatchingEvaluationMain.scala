@@ -23,7 +23,7 @@ object RoleMatchingEvaluationMain extends App with StrictLogging {
   val scoreConfig = if(args(7)=="max_recall" || args(7) == "baselineNoWeight") None else Some(ScoreConfig.fromJsonFile(args(7)))
   val maxRecallSetting = args(7)=="max_recall"
   val baselineNoWeightSetting = args(7) == "baselineNoWeight"
-  GLOBAL_CONFIG.setDatesForDataSource(source)
+  GLOBAL_CONFIG.setSettingsForDataSource(source)
   val resultDir = args(8)
   val redoGreedyOnly = args(9).toBoolean
   val graphSet = MemoryEfficientCompatiblityGraphSet.fromJsonFile(graphFile)

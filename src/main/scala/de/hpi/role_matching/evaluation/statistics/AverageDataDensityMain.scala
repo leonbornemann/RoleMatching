@@ -9,7 +9,7 @@ object AverageDataDensityMain extends App {
 
   val vertexLookupDir = args(0)
   val dsNames = Seq("politics", "military", "education", "football", "tv_and_film")
-  GLOBAL_CONFIG.setDatesForDataSource("wikipedia")
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val totalDurationDays = ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, GLOBAL_CONFIG.STANDARD_TIME_FRAME_END)
   val finalRes = dsNames.flatMap(dsName => {
     val map = Roleset.fromJsonFile(vertexLookupDir + s"/$dsName.json")

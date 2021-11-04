@@ -15,7 +15,7 @@ object RoleMatchingExploration extends App {
   val roleSetDir = args(3)
   val outputDir = args(4)
 
-  GLOBAL_CONFIG.setDatesForDataSource(datasource)
+  GLOBAL_CONFIG.setSettingsForDataSource(datasource)
   val csvFile =s"$inputDir/" + dsName + ".csv"
   val vertexLookupMap = Roleset.fromJsonFile(s"$roleSetDir/" + dsName + ".json")
   val resultFile = s"$outputDir/" + dsName + ".txt"

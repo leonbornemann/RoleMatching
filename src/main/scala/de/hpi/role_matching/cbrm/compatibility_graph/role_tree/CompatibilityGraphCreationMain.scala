@@ -11,30 +11,26 @@ import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 object CompatibilityGraphCreationMain extends App with StrictLogging {
-  GLOBAL_CONFIG.setDatesForDataSource("socrata")
-  val dataDir = args(0)
-  val resultDirEdges = new File(args(1))
-  val resultDirStats = new File(args(2))
-  val resultDirTime = new File(args(3))
-  val endDateTrainPhase = LocalDate.parse(args(4))
-  val timestampResolutionInDays = args(5).toInt
+  GLOBAL_CONFIG.setSettingsForDataSource(args(0))
+  val rolsetFile = args(1)
+  val resultDirEdges = new File(args(2))
+  val resultDirStats = new File(args(3))
+  val resultDirTime = new File(args(4))
+  val endDateTrainPhase = LocalDate.parse(args(5))
   val nthreads = args(6).toInt
   val thresholdForFork = args(7).toInt
   val maxPairwiseListSizeForSingleThread = args(8).toInt
   val roleSamplingRate = args(9).toDouble
   val timestampSamplingRate = args(10).toDouble
-  val dsName = args(11)
   Seq(resultDirEdges, resultDirStats, resultDirTime).foreach(_.mkdirs())
   private val config: CompatibilityGraphCreationConfig = CompatibilityGraphCreationConfig(roleSamplingRate, timestampSamplingRate, 50)
   GLOBAL_CONFIG.INDEXING_CONFIG = config
   AbstractAsynchronousRoleTree.thresholdForFork = thresholdForFork
   AbstractAsynchronousRoleTree.maxPairwiseListSizeForSingleThread = maxPairwiseListSizeForSingleThread
   GLOBAL_CONFIG.trainTimeEnd = endDateTrainPhase
-  GLOBAL_CONFIG.granularityInDays = timestampResolutionInDays
   GLOBAL_CONFIG.INDEXING_STATS_RESULT_DIR = resultDirStats
   resultDirStats.mkdir()
-  InfoboxRevisionHistory.setGranularityInDays(timestampResolutionInDays)
-  val identifiedLineages = Roleset.fromJsonFile(new File(dataDir + s"/$dsName.json").getAbsolutePath)
+  val identifiedLineages = Roleset.fromJsonFile(new File(rolsetFile).getAbsolutePath)
     .positionToRoleLineage
     .toIndexedSeq
     .sortBy(_._1)
@@ -62,9 +58,7 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
   val timeAfter = System.currentTimeMillis()
   val timeInSeconds = (timeAfter - timeNow) / 1000.0
 
-  def getFileName = s"/${dsName}_nThreads_${nthreads}_${config.samplingRateRoles}_${config.samplingRateTimestamps}.csv"
-
-  val pr = new PrintWriter(resultDirTime + getFileName)
+  val pr = new PrintWriter(resultDirTime + "/runtime.csv")
   pr.println("NThreads,RolesampleRate,TimestampSampleRate,Time [s]")
   pr.println(s"$nthreads,${config.samplingRateRoles},${config.samplingRateTimestamps},$timeInSeconds")
   pr.close()

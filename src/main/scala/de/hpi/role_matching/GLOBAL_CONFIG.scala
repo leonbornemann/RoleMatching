@@ -3,6 +3,7 @@ package de.hpi.role_matching
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.cbrm.compatibility_graph.CompatibilityGraphCreationConfig
 import de.hpi.role_matching.cbrm.data.UpdateChangeCounter
+import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory
 
 import java.io.File
 import java.time.LocalDate
@@ -34,13 +35,17 @@ object GLOBAL_CONFIG extends StrictLogging{
 
   def STANDARD_TIME_RANGE_SIZE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay).size
 
-  def setDatesForDataSource(dataSource: String) = {
+  def setSettingsForDataSource(dataSource: String) = {
     if(dataSource=="wikipedia"){
       STANDARD_TIME_FRAME_START=LocalDate.parse("2003-01-04")
       STANDARD_TIME_FRAME_END=LocalDate.parse("2019-09-07")
+      InfoboxRevisionHistory.setGranularityInDays(7)
+      granularityInDays=7
     } else if(dataSource=="socrata"){
       STANDARD_TIME_FRAME_START=LocalDate.parse("2019-11-01")
       STANDARD_TIME_FRAME_END=LocalDate.parse("2020-11-01")
+      InfoboxRevisionHistory.setGranularityInDays(1)
+      granularityInDays=1
     } else {
       logger.debug("Unknown data source specified!")
       assert(false)

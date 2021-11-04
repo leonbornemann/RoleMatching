@@ -17,7 +17,7 @@ object BaselineMain extends App with StrictLogging{
   logger.debug(s"Called with ${args.toIndexedSeq}")
   val vertexLookupMap = Roleset.fromJsonFile(args(0))
   val dataSource = args(1)
-  GLOBAL_CONFIG.setDatesForDataSource(dataSource)
+  GLOBAL_CONFIG.setSettingsForDataSource(dataSource)
   val trainTimeEnd = LocalDate.parse(args(2))
   val resultDir = args(3)
   val methodIsValueSet = args(4) == "valueSet"

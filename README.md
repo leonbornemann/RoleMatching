@@ -13,4 +13,4 @@ We evaluate our method on datasets from the Socrata open government data portal,
 The repository contains several Main classes, that can start different parts of the Compatibility Based Role Matching by themselves:
 
 * de.hpi.role_matching.cbrm.compatibility_graph.role_tree.CompatibilityGraphCreationMain - Creation of the unweighted compatiblity graph from a set of vertices
-* <To be updated soon>
+* To be updated soon

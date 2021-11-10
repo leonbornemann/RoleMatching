@@ -14,4 +14,5 @@ The repository contains several Main classes, that can start different parts of 
 
 
 * [CompatibilityGraphCreationMain](src/main/scala/de/hpi/role_matching/cbrm/compatibility_graph/role_tree/CompatibilityGraphCreationMain.scala) - Creation of the unweighted compatiblity graph from a set of vertices (also see [here](src/main/executable/compatibility_graph_creation.sh) for an executable linux shell script that repeats our expermients as presented in the paper)
-* To be updated soon
+* [TuningDataExport](src/main/scala/de/hpi/role_matching/cbrm/evidence_based_weighting/TuningDataExportMain.scala) - Transforms the simple but memory inefficient graph format to a more compressed version and exports statistics (as csv) which are used for the tuning of the evidence based weighting. Also see [here](src/main/executable/evidenceBasedWeighting.sh) for an executable linux shell script that runs this Main class and exports the data used in our experiments as presented in the paper.
+* 

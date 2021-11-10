@@ -14,7 +14,7 @@ class RoleTreeLevel(private var tuples: IndexedSeq[RoleReference],
                        val ignoreTuplesWithNoChanges:Boolean) extends IterableRoleIndex{
 
   if(ignoreTuplesWithNoChanges)
-    tuples = tuples.filter(a => a.getDataTuple.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1 > 0)
+    tuples = tuples.filter(a => a.getRole.countChanges(GLOBAL_CONFIG.CHANGE_COUNT_METHOD)._1 > 0)
 
   val indexableTimestamps = getRelevantTimestamps(tuples).diff(parentNodesTimestamps.toSet)
 

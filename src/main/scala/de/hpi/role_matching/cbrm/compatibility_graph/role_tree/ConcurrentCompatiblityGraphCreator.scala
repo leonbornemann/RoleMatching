@@ -10,13 +10,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{ConcurrentHashMap, Executors, Semaphore}
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-class ConcurrentCompatiblityGraphCreator(tuples: IndexedSeq[RoleReference],
-                                            graphConfig:GraphConfig,
-                                            filterByCommonWildcardIgnoreChangeTransition:Boolean=true,
-                                            nonInformativeValues:Set[Any] = Set(),
-                                            nthreads:Int,
-                                            resultDir:File,
-                                            toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge)
+class ConcurrentCompatiblityGraphCreator(roles: IndexedSeq[RoleReference],
+                                         graphConfig:GraphConfig,
+                                         filterByCommonWildcardIgnoreChangeTransition:Boolean=true,
+                                         nonInformativeValues:Set[Any] = Set(),
+                                         nthreads:Int,
+                                         resultDir:File,
+                                         toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge)
                              ) extends StrictLogging {
 
   logger.debug("Cleanung up old files")
@@ -28,18 +28,29 @@ class ConcurrentCompatiblityGraphCreator(tuples: IndexedSeq[RoleReference],
   val futures = new java.util.concurrent.ConcurrentHashMap[String,Future[Any]]()
 
   var tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]] = None
+  logger.debug(s"processing ${roles.size} roles")
+  var i = 0
   if(filterByCommonWildcardIgnoreChangeTransition){
-    tupleToNonWcTransitions = Some(tuples
-      .map(t => (t,t.getDataTuple
-        .valueTransitions(false,true)
-        .filter(t => !nonInformativeValues.contains(t.prev) && !nonInformativeValues.contains(t.after))
-      ))
+    tupleToNonWcTransitions = Some(roles
+      .map(t => {
+        i+=1
+        if(i==83925)
+          println()
+        val role = t.getRole
+        val valueTransitions = role
+          .valueTransitions(false, true)
+        val valueTransitionsFiltered = valueTransitions
+          .filter(t => !nonInformativeValues.contains(t.prev) && !nonInformativeValues.contains(t.after))
+        (t,valueTransitionsFiltered
+        )
+      })
       .toMap)
   }
 
   val fname = "graph"
+  logger.debug("beginning future computation")
   ConcurrentCompatiblityGraphCreator.lastReportTimestamp = System.currentTimeMillis()
-  AsynchronousRoleTree.createAsFuture(futures,tuples,IndexedSeq(),IndexedSeq(),graphConfig,nonInformativeValues,context,resultDir,fname,toGeneralEdgeFunction,tupleToNonWcTransitions,0,true)
+  AsynchronousRoleTree.createAsFuture(futures,roles,IndexedSeq(),IndexedSeq(),graphConfig,nonInformativeValues,context,resultDir,fname,toGeneralEdgeFunction,tupleToNonWcTransitions,0,true)
   ConcurrentCompatiblityGraphCreator.allFuturesTerminated.acquire()
   ConcurrentCompatiblityGraphCreator.closeAllPrintWriters()
   logger.debug("Finished - closing print writers and shutting down executor service")

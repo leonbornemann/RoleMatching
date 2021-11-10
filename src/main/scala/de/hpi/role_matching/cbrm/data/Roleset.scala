@@ -10,6 +10,8 @@ import org.json4s.DefaultFormats
  * @param positionToRoleLineage
  */
 case class Roleset(rolesSortedByID: IndexedSeq[String], positionToRoleLineage:Map[Int,RoleLineageWithID]) extends JsonWritable[Roleset]{
+  def toNonCaseClass: NonCaseClassRoleset = new NonCaseClassRoleset(this)
+
   def wildcardValues = RoleLineage.WILDCARD_VALUES
 
   def getStringToLineageMap = {

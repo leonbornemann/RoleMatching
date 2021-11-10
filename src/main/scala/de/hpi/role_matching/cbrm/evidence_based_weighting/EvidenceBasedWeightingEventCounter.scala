@@ -13,12 +13,11 @@ import java.time.LocalDate
 import scala.collection.mutable
 import scala.util.Random
 
-class EvidenceBasedWeightingEventCounter(dsName:String,
-                                         graph:MemoryEfficientCompatiblityGraphWithoutEdgeWeight,
+class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphWithoutEdgeWeight,
                                          tfIDF:Map[LocalDate, ISFMapStorage],
                                          TIMESTAMP_GRANULARITY_IN_DAYS:Int,
                                          statFile:File,
-                                         graphSetFile:File,
+                                         graphSetResultFile:File,
                                          nonInformativeValuesIsStrict:Boolean =false) extends StrictLogging{
 
   assert(graph.allEndTimes == tfIDF.keySet)
@@ -117,7 +116,7 @@ class EvidenceBasedWeightingEventCounter(dsName:String,
     }}
     val trainTimeEndsSorted = graph.allEndTimes.toIndexedSeq.sortBy(_.toEpochDay)
     val graphSet = MemoryEfficientCompatiblityGraphSet(graph.verticesOrdered.map(_.id),trainTimeEndsSorted,adjacencyList)
-    graphSet.toJsonFile(graphSetFile)
+    graphSet.toJsonFile(graphSetResultFile)
     statPr.close()
     totalCounts
   }
@@ -125,7 +124,7 @@ class EvidenceBasedWeightingEventCounter(dsName:String,
   private def addToTotal(totalCounts: mutable.HashMap[LocalDate, EventOccurrenceStatistics],
                          eventCounts: EventOccurrenceStatistics,
                          date:LocalDate) = {
-    totalCounts.getOrElseUpdate(date, new EventOccurrenceStatistics(dsName, date))
+    totalCounts.getOrElseUpdate(date, new EventOccurrenceStatistics( date))
       .addAll(eventCounts)
   }
 }

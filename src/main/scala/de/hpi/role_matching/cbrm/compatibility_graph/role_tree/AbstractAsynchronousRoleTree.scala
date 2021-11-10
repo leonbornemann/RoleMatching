@@ -89,8 +89,8 @@ abstract class AbstractAsynchronousRoleTree(val toGeneralEdgeFunction:((RoleRefe
 object AbstractAsynchronousRoleTree {
 
   def getTupleMatchOption(ref1:RoleReference, ref2:RoleReference) = {
-    val left = ref1.getDataTuple
-    val right = ref2.getDataTuple // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
+    val left = ref1.getRole
+    val right = ref2.getRole // this is a map with all LHS being fields from tupleA and all rhs being fields from tuple B
     val evidence = left.getOverlapEvidenceCount(right)
     if (evidence == -1) {
       None

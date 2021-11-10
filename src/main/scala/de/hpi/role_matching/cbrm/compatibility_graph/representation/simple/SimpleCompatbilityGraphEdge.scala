@@ -6,6 +6,7 @@ import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWrit
 import de.hpi.role_matching.evaluation.tuning
 import de.hpi.util.TableFormatter
 
+//not very memory efficient but can easily be written in parallel
 case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithID) extends JsonWritable[SimpleCompatbilityGraphEdge] {
 
   def toGeneralEdgeStatRow(granularityInDays: Int,

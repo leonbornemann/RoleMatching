@@ -5,8 +5,7 @@ import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatist
 
 import java.time.LocalDate
 
-case class EventOccurrenceStatistics(val dsName:String,
-                                     val trainTimeEnd:LocalDate,
+case class EventOccurrenceStatistics(val trainTimeEnd:LocalDate,
                                      val summedScores:Option[collection.mutable.IndexedSeq[Float]]=Some(collection.mutable.ArrayBuffer[Float](0.0f,0.0f,0.0f,0.0f,0.0f)),
                                      var strongPositive:Int=0,
                                      var weakPositive:Int=0,

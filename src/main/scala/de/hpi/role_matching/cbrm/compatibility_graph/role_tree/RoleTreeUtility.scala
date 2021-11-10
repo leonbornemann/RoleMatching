@@ -23,6 +23,6 @@ trait RoleTreeUtility {
     }
   }
 
-  def getField(tupleReference: RoleReference) = tupleReference.getDataTuple
+  def getField(tupleReference: RoleReference) = tupleReference.getRole
 
 }

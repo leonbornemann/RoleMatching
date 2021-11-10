@@ -1,9 +1,11 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.representation.slim
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatibilityGraphEdgeIterator}
 import de.hpi.role_matching.cbrm.data.RoleLineageWithID
 import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
+import de.hpi.role_matching.cbrm.evidence_based_weighting.isf.ISFMapStorage
 
 import java.time.LocalDate
 import scala.collection.mutable
@@ -13,6 +15,17 @@ case class MemoryEfficientCompatiblityGraphWithoutEdgeWeight(smallestTrainTimeEn
                                                              trainTimeEnds:Seq[LocalDate],
                                                              verticesOrdered: IndexedSeq[RoleLineageWithID],
                                                              adjacencyList: collection.Map[Int, collection.Map[Int,Seq[Boolean]]]) extends JsonWritable[MemoryEfficientCompatiblityGraphWithoutEdgeWeight] with StrictLogging{
+  def getISFMapsAtEndTimes(trainTimeEnds: Array[LocalDate]) = {
+    trainTimeEnds.map(t => {
+      val lineagesProjected = verticesOrdered.map(rl => RoleLineageWithID(rl.id,rl.roleLineage
+          .toRoleLineage
+          .projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,t).toSerializationHelper)
+      )
+      val hist = RoleLineageWithID.getTransitionHistogramForTFIDFFromVertices(lineagesProjected, GLOBAL_CONFIG.granularityInDays)
+      (t,ISFMapStorage(hist.toIndexedSeq))
+    })
+      .toMap
+  }
 
 
   def getLineage(vertex: Int): RoleLineageWithID = {

@@ -1,0 +1,9 @@
+{
+  "alpha" : 0.000031,
+  "strongPositiveWeight" : 1.0,
+  "weakPositiveWeight" : 0.001,
+  "neutralWeight" : 0.0,
+  "weakNegativeWeight" : -0.01,
+  "strongNegativeWeight" : -0.01,
+  "eventCountInLineage" : 364
+}

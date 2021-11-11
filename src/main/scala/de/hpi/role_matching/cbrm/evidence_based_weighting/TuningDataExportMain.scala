@@ -3,7 +3,6 @@ package de.hpi.role_matching.cbrm.evidence_based_weighting
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.MemoryEfficientCompatiblityGraphWithoutEdgeWeight
-import de.hpi.role_matching.cbrm.evidence_based_weighting.isf.ISFMapStorage
 
 import java.io.File
 import java.time.LocalDate

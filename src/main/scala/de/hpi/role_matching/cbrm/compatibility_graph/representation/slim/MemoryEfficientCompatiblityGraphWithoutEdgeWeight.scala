@@ -40,7 +40,7 @@ case class MemoryEfficientCompatiblityGraphWithoutEdgeWeight(smallestTrainTimeEn
 }
 object MemoryEfficientCompatiblityGraphWithoutEdgeWeight extends JsonReadable[MemoryEfficientCompatiblityGraphWithoutEdgeWeight] with StrictLogging {
 
-  def fromGeneralEdgeIterator(edges: SimpleCompatbilityGraphEdge.JsonObjectPerLineFileIterator,
+  def fromGeneralEdgeIterator(edges: Iterator[SimpleCompatbilityGraphEdge],
                               trainTimeStart:LocalDate,
                               smallestTrainTimeEnd:LocalDate,
                               trainTimeEnds:Seq[LocalDate]) = {

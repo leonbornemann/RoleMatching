@@ -18,14 +18,14 @@ do
         currentResultDir="$resultDir/$datasetName/"
         mkdir currentResultDir
         resultFileStats="$currentResultDir/${datasetName}_stats.csv"
-        resultFileGraph="$currentResultDir/${datasetName}.json"
+        graphResultFile="$currentResultDir/${datasetName}/"
         logFile="logs/${datasetName}_tuningDataExport.log"
         #setting up input file variables:
-        simpleGraphFile="$graphDir/$datasetName.json"
+        simpleGraphDir="$graphDir/$datasetName/graph/"
         dataSource=${dataSources[i]}
         matchingEndTime=${matchingEndTimes[i]}
         #starting the process
-        echo "Running ISF Map extraction for $datasetName"
-        java -ea -Xmx96g -cp $jarFile de.hpi.role_matching.cbrm.evidence_based_weighting.TuningDataExportMain $dataSource $simpleGraphFile $resultFileStats $resultFileGraph $matchingEndTime > $logFile 2<&1
-        echo "Finished ISF Map extraction with exit code $?"
+        echo "Running Tuning and Transformation to memory efficient representation for $datasetName"
+        java -ea -Xmx96g -cp $jarFile de.hpi.role_matching.cbrm.evidence_based_weighting.TuningDataExportMain $dataSource $simpleGraphDir $resultFileStats $graphResultFile $matchingEndTime > $logFile 2<&1
+        echo "Finished with exit code $?"
 done

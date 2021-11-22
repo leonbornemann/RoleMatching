@@ -16,7 +16,7 @@ do
         datasetName=${datasetNames[i]}
         #setting up result directories:
         currentResultDir="$resultDir/$datasetName/"
-        mkdir currentResultDir
+        mkdir $currentResultDir
         resultFileStats="$currentResultDir/${datasetName}_stats.csv"
         graphResultFile="$currentResultDir/${datasetName}/"
         logFile="logs/${datasetName}_tuningDataExport.log"

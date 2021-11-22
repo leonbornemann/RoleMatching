@@ -6,7 +6,7 @@ import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatist
 import java.time.LocalDate
 
 case class EventOccurrenceStatistics(val trainTimeEnd:LocalDate,
-                                     val summedScores:Option[collection.mutable.IndexedSeq[Float]]=Some(collection.mutable.ArrayBuffer[Float](0.0f,0.0f,0.0f,0.0f,0.0f)),
+                                     var summedScores:Option[collection.mutable.IndexedSeq[Float]]=Some(collection.mutable.ArrayBuffer[Float](0.0f,0.0f,0.0f,0.0f,0.0f)),
                                      var strongPositive:Int=0,
                                      var weakPositive:Int=0,
                                      var neutral:Int=0,
@@ -25,6 +25,10 @@ case class EventOccurrenceStatistics(val trainTimeEnd:LocalDate,
       case _  => assert(false)
     }
   }
+
+//  if(summedScores.isEmpty){
+//    summedScores =
+//  }
 
   if(summedScores.isDefined)
     assert(summedScores.get.size==5) //positions of the score sums are the same as in the constructors

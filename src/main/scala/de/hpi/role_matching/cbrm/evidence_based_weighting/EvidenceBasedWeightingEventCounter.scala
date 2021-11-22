@@ -33,7 +33,7 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
 
   def getEventCounts(cp: ChangePoint,vertexIdFirst:Int,vertexIdSecond:Int,trainTimeEnd:LocalDate) = {
     assert(!cp.prevPointInTime.isAfter(trainTimeEnd))
-    val totalCounts = new EventOccurrenceStatistics(null,null)
+    val totalCounts = new EventOccurrenceStatistics(trainTimeEnd)
     val countPrev = EvidenceBasedWeightingScoreComputer.getCountPrev(cp,TIMESTAMP_GRANULARITY_IN_DAYS,Some(trainTimeEnd)).toInt
     if(countPrev>0){
       val countPrevTransiton = EvidenceBasedWeightingScoreComputer.getCountForSameValueTransition(cp.prevValueA,cp.prevValueB,countPrev,isWildcard,
@@ -124,7 +124,7 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
   private def addToTotal(totalCounts: mutable.HashMap[LocalDate, EventOccurrenceStatistics],
                          eventCounts: EventOccurrenceStatistics,
                          date:LocalDate) = {
-    totalCounts.getOrElseUpdate(date, new EventOccurrenceStatistics( date))
+    totalCounts.getOrElseUpdate(date, new EventOccurrenceStatistics(date))
       .addAll(eventCounts)
   }
 }

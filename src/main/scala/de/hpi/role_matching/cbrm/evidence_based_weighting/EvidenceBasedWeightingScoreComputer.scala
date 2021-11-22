@@ -180,7 +180,7 @@ object EvidenceBasedWeightingScoreComputer extends StrictLogging {
                                         nonInformativeValueIsStrict:Boolean,
                                         transitionHistogramForTFIDF:Option[Map[ValueTransition,Int]]=None
                                        ) = {
-    val totalScore = new EventOccurrenceStatistics(null,null)
+    val totalScore = new EventOccurrenceStatistics(null)
     var isInvalid = false
     if(countPrev!=0){
       if(isWildcard(prevValueA) && isWildcard(prevValueB)){
@@ -232,7 +232,7 @@ object EvidenceBasedWeightingScoreComputer extends StrictLogging {
     val values = Set(cp.prevValueA, cp.prevValueB, cp.curValueA, cp.curValueB)
     //handle transition:
     val noWildcardInTransition = values.forall(v => !isWildcard(v))
-    val totalScore = new EventOccurrenceStatistics(null,null)
+    val totalScore = new EventOccurrenceStatistics(null)
     var invalid=false
     if (noWildcardInTransition) {
       if(cp.prevValueA == cp.prevValueB && cp.curValueA == cp.curValueB){

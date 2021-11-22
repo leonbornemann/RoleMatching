@@ -34,8 +34,6 @@ class ConcurrentCompatiblityGraphCreator(roles: IndexedSeq[RoleReference],
     tupleToNonWcTransitions = Some(roles
       .map(t => {
         i+=1
-        if(i==83925)
-          println()
         val role = t.getRole
         val valueTransitions = role
           .valueTransitions(false, true)
@@ -66,12 +64,14 @@ object ConcurrentCompatiblityGraphCreator extends StrictLogging {
   def closeAllPrintWriters() = {
     availablePrintWriters.synchronized{
       availablePrintWriters.foreach(t => {
+        t._1.flush()
         t._1.close()
         println(s"Closed writer for ${t._2}")
       })
     }
     availablePrintWritersStats.synchronized{
       availablePrintWritersStats.foreach(t => {
+        t._1.flush()
         t._1.close()
         println(s"Closed Stat writer for ${t._2}")
       })
@@ -124,6 +124,7 @@ object ConcurrentCompatiblityGraphCreator extends StrictLogging {
 //      logger.debug(s"Released writer $filename")
 //      if(availablePrintWriters.exists(_._2==filename))
 //        logger.debug("Huh?")
+      pr.flush()
       availablePrintWriters.append((pr,filename))
     }
   }
@@ -133,6 +134,7 @@ object ConcurrentCompatiblityGraphCreator extends StrictLogging {
       //      logger.debug(s"Released writer $filename")
       //      if(availablePrintWriters.exists(_._2==filename))
       //        logger.debug("Huh?")
+      pr.flush()
       availablePrintWritersStats.append((pr,filename))
     }
   }

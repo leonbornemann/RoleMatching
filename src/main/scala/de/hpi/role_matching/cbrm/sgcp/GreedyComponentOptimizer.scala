@@ -42,7 +42,7 @@ class GreedyComponentOptimizer(c: NewSubgraph,log:Boolean) extends Optimizer(c) 
     }
     //validate result:
     cliqueCover.foreach{case (cc,w) => {
-      assert(w>=0)
+      //assert(w>=0)
       val vertices = cc.toIndexedSeq
       var newWeight = 0.0
       for(i <- 0 until vertices.size){
@@ -58,7 +58,7 @@ class GreedyComponentOptimizer(c: NewSubgraph,log:Boolean) extends Optimizer(c) 
         logger.debug(s"Bug found in Greedy: Clique: ${cc.min}, size: ${cc.size}, Weight by greedy: ${w} Weight from edges: ${newWeight}  ")
       }
       //assert(Math.abs(w - newWeight) < 0.0000001)
-      assert(newWeight>=0)
+      //assert(newWeight>=0)
     }}
     cliqueCover.map{case (cc,objective) => {
       RoleMerge(cc,objective)

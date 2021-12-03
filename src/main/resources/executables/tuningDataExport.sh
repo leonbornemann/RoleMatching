@@ -18,7 +18,7 @@ do
         currentResultDir="$resultDir/$datasetName/"
         mkdir $currentResultDir
         resultFileStats="$currentResultDir/${datasetName}_stats.csv"
-        graphResultFile="$currentResultDir/${datasetName}/"
+        graphResultFile="$currentResultDir/${datasetName}.json"
         logFile="logs/${datasetName}_tuningDataExport.log"
         #setting up input file variables:
         simpleGraphDir="$graphDir/$datasetName/graph/"

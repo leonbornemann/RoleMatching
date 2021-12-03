@@ -1,6 +1,6 @@
 #input directories
 graphDir="<substitute the path to a directory containing the graph set files (output of tuning Data Export)>"
-rolesetDir="<substitute the path to a diretory contained the role sets json files here>"
+rolesetDir="<substitute the path to a directory contained the role sets json files here>"
 resultDir="<substitute the path to a directory for the output here>"
 jarFile="<substitute the path to the jar file obtained by sbt assembly here>"
 
@@ -23,11 +23,13 @@ do
         weightConfig=${weightSettings[i]}
         currentResultDir="$resultDir/$datasetName/sgcp/"
         rolesetFile="$rolesetDir/$datasetName.json"
-        mkdir currentResultDir
+        graphsetFile="$graphDir/$datasetName/$datasetName.json"
+        mkdir $resultDir/$datasetName/
+        mkdir $currentResultDir
         logFile="logs/${datasetName}_sgcp.log"
         dataSource=${dataSources[i]}
         #starting the process
-        echo "Running $datasetName with nThreads $nThreads"
-        java -ea -Xmx96g -cp $jarFile de.hpi.role_matching.cbrm.sgcp.SparseGraphCliquePartitioningMain $dataSource $graphsetFile $trainTimeEnd $weightConfig $resultDir $rolesetFile  > $logFile 2<&1
+        echo "Running $datasetName"
+        java -ea -Xmx96g -cp $jarFile de.hpi.role_matching.cbrm.sgcp.SparseGraphCliquePartitioningMain $dataSource $graphsetFile $matchingEndTime $weightConfig $currentResultDir $rolesetFile  > $logFile 2<&1
         echo "Finished with exit code $?"
 done

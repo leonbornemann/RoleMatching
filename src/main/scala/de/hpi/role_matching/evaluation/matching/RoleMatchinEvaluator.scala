@@ -50,9 +50,9 @@ case class RoleMatchinEvaluator(prCliques: PrintWriter,
   }
 
   def getCommonValuesAsSemicolonSeparatedString(vertices: IndexedSeq[RoleLineageWithID]) = {
-    val allDates = vertices.flatMap(_.roleLineage.lineage.keySet)
+    val allDates = vertices.flatMap(_.factLineage.lineage.keySet)
     val valuesAtDate = allDates.map(ld => {
-      (ld,vertices.map(_.roleLineage.toRoleLineage.valueAt(ld)))
+      (ld,vertices.map(_.factLineage.toRoleLineage.valueAt(ld)))
     })
     val values = valuesAtDate
       .filter{case (ld,values) => values.filter(v => !RoleLineage.isWildcard(v)).size>1}

@@ -20,7 +20,7 @@ case class Roleset(rolesSortedByID: IndexedSeq[String], positionToRoleLineage:Ma
 
   rolesSortedByID.zipWithIndex.foreach(t => assert(positionToRoleLineage(t._2).id==t._1))
 
-  val posToRoleLineage = positionToRoleLineage.map(t => (t._1,t._2.roleLineage.toRoleLineage))
+  val posToRoleLineage = positionToRoleLineage.map(t => (t._1,t._2.factLineage.toRoleLineage))
 }
 object Roleset extends JsonReadable[Roleset]{
 

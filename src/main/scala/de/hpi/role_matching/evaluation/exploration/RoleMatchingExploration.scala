@@ -20,7 +20,7 @@ object RoleMatchingExploration extends App {
   val vertexLookupMap = Roleset.fromJsonFile(s"$roleSetDir/" + dsName + ".json")
   val resultFile = s"$outputDir/" + dsName + ".txt"
   val pr = new PrintWriter(resultFile)
-  val seqWithName = vertexLookupMap.positionToRoleLineage.values.toIndexedSeq.map(idfl => (idfl.csvSafeID,(idfl,idfl.roleLineage.toRoleLineage))).toMap
+  val seqWithName = vertexLookupMap.positionToRoleLineage.values.toIndexedSeq.map(idfl => (idfl.csvSafeID,(idfl,idfl.factLineage.toRoleLineage))).toMap
   val edges = Source.fromFile(csvFile)
     .getLines()
     .toIndexedSeq

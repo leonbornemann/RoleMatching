@@ -50,7 +50,7 @@ case class MemoryEfficientCompatiblityGraph(verticesOrdered: IndexedSeq[String],
 object MemoryEfficientCompatiblityGraph extends JsonReadable[MemoryEfficientCompatiblityGraph] with StrictLogging {
 
   def getEdgeOption(e:SimpleCompatbilityGraphEdge, scoringFunction: EdgeScore, scoringFunctionThreshold: Double) = {
-    val score = scoringFunction.compute(e.v1.roleLineage.toRoleLineage,e.v2.roleLineage.toRoleLineage)
+    val score = scoringFunction.compute(e.v1.factLineage.toRoleLineage,e.v2.factLineage.toRoleLineage)
     val weight = (score-scoringFunctionThreshold).toFloat
     if(weight==Float.NegativeInfinity) {
       None
@@ -83,7 +83,7 @@ object MemoryEfficientCompatiblityGraph extends JsonReadable[MemoryEfficientComp
     edges.foreach(e => {
       vertices.add(e.v1.id)
       vertices.add(e.v2.id)
-      val score = scoringFunction.compute(e.v1.roleLineage.toRoleLineage,e.v2.roleLineage.toRoleLineage)
+      val score = scoringFunction.compute(e.v1.factLineage.toRoleLineage,e.v2.factLineage.toRoleLineage)
       val edge = getEdgeOption(e,scoringFunction,scoringFunctionThreshold)
       if(edge.isDefined){
         adjacencyList.getOrElseUpdate(edge.get._1,mutable.HashMap[String,Float]()).put(edge.get._2,edge.get._3)

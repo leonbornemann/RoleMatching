@@ -17,7 +17,7 @@ case class MemoryEfficientCompatiblityGraphWithoutEdgeWeight(smallestTrainTimeEn
                                                              adjacencyList: collection.Map[Int, collection.Map[Int,Seq[Boolean]]]) extends JsonWritable[MemoryEfficientCompatiblityGraphWithoutEdgeWeight] with StrictLogging{
   def getISFMapsAtEndTimes(trainTimeEnds: Array[LocalDate]) = {
     trainTimeEnds.map(t => {
-      val lineagesProjected = verticesOrdered.map(rl => RoleLineageWithID(rl.id,rl.roleLineage
+      val lineagesProjected = verticesOrdered.map(rl => RoleLineageWithID(rl.id,rl.factLineage
           .toRoleLineage
           .projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,t).toSerializationHelper)
       )
@@ -51,8 +51,8 @@ object MemoryEfficientCompatiblityGraphWithoutEdgeWeight extends JsonReadable[Me
     edges.foreach(e => {
       vertices.add(e.v1)
       vertices.add(e.v2)
-      val fl1 = e.v1.roleLineage.toRoleLineage
-      val fl2 = e.v2.roleLineage.toRoleLineage
+      val fl1 = e.v1.factLineage.toRoleLineage
+      val fl2 = e.v2.factLineage.toRoleLineage
       if(fl1.projectToTimeRange(trainTimeStart,smallestTrainTimeEnd).tryMergeWithConsistent(fl2.projectToTimeRange(trainTimeStart,smallestTrainTimeEnd)).isDefined){
         val edgeIsPresent = trainTimeEnds.map(end => fl1.projectToTimeRange(trainTimeStart,end).tryMergeWithConsistent(fl2.projectToTimeRange(trainTimeStart,end)).isDefined)
         val id1 = e.v1.id

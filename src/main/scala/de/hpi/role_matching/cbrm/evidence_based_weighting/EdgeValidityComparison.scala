@@ -4,6 +4,7 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.MemoryEfficientCompatiblityGraphWithoutEdgeWeight
 import de.hpi.role_matching.cbrm.evidence_based_weighting.TuningDataExportMain.args
+import de.hpi.role_matching.evaluation.tuning.EdgeStatRowForTuning
 
 import java.io.File
 import java.time.LocalDate
@@ -19,13 +20,15 @@ object EdgeValidityComparison extends App {
     .map(e => (e.getEdgeID,e))
     .toMap
   println("Read file 1")
-  val edges2 = SimpleCompatbilityGraphEdge.fromJsonObjectPerLineFile(simpleGraphFile1.getAbsolutePath)
+  val edges2 = SimpleCompatbilityGraphEdge.fromJsonObjectPerLineFile(simpleGraphFile2.getAbsolutePath)
     .map(e => (e.getEdgeID,e))
     .toMap
   println("Read file 2")
   println(s"edges 1: ${edges1.size} edges 2: ${edges2.size} intersection: ${edges1.keySet.intersect(edges2.keySet)}")
   //check common edges:
-  edges1.keySet.intersect(edges2.keySet).foreach(k => {
-
-  })
+//  edges1.keySet.intersect(edges2.keySet).foreach(k => {
+//    val e1 = edges1(k)
+//    val e2 = edges2(k)
+//    val statRow = EdgeStatRowForTuning(e1,)
+//  })
 }

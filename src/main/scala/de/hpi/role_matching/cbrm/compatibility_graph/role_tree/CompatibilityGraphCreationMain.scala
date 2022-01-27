@@ -37,7 +37,7 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
     .sortBy(_._1)
   val lineages = identifiedLineages
     .map(t => {
-      val newLineage = t._2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, endDateTrainPhase)
+      val newLineage = t._2.factLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, endDateTrainPhase)
       RoleLineageWithID(t._2.id,newLineage.toSerializationHelper)
     })
   val timeNow = System.currentTimeMillis()

@@ -78,7 +78,6 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
       commonPointOfInterestIterator
         .withFilter(cp => !cp.prevPointInTime.isAfter(latestTime))
         .foreach(cp => {
-          true==true
           //val eventCounts = getEventCounts(cp, firstNode, secondNode)
           if (!cp.prevPointInTime.isAfter(graph.smallestTrainTimeEnd)) {
             val eventCountsSmallestTimeEnd = getEventCounts(cp, firstNode, secondNode,graph.smallestTrainTimeEnd)

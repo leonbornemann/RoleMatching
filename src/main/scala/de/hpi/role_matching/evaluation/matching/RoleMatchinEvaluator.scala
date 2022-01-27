@@ -44,7 +44,10 @@ case class RoleMatchinEvaluator(prCliques: PrintWriter,
     }
   }
 
-  def toCSVSafe(head: Any) = head.toString.replace("\r"," ").replace("\n"," ").replace(","," ")
+  def toCSVSafe(str: Any) = {
+    val string = if(str==null) "null" else str
+    string.toString.replace("\r"," ").replace("\n"," ").replace(","," ")
+  }
 
   def getCommonValuesAsSemicolonSeparatedString(vertices: IndexedSeq[RoleLineageWithID]) = {
     val allDates = vertices.flatMap(_.roleLineage.lineage.keySet)

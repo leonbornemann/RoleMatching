@@ -8,6 +8,14 @@ import de.hpi.util.TableFormatter
 
 //not very memory efficient but can easily be written in parallel
 case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithID) extends JsonWritable[SimpleCompatbilityGraphEdge] {
+  def getEdgeID = {
+    if(v1.csvSafeID < v2.csvSafeID){
+      v1.csvSafeID + "||" + v2.csvSafeID
+    } else {
+      v2.csvSafeID + "||" + v1.csvSafeID
+    }
+  }
+
 
   def toGeneralEdgeStatRow(granularityInDays: Int,
                            trainGraphConfig: GraphConfig,

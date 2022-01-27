@@ -20,7 +20,7 @@ object RoleMatchingEvaluationMain extends App with StrictLogging {
   val vertexMappingDirMDMCP = new File(args(3))
   val graphFile = args(4)
   val trainTimeEnd = LocalDate.parse(args(5))
-  val scoreConfig = if(args(6)=="MAX_RECALL" || args(6) == "UNWEIGHTED") None else Some(ScoreConfig.fromJsonFile(args(7)))
+  val scoreConfig = if(args(6)=="MAX_RECALL" || args(6) == "UNWEIGHTED") None else Some(ScoreConfig.fromJsonFile(args(6)))
   val maxRecallSetting = args(6)=="MAX_RECALL"
   val baselineNoWeightSetting = args(6) == "UNWEIGHTED"
   val resultDir = args(7)

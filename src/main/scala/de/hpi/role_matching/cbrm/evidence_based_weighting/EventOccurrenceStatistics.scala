@@ -14,7 +14,6 @@ case class EventOccurrenceStatistics(val trainTimeEnd:LocalDate,
                                      var strongNegative:Int=0) extends JsonWritable[EventOccurrenceStatistics]{
   def totalCount = strongPositive+weakPositive+neutral+weakNegative+strongNegative
 
-
   def addScore(kind:String,count:Int,scoreSum:Float) = {
     kind match {
       case STRONGPOSTIVE  => strongPositive+=count; if(summedScores.isDefined) summedScores.get(0) = summedScores.get(0) + scoreSum

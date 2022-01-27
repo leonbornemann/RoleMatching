@@ -15,7 +15,7 @@ object EdgeValidityComparison extends App {
   GLOBAL_CONFIG.setSettingsForDataSource(datasource)
   val simpleGraphFile1 = new File(args(1))
   val simpleGraphFile2 = new File(args(2))
-  val trainTimeEnds = args(3).split(";").map(t => LocalDate.parse(t))
+  val trainTimeEnd = LocalDate.parse(args(3))
   val edges1 = SimpleCompatbilityGraphEdge.iterableFromJsonObjectPerLineDir(simpleGraphFile1)
     .toIndexedSeq
     .map(e => (e.getEdgeID,e))
@@ -26,11 +26,24 @@ object EdgeValidityComparison extends App {
     .map(e => (e.getEdgeID,e))
     .toMap
   println("Read file 2")
-  println(s"edges 1: ${edges1.size} edges 2: ${edges2.size} intersection: ${edges1.keySet.intersect(edges2.keySet)}")
+  println(s"edges 1: ${edges1.size} edges 2: ${edges2.size} intersection: ${edges1.keySet.intersect(edges2.keySet).size}")
   //check common edges:
+  val edgesUniqueTo2 = edges2.keySet.diff(edges1.keySet)
+  println("edgesUniqueTo2: "+ edgesUniqueTo2.size)
+  val res = edgesUniqueTo2.map(e => {
+    val edge = edges2(e)
+    val rl1 = edge.v1.roleLineage.toRoleLineage
+    val rl2 = edge.v2.roleLineage.toRoleLineage
+    val remainsValid = rl1.tryMergeWithConsistent(rl2).isDefined
+    val evidenceInTrainPhase = rl1.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd).getOverlapEvidenceCount(rl2.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))
+    (remainsValid,evidenceInTrainPhase)
+  })
+  val withEvidence = res.filter(t => t._2>0)
+  println("With Evidence:" + withEvidence.size)
 //  edges1.keySet.intersect(edges2.keySet).foreach(k => {
 //    val e1 = edges1(k)
 //    val e2 = edges2(k)
-//    val statRow = EdgeStatRowForTuning(e1,)
+//    val statRow:EventOccurrenceStatistics = e1.eventOccurrences(trainTimeEnd)
+//    val lol = EdgeStatRowForTuning(e1,statRow,7)
 //  })
 }

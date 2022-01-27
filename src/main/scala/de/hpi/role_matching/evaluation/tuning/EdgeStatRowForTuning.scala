@@ -12,8 +12,8 @@ case class EdgeStatRowForTuning(e: SimpleCompatbilityGraphEdge,
                                 scoreStats: EventOccurrenceStatistics,
                                 evaluationStepDurationInDays:Int) extends StatComputer {
 
-  val fl1 = e.v1.factLineage.toRoleLineage
-  val fl2 = e.v2.factLineage.toRoleLineage
+  val fl1 = e.v1.roleLineage.toRoleLineage
+  val fl2 = e.v2.roleLineage.toRoleLineage
   val remainsValidFullTimeSpan = fl1.tryMergeWithConsistent(fl2, RemainsValidVariant.STRICT).isDefined
   val isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(fl1, scoreStats.trainTimeEnd).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(fl2, scoreStats.trainTimeEnd).isDefined
   val interestingnessEvidence = getEvidenceInTestPhase(fl1, fl2, scoreStats.trainTimeEnd)

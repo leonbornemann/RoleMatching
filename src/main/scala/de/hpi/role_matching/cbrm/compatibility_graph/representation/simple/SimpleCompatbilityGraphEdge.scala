@@ -26,8 +26,8 @@ case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithI
       trainGraphConfig,
       v1.csvSafeID,
       v2.csvSafeID,
-      v1.factLineage.toRoleLineage,
-      v2.factLineage.toRoleLineage,
+      v1.roleLineage.toRoleLineage,
+      v2.roleLineage.toRoleLineage,
       nonInformativeValues,
       transitionHistogramForTFIDF,
       lineageCount)
@@ -38,11 +38,11 @@ case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithI
   }
 
   def getTabularEventLineageString = {
-    val dates = v1.factLineage.toRoleLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
-    val dates2 = v2.factLineage.toRoleLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
+    val dates = v1.roleLineage.toRoleLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
+    val dates2 = v2.roleLineage.toRoleLineage.lineage.keySet//.filter(v => !FactLineage.isWildcard(v._2) && v._2!="").keySet
     val allDates = dates.union(dates2).toIndexedSeq.sorted
-    val cells1 = IndexedSeq(v1.id) ++ allDates.map(t => v1.factLineage.toRoleLineage.valueAt(t)).map(v => if(RoleLineage.isWildcard(v)) "_" else v)
-    val cells2 = IndexedSeq(v2.id) ++ allDates.map(t => v2.factLineage.toRoleLineage.valueAt(t)).map(v => if(RoleLineage.isWildcard(v)) "_" else v)
+    val cells1 = IndexedSeq(v1.id) ++ allDates.map(t => v1.roleLineage.toRoleLineage.valueAt(t)).map(v => if(RoleLineage.isWildcard(v)) "_" else v)
+    val cells2 = IndexedSeq(v2.id) ++ allDates.map(t => v2.roleLineage.toRoleLineage.valueAt(t)).map(v => if(RoleLineage.isWildcard(v)) "_" else v)
     val valuesMatch = (1 until cells1.size).map(i => {
       cells1(i)=="_" || cells2(i)=="_" || cells1(i)==cells2(i)
     })

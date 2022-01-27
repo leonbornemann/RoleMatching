@@ -25,9 +25,9 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
   //for the sake of simplicity for now: change this later
   val tfIDFTableAsMap = tfIDF.map(t => (t._1,t._2.asMap))
 
-  val isWildcard:(Any => Boolean) = graph.verticesOrdered.head.factLineage.toRoleLineage.isWildcard
+  val isWildcard:(Any => Boolean) = graph.verticesOrdered.head.roleLineage.toRoleLineage.isWildcard
   val transitionSets = graph.verticesOrdered.zipWithIndex
-    .map(il => (il._2,il._1.factLineage.toRoleLineage.valueTransitions(true,false)))
+    .map(il => (il._2,il._1.roleLineage.toRoleLineage.valueTransitions(true,false)))
     .toMap
   val nonInformativeValues = GLOBAL_CONFIG.nonInformativeValues
 
@@ -74,7 +74,7 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
     val nEdges = graph.adjacencyList.map(_._2.size).sum
     graph.generalEdgeIterator.foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {
       val totalCountsThisEdge = scala.collection.mutable.HashMap[LocalDate, EventOccurrenceStatistics]()
-      val commonPointOfInterestIterator = new CommonPointOfInterestIterator(e.v1.factLineage.toRoleLineage, e.v2.factLineage.toRoleLineage)
+      val commonPointOfInterestIterator = new CommonPointOfInterestIterator(e.v1.roleLineage.toRoleLineage, e.v2.roleLineage.toRoleLineage)
       commonPointOfInterestIterator
         .withFilter(cp => !cp.prevPointInTime.isAfter(latestTime))
         .foreach(cp => {

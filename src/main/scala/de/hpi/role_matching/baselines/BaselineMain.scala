@@ -31,9 +31,9 @@ object BaselineMain extends App with StrictLogging{
   val prEdges = new PrintWriter(resultDir + "/edges.csv")
   val grouped = vertexLookupMap.positionToRoleLineage.groupMap(ifl => {
     if(methodIsValueSet)
-      ifl._2.factLineage.toRoleLineage.nonWildcardValueSetBefore(trainTimeEnd)
+      ifl._2.roleLineage.toRoleLineage.nonWildcardValueSetBefore(trainTimeEnd)
     else
-      ifl._2.factLineage.toRoleLineage.nonWildcardValueSequenceBefore(trainTimeEnd)
+      ifl._2.roleLineage.toRoleLineage.nonWildcardValueSequenceBefore(trainTimeEnd)
   })(_._1)
   val edgesInMaxRecall = Source.fromFile(maxRecallEdgeSetFile)
     .getLines()

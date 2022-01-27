@@ -16,11 +16,13 @@ object EdgeValidityComparison extends App {
   val simpleGraphFile1 = new File(args(1))
   val simpleGraphFile2 = new File(args(2))
   val trainTimeEnds = args(3).split(";").map(t => LocalDate.parse(t))
-  val edges1 = SimpleCompatbilityGraphEdge.fromJsonObjectPerLineFile(simpleGraphFile1.getAbsolutePath)
+  val edges1 = SimpleCompatbilityGraphEdge.iterableFromJsonObjectPerLineDir(simpleGraphFile1)
+    .toIndexedSeq
     .map(e => (e.getEdgeID,e))
     .toMap
   println("Read file 1")
-  val edges2 = SimpleCompatbilityGraphEdge.fromJsonObjectPerLineFile(simpleGraphFile2.getAbsolutePath)
+  val edges2 = SimpleCompatbilityGraphEdge.iterableFromJsonObjectPerLineDir(simpleGraphFile2)
+    .toIndexedSeq
     .map(e => (e.getEdgeID,e))
     .toMap
   println("Read file 2")

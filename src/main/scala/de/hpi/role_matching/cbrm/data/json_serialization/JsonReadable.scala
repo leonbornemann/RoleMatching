@@ -1,6 +1,8 @@
 package de.hpi.role_matching.cbrm.data.json_serialization
 
-import org.json4s.DefaultFormats
+import de.hpi.role_matching.cbrm.data.RoleLineageWithHashMap
+import org.json4s.FieldSerializer.{renameFrom, renameTo}
+import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.jackson.JsonMethods.parse
 
 import java.io.{File, FileInputStream}
@@ -10,7 +12,8 @@ trait JsonReadable[T <: AnyRef] {
 
   implicit def formats = (DefaultFormats.preservingEmptyValues
     + LocalDateSerializer
-    + LocalDateKeySerializer)
+    + LocalDateKeySerializer
+    + oldNameDeserializer)
 
 
   def fromJsonString(json: String)(implicit m: Manifest[T]) = {
@@ -23,6 +26,10 @@ trait JsonReadable[T <: AnyRef] {
     val json = parse(file)
     json.extract[T]
   }
+
+  val oldNameDeserializer = FieldSerializer[RoleLineageWithHashMap](
+    renameTo("lineage", "lineage"),
+    renameFrom("factLineage", "lineage"))
 
   def iterableFromJsonObjectPerLineFile(path: String)(implicit m: Manifest[T]) = {
     new JsonObjectPerLineFileIterator(path)(m)

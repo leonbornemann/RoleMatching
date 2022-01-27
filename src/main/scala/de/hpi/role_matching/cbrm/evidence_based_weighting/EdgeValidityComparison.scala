@@ -25,5 +25,7 @@ object EdgeValidityComparison extends App {
   println("Read file 2")
   println(s"edges 1: ${edges1.size} edges 2: ${edges2.size} intersection: ${edges1.keySet.intersect(edges2.keySet)}")
   //check common edges:
+  edges1.keySet.intersect(edges2.keySet).foreach(k => {
 
+  })
 }

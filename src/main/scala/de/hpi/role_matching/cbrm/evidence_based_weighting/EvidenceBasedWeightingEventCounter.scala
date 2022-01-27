@@ -72,47 +72,54 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
     val statPr = new PrintWriter(statFile)
     val adjacencyList = collection.mutable.HashMap[Int, collection.mutable.HashMap[Int, Seq[EventCounts]]]()
     val nEdges = graph.adjacencyList.map(_._2.size).sum
-    graph.generalEdgeIterator.foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {
-      val totalCountsThisEdge = scala.collection.mutable.HashMap[LocalDate, EventOccurrenceStatistics]()
-      val commonPointOfInterestIterator = new CommonPointOfInterestIterator(e.v1.roleLineage.toRoleLineage, e.v2.roleLineage.toRoleLineage)
-      commonPointOfInterestIterator
-        .withFilter(cp => !cp.prevPointInTime.isAfter(latestTime))
-        .foreach(cp => {
-          //val eventCounts = getEventCounts(cp, firstNode, secondNode)
-          if (!cp.prevPointInTime.isAfter(graph.smallestTrainTimeEnd)) {
-            val eventCountsSmallestTimeEnd = getEventCounts(cp, firstNode, secondNode,graph.smallestTrainTimeEnd)
-            addToTotal(totalCounts, eventCountsSmallestTimeEnd,graph.smallestTrainTimeEnd)
-            addToTotal(totalCountsThisEdge, eventCountsSmallestTimeEnd,graph.smallestTrainTimeEnd)
-          }
-          trainTimeEndsWithIndex.foreach { case (ld, i) => {
-            if (isEdgeInGraph(i) && !cp.prevPointInTime.isAfter(ld)) {
-              val eventCounts = getEventCounts(cp, firstNode, secondNode,ld)
-              addToTotal(totalCounts, eventCounts,ld)
-              addToTotal(totalCountsThisEdge, eventCounts,ld)
+    graph.generalEdgeIterator
+      .withFilter{ case (firstNode, secondNode, e, isEdgeInGraph) => {
+        val v1LineageTrain = e.v1.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,graph.smallestTrainTimeEnd)
+        val v2LineageTrain = e.v2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,graph.smallestTrainTimeEnd)
+        val evidence = v1LineageTrain.getOverlapEvidenceCount(v2LineageTrain)
+        evidence>0
+      }}
+      .foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {
+        val totalCountsThisEdge = scala.collection.mutable.HashMap[LocalDate, EventOccurrenceStatistics]()
+        val commonPointOfInterestIterator = new CommonPointOfInterestIterator(e.v1.roleLineage.toRoleLineage, e.v2.roleLineage.toRoleLineage)
+        commonPointOfInterestIterator
+          .withFilter(cp => !cp.prevPointInTime.isAfter(latestTime))
+          .foreach(cp => {
+            //val eventCounts = getEventCounts(cp, firstNode, secondNode)
+            if (!cp.prevPointInTime.isAfter(graph.smallestTrainTimeEnd)) {
+              val eventCountsSmallestTimeEnd = getEventCounts(cp, firstNode, secondNode,graph.smallestTrainTimeEnd)
+              addToTotal(totalCounts, eventCountsSmallestTimeEnd,graph.smallestTrainTimeEnd)
+              addToTotal(totalCountsThisEdge, eventCountsSmallestTimeEnd,graph.smallestTrainTimeEnd)
             }
-          }
-          }
-        })
-      //add to stats:
-      if(processedEdges==0){
-        val statRow = tuning.EdgeStatRowForTuning(e,totalCountsThisEdge.head._2,evaluationStepDurationInDays)
-        statPr.println(statRow.getSchema.mkString(","))
-      }
-      if(nEdges < approxStatSampleSize || Random.nextDouble() < approxStatSampleSize / nEdges.toDouble){
-        val statRows = totalCountsThisEdge.values.toIndexedSeq.map(v => tuning.EdgeStatRowForTuning(e,v,evaluationStepDurationInDays))
-        statRows.sortBy(_.scoreStats.trainTimeEnd.toEpochDay).foreach(sr => statPr.println(sr.getStatRow.mkString(",")))
-      }
-      //add to SlimGraphSet:
-      assert(firstNode<secondNode)
-      val countsSorted = totalCountsThisEdge.toIndexedSeq.sortBy(_._1.toEpochDay)
-        .map(t => EventCounts.from(t._2))
-      val map = adjacencyList.getOrElseUpdate(firstNode,collection.mutable.HashMap[Int, Seq[EventCounts]]())
-      map.put(secondNode,countsSorted)
-      processedEdges+=1
-      val toLog = LogUtil.buildLogProgressStrings(processedEdges,100000,None,"edges")
-      if(toLog.isDefined)
-        logger.debug(toLog.get)
-    }}
+            trainTimeEndsWithIndex.foreach { case (ld, i) => {
+              if (isEdgeInGraph(i) && !cp.prevPointInTime.isAfter(ld)) {
+                val eventCounts = getEventCounts(cp, firstNode, secondNode,ld)
+                addToTotal(totalCounts, eventCounts,ld)
+                addToTotal(totalCountsThisEdge, eventCounts,ld)
+              }
+            }
+            }
+          })
+        //add to stats:
+        if(processedEdges==0){
+          val statRow = tuning.EdgeStatRowForTuning(e,totalCountsThisEdge.head._2,evaluationStepDurationInDays)
+          statPr.println(statRow.getSchema.mkString(","))
+        }
+        if(nEdges < approxStatSampleSize || Random.nextDouble() < approxStatSampleSize / nEdges.toDouble){
+          val statRows = totalCountsThisEdge.values.toIndexedSeq.map(v => tuning.EdgeStatRowForTuning(e,v,evaluationStepDurationInDays))
+          statRows.sortBy(_.scoreStats.trainTimeEnd.toEpochDay).foreach(sr => statPr.println(sr.getStatRow.mkString(",")))
+        }
+        //add to SlimGraphSet:
+        assert(firstNode<secondNode)
+        val countsSorted = totalCountsThisEdge.toIndexedSeq.sortBy(_._1.toEpochDay)
+          .map(t => EventCounts.from(t._2))
+        val map = adjacencyList.getOrElseUpdate(firstNode,collection.mutable.HashMap[Int, Seq[EventCounts]]())
+        map.put(secondNode,countsSorted)
+        processedEdges+=1
+        val toLog = LogUtil.buildLogProgressStrings(processedEdges,100000,None,"edges")
+        if(toLog.isDefined)
+          logger.debug(toLog.get)
+      }}
     val trainTimeEndsSorted = graph.allEndTimes.toIndexedSeq.sortBy(_.toEpochDay)
     val graphSet = MemoryEfficientCompatiblityGraphSet(graph.verticesOrdered.map(_.id),trainTimeEndsSorted,adjacencyList)
     graphSet.toJsonFile(graphSetResultFile)

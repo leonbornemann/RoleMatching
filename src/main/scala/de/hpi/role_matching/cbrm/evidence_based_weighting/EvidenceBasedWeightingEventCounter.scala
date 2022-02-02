@@ -77,6 +77,11 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
         val v1LineageTrain = e.v1.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,graph.smallestTrainTimeEnd)
         val v2LineageTrain = e.v2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,graph.smallestTrainTimeEnd)
         val evidence = v1LineageTrain.getOverlapEvidenceCount(v2LineageTrain)
+        e.printTabularEventLineageString
+        if(evidence>0) {
+          println("found candidate")
+        } else
+          println("found no candidate")
         evidence>0
       }}
       .foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {

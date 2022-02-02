@@ -1,6 +1,8 @@
 package de.hpi.role_matching.cbrm.sgcp
 
-case class Histogram(values: collection.Seq[Int], relative: Boolean = false) {
+import de.hpi.role_matching.playground.{JsonReadable, JsonWritable}
+
+case class Histogram(values: collection.Seq[Int], relative: Boolean = false) extends JsonWritable[Histogram]{
 
   var hist: IndexedSeq[(Int, Double)] = values.groupBy(identity)
     .map(t => (t._1, t._2.size.toDouble))
@@ -18,3 +20,4 @@ case class Histogram(values: collection.Seq[Int], relative: Boolean = false) {
     println("--------------------")
   }
 }
+object Histogram extends JsonReadable[Histogram]

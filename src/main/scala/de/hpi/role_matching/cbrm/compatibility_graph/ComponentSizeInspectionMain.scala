@@ -13,8 +13,8 @@ object ComponentSizeInspectionMain extends App with StrictLogging{
   val inputGraphDir = new File(args(0))
   val dsNames = args(1).split(";")
   val trainTimeEnds = args(2).split(";").map(LocalDate.parse(_))
-  val scoreConfig = ScoreConfig(0.0f,1,1,1,1,1,1)
-  val resultDir = args(2)
+  val scoreConfig = ScoreConfig(0.0f,1,1,0,-1,-1,10)
+  val resultDir = args(3)
   assert(trainTimeEnds.size==dsNames.size)
   dsNames.zip(trainTimeEnds).foreach{ case (dsName,trainTimeEnd) => {
     logger.debug(s"Processing $dsName")

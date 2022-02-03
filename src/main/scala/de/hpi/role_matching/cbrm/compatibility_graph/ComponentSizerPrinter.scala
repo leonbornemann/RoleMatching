@@ -15,7 +15,7 @@ class ComponentSizerPrinter(graph: SimpleWeightedGraph[Int, DefaultWeightedEdge]
 
   override def closeAllWriters(): Unit = {
     val hist = Histogram(histogram)
-    hist.toJsonFile(resultFile)
     hist.printAll()
+    hist.toJsonFile(resultFile)
   }
 }

@@ -31,7 +31,7 @@ object RoleLineageWithID extends JsonReadable[RoleLineageWithID] {
   }
 
   def getTabularEventLineageString(vertices:collection.Seq[RoleLineageWithID]):String = {
-    val allDates = vertices.flatMap(_.roleLineage.lineage.keySet).sortBy(_.toEpochDay)
+    val allDates = vertices.flatMap(_.roleLineage.lineage.keySet).sortBy(_.toEpochDay).toSet.toIndexedSeq.sorted
     val header = Seq("") ++ allDates
     val cellsAll = vertices.map(v => {
       Seq(v.id) ++ allDates.map(t => v.roleLineage.toRoleLineage.valueAt(t)).map(v => if(RoleLineage.isWildcard(v)) "_" else v)

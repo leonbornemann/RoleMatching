@@ -61,6 +61,8 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       val vhAsIndexedSeq = vh.toIndexedSeq
       assert(vh.head._1.toLocalDate==EARLIEST_HISTORY_TIMESTAMP)
       for(i <- 1 until vhAsIndexedSeq.size){
+        if(!(vhAsIndexedSeq(i-1)._2!=vhAsIndexedSeq(i)._2))
+          println() //TODO: what warum taucht dieser Bug jetzt auf einmal auf? Späterer Time end kann nicht sein - werden daten modifiziert?
         assert(vhAsIndexedSeq(i-1)._2!=vhAsIndexedSeq(i)._2)
         assert(vhAsIndexedSeq(i-1)._1.isBefore(vhAsIndexedSeq(i)._1))
       }
@@ -134,6 +136,15 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     factLineages
   }
 
+  def applyNoDecay() = {
+    val roleLineages = propToValueHistory.map { case (k, valueHistory) => {
+      val withOutVandalism = removeVandalism(valueHistory)
+      integrityCheckRoleLineage(withOutVandalism)
+      (k, RoleLineage(collection.mutable.TreeMap[LocalDate, Any]() ++ withOutVandalism))
+    }}
+    roleLineages
+  }
+
   def transformGranularityAndExpandTimeRange = {
 //    val relevantTimePoints = revisionsSorted
 //      .map(r => r.validFromAsDate)
@@ -144,7 +155,9 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
 //
     if(mode == WikipediaLineageCreationMode.PROBABILISTIC_DECAY_FUNCTION){
       applyProbabilisticDecay
-    } else {
+    } else if(mode==WikipediaLineageCreationMode.NO_DECAY){
+      applyNoDecay()
+    } else{
       applyNonProbabilisticDecay()
     }
 
@@ -182,38 +195,50 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
   }
 
   private def applyProbabilisticDecay = {
-    val roleLineages = propToValueHistory.map { case (k, valueHistory) => {
-      if (!valueHistory.contains(EARLIEST_HISTORY_TIMESTAMP.atStartOfDay())) {
-        valueHistory.put(EARLIEST_HISTORY_TIMESTAMP.atStartOfDay(), ReservedChangeValues.NOT_EXISTANT_CELL)
-      }
-      val datesSorted = valueHistory.keySet.toIndexedSeq
-      val withOutVandalismWithDuplicates = datesSorted
-        .map { case (ldt) =>
-          val beginInTimeaxis = TIME_AXIS.maxBefore(ldt.toLocalDate.plusDays(1)).get
-          val value = new TimeRangeToSingleValueReducer(beginInTimeaxis, beginInTimeaxis.plusDays(lowestGranularityInDays), valueHistory, true).computeValue()
-          (beginInTimeaxis, value)
-        }
-      //filter duplicates:
-      val withOutVandalism = removeDuplicates(withOutVandalismWithDuplicates)
+    val roleLineages = propToValueHistory.flatMap { case (k, valueHistory) =>
+      val withOutVandalism: IndexedSeq[((LocalDate, String), Int)] = removeVandalism(valueHistory)
         .zipWithIndex
       assert(withOutVandalism.forall { case ((ld, v), i) =>
         i == 0 || v != withOutVandalism(i - 1)._2
       })
       //we are skipping the last change because we can't compute a duration for it
       //we call tail twice so we skip the artificial duration in the beginning (we before inserted wildcard at the startpoint)
-      val lineage = removeDuplicates(probabilisticDecay(withOutVandalism))
-      lineage
-        .zipWithIndex
-        .foreach { case ((ld, v), i) =>
-          assert(i == 0 || lineage(i - 1)._2 != v && lineage(i - 1)._1.isBefore(ld))
-        }
-      assert(lineage(0)._1 == EARLIEST_HISTORY_TIMESTAMP)
-      //assert that all timestamps are multiples of granularity:
-      assert(lineage.forall { case (ld, _) => ChronoUnit.DAYS.between(EARLIEST_HISTORY_TIMESTAMP, ld) % lowestGranularityInDays == 0 })
-      (k, RoleLineage(collection.mutable.TreeMap[LocalDate, Any]() ++ lineage))
-    }
+      if(withOutVandalism.size>1) {
+        val lineage = removeDuplicates(probabilisticDecay(withOutVandalism))
+        integrityCheckRoleLineage(lineage)
+        Seq((k, RoleLineage(collection.mutable.TreeMap[LocalDate, Any]() ++ lineage)))
+      } else {
+        Seq()
+      }
     }
     roleLineages
+  }
+
+  private def removeVandalism(valueHistory: mutable.TreeMap[LocalDateTime, String]) = {
+    if (!valueHistory.contains(EARLIEST_HISTORY_TIMESTAMP.atStartOfDay())) {
+      valueHistory.put(EARLIEST_HISTORY_TIMESTAMP.atStartOfDay(), ReservedChangeValues.NOT_EXISTANT_CELL)
+    }
+    val datesSorted = valueHistory.keySet.toIndexedSeq
+    val withOutVandalismWithDuplicates = datesSorted
+      .map { case (ldt) =>
+        val beginInTimeaxis = TIME_AXIS.maxBefore(ldt.toLocalDate.plusDays(1)).get
+        val value = new TimeRangeToSingleValueReducer(beginInTimeaxis, beginInTimeaxis.plusDays(lowestGranularityInDays), valueHistory, true).computeValue()
+        (beginInTimeaxis, value)
+      }
+    //filter duplicates:
+    val withOutVandalism = removeDuplicates(withOutVandalismWithDuplicates)
+    withOutVandalism
+  }
+
+  private def integrityCheckRoleLineage(lineage: IndexedSeq[(LocalDate, String)]) = {
+    lineage
+      .zipWithIndex
+      .foreach { case ((ld, v), i) =>
+        assert(i == 0 || lineage(i - 1)._2 != v && lineage(i - 1)._1.isBefore(ld))
+      }
+    assert(lineage(0)._1 == EARLIEST_HISTORY_TIMESTAMP)
+    //assert that all timestamps are multiples of granularity:
+    assert(lineage.forall { case (ld, _) => ChronoUnit.DAYS.between(EARLIEST_HISTORY_TIMESTAMP, ld) % lowestGranularityInDays == 0 })
   }
 
   def updateHistoryIfChanged(property: InfoboxProperty, newValue: String, t: LocalDateTime) = {
@@ -256,6 +281,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
   }
 
   def toWikipediaInfoboxValueHistories = {
+    propToValueHistory.clear()
     revisionsSorted.foreach(r => {
       r.changes
         .withFilter(_.property.propertyType!="meta")

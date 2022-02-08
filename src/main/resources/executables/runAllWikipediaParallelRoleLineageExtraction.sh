@@ -7,4 +7,4 @@ mkdir logs
 mkdir logs/WikipediaHistoryCreation/
 rm logs/WikipediaHistoryCreation/*
 rm parallelLogs/WikipediaHistoryCreation
-find /san2/data/change-exploration/wikipedia/infobox/changesZipped/ -type f | parallel --joblog parallelLogs/WikipediaHistoryCreation --delay 1 --eta -j8 -v "bash /home/leon.bornemann/dataset_versioning/wikipedia/runWikipediaHistoryCreation.sh {} $granularityInDays $mode $minDecayProbability $trainTimeEnd > logs/WikipediaHistoryCreation/{/}.log 2>&1"
+find /san2/data/change-exploration/wikipedia/infobox/changesZipped/ -type f | parallel --joblog parallelLogs/WikipediaHistoryCreation --delay 1 --eta -j8 -v "bash /home/leon.bornemann/dataset_versioning/finalExperiments/wikipedia/runSingleWikipediaRoleLineageExtraction.sh {} $granularityInDays $mode $minDecayProbability $trainTimeEnd > logs/WikipediaHistoryCreation/{/}.log 2>&1"

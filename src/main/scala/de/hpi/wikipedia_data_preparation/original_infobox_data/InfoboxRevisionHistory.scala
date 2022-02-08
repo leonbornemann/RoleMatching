@@ -3,12 +3,14 @@ package de.hpi.wikipedia_data_preparation.original_infobox_data
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.cbrm.data.{ReservedChangeValues, RoleLineage}
 import de.hpi.role_matching.cbrm.sgcp.Histogram
-import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, lowestGranularityInDays}
+import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, TIME_AXIS, lineageCreationMode, lowestGranularityInDays}
 import de.hpi.wikipedia_data_preparation.original_infobox_data.WikipediaLineageCreationMode.{WILDCARD_BETWEEN_ALL_CONFIRMATIONS, WILDCARD_BETWEEN_CHANGE, WILDCARD_OUTSIDE_OF_GRACE_PERIOD, WikipediaLineageCreationMode}
 import de.hpi.wikipedia_data_preparation.transformed.{TimeRangeToSingleValueReducer, WikipediaRoleLineage}
 
+import java.time.temporal.ChronoUnit
 import java.time.{LocalDate, LocalDateTime}
 import java.util.regex.Pattern
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRevision]) {
@@ -25,7 +27,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
 
   val wikilinkPattern = Pattern.compile("\\[\\[((?:\\w+:)?[^<>\\[\\]\"\\|]+)(?:\\|[^\\n\\]]+)?\\]\\]")
 
-  val propToValueHistory = collection.mutable.HashMap[String,collection.mutable.TreeMap[LocalDateTime,String]]()
+  val propToValueHistory:collection.mutable.HashMap[String,collection.mutable.TreeMap[LocalDateTime,String]] = collection.mutable.HashMap[String,collection.mutable.TreeMap[LocalDateTime,String]]()
 
   val valueConfirmationPoints = revisionsSorted
     .map(r => InfoboxRevisionHistory.TIME_AXIS.maxBefore(r.validFromAsDate.toLocalDate.plusDays(1)).get).toSet
@@ -79,14 +81,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     }
   }
 
-  def transformGranularityAndExpandTimeRange(mode:WikipediaLineageCreationMode) = {
-//    val relevantTimePoints = revisionsSorted
-//      .map(r => r.validFromAsDate)
-//      .toSet
-//      .toIndexedSeq
-//      .sorted
-//    //map this to the ranges that are relevant:
-//
+  def applyNonProbabilisticDecay() = {
     val confirmationPointsSorted = valueConfirmationPoints.toIndexedSeq.sortBy(_.toEpochDay)
     val factLineages = propToValueHistory.map{case (k,valueHistory) => {
       val lineage = scala.collection.mutable.ArrayBuffer[(LocalDate,String)]()
@@ -128,7 +123,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
             }
           }
 
-      }}
+        }}
       lineage
         .zipWithIndex
         .foreach(t => {
@@ -137,6 +132,88 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       (k,RoleLineage(collection.mutable.TreeMap[LocalDate,Any]() ++ lineage))
     }}
     factLineages
+  }
+
+  def transformGranularityAndExpandTimeRange = {
+//    val relevantTimePoints = revisionsSorted
+//      .map(r => r.validFromAsDate)
+//      .toSet
+//      .toIndexedSeq
+//      .sorted
+//    //map this to the ranges that are relevant:
+//
+    if(mode == WikipediaLineageCreationMode.PROBABILISTIC_DECAY_FUNCTION){
+      applyProbabilisticDecay
+    } else {
+      applyNonProbabilisticDecay()
+    }
+
+  }
+
+  def probabilisticDecay(withOutVandalism: IndexedSeq[((LocalDate, String), Int)]) = {
+    val durationsInTrainTime = withOutVandalism.tail.tail
+      .withFilter{ case ((ld, _), i) => !ld.isAfter(trainTimeEnd)}
+      .map { case ((ld, _), i) => ChronoUnit.DAYS.between(withOutVandalism(i - 1)._1._1, ld) }
+      .sorted
+    val indexOfCutoff = math.ceil(minDecayProbability * durationsInTrainTime.size).toInt -1
+    if(!durationsInTrainTime.isEmpty){
+      val decayTimeInDays = durationsInTrainTime(indexOfCutoff)
+      assert((decayTimeInDays % lowestGranularityInDays) == 0)
+      val lineage = withOutVandalism
+        .flatMap { case ((ld, v), i) =>
+          val endDate = if (i == withOutVandalism.size-1) LATEST_HISTORY_TIMESTAMP else withOutVandalism(i + 1)._1._1
+          val duration = ChronoUnit.DAYS.between(ld, endDate)
+          if (duration > decayTimeInDays && !RoleLineage.isWildcard(v))
+            Seq((ld, v), (ld.plusDays(decayTimeInDays), ReservedChangeValues.NOT_EXISTANT_CELL))
+          else
+            Seq((ld, v))
+        }
+      lineage
+    } else {
+      withOutVandalism.map(_._1)
+    }
+  }
+
+  def removeDuplicates(lineageWithDuplicates: IndexedSeq[(LocalDate, String)]) = {
+    val withIndex = lineageWithDuplicates.zipWithIndex
+    withIndex
+      .filter{ case ((ld, v), i) => i == 0 || v != withIndex(i - 1)._1._2 }
+      .map(_._1)
+  }
+
+  private def applyProbabilisticDecay = {
+    val roleLineages = propToValueHistory.map { case (k, valueHistory) => {
+      if (!valueHistory.contains(EARLIEST_HISTORY_TIMESTAMP.atStartOfDay())) {
+        valueHistory.put(EARLIEST_HISTORY_TIMESTAMP.atStartOfDay(), ReservedChangeValues.NOT_EXISTANT_CELL)
+      }
+      val datesSorted = valueHistory.keySet.toIndexedSeq
+      val withOutVandalismWithDuplicates = datesSorted
+        .map { case (ldt) =>
+          val beginInTimeaxis = TIME_AXIS.maxBefore(ldt.toLocalDate.plusDays(1)).get
+          val value = new TimeRangeToSingleValueReducer(beginInTimeaxis, beginInTimeaxis.plusDays(lowestGranularityInDays), valueHistory, true).computeValue()
+          (beginInTimeaxis, value)
+        }
+      //filter duplicates:
+      val withOutVandalism = removeDuplicates(withOutVandalismWithDuplicates)
+        .zipWithIndex
+      assert(withOutVandalism.forall { case ((ld, v), i) =>
+        i == 0 || v != withOutVandalism(i - 1)._2
+      })
+      //we are skipping the last change because we can't compute a duration for it
+      //we call tail twice so we skip the artificial duration in the beginning (we before inserted wildcard at the startpoint)
+      val lineage = removeDuplicates(probabilisticDecay(withOutVandalism))
+      lineage
+        .zipWithIndex
+        .foreach { case ((ld, v), i) =>
+          assert(i == 0 || lineage(i - 1)._2 != v && lineage(i - 1)._1.isBefore(ld))
+        }
+      assert(lineage(0)._1 == EARLIEST_HISTORY_TIMESTAMP)
+      //assert that all timestamps are multiples of granularity:
+      assert(lineage.forall { case (ld, _) => ChronoUnit.DAYS.between(EARLIEST_HISTORY_TIMESTAMP, ld) % lowestGranularityInDays == 0 })
+      (k, RoleLineage(collection.mutable.TreeMap[LocalDate, Any]() ++ lineage))
+    }
+    }
+    roleLineages
   }
 
   def updateHistoryIfChanged(property: InfoboxProperty, newValue: String, t: LocalDateTime) = {
@@ -178,7 +255,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
       .printAll()
   }
 
-  def toWikipediaInfoboxValueHistories(mode: WikipediaLineageCreationMode) = {
+  def toWikipediaInfoboxValueHistories = {
     revisionsSorted.foreach(r => {
       r.changes
         .withFilter(_.property.propertyType!="meta")
@@ -192,10 +269,9 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     //propToValueHistory("map2 cap")
     extractExtraLinkHistories()
     integrityCheckHistories()
-    val lineages = transformGranularityAndExpandTimeRange(mode)
+    val lineages = transformGranularityAndExpandTimeRange
       .withFilter(_._2.lineage.values.exists(v => !RoleLineage.isWildcard(v)))
       .map(t => {
-        (t._1,t._2.toSerializationHelper)
         WikipediaRoleLineage(revisions.head.template,revisions.head.pageID,revisions.head.key,t._1,t._2.toSerializationHelper)
       })
     lineages
@@ -205,13 +281,16 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     28
   }
 
-  def changeCount(p:String) = {
-
-
-  }
+  def mode = InfoboxRevisionHistory.lineageCreationMode.get
+  def minDecayProbability = InfoboxRevisionHistory.minDecayProbability.get
+  def trainTimeEnd = InfoboxRevisionHistory.trainTimeEnd.get
 
 }
 object InfoboxRevisionHistory extends StrictLogging{
+
+  var lineageCreationMode:Option[WikipediaLineageCreationMode] = None
+  var minDecayProbability:Option[Double] = None
+  var trainTimeEnd:Option[LocalDate] = None
 
   def getFromRevisionCollection(objects:collection.Seq[InfoboxRevision]) = {
     objects

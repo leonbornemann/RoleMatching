@@ -53,11 +53,11 @@ object WikipediaRoleLineageExtractionMain extends App with StrictLogging {
     if(mode==WikipediaLineageCreationMode.PROBABILISTIC_DECAY_FUNCTION){
       for( minDecayProbability <- minDecayProbabilities){
         InfoboxRevisionHistory.minDecayProbability = Some(minDecayProbability)
-        val curResultDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${minDecayProbability}_${granularityInDays}_$trainTimeEnd")
+        val curResultDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${minDecayProbability}_${granularityInDays}_$trainTimeEnd/wikipediaLineages/")
         runForResultDir(curResultDir)
       }
     } else {
-      val curResultDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${granularityInDays}_$trainTimeEnd")
+      val curResultDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${granularityInDays}_$trainTimeEnd/wikipediaLineages/")
       runForResultDir(curResultDir)
     }
   }

@@ -17,20 +17,20 @@ object CompatibilityGraphByTemplateCreationMain extends App with StrictLogging {
   logger.debug(s"called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_END = InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP
-  val templates = args(0).split(Pattern.quote(";")).toIndexedSeq
-  val templateSetString = templates.mkString("&")
+  val templates = args(0).split(Pattern.quote(",")).toIndexedSeq
   val byTemplateDir = new File(args(1))
-  val resultDirEdges = new File(args(2))
-  val resultDirStats = new File(args(3))
-  val resultDirTime = new File(args(4))
-  val endDateTrainPhase = LocalDate.parse(args(5))
-  val timestampResolutionInDays = args(6).toInt
-  val nthreads = args(7).toInt
-  val thresholdForFork = args(8).toInt
-  val maxPairwiseListSizeForSingleThread = args(9).toInt
-  val roleSamplingRate = args(10).toDouble
-  val timestampSamplingRate = args(11).toDouble
-  val dsName = args(12)
+  val resultRootDir = args(2)
+  val resultDirEdges = new File(resultRootDir + "/edges/")
+  val resultDirStats = new File(resultRootDir + "/stats/")
+  val resultDirTime = new File(resultRootDir + "/executionTime/")
+  val endDateTrainPhase = LocalDate.parse(args(3))
+  val timestampResolutionInDays = args(4).toInt
+  val nthreads = args(5).toInt
+  val thresholdForFork = args(6).toInt
+  val maxPairwiseListSizeForSingleThread = args(7).toInt
+  val roleSamplingRate = args(8).toDouble
+  val timestampSamplingRate = args(9).toDouble
+  val dsName = args(10)
   Seq(resultDirEdges,resultDirStats,resultDirTime).foreach(_.mkdirs())
   private val config: CompatibilityGraphCreationConfig = CompatibilityGraphCreationConfig(roleSamplingRate, timestampSamplingRate, 50)
   GLOBAL_CONFIG.INDEXING_CONFIG=config

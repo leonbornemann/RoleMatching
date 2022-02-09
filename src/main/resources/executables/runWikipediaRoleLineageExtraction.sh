@@ -12,7 +12,7 @@ mkdir $workingDir
 7zr e $inputZipFile -o$workingDir/$uuid/
 fname=$(find $workingDir/$uuid/ -type f)
 echo $fname
-java -ea -Xmx64g -cp ../../code/CompatibilityBasedRoleMatching/target/scala-2.13/DatasetVersioning-assembly-0.1.jar de.hpi.wikipedia_data_preparation.WikipediaRoleLineageExtractionMain $fname $resultDir $granularityInDays $mode $minDecayProbability $trainTimeEnd
+java -ea -Xmx64g -cp ../../code/CompatibilityBasedRoleMatching/target/scala-2.13/DatasetVersioning-assembly-0.1.jar de.hpi.wikipedia_data_preparation.transformed.WikipediaRoleLineageExtractionMain $fname $resultDir $granularityInDays $mode $minDecayProbability $trainTimeEnd
 returnValue=$?
 rm $fname
 rm -r $workingDir/$uuid/

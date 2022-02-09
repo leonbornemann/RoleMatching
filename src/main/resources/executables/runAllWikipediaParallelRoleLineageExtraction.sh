@@ -1,7 +1,7 @@
 granularityInDays=7
-mode="PROBABILISTIC_DECAY_FUNCTION;NO_DECAY"
-minDecayProbability="0.3;0.7"
-trainTimeEnd="2011-05-07;2017-04-29"
+mode="PROBABILISTIC_DECAY_FUNCTION,NO_DECAY"
+minDecayProbability="0.3,0.7"
+trainTimeEnd="2011-05-07,2017-04-29"
 mkdir parallelLogs
 mkdir logs
 mkdir logs/WikipediaHistoryCreation/

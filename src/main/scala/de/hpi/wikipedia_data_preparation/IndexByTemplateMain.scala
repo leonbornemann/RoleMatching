@@ -12,6 +12,7 @@ object IndexByTemplateMain extends App with StrictLogging {
   val templateNames = Source.fromFile(args(0)).getLines().toSet
   val infoboxHistoryDir = new File(args(1))
   val templateDir = new File(args(2))
+  templateDir.mkdirs()
   val files = infoboxHistoryDir.listFiles()
   logger.debug(s"Found ${files.size} files")
   var processed = 0

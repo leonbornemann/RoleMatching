@@ -31,7 +31,7 @@ object CompatibilityGraphByTemplateCreationMain extends App with StrictLogging {
   val roleSamplingRate = args(8).toDouble
   val timestampSamplingRate = args(9).toDouble
   val dsName = args(10)
-  Seq(resultDirEdges,resultDirStats,resultDirTime).foreach(_.mkdirs())
+  Seq(resultDirEdges,resultDirStats,resultDirTime,byTemplateDir).foreach(_.mkdirs())
   private val config: CompatibilityGraphCreationConfig = CompatibilityGraphCreationConfig(roleSamplingRate, timestampSamplingRate, 50)
   GLOBAL_CONFIG.INDEXING_CONFIG=config
   AbstractAsynchronousRoleTree.thresholdForFork = thresholdForFork

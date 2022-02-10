@@ -5,9 +5,11 @@ import de.hpi.role_matching.cbrm.data.RoleLineageWithID.digitRegex
 import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
 import de.hpi.util.TableFormatter
 
+import java.time.LocalDate
+
 case class RoleLineageWithID(id:String, roleLineage: RoleLineageWithHashMap) extends JsonWritable[RoleLineageWithID] {
 
-  def csvSafeID = id.replace('\r',' ').replace('\n',' ').replace(',',' ')
+  def csvSafeID = Util.toCSVSafe(id)
 
   def isNumeric = {
     roleLineage.lineage.values.forall(v => RoleLineage.isWildcard(v) || GLOBAL_CONFIG.nonInformativeValues.contains(v) || v.toString.matches(digitRegex))

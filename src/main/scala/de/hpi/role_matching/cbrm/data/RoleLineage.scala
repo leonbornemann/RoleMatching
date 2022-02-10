@@ -13,6 +13,22 @@ import scala.collection.mutable
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
 
+  def dittoString(endTime: LocalDate):String = {
+    assert(!lineage.lastKey.isAfter(endTime))
+    val withIndex = lineage
+      .toIndexedSeq
+      .zipWithIndex
+    withIndex
+      .map{case ((date,value),i) =>
+        val curEndTime = if(i==lineage.size-1) endTime else withIndex(i+1)._1._1
+        val duration = ChronoUnit.DAYS.between(date,curEndTime)
+        val res = s"COL V$i VAL $value COL T$i VAL ${date.toString} COL D$i VAL $duration"
+        res
+      }
+      .mkString(" ")
+  }
+
+
   def nonWildcardValueSequenceBefore(trainTimeEnd: LocalDate) = {
     val iterator = lineage.iterator
     var curElem = iterator.nextOption()

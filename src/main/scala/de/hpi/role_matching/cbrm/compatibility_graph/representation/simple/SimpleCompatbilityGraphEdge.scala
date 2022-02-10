@@ -7,6 +7,7 @@ import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatist
 import de.hpi.role_matching.evaluation.tuning
 import de.hpi.util.TableFormatter
 
+import java.io.File
 import java.time.LocalDate
 
 //not very memory efficient but can easily be written in parallel
@@ -68,6 +69,12 @@ case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithI
 }
 
 object SimpleCompatbilityGraphEdge extends JsonReadable[SimpleCompatbilityGraphEdge] {
+  def iterableFromEdgeIDObjectPerLineDir(dir: File, roleset: Roleset) = {
+    val map = roleset.getStringToLineageMap
+    SimpleCompatbilityGraphEdgeID.iterableFromJsonObjectPerLineDir(dir)
+      .map(e => SimpleCompatbilityGraphEdge(map(e.v1),map(e.v2)))
+  }
+
 
   def getTransitionHistogramForTFIDF(edges:Iterable[SimpleCompatbilityGraphEdge], granularityInDays:Int) :Map[ValueTransition,Int] = {
     RoleLineageWithID.getTransitionHistogramForTFIDFFromVertices(edges.flatMap(ge => Seq(ge.v1,ge.v2)).toSet.toSeq,granularityInDays)

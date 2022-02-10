@@ -3,7 +3,7 @@ package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
 import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
 
 import java.io.{File, PrintWriter}
@@ -104,7 +104,8 @@ object AbstractAsynchronousRoleTree {
     if(option.isDefined){
       val e = option.get
       val edge = toGeneralEdgeFunction(e.tupleReferenceA,e.tupleReferenceB)
-      edge.appendToWriter(pr,false,true)
+      val idEdge = SimpleCompatbilityGraphEdgeID(edge.v1.id,edge.v2.id)
+      idEdge.appendToWriter(pr,false,true)
     }
   }
 

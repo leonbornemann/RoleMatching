@@ -14,7 +14,7 @@ import java.time.LocalDate
 import java.util.regex.Pattern
 
 object CompatibilityGraphByTemplateCreationMain extends App with StrictLogging {
-  logger.debug(s"called with ${args.toIndexedSeq}")
+  println(s"called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_END = InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP
   val templates = args(0).split(Pattern.quote(",")).toIndexedSeq

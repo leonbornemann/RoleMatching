@@ -15,23 +15,23 @@ case class EdgeStatRowForTuning(e: SimpleCompatbilityGraphEdge,
   private val evalEndDateOneTimeUnitAfterTrain: LocalDate = scoreStats.trainTimeEnd.plusDays(evaluationStepDurationInDays)
   val fl1Projected: RoleLineage = fl1.projectToTimeRange(fl1.firstTimestamp, evalEndDateOneTimeUnitAfterTrain)
   val fl2Projected: RoleLineage = fl2.projectToTimeRange(fl2.firstTimestamp, evalEndDateOneTimeUnitAfterTrain)
-  val remainsValidOneTimeUnitAfterTrain = fl1Projected.tryMergeWithConsistent(fl2Projected, RemainsValidVariant.STRICT).isDefined
-  val isInterestingOneTimeUnitAfterTrain = getPointInTimeOfRealChangeAfterTrainPeriod(fl1Projected, scoreStats.trainTimeEnd).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(fl2Projected, scoreStats.trainTimeEnd).isDefined
-  val interestingnessEvidenceOneTimeUnitAfterTrain = getEvidenceInTestPhase(fl1Projected, fl2Projected, scoreStats.trainTimeEnd)
+//  val remainsValidOneTimeUnitAfterTrain = fl1Projected.tryMergeWithConsistent(fl2Projected, RemainsValidVariant.STRICT).isDefined
+//  val isInterestingOneTimeUnitAfterTrain = getPointInTimeOfRealChangeAfterTrainPeriod(fl1Projected, scoreStats.trainTimeEnd).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(fl2Projected, scoreStats.trainTimeEnd).isDefined
+//  val interestingnessEvidenceOneTimeUnitAfterTrain = getEvidenceInTestPhase(fl1Projected, fl2Projected, scoreStats.trainTimeEnd)
 
   def getSchema = {
     val eventCounts = Seq(STRONGPOSTIVE, WEAKPOSTIVE, NEUTRAL, WEAKNEGATIVE, STRONGNEGATIVE).map(s => s + "_count")
     val eventScores = Seq(STRONGPOSTIVE, WEAKPOSTIVE, NEUTRAL, WEAKNEGATIVE, STRONGNEGATIVE).map(s => s + "_scoreSum")
     (Seq("Vertex1ID,Vertex2ID") ++
       Seq("trainEndDate", "remainsValidFullTimeSpan", "hasChangeAfterTrainPeriod", "interestingnessEvidence") ++
-      Seq("evalEndDateOneTimeUnitAfterTrain", "remainsValidOneTimeUnitAfterTrain", "isInterestingOneTimeUnitAfterTrain", "interestingnessEvidenceOneTimeUnitAfterTrain") ++
+      //Seq("evalEndDateOneTimeUnitAfterTrain", "remainsValidOneTimeUnitAfterTrain", "isInterestingOneTimeUnitAfterTrain", "interestingnessEvidenceOneTimeUnitAfterTrain") ++
       eventCounts ++ eventScores)
   }
 
   def getStatRow = {
     Seq(e.v1.csvSafeID, e.v2.csvSafeID,
       scoreStats.trainTimeEnd, remainsValidFullTimeSpan, isInteresting, interestingnessEvidence,
-      evalEndDateOneTimeUnitAfterTrain,remainsValidOneTimeUnitAfterTrain,isInterestingOneTimeUnitAfterTrain,interestingnessEvidenceOneTimeUnitAfterTrain,
+      //evalEndDateOneTimeUnitAfterTrain,remainsValidOneTimeUnitAfterTrain,isInterestingOneTimeUnitAfterTrain,interestingnessEvidenceOneTimeUnitAfterTrain,
       scoreStats.strongPositive, scoreStats.weakPositive, scoreStats.neutral, scoreStats.weakNegative, scoreStats.strongNegative) ++ scoreStats.summedScores.get
   }
 

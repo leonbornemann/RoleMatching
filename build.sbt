@@ -28,5 +28,8 @@ libraryDependencies += "org.scala-graph" %% "graph-core" % "1.13.2"
 libraryDependencies += "org.json4s" %% "json4s-ext" % "3.7.0-M4"
 // https://mvnrepository.com/artifact/org.jgrapht/jgrapht-core
 libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.4.0"
+// https://mvnrepository.com/artifact/org.scala-lang.modules/scala-parallel-collections
+libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
+
 
 

@@ -1,14 +1,13 @@
 package de.hpi.wikipedia_data_preparation
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithID, Roleset}
+
 import scala.collection.parallel.CollectionConverters._
-
-
-
 import java.io.File
 import scala.io.Source
 
-object TemplateDirToRolesetMain extends App {
+object TemplateDirToRolesetMain extends App with StrictLogging{
   val templateRootDir = new File(args(0))
   val rolesetRootDir = new File(args(1))
   val datasetList = Source.fromFile(args(2))
@@ -23,13 +22,19 @@ object TemplateDirToRolesetMain extends App {
     .toMap
   val configDirs = templateRootDir.listFiles()
   configDirs.toIndexedSeq.foreach(dir => {
+    logger.debug(s"Processing $dir")
     val configName = dir.getName
     val resultDir = new File(rolesetRootDir.getAbsolutePath + s"/$configName/")
     resultDir.mkdirs()
     val templateDir = dir.getAbsolutePath + "/byTemplate/"
     datasetList.foreach{case (dsName,templates) => {
+      logger.debug(s"Reading $dsName")
       val resultFile = new File(resultDir.getAbsolutePath + s"/$dsName.json")
-      val roles = templates.flatMap(template => RoleLineageWithID.fromJsonObjectPerLineFile(templateDir + s"/$template.json"))
+      val roles = templates.flatMap(template => {
+        val toRead = templateDir + s"/$template.json"
+        logger.debug(s"Reading $toRead")
+        RoleLineageWithID.fromJsonObjectPerLineFile(toRead)
+      })
         .map(rl => (rl.id,rl))
         .toIndexedSeq
         .sortBy(_._1)

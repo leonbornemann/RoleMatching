@@ -15,7 +15,6 @@ object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogg
   val datasource = args(0)
   GLOBAL_CONFIG.setSettingsForDataSource(datasource)
   val simpleGraphRootDir = new File(args(1))
-  val graphResultRootDir = new File(args(2))
   simpleGraphRootDir.listFiles().par
     .foreach{configDir =>
       processConfigDir(configDir)

@@ -1,6 +1,9 @@
 package de.hpi.wikipedia_data_preparation
 
 import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithID, Roleset}
+import scala.collection.parallel.CollectionConverters._
+
+
 
 import java.io.File
 import scala.io.Source
@@ -19,13 +22,14 @@ object TemplateDirToRolesetMain extends App {
     })
     .toMap
   val configDirs = templateRootDir.listFiles()
-  configDirs.foreach(dir => {
+  configDirs.toIndexedSeq.foreach(dir => {
     val configName = dir.getName
     val resultDir = new File(rolesetRootDir.getAbsolutePath + s"/$configName/")
     resultDir.mkdirs()
+    val templateDir = dir.getAbsolutePath + "/byTemplate/"
     datasetList.foreach{case (dsName,templates) => {
       val resultFile = new File(resultDir.getAbsolutePath + s"/$dsName.json")
-      val roles = templates.flatMap(template => RoleLineageWithID.fromJsonObjectPerLineFile(dir.getAbsolutePath + s"/$template.json"))
+      val roles = templates.flatMap(template => RoleLineageWithID.fromJsonObjectPerLineFile(templateDir + s"/$template.json"))
         .map(rl => (rl.id,rl))
         .toIndexedSeq
         .sortBy(_._1)

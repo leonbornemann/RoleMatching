@@ -19,28 +19,35 @@ class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) 
 
   def exportData() = {
     val blocks:IndexedSeq[IndexedSeq[String]] = blocking()
-//    blocks.foreach{ block =>
-//      for(i <- 0 until block.size){
-//        for(j <- i until block.size){
-//          val v1 = block(i)
-//          val v2 = block(j)
-//          val label:Option[Boolean] = getClassLabel(v1,v2)
-//          if(label.isDefined){
-//            outputRecord(v1,v2,label.get)
-//          }
-//        }
-//      }
-//    }
-//    resultPr.close()
+    blocks.foreach{ block =>
+      for(i <- 0 until block.size){
+        for(j <- i until block.size){
+          val v1 = block(i)
+          val v2 = block(j)
+          val label:Option[Boolean] = getClassLabel(v1,v2)
+          if(label.isDefined){
+            outputRecord(v1,v2,label.get)
+          }
+        }
+      }
+    }
+    resultPr.close()
   }
 
   def blocking(): IndexedSeq[IndexedSeq[String]] = {
-    val blocks = vertexMapOnlyTrainWithID
+    val grouped = vertexMapOnlyTrainWithID
       .groupBy(t => vertexMapOnlyTrain(t._1).nonWildCardValues.toSet)
+    val blocks = grouped
       .map{case (k,v) => v.values.map(_.id).toIndexedSeq}
       .toIndexedSeq
     val totalNumberOfEdges = blocks.map(b => (b.size*(b.size-1))/2).sum
     logger.debug(s"Will create $totalNumberOfEdges")
+    val topBlocks = grouped
+      .map{case (k,v) => (k,v.size)}
+      .toIndexedSeq
+      .sortBy(-_._2)
+      .take(20)
+    topBlocks.foreach{case (k,v) => logger.debug(s"$v: $k")}
     blocks
   }
 

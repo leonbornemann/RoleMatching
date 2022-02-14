@@ -15,8 +15,7 @@ object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogg
   val datasource = args(0)
   GLOBAL_CONFIG.setSettingsForDataSource(datasource)
   val simpleGraphRootDir = new File(args(1))
-  val statRootDir = new File(args(2))
-  val graphResultRootDir = new File(args(3))
+  val graphResultRootDir = new File(args(2))
   simpleGraphRootDir.listFiles().par
     .foreach{configDir =>
       processConfigDir(configDir)
@@ -38,12 +37,12 @@ object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogg
     val graphOutputFile = new File(dsDir.getAbsolutePath + "/memoryEfficientGraphForOptimization.json")
     ///san2/data/change-exploration/roleMerging/finalExperiments/newWikipediaGraphs/NO_DECAY_7_2011-05-07/tv_and_film/edges/
     val edgeIDGraphDir = new File(dsDir.getAbsolutePath + "/edges/")
-    val roleset = Roleset.fromJsonFile(dsDir.getAbsolutePath + "/roleset.json") //TODO: actually create those rolesets!
+    val roleset = Roleset.fromJsonFile(dsDir.getAbsolutePath + "/roleset.json")
     val simpleEdgeIterator = SimpleCompatbilityGraphEdge.iterableFromEdgeIDObjectPerLineDir(edgeIDGraphDir, roleset)
     val graph = MemoryEfficientCompatiblityGraphWithoutEdgeWeight.fromGeneralEdgeIterator(simpleEdgeIterator, GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, curTrainTimeEnd, Seq())
     val isfMaps = graph.getISFMapsAtEndTimes(Array(curTrainTimeEnd))
     val counter = new EvidenceBasedWeightingEventCounter(graph, isfMaps, GLOBAL_CONFIG.granularityInDays, statOutputFile, graphOutputFile)
     counter.aggregateEventCounts(GLOBAL_CONFIG.granularityInDays, 1000000) //we do some sampling so that the tuning experiments (python jupyter notebook) can be conveniently executed on a local machine
-    logger.debug(s"Finished Config ${configDir.getName} - Dataset ${dsDir.getName}")
+    logger.debug(s"Terminating Config ${configDir.getName} - Dataset ${dsDir.getName}")
   }
 }

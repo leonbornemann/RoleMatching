@@ -2,6 +2,7 @@ package de.hpi.wikipedia_data_preparation
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithID, Roleset}
+import de.hpi.wikipedia_data_preparation.transformed.WikipediaRoleLineage
 
 import scala.collection.parallel.CollectionConverters._
 import java.io.File
@@ -33,7 +34,8 @@ object TemplateDirToRolesetMain extends App with StrictLogging{
       val roles = templates.flatMap(template => {
         val toRead = templateDir + s"/$template.json"
         logger.debug(s"Reading $toRead")
-        RoleLineageWithID.fromJsonObjectPerLineFile(toRead)
+        WikipediaRoleLineage.fromJsonObjectPerLineFile(toRead)
+          .map(_.toIdentifiedFactLineage)
       })
         .map(rl => (rl.id,rl))
         .toIndexedSeq

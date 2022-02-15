@@ -11,10 +11,15 @@ import java.io.File
 import java.time.LocalDate
 
 object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogging{
+  // ls /san2/data/change-exploration/roleMerging/finalExperiments/newWikipediaRolesets/NO_DECAY_7_2011-05-07/
+  //education.json  football.json  military.json  politics.json  tv_and_film.json
+
+
   println(s"Called with ${args.toIndexedSeq}")
   val datasource = args(0)
   GLOBAL_CONFIG.setSettingsForDataSource(datasource)
   val simpleGraphRootDir = new File(args(1))
+  val rolesetRootDir = args(2)
   simpleGraphRootDir.listFiles().par
     .foreach{configDir =>
       processConfigDir(configDir)
@@ -36,7 +41,7 @@ object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogg
     val graphOutputFile = new File(dsDir.getAbsolutePath + "/memoryEfficientGraphForOptimization.json")
     ///san2/data/change-exploration/roleMerging/finalExperiments/newWikipediaGraphs/NO_DECAY_7_2011-05-07/tv_and_film/edges/
     val edgeIDGraphDir = new File(dsDir.getAbsolutePath + "/edges/")
-    val roleset = Roleset.fromJsonFile(dsDir.getAbsolutePath + "/roleset.json")
+    val roleset = Roleset.fromJsonFile(s"$rolesetRootDir/${configDir.getName}/${dsDir.getName}.json")
     val simpleEdgeIterator = SimpleCompatbilityGraphEdge.iterableFromEdgeIDObjectPerLineDir(edgeIDGraphDir, roleset)
     val graph = MemoryEfficientCompatiblityGraphWithoutEdgeWeight.fromGeneralEdgeIterator(simpleEdgeIterator, GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, curTrainTimeEnd, Seq())
     val isfMaps = graph.getISFMapsAtEndTimes(Array(curTrainTimeEnd))

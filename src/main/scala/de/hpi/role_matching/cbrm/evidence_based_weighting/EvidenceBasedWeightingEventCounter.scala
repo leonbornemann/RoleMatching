@@ -18,6 +18,7 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
                                          TIMESTAMP_GRANULARITY_IN_DAYS:Int,
                                          statFile:File,
                                          graphSetResultFile:File,
+                                         logPrefix:String = "",
                                          nonInformativeValuesIsStrict:Boolean =false) extends StrictLogging{
 
   assert(graph.allEndTimes == tfIDF.keySet)
@@ -67,7 +68,7 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
   def aggregateEventCounts(evaluationStepDurationInDays:Int,approxStatSampleSize:Int) = {
     val totalCounts = scala.collection.mutable.HashMap[LocalDate, EventOccurrenceStatistics]()
     val trainTimeEndsWithIndex = graph.trainTimeEnds.zipWithIndex
-    val latestTime = graph.trainTimeEnds.max
+    val latestTime = graph.trainTimeEnds.maxOption.getOrElse(graph.smallestTrainTimeEnd)
     var processedEdges = 0
     val statPr = new PrintWriter(statFile)
     val adjacencyList = collection.mutable.HashMap[Int, collection.mutable.HashMap[Int, Seq[EventCounts]]]()
@@ -77,11 +78,6 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
         val v1LineageTrain = e.v1.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,graph.smallestTrainTimeEnd)
         val v2LineageTrain = e.v2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,graph.smallestTrainTimeEnd)
         val evidence = v1LineageTrain.getOverlapEvidenceCount(v2LineageTrain)
-        e.printTabularEventLineageString
-        if(evidence>0) {
-          println("found candidate")
-        } else
-          println("found no candidate")
         evidence>0
       }}
       .foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {
@@ -123,7 +119,7 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
         processedEdges+=1
         val toLog = LogUtil.buildLogProgressStrings(processedEdges,100000,None,"edges")
         if(toLog.isDefined)
-          logger.debug(toLog.get)
+          logger.debug(logPrefix + toLog.get)
       }}
     val trainTimeEndsSorted = graph.allEndTimes.toIndexedSeq.sortBy(_.toEpochDay)
     val graphSet = MemoryEfficientCompatiblityGraphSet(graph.verticesOrdered.map(_.id),trainTimeEndsSorted,adjacencyList)

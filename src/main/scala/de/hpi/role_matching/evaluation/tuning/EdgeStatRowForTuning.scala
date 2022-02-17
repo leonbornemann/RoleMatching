@@ -23,14 +23,14 @@ case class EdgeStatRowForTuning(e: SimpleCompatbilityGraphEdge,
     val eventCounts = Seq(STRONGPOSTIVE, WEAKPOSTIVE, NEUTRAL, WEAKNEGATIVE, STRONGNEGATIVE).map(s => s + "_count")
     val eventScores = Seq(STRONGPOSTIVE, WEAKPOSTIVE, NEUTRAL, WEAKNEGATIVE, STRONGNEGATIVE).map(s => s + "_scoreSum")
     (Seq("Vertex1ID,Vertex2ID") ++
-      Seq("trainEndDate", "remainsValidFullTimeSpan","isValidSuperStrict", "hasChangeAfterTrainPeriod", "interestingnessEvidence") ++
+      Seq("trainEndDate", "remainsValidFullTimeSpan","isValidSuperStrict","isValidFirstChangeAfter", "hasChangeAfterTrainPeriod", "interestingnessEvidence") ++
       //Seq("evalEndDateOneTimeUnitAfterTrain", "remainsValidOneTimeUnitAfterTrain", "isInterestingOneTimeUnitAfterTrain", "interestingnessEvidenceOneTimeUnitAfterTrain") ++
       eventCounts ++ eventScores)
   }
 
   def getStatRow = {
     Seq(e.v1.csvSafeID, e.v2.csvSafeID,
-      scoreStats.trainTimeEnd, remainsValidFullTimeSpan,isValidSuperStrict, isInteresting, interestingnessEvidence,
+      scoreStats.trainTimeEnd, remainsValidFullTimeSpan,isValidSuperStrict,isValidFirstChangeAfter, isInteresting, interestingnessEvidence,
       //evalEndDateOneTimeUnitAfterTrain,remainsValidOneTimeUnitAfterTrain,isInterestingOneTimeUnitAfterTrain,interestingnessEvidenceOneTimeUnitAfterTrain,
       scoreStats.strongPositive, scoreStats.weakPositive, scoreStats.neutral, scoreStats.weakNegative, scoreStats.strongNegative) ++ scoreStats.summedScores.get
   }

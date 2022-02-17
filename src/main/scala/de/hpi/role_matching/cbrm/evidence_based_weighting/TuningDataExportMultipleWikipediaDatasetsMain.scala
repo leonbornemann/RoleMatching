@@ -36,6 +36,7 @@ object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogg
   }
 
   private def processDatasetDir(configDir: File, curTrainTimeEnd: LocalDate, dsDir: File) = {
+    val logPrefix = s"${dsDir.getName}_${configDir.getName}  --  "
     logger.debug(s"Starting Config ${configDir.getName} - Dataset ${dsDir.getName}")
     val statOutputFile = new File(dsDir.getAbsolutePath + "/tuningStats.csv")
     val graphOutputFile = new File(dsDir.getAbsolutePath + "/memoryEfficientGraphForOptimization.json")
@@ -46,7 +47,7 @@ object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogg
       val simpleEdgeIterator = SimpleCompatbilityGraphEdge.iterableFromEdgeIDObjectPerLineDir(edgeIDGraphDir, roleset)
       val graph = MemoryEfficientCompatiblityGraphWithoutEdgeWeight.fromGeneralEdgeIterator(simpleEdgeIterator, GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, curTrainTimeEnd, Seq())
       val isfMaps = graph.getISFMapsAtEndTimes(Array(curTrainTimeEnd))
-      val counter = new EvidenceBasedWeightingEventCounter(graph, isfMaps, GLOBAL_CONFIG.granularityInDays, statOutputFile, graphOutputFile)
+      val counter = new EvidenceBasedWeightingEventCounter(graph, isfMaps, GLOBAL_CONFIG.granularityInDays, statOutputFile, graphOutputFile,logPrefix)
       counter.aggregateEventCounts(GLOBAL_CONFIG.granularityInDays, 1000000) //we do some sampling so that the tuning experiments (python jupyter notebook) can be conveniently executed on a local machine
 
     } else {

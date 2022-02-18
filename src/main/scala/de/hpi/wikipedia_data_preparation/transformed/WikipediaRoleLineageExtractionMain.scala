@@ -59,7 +59,7 @@ object WikipediaRoleLineageExtractionMain extends App with StrictLogging {
         InfoboxRevisionHistory.minDecayProbability = Some(minDecayProbability)
         val curResultDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${minDecayProbability}_${granularityInDays}_$trainTimeEnd/wikipediaLineages/")
         val statRootDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${minDecayProbability}_${granularityInDays}_$trainTimeEnd/templateStats/")
-        curStatDir.mkdirs()
+        statRootDir.mkdirs()
         runForResultDir(curResultDir,statRootDir,trainTimeEnd)
       }
     } else {

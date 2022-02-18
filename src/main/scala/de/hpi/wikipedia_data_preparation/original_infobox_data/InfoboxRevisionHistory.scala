@@ -73,13 +73,13 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
     if(curSequence.isEmpty || curSequence.last._2!=v){
       curSequence.append((t,v))
       val nextTimePoint = t.plusDays(lowestGranularityInDays)
-      if(insertWildcardAfter && !valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
-        curSequence.append((nextTimePoint,ReservedChangeValues.NOT_EXISTANT_CELL))
+      if(insertWildcardAfter && !valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.DECAYED && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
+        curSequence.append((nextTimePoint,ReservedChangeValues.DECAYED))
     } else {
       //we confirm this value, but it is the same as the previous so no need to insert anything new, but we might need to insert wildcard on the next day
       val nextTimePoint = t.plusDays(lowestGranularityInDays)
-      if(insertWildcardAfter && !valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.NOT_EXISTANT_CELL && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
-        curSequence.append((nextTimePoint,ReservedChangeValues.NOT_EXISTANT_CELL))
+      if(insertWildcardAfter && !valueConfirmationPoints.contains(nextTimePoint) && v!=ReservedChangeValues.DECAYED && !nextTimePoint.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP))
+        curSequence.append((nextTimePoint,ReservedChangeValues.DECAYED))
     }
   }
 
@@ -108,7 +108,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
               addValueToSequence(lineage,ld,value,false)
               val nextChangeIsAfterGracePeriod = nextDate.isAfter(ld.plusDays(getGracePeriodInDays))
               if(nextChangeIsAfterGracePeriod)
-                addValueToSequence(lineage,ld.plusDays(getGracePeriodInDays),ReservedChangeValues.NOT_EXISTANT_CELL,false)
+                addValueToSequence(lineage,ld.plusDays(getGracePeriodInDays),ReservedChangeValues.DECAYED,false)
             }
           } else {
             if(mode==WILDCARD_BETWEEN_CHANGE) {
@@ -121,7 +121,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
               addValueToSequence(lineage,ld,value,false)
               val nextChangeIsAfterGracePeriod = LATEST_HISTORY_TIMESTAMP.isAfter(ld.plusDays(getGracePeriodInDays))
               if(nextChangeIsAfterGracePeriod)
-                addValueToSequence(lineage,ld.plusDays(getGracePeriodInDays),ReservedChangeValues.NOT_EXISTANT_CELL,false)
+                addValueToSequence(lineage,ld.plusDays(getGracePeriodInDays),ReservedChangeValues.DECAYED,false)
             }
           }
 
@@ -177,7 +177,7 @@ case class InfoboxRevisionHistory(key:String,revisions:collection.Seq[InfoboxRev
           val endDate = if (i == withOutVandalism.size-1) LATEST_HISTORY_TIMESTAMP else withOutVandalism(i + 1)._1._1
           val duration = ChronoUnit.DAYS.between(ld, endDate)
           if (duration > decayTimeInDays && !RoleLineage.isWildcard(v))
-            Seq((ld, v), (ld.plusDays(decayTimeInDays), ReservedChangeValues.NOT_EXISTANT_CELL))
+            Seq((ld, v), (ld.plusDays(decayTimeInDays), ReservedChangeValues.DECAYED))
           else
             Seq((ld, v))
         }

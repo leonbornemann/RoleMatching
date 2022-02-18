@@ -45,6 +45,7 @@ object CompatibilityGraphByTemplateCreationMain extends App with StrictLogging {
   val lineagesComplete = infoboxHistoryFiles.flatMap(f => {
     logger.debug(s"Loading lineages in $f")
     WikipediaRoleLineage.fromJsonObjectPerLineFile(f.getAbsolutePath)
+      .filter(_.isOfInterest(endDateTrainPhase))
   })
   val lineagesTrain = lineagesComplete
     .map(h => h.projectToTimeRange(InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase))

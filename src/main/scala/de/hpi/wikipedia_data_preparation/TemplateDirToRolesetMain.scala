@@ -6,6 +6,7 @@ import de.hpi.wikipedia_data_preparation.transformed.WikipediaRoleLineage
 
 import scala.collection.parallel.CollectionConverters._
 import java.io.File
+import java.time.LocalDate
 import scala.io.Source
 
 object TemplateDirToRolesetMain extends App with StrictLogging{
@@ -21,6 +22,7 @@ object TemplateDirToRolesetMain extends App with StrictLogging{
       (name,templates)
     })
     .toMap
+  val trainTimeEnd = LocalDate.parse(args(3))
   val configDirs = templateRootDir.listFiles()
   configDirs.toIndexedSeq.foreach(dir => {
     logger.debug(s"Processing $dir")
@@ -35,6 +37,7 @@ object TemplateDirToRolesetMain extends App with StrictLogging{
         val toRead = templateDir + s"/$template.json"
         logger.debug(s"Reading $toRead")
         WikipediaRoleLineage.fromJsonObjectPerLineFile(toRead)
+          .withFilter(_.isOfInterest(trainTimeEnd))
           .map(_.toIdentifiedFactLineage)
       })
         .map(rl => (rl.id,rl))

@@ -9,5 +9,5 @@ object ReservedChangeValues {
   val NOT_EXISTANT_DATASET = "\u200c⊥D\u200c"
   val NOT_EXISTANT_CELL = "\u200c⊥CE\u200c"
   val NOT_KNOWN_DUE_TO_NO_VISIBLE_CHANGE = "\u200c⊥V\u200c"
-
+  val DECAYED = "\u200c⊥DE\u200c"
 }

@@ -19,31 +19,35 @@ object WikipediaRoleLineageExtractionMain extends App with StrictLogging {
   revisionHistories.foreach(rh => rh.integrityCheck())
   logger.debug(s"Found ${revisionHistories.size} infobox histories to process")
 
-  def runForResultDir(resultDir: File) = {
+  def runForResultDir(resultDir: File,statRootDir:File,trainTimeEnd:LocalDate) = {
     resultDir.mkdirs()
     var finished = 0
     val resultFile = resultDir.getAbsolutePath + "/" + WikipediaRoleLineage.getFilenameForBucket(new File(file).getName)
+    val resultFileStats = new File(statRootDir.getAbsolutePath + "/" + WikipediaRoleLineage.getFilenameForBucket(new File(file).getName))
     val pr = new PrintWriter(resultFile)
     var filtered = 0
     var total = 0
+    val templateStats = TemplateStats()
     revisionHistories
       .foreach(r => {
         val res = r.toWikipediaInfoboxValueHistories
         val weird = res.filter(_.lineage.lineage.keySet.exists(_.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)))
         assert(weird.size==0)
         val retained = res.filter(vh => {
-          vh.isOfInterest
+          vh.isOfInterest(trainTimeEnd)
           //very basic filtering to weed out uninteresting infoboxes / property lineages
         })
         filtered += (res.size - retained.size)
         total += res.size
         retained.foreach(_.appendToWriter(pr,false,true))
+        templateStats.addAll(retained)
         finished += 1
         if (finished % 100 == 0) {
           logger.debug(s"Finished $finished infobox histories leading to ${total} num facts of which we discarded ${filtered} (${100*filtered / total.toDouble}%)")
         }
       })
     pr.close()
+    templateStats.toJsonFile(resultFileStats)
   }
 
   for(granularityInDays <- granularitiesInDays; mode <- modes; trainTimeEnd <- trainTimeEnds){
@@ -54,11 +58,14 @@ object WikipediaRoleLineageExtractionMain extends App with StrictLogging {
       for( minDecayProbability <- minDecayProbabilities){
         InfoboxRevisionHistory.minDecayProbability = Some(minDecayProbability)
         val curResultDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${minDecayProbability}_${granularityInDays}_$trainTimeEnd/wikipediaLineages/")
-        runForResultDir(curResultDir)
+        val statRootDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${minDecayProbability}_${granularityInDays}_$trainTimeEnd/templateStats/")
+        runForResultDir(curResultDir,statRootDir,trainTimeEnd)
       }
     } else {
       val curResultDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${granularityInDays}_$trainTimeEnd/wikipediaLineages/")
-      runForResultDir(curResultDir)
+      val curStatDir = new File(resultRootDir.getAbsolutePath + s"/${mode.toString}_${granularityInDays}_$trainTimeEnd/stats/")
+      curStatDir.mkdirs()
+      runForResultDir(curResultDir,curStatDir,trainTimeEnd)
     }
   }
 

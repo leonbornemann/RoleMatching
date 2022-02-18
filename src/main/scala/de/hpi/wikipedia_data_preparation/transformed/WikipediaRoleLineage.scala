@@ -1,6 +1,8 @@
 package de.hpi.wikipedia_data_preparation.transformed
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.cbrm.data.RoleLineage.isWildcard
 import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
 import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithHashMap, RoleLineageWithID, UpdateChangeCounter}
 import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory
@@ -13,12 +15,13 @@ case class WikipediaRoleLineage(template:Option[String],
                                 key: String,
                                 p: String,
                                 lineage: RoleLineageWithHashMap) extends JsonWritable[WikipediaRoleLineage]{
-  def isOfInterest = {
-    val nonWildcardPeriod = lineage.toRoleLineage.nonWildcardDuration(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)
-    val nChanges = lineage.toRoleLineage.countChanges(new UpdateChangeCounter)
-    val hasRealChange = nChanges._1 >= 1
-    val hasEnoughNonWildcard = nonWildcardPeriod >= 0
-    hasRealChange && hasEnoughNonWildcard
+  def isOfInterest(trainTimeEnd:LocalDate) = {
+    val rl = lineage.toRoleLineage
+    val valueSetTrain = rl.lineage.range(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd).map{ case(_,v) => v}.toSet
+      .filter(v => !isWildcard(v))
+    val valueSetTest = rl.lineage.rangeFrom(trainTimeEnd).map(_._2).toSet
+      .filter(v => !isWildcard(v))
+    valueSetTrain.size>1 && valueSetTest.size>1
   }
 
   def changeCount = {

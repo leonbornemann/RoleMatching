@@ -211,6 +211,8 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
         for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
           val ref1 = tuplesInNodeAsIndexedSeq(i)
           val ref2 = tuplesInNodeAsIndexedSeq(j)
+//          TODO: change this filtering criterion to make it simpler
+//          TODO: prefilter rolesets
           if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
             //we have a candidate - add it to buffer!
             serializeIfMatch(ref1,ref2,pr)

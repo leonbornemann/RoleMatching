@@ -514,7 +514,12 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
 }
 object RoleLineage{
 
-  def WILDCARD_VALUES:Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_DATASET,ReservedChangeValues.NOT_EXISTANT_COL,ReservedChangeValues.NOT_EXISTANT_ROW,ReservedChangeValues.NOT_EXISTANT_CELL,ReservedChangeValues.NOT_KNOWN_DUE_TO_NO_VISIBLE_CHANGE)
+  def WILDCARD_VALUES:Set[Any] = Set(ReservedChangeValues.NOT_EXISTANT_DATASET,
+    ReservedChangeValues.NOT_EXISTANT_COL,
+    ReservedChangeValues.NOT_EXISTANT_ROW,
+    ReservedChangeValues.NOT_EXISTANT_CELL,
+    ReservedChangeValues.NOT_KNOWN_DUE_TO_NO_VISIBLE_CHANGE,
+    ReservedChangeValues.DECAYED)
 
   def tryMergeAll(toMerge: IndexedSeq[RoleLineage]) = {
     var res = Option(toMerge.head)

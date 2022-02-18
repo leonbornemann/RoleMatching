@@ -1,12 +1,14 @@
 package de.hpi.wikipedia_data_preparation.transformed
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.wikipedia_data_preparation.original_infobox_data.{InfoboxRevision, InfoboxRevisionHistory, WikipediaLineageCreationMode}
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 object WikipediaRoleLineageExtractionMain extends App with StrictLogging {
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val file = args(0)
   val resultRootDir = new File(args(1))
   val granularitiesInDays = args(2).split(",").map(_.toInt)

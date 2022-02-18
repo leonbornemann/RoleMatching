@@ -4,7 +4,7 @@ import de.hpi.role_matching.playground.{JsonReadable, JsonWritable}
 
 import scala.collection.mutable
 
-case class TemplateStats(nameToCount:collection.mutable.HashMap[String,Int] = collection.mutable.HashMap()) extends JsonWritable[TemplateStats] {
+case class TemplateStats(nameToCount:collection.mutable.HashMap[String,Int]) extends JsonWritable[TemplateStats] {
 
   def addAll(retained: Iterable[WikipediaRoleLineage]) = {
     retained

@@ -21,7 +21,7 @@ case class WikipediaRoleLineage(template:Option[String],
       .filter(v => !isWildcard(v))
     val valueSetTest = rl.lineage.rangeFrom(trainTimeEnd).map(_._2).toSet
       .filter(v => !isWildcard(v))
-    valueSetTrain.size>1 && valueSetTest.size>1
+    valueSetTrain.size>1 && valueSetTest.size>0
   }
 
   def changeCount = {

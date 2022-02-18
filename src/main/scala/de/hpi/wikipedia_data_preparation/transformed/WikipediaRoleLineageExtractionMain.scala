@@ -27,11 +27,10 @@ object WikipediaRoleLineageExtractionMain extends App with StrictLogging {
     val pr = new PrintWriter(resultFile)
     var filtered = 0
     var total = 0
-    val templateStats = TemplateStats()
+    val templateStats = TemplateStats(collection.mutable.HashMap())
     revisionHistories
       .foreach(r => {
         val res = r.toWikipediaInfoboxValueHistories.toIndexedSeq
-        println(s"Found ${r.revisions.flatMap(_.template).size} templates")
         val weird = res.filter(_.lineage.lineage.keySet.exists(_.isAfter(InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP)))
         assert(weird.size==0)
         val retained = res.filter(vh => {

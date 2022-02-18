@@ -36,7 +36,7 @@ object WikipediaRoleLineageExtractionMain extends App with StrictLogging {
         val retained = res.filter(vh => {
           vh.isOfInterest(trainTimeEnd)
           //very basic filtering to weed out uninteresting infoboxes / property lineages
-        })
+        }).toIndexedSeq
         filtered += (res.size - retained.size)
         total += res.size
         retained.foreach(_.appendToWriter(pr,false,true))
@@ -47,6 +47,7 @@ object WikipediaRoleLineageExtractionMain extends App with StrictLogging {
         }
       })
     pr.close()
+    logger.debug(s"Gathered stats about ${templateStats.nameToCount.size} templates")
     templateStats.toJsonFile(resultFileStats)
   }
 

@@ -6,7 +6,7 @@ import scala.collection.mutable
 
 case class TemplateStats(nameToCount:collection.mutable.HashMap[String,Int] = collection.mutable.HashMap()) extends JsonWritable[TemplateStats] {
 
-  def addAll(retained: mutable.Iterable[WikipediaRoleLineage]) = {
+  def addAll(retained: Iterable[WikipediaRoleLineage]) = {
     retained
       .groupBy(wrl => wrl.template.getOrElse(""))
       .withFilter(_._1 != "")

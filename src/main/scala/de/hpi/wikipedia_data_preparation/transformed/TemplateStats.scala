@@ -6,6 +6,13 @@ import scala.collection.mutable
 
 case class TemplateStats(nameToCount:collection.mutable.HashMap[String,Int]) extends JsonWritable[TemplateStats] {
 
+  def add(stats: TemplateStats) = {
+    val mergedMap = collection.mutable.HashMap() ++ nameToCount.keySet.union(stats.nameToCount.keySet)
+      .map(k => (k,nameToCount.getOrElse(k,0) + stats.nameToCount.getOrElse(k,0)))
+    TemplateStats(mergedMap)
+  }
+
+
   def addAll(retained: Iterable[WikipediaRoleLineage]) = {
     retained
       .groupBy(wrl => wrl.template.getOrElse(""))

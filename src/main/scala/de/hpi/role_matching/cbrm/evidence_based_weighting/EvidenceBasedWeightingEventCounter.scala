@@ -32,6 +32,10 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
     .toMap
   val nonInformativeValues = GLOBAL_CONFIG.nonInformativeValues
 
+  val idToRoleLineage = graph.verticesOrdered.map(rl => (rl.id,rl.roleLineage.toRoleLineage)).toMap
+  val idToRoleLineageSmallestTrainTimeEnd = idToRoleLineage.map{case (id,rl) => (id,rl.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,graph.smallestTrainTimeEnd))}
+  val idToChangeSetInSmallestTrainTimeEnd = idToRoleLineageSmallestTrainTimeEnd.map{case (id,rl) => (id,rl.allNonWildcardTimestamps.toSet)}
+
   def getEventCounts(cp: ChangePoint,vertexIdFirst:Int,vertexIdSecond:Int,trainTimeEnd:LocalDate) = {
     assert(!cp.prevPointInTime.isAfter(trainTimeEnd))
     val totalCounts = new EventOccurrenceStatistics(trainTimeEnd)
@@ -74,15 +78,13 @@ class EvidenceBasedWeightingEventCounter(graph:MemoryEfficientCompatiblityGraphW
     val adjacencyList = collection.mutable.HashMap[Int, collection.mutable.HashMap[Int, Seq[EventCounts]]]()
     val nEdges = graph.adjacencyList.map(_._2.size).sum
     graph.generalEdgeIterator
-      .withFilter{ case (firstNode, secondNode, e, isEdgeInGraph) => {
-        val v1LineageTrain = e.v1.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,graph.smallestTrainTimeEnd)
-        val v2LineageTrain = e.v2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,graph.smallestTrainTimeEnd)
-        val evidence = v1LineageTrain.getOverlapEvidenceCount(v2LineageTrain)
+      .withFilter{ case (_, _, e, _) => {
+        val evidence = idToChangeSetInSmallestTrainTimeEnd(e.v1.id).intersect(idToChangeSetInSmallestTrainTimeEnd(e.v2.id)).size
         evidence>0
       }}
       .foreach { case (firstNode, secondNode, e, isEdgeInGraph) => {
         val totalCountsThisEdge = scala.collection.mutable.HashMap[LocalDate, EventOccurrenceStatistics]()
-        val commonPointOfInterestIterator = new CommonPointOfInterestIterator(e.v1.roleLineage.toRoleLineage, e.v2.roleLineage.toRoleLineage)
+        val commonPointOfInterestIterator = new CommonPointOfInterestIterator(idToRoleLineage(e.v1.id), idToRoleLineage(e.v2.id))
         commonPointOfInterestIterator
           .withFilter(cp => !cp.prevPointInTime.isAfter(latestTime))
           .foreach(cp => {

@@ -17,6 +17,7 @@ object CompatibilityGraphByTemplateCreationMain extends App with StrictLogging {
   println(s"called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_START = InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP
   GLOBAL_CONFIG.STANDARD_TIME_FRAME_END = InfoboxRevisionHistory.LATEST_HISTORY_TIMESTAMP
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val templates = args(0).split(Pattern.quote(",")).toIndexedSeq
   val byTemplateDir = new File(args(1))
   val resultRootDir = args(2)
@@ -50,7 +51,7 @@ object CompatibilityGraphByTemplateCreationMain extends App with StrictLogging {
   val lineagesTrain = lineagesComplete
     .map(h => h.projectToTimeRange(InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase))
 
-  val references = RoleLineageWithID.toReferences(lineagesTrain.map(_.toIdentifiedFactLineage))
+  val references = RoleLineageWithID.toReferences(lineagesTrain.map(_.toIdentifiedFactLineage),endDateTrainPhase)
 
   val graphConfig = GraphConfig(0, InfoboxRevisionHistory.EARLIEST_HISTORY_TIMESTAMP, endDateTrainPhase)
   logger.debug("Starting compatibility graph creation")

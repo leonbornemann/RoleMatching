@@ -43,7 +43,7 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
   val timeNow = System.currentTimeMillis()
   val graphConfig = GraphConfig(1: Int, GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, endDateTrainPhase)
 
-  val references = RoleLineageWithID.toReferences(lineages)
+  val references = RoleLineageWithID.toReferences(lineages,endDateTrainPhase)
 
   def toGeneralEdgeFunction(a: RoleReference, b: RoleReference) = {
     SimpleCompatbilityGraphEdge(identifiedLineages(a.rowIndex)._2, identifiedLineages(b.rowIndex)._2)

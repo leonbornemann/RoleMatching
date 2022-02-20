@@ -19,13 +19,13 @@ case class RoleLineageWithID(id:String, roleLineage: RoleLineageWithHashMap) ext
 
 object RoleLineageWithID extends JsonReadable[RoleLineageWithID] {
 
-  def toReferences(lineages: IndexedSeq[RoleLineageWithID]) = {
+  def toReferences(lineages: IndexedSeq[RoleLineageWithID],trainTimeEnd:LocalDate) = {
     val sortedByID = lineages
       .sortBy(_.id)
       .zipWithIndex
     val asMap = sortedByID.map(t => (t._2, t._1)).toMap
     val roleset = Roleset(sortedByID.map(_._1.id),asMap)
-    asMap.toIndexedSeq.sortBy(_._1).map(t => RoleReference(roleset.toNonCaseClass,t._1))
+    asMap.toIndexedSeq.sortBy(_._1).map(t => RoleReference(roleset.toNonCaseClass(trainTimeEnd),t._1))
   }
 
   def printTabularEventLineageString(vertices:collection.Seq[RoleLineageWithID]) = {

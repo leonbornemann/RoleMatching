@@ -3,6 +3,8 @@ package de.hpi.role_matching.cbrm.data
 import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable, LocalDateKeySerializer, LocalDateSerializer}
 import org.json4s.DefaultFormats
 
+import java.time.LocalDate
+
 /***
  * Representation of a set of roles
  *
@@ -10,7 +12,7 @@ import org.json4s.DefaultFormats
  * @param positionToRoleLineage
  */
 case class Roleset(rolesSortedByID: IndexedSeq[String], positionToRoleLineage:Map[Int,RoleLineageWithID]) extends JsonWritable[Roleset]{
-  def toNonCaseClass: NonCaseClassRoleset = new NonCaseClassRoleset(this)
+  def toNonCaseClass(trainTimeEnd:LocalDate): NonCaseClassRoleset = new NonCaseClassRoleset(this,trainTimeEnd)
 
   def wildcardValues = RoleLineage.WILDCARD_VALUES
 

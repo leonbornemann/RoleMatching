@@ -25,7 +25,7 @@ object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogg
     }
 
   private def processConfigDir(configDir: File) = {
-    if(!configDir.getName.contains("2011")){
+    if(!configDir.getName.contains("2016")){
       logger.debug(s"Starting Config ${configDir.getName}")
       val curConfig = configDir.getName
       val curTrainTimeEnd = LocalDate.parse(curConfig.split("_").last)
@@ -41,26 +41,26 @@ object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogg
 
   private def processDatasetDir(configDir: File, curTrainTimeEnd: LocalDate, dsDir: File) = {
     val runConfig = RunConfig.fromString(configDir.getName)
-    if(runConfig.decayProbability.getOrElse(Double.NaN)==0.7 && dsDir.getName=="football"){
-      logger.debug(s"Skipping Config ${configDir.getName} - Dataset ${dsDir.getName}")
+//    if(runConfig.decayProbability.getOrElse(Double.NaN)==0.7 && dsDir.getName=="football"){
+//      logger.debug(s"Skipping Config ${configDir.getName} - Dataset ${dsDir.getName}")
+//    } else {
+    val logPrefix = s"${dsDir.getName}_${configDir.getName}  --  "
+    logger.debug(s"Starting Config ${configDir.getName} - Dataset ${dsDir.getName}")
+    val statOutputFile = new File(dsDir.getAbsolutePath + "/tuningStats.csv")
+    val graphOutputFile = new File(dsDir.getAbsolutePath + "/memoryEfficientGraphForOptimization.json")
+    ///san2/data/change-exploration/roleMerging/finalExperiments/newWikipediaGraphs/NO_DECAY_7_2011-05-07/tv_and_film/edges/
+    val edgeIDGraphDir = new File(dsDir.getAbsolutePath + "/edges/")
+    val roleset = Roleset.fromJsonFile(s"$rolesetRootDir/${configDir.getName}/${dsDir.getName}.json")
+    if(edgeIDGraphDir.exists() && !edgeIDGraphDir.listFiles().isEmpty){
+      val simpleEdgeIterator = SimpleCompatbilityGraphEdge.iterableFromEdgeIDObjectPerLineDir(edgeIDGraphDir, roleset)
+      val graph = MemoryEfficientCompatiblityGraphWithoutEdgeWeight.fromGeneralEdgeIterator(simpleEdgeIterator, GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, curTrainTimeEnd, Seq())
+      val isfMaps = graph.getISFMapsAtEndTimes(Array(curTrainTimeEnd))
+      val counter = new EvidenceBasedWeightingEventCounter(graph, isfMaps, GLOBAL_CONFIG.granularityInDays, statOutputFile, graphOutputFile,logPrefix)
+      counter.aggregateEventCounts(GLOBAL_CONFIG.granularityInDays, 1000000) //we do some sampling so that the tuning experiments (python jupyter notebook) can be conveniently executed on a local machine
     } else {
-      val logPrefix = s"${dsDir.getName}_${configDir.getName}  --  "
-      logger.debug(s"Starting Config ${configDir.getName} - Dataset ${dsDir.getName}")
-      val statOutputFile = new File(dsDir.getAbsolutePath + "/tuningStats.csv")
-      val graphOutputFile = new File(dsDir.getAbsolutePath + "/memoryEfficientGraphForOptimization.json")
-      ///san2/data/change-exploration/roleMerging/finalExperiments/newWikipediaGraphs/NO_DECAY_7_2011-05-07/tv_and_film/edges/
-      val edgeIDGraphDir = new File(dsDir.getAbsolutePath + "/edges/")
-      val roleset = Roleset.fromJsonFile(s"$rolesetRootDir/${configDir.getName}/${dsDir.getName}.json")
-      if(edgeIDGraphDir.exists() && !edgeIDGraphDir.listFiles().isEmpty){
-        val simpleEdgeIterator = SimpleCompatbilityGraphEdge.iterableFromEdgeIDObjectPerLineDir(edgeIDGraphDir, roleset)
-        val graph = MemoryEfficientCompatiblityGraphWithoutEdgeWeight.fromGeneralEdgeIterator(simpleEdgeIterator, GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, curTrainTimeEnd, Seq())
-        val isfMaps = graph.getISFMapsAtEndTimes(Array(curTrainTimeEnd))
-        val counter = new EvidenceBasedWeightingEventCounter(graph, isfMaps, GLOBAL_CONFIG.granularityInDays, statOutputFile, graphOutputFile,logPrefix)
-        counter.aggregateEventCounts(GLOBAL_CONFIG.granularityInDays, 1000000) //we do some sampling so that the tuning experiments (python jupyter notebook) can be conveniently executed on a local machine
-      } else {
-        logger.debug(s"Skipping Config  ${configDir.getName} - Dataset ${dsDir.getName} - no edge id files available")
-      }
-      logger.debug(s"Terminating Config ${configDir.getName} - Dataset ${dsDir.getName}")
+      logger.debug(s"Skipping Config  ${configDir.getName} - Dataset ${dsDir.getName} - no edge id files available")
     }
+    logger.debug(s"Terminating Config ${configDir.getName} - Dataset ${dsDir.getName}")
+//    }
   }
 }

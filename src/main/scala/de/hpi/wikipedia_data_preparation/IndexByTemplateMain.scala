@@ -1,6 +1,7 @@
 package de.hpi.wikipedia_data_preparation
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory
 import de.hpi.wikipedia_data_preparation.transformed.WikipediaRoleLineage
 
@@ -10,6 +11,7 @@ import scala.io.Source
 
 object IndexByTemplateMain extends App with StrictLogging {
   println(InfoboxRevisionHistory.TIME_AXIS.size)
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val templateNames = Source.fromFile(args(0)).getLines().toSet
   val infoboxHistoryDir = new File(args(1))
   val templateDir = new File(args(2))

@@ -14,7 +14,6 @@ class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) 
   val vertexMapOnlyTrain = vertexMap.map{case (k,v) => (k,v.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
   val vertexMapOnlyTrainWithID = vertices.getStringToLineageMap.map{case (k,v) => (k,RoleLineageWithID(v.id,v.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd).toSerializationHelper))}
 
-
   val resultPr = new PrintWriter(resultFile)
 
   def exportData() = {
@@ -36,7 +35,7 @@ class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) 
 
   def blocking(): IndexedSeq[IndexedSeq[String]] = {
     val grouped = vertexMapOnlyTrainWithID
-      .groupBy(t => vertexMapOnlyTrain(t._1).nonWildCardValues.toSet)
+      .groupBy(t => vertexMapOnlyTrain(t._1).nonWildcardValueSequenceBefore(trainTimeEnd))
     val blocks = grouped
       .map{case (k,v) => v.values.map(_.id).toIndexedSeq}
       .toIndexedSeq

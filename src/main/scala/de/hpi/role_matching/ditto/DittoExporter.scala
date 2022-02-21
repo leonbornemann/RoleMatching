@@ -18,6 +18,7 @@ class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) 
 
   def exportData() = {
     val blocks:IndexedSeq[IndexedSeq[String]] = blocking()
+    var exportedLines = 0
     blocks.foreach{ block =>
       for(i <- 0 until block.size){
         for(j <- i until block.size){
@@ -26,11 +27,13 @@ class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) 
           val label:Option[Boolean] = getClassLabel(v1,v2)
           if(label.isDefined){
             outputRecord(v1,v2,label.get)
+            exportedLines +=1
           }
         }
       }
     }
     resultPr.close()
+    exportedLines
   }
 
   def blocking(): IndexedSeq[IndexedSeq[String]] = {

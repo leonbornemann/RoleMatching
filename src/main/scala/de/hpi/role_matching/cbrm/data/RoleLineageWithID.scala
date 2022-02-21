@@ -24,8 +24,8 @@ object RoleLineageWithID extends JsonReadable[RoleLineageWithID] {
       .sortBy(_.id)
       .zipWithIndex
     val asMap = sortedByID.map(t => (t._2, t._1)).toMap
-    val roleset = Roleset(sortedByID.map(_._1.id),asMap)
-    asMap.toIndexedSeq.sortBy(_._1).map(t => RoleReference(roleset.toNonCaseClass(trainTimeEnd),t._1))
+    val roleset = Roleset(sortedByID.map(_._1.id),asMap).toNonCaseClass(trainTimeEnd)
+    asMap.toIndexedSeq.sortBy(_._1).map(t => RoleReference(roleset,t._1))
   }
 
   def printTabularEventLineageString(vertices:collection.Seq[RoleLineageWithID]) = {

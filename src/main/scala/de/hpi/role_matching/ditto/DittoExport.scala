@@ -25,7 +25,6 @@ object DittoExport extends App with StrictLogging{
       val exporter = new DittoExporter(vertices,trainTimeEnd,resultFile)
       exporter.exportData()
     }
-
   }
 
 }

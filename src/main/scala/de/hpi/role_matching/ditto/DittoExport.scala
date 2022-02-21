@@ -11,16 +11,18 @@ object DittoExport extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")
   val datasources = args(0).split(";")
   val rolesetDirs = args(1).split(";")
-  val trainTimeEnd = LocalDate.parse(args(2))
+  val trainTimeEnds = args(2).split(";").map(LocalDate.parse(_))
   val resultRootDir = new File(args(3))
   assert(rolesetDirs.size==datasources.size)
-  for((source,rolesetDir) <- datasources.zip(rolesetDirs)){
+  for(((source,rolesetDir),trainTimeEnd) <- datasources.zip(rolesetDirs).zip(trainTimeEnds)){
     logger.debug("Running ",source,rolesetDir)
     GLOBAL_CONFIG.setSettingsForDataSource(source)
     val rolesetFiles = new File(rolesetDir).listFiles()
     for(rolesetFile <- rolesetFiles){
       logger.debug("Running {}",rolesetFile)
-      val resultFile = new File(resultRootDir.getAbsolutePath + s"/${new File(rolesetDir).getName}/${rolesetFile.getName}.txt")
+      val resultDir = new File(resultRootDir.getAbsolutePath + s"/${new File(rolesetDir).getName}")
+      val resultFile = new File(s"${resultDir.getAbsolutePath}/${rolesetFile.getName}.txt")
+      resultDir.mkdir()
       val vertices = Roleset.fromJsonFile(rolesetFile.getAbsolutePath)
       val exporter = new DittoExporter(vertices,trainTimeEnd,resultFile)
       exporter.exportData()

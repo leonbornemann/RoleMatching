@@ -16,12 +16,7 @@ case class WikipediaRoleLineage(template:Option[String],
                                 p: String,
                                 lineage: RoleLineageWithHashMap) extends JsonWritable[WikipediaRoleLineage]{
   def isOfInterest(trainTimeEnd:LocalDate) = {
-    val rl = lineage.toRoleLineage
-    val valueSetTrain = rl.lineage.range(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd).map{ case(_,v) => v}.toSet
-      .filter(v => !isWildcard(v))
-    val valueSetTest = rl.lineage.rangeFrom(trainTimeEnd).map(_._2).toSet
-      .filter(v => !isWildcard(v))
-    valueSetTrain.size>1 && valueSetTest.size>0
+    lineage.toRoleLineage.isOfInterest(trainTimeEnd)
   }
 
   def changeCount = {

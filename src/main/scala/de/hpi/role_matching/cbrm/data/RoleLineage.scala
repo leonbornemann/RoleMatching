@@ -1,7 +1,7 @@
 package de.hpi.role_matching.cbrm.data
 
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.data.RoleLineage.WILDCARD_VALUES
+import de.hpi.role_matching.cbrm.data.RoleLineage.{WILDCARD_VALUES, isWildcard}
 import de.hpi.role_matching.cbrm.data.RoleLineageWithID.digitRegex
 import de.hpi.role_matching.evaluation.tuning.RemainsValidVariant
 import de.hpi.role_matching.evaluation.tuning.RemainsValidVariant.RemainsValidVariant
@@ -12,6 +12,15 @@ import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
+
+  def isOfInterest(trainTimeEnd: LocalDate) = {
+    val valueSetTrain = lineage.range(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd).map{ case(_,v) => v}.toSet
+      .filter(v => !isWildcard(v))
+    val valueSetTest = lineage.rangeFrom(trainTimeEnd).map(_._2).toSet
+      .filter(v => !isWildcard(v))
+    valueSetTrain.size>1 && valueSetTest.size>0
+  }
+
 
   def dittoString(endTime: LocalDate):String = {
     assert(!lineage.lastKey.isAfter(endTime))

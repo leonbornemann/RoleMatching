@@ -1,6 +1,7 @@
 package de.hpi.wikipedia_data_preparation
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithID, Roleset}
 import de.hpi.wikipedia_data_preparation.transformed.WikipediaRoleLineage
 
@@ -10,6 +11,7 @@ import java.time.LocalDate
 import scala.io.Source
 
 object TemplateDirToRolesetMain extends App with StrictLogging{
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val templateRootDir = new File(args(0))
   val rolesetRootDir = new File(args(1))
   val datasetList = Source.fromFile(args(2))

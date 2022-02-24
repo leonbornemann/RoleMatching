@@ -21,7 +21,6 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     valueSetTrain.size>1 && valueSetTest.size>0
   }
 
-
   def dittoString(endTime: LocalDate):String = {
     assert(!lineage.lastKey.isAfter(endTime))
     val withIndex = lineage
@@ -32,7 +31,8 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
         val curEndTime = if(i==lineage.size-1) endTime else withIndex(i+1)._1._1
         val duration = ChronoUnit.DAYS.between(date,curEndTime)
         val valueToSerialize = Util.toCSVSafe(Util.nullSafeToString(value))
-        val res = s"COL V$i VAL $valueToSerialize COL T$i VAL ${date.toString} COL D$i VAL $duration"
+        //old: val res = s"COL V$i VAL $valueToSerialize COL T$i VAL ${date.toString} COL D$i VAL $duration"
+        val res = s"COL ${date.toString} VAL $valueToSerialize COL D$i VAL $duration"
         res
       }
       .mkString(" ")

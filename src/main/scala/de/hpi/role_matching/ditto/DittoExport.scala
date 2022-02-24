@@ -27,31 +27,7 @@ object DittoExport extends App with StrictLogging{
       resultDir.mkdir()
       val vertices = Roleset.fromJsonFile(rolesetFile.getAbsolutePath)
       val exporter = new DittoExporter(vertices,trainTimeEnd,resultFile)
-      val exportedLines = exporter.exportData()
-      val filename = resultFile.getAbsolutePath
-      //shuffle file
-      val cmd = s"shuf $filename -o $filename" // Your command
-      val output = cmd.!
-      println(s"Output of shuffle command: $output")
-      //train / validation / test split
-      val trainFile = new PrintWriter(s"${filename}_train.txt")
-      val validationFile = new PrintWriter(s"${filename}_validation.txt")
-      val testFile = new PrintWriter(s"${filename}_test.txt")
-      val validationLineBegin = (exportedLines*0.6).toInt
-      val testLineBegin = (exportedLines*0.8).toInt
-      var curCount = 0
-      Source.fromFile(resultFile).getLines().foreach{s =>
-        if(curCount<validationLineBegin)
-          trainFile.println(s)
-        else if (curCount<testLineBegin)
-          validationFile.println(s)
-        else
-          testFile.println(s)
-        curCount+=1
-      }
-      trainFile.close()
-      validationFile.close()
-      testFile.close()
+      exporter.exportDataWithSimpleBlocking()
     }
   }
 }

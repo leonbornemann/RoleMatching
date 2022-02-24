@@ -2,11 +2,15 @@ package de.hpi.role_matching.ditto
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
 import de.hpi.role_matching.evaluation.tuning.BasicStatRow
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
+import scala.io.Source
+import scala.sys.process._
+
 
 class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) extends StrictLogging{
 
@@ -16,7 +20,50 @@ class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) 
 
   val resultPr = new PrintWriter(resultFile)
 
-  def exportData() = {
+  //val maxTrainingExampleCount = approximateSampleSize.getOrElse(Int.MaxValue)
+
+  def exportDataForGraph(e:Iterator[SimpleCompatbilityGraphEdge]) = {
+    var exportedLines =0
+    e.foreach(e => {
+      val (v1,v2) = (e.v1.id,e.v2.id)
+      val label:Option[Boolean] = getClassLabel(v1,v2)
+      if(label.isDefined){
+        outputRecord(v1,v2,label.get)
+        exportedLines +=1
+      }
+    })
+    resultPr.close()
+    executeTrainTestSplit(exportedLines)
+  }
+
+  def executeTrainTestSplit(exportedLines: Int) = {
+    val filename = resultFile.getAbsolutePath
+    //shuffle file
+    val cmd = s"shuf $filename -o $filename" // Your command
+    val output = cmd.!
+    println(s"Output of shuffle command: $output")
+    //train / validation / test split
+    val trainFile = new PrintWriter(s"${filename}_train.txt")
+    val validationFile = new PrintWriter(s"${filename}_validation.txt")
+    val testFile = new PrintWriter(s"${filename}_test.txt")
+    val validationLineBegin = (exportedLines*0.6).toInt
+    val testLineBegin = (exportedLines*0.8).toInt
+    var curCount = 0
+    Source.fromFile(resultFile).getLines().foreach{s =>
+      if(curCount<validationLineBegin)
+        trainFile.println(s)
+      else if (curCount<testLineBegin)
+        validationFile.println(s)
+      else
+        testFile.println(s)
+      curCount+=1
+    }
+    trainFile.close()
+    validationFile.close()
+    testFile.close()
+  }
+
+  def exportDataWithSimpleBlocking() = {
     val blocks:IndexedSeq[IndexedSeq[String]] = blocking()
     var exportedLines = 0
     blocks.foreach{ block =>
@@ -34,6 +81,7 @@ class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) 
     }
     resultPr.close()
     exportedLines
+    executeTrainTestSplit(exportedLines)
   }
 
   def blocking(): IndexedSeq[IndexedSeq[String]] = {
@@ -44,6 +92,7 @@ class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) 
       .toIndexedSeq
     val totalNumberOfEdges = blocks.map(b => (b.size*(b.size-1))/2).sum
     logger.debug(s"Will create $totalNumberOfEdges")
+    //val exampleProbability = if(totalNumberOfEdges<maxTrainingExampleCount)
     val topBlocks = grouped
       .map{case (k,v) => (k,v.size)}
       .toIndexedSeq

@@ -213,6 +213,9 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
           val ref2 = tuplesInNodeAsIndexedSeq(j)
           val evidence = ref1.nonWildCardChangePointsInTrainPeriod.intersect(ref2.nonWildCardChangePointsInTrainPeriod).size
           if(evidence>1){
+//            val e = toGeneralEdgeFunction(ref1,ref2)
+//            if(e.v1.id == "infobox book||1000149||161384507-0||country" && e.v2.id == "infobox book||2730873||259414743-0||image" || e.v2.id == "infobox book||1000149||161384507-0||country" && e.v1.id == "infobox book||2730873||259414743-0||image")
+//              println()
             serializeIfMatch(ref1,ref2,pr)
           }
 //          if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
@@ -224,6 +227,11 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
       }
       AbstractAsynchronousRoleTree.serializeMatchChecks(matchChecks)
     }
+  }
+
+  private def fulfillsFIlter(ref1: RoleReference, ref2: RoleReference) = {
+    ref1.getRole.lineage.values.toIndexedSeq.exists(s => s.toString.contains("[[File:The Machine Gunners cover.jpg|200px]]")) &&
+      ref2.getRole.lineage.values.toIndexedSeq.exists(s => s.toString.contains("[[United States]]"))
   }
 
   def gaussSum(n: Int) = n*n+1/2

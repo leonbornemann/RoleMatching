@@ -40,6 +40,7 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
       val newLineage = t._2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, endDateTrainPhase)
       RoleLineageWithID(t._2.id,newLineage.toSerializationHelper)
     })
+  println(lineages.size)
   val timeNow = System.currentTimeMillis()
   val graphConfig = GraphConfig(1: Int, GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, endDateTrainPhase)
 

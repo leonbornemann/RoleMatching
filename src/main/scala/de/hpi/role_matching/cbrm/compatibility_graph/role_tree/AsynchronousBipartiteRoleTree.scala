@@ -154,7 +154,8 @@ class AsynchronousBipartiteRoleTree(tuplesLeft: IndexedSeq[RoleReference],
           for (j <- 0 until tuplesRight.size) {
             val ref1 = tuplesLeft(i)
             val ref2 = tuplesRight(j)
-            if (!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))) {
+            val evidence = ref1.nonWildCardChangePointsInTrainPeriod.intersect(ref2.nonWildCardChangePointsInTrainPeriod).size
+            if (evidence>1) {
               serializeIfMatch(ref1, ref2, pr)
             }
             matchChecks+=1

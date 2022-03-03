@@ -30,7 +30,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
       .map{case ((date,value),i) =>
         val curEndTime = if(i==lineage.size-1) endTime else withIndex(i+1)._1._1
         val duration = ChronoUnit.DAYS.between(date,curEndTime)
-        val valueToSerialize = Util.toCSVSafe(Util.nullSafeToString(value))
+        val valueToSerialize = Util.toDittoSaveString(Util.nullSafeToString(value))
         //old: val res = s"COL V$i VAL $valueToSerialize COL T$i VAL ${date.toString} COL D$i VAL $duration"
         val res = s"COL ${date.toString} VAL $valueToSerialize COL D$i VAL $duration"
         res

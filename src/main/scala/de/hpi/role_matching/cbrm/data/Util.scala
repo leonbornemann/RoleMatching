@@ -1,6 +1,7 @@
 package de.hpi.role_matching.cbrm.data
 
 object Util {
+  def toDittoSaveString(str: String) = toCSVSafe(str).replace('\t','_').replace(' ','_')
 
   def nullSafeToString(value: Any): String = if(value==null) "null" else value.toString
 

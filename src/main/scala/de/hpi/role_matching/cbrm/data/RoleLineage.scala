@@ -12,6 +12,15 @@ import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
+  def removeDECAYED(DECAYED: String) = {
+    val lineageNew = lineage.toIndexedSeq
+      .filter(_._2!=DECAYED)
+    val lineageFinal = lineageNew.zipWithIndex
+      .filter{case ((ld,v),i) => i==0 || v != lineageNew(i-1)._2}
+      .map(_._1)
+    RoleLineage(collection.mutable.TreeMap[LocalDate,Any]() ++ lineageFinal)
+  }
+
 
   def isOfInterest(trainTimeEnd: LocalDate) = {
     val valueSetTrain = lineage.range(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd).map{ case(_,v) => v}.toSet
@@ -21,7 +30,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     valueSetTrain.size>1 && valueSetTest.size>0
   }
 
-  def dittoString(endTime: LocalDate):String = {
+  def dittoString(endTime: LocalDate,idString:Option[String]):String = {
     assert(!lineage.lastKey.isAfter(endTime))
     val withIndex = lineage
       .toIndexedSeq
@@ -32,7 +41,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
         val duration = ChronoUnit.DAYS.between(date,curEndTime)
         val valueToSerialize = Util.toDittoSaveString(Util.nullSafeToString(value))
         //old: val res = s"COL V$i VAL $valueToSerialize COL T$i VAL ${date.toString} COL D$i VAL $duration"
-        val res = s"COL ${date.toString} VAL $valueToSerialize COL D$i VAL $duration"
+        val res = s"${idString.getOrElse("")} COL ${date.toString} VAL $valueToSerialize COL D$i VAL $duration"
         res
       }
       .mkString(" ")

@@ -3,8 +3,12 @@ package de.hpi.oneshot
 import scala.io.Source
 
 object DittoEpochF1Processing extends App {
-  val datasets = Seq("oregon","austintexas","chicago","utah","maryland")
-  private val lines: IndexedSeq[String] = Source.fromFile("src/main/resources/tmp/dittoOutputSocrataNew.txt")
+  //val datasets = Seq("oregon","austintexas","chicago","utah","maryland")
+  //tasknames=("education_PROBABILISTIC_DECAY_FUNCTION_0.7_7_2016-05-07_withIDAndScore" "military_PROBABILISTIC_DECAY_FUNCTION_0.7_7_2016-05-07_withIDAndScore" "politics_PROBABILISTIC_DECAY_FUNCTION_0.7_7_2016-05-07_withIDAndScore" "tv_and_film_PROBABILISTIC_DECAY_FUNCTION_0.7_7_2016-05-07_withIDAndScore"
+  // "oregon_withIDAndScore" "chicago_withIDAndScore" "utah_withIDAndScore" "gov.maryland_withIDAndScore" "austintexas_withIDAndScore" "football_PROBABILISTIC_DECAY_FUNCTION_0.7_7_2016-05-07_withIDAndScore" )
+  val datasets = Seq("education","military","politics","tv_and_film","oregon","chicago","utah","maryland","austintexas","football")
+  //val datasets = Seq("education","military","politics","tv_and_film","football")
+  private val lines: IndexedSeq[String] = Source.fromFile("src/main/resources/tmp/dittoOutputAllWithIDAndScore.txt") // Source.fromFile("src/main/resources/tmp/dittoOutputAllWithIDAndScore.txt")
     .getLines()
     .toIndexedSeq
   //pivot file

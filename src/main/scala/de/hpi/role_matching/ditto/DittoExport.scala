@@ -15,6 +15,8 @@ object DittoExport extends App with StrictLogging{
   val rolesetDirs = args(1).split(";")
   val trainTimeEnds = args(2).split(";").map(LocalDate.parse(_))
   val resultRootDir = new File(args(3))
+  val exportEntityPropertyIDs = args(4).toBoolean
+  val exportEvidenceCounts = args(5).toBoolean
   assert(rolesetDirs.size==datasources.size)
   for(((source,rolesetDir),trainTimeEnd) <- datasources.zip(rolesetDirs).zip(trainTimeEnds)){
     logger.debug("Running ",source,rolesetDir)
@@ -26,7 +28,7 @@ object DittoExport extends App with StrictLogging{
       val resultFile = new File(s"${resultDir.getAbsolutePath}/${rolesetFile.getName}.txt")
       resultDir.mkdir()
       val vertices = Roleset.fromJsonFile(rolesetFile.getAbsolutePath)
-      val exporter = new DittoExporter(vertices,trainTimeEnd,resultFile)
+      val exporter = new DittoExporter(vertices,trainTimeEnd,resultFile,exportEntityPropertyIDs,exportEvidenceCounts)
       exporter.exportDataWithSimpleBlocking()
     }
   }

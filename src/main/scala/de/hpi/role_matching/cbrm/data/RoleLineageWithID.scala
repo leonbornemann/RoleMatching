@@ -18,6 +18,25 @@ case class RoleLineageWithID(id:String, roleLineage: RoleLineageWithHashMap) ext
 }
 
 object RoleLineageWithID extends JsonReadable[RoleLineageWithID] {
+  def getDittoIDString(id1: String): String = {
+    if(id1.contains("||")) {
+      val tokens = id1.split("||")
+      val template = Util.toDittoSaveString(tokens(0))
+      val pageID = Util.toDittoSaveString(tokens(1))
+      val propertyID = Util.toDittoSaveString(tokens.last)
+      s" COL TID VAL $template COL EID VAL $pageID COL PID VAL $propertyID "
+    } else {
+      val tokens = id1.split("\\.")
+      val datasetID = Util.toDittoSaveString(tokens(tokens.size-2))
+      val tokens2 = tokens.last.split("_")
+      val colID = Util.toDittoSaveString(tokens2(1))
+      val rowID = Util.toDittoSaveString(tokens2(2))
+      s"COL TID VAL $datasetID COL CID VAL $colID COL EID VAL $rowID"
+    }
+  }
+
+    //infobox_politician||2568491||177756823-0||term_start_🔗_extractedLink0
+    //gov.utah_gov.utah.67uj-wt47.0_6_1042
 
   def toReferences(lineages: IndexedSeq[RoleLineageWithID],trainTimeEnd:LocalDate) = {
     val sortedByID = lineages

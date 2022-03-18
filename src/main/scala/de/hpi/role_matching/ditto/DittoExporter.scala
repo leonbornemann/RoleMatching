@@ -3,7 +3,8 @@ package de.hpi.role_matching.ditto
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
-import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
+import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset, ValueTransition}
+import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics
 import de.hpi.role_matching.evaluation.tuning.BasicStatRow
 
 import java.io.{File, PrintWriter}
@@ -12,11 +13,25 @@ import scala.io.Source
 import scala.sys.process._
 
 
-class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) extends StrictLogging{
+class DittoExporter(vertices: Roleset,
+                    trainTimeEnd: LocalDate,
+                    resultFile:File,
+                    exportEntityPropertyIDs:Boolean,
+                    exportEvidenceCounts:Boolean) extends StrictLogging{
 
   val vertexMap = vertices.getStringToLineageMap.map{case (k,v) => (k,v.roleLineage.toRoleLineage)}
   val vertexMapOnlyTrain = vertexMap.map{case (k,v) => (k,v.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
   val vertexMapOnlyTrainWithID = vertices.getStringToLineageMap.map{case (k,v) => (k,RoleLineageWithID(v.id,v.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd).toSerializationHelper))}
+  val tfIDFMap = RoleLineageWithID.getTransitionHistogramForTFIDFFromVertices(vertexMapOnlyTrainWithID.values.toSeq, GLOBAL_CONFIG.granularityInDays)
+
+  val idToRoleLineageSmallestTrainTimeEnd = vertexMap.map{case (id,rl) => (id,rl.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
+  val idToChangeSetInSmallestTrainTimeEnd = idToRoleLineageSmallestTrainTimeEnd.map{case (id,rl) => (id,rl.allNonWildcardTimestamps.toSet)}
+
+  val transitionSets = if(exportEvidenceCounts) {
+    Some(vertexMapOnlyTrain
+      .map{case (k,rl) => (k,rl.valueTransitions(true,false))}.toMap)
+  } else
+    None
 
   val resultPr = new PrintWriter(resultFile)
 
@@ -102,20 +117,40 @@ class DittoExporter(vertices: Roleset, trainTimeEnd: LocalDate,resultFile:File) 
     blocks
   }
 
+  def getStatisticsForEdge(id1: String, id2: String) :EventOccurrenceStatistics = {
+    EventOccurrenceStatistics.extractForEdge(id1,id2,vertexMapOnlyTrain(id1),vertexMapOnlyTrain(id2),trainTimeEnd,transitionSets.get,tfIDFMap)
+  }
+
   def outputRecord(id1:String, id2:String, label: Boolean) = {
-    val output1 = vertexMapOnlyTrain(id1).dittoString(trainTimeEnd)
-    val output2 = vertexMapOnlyTrain(id2).dittoString(trainTimeEnd)
+    val idString1 = getIDString(id1)
+    val idString2 = getIDString(id2)
+    val eventOccurrenceString = if(exportEvidenceCounts){
+      val eventOccurrenceStatistics = getStatisticsForEdge(id1,id2)
+      eventOccurrenceStatistics.toDittoString
+    } else
+      ""
+    val output1 = vertexMapOnlyTrain(id1).dittoString(trainTimeEnd,idString1)
+    val output2 = vertexMapOnlyTrain(id2).dittoString(trainTimeEnd,idString2)
     val labelString = if(label) "1" else "0"
     val finaloutPutString = if(id1 < id2)
-      output1 + "\t" + output2 + "\t" + labelString
+      eventOccurrenceString + " " + output1 + "\t" + output2 + "\t" + labelString
     else
-      output2 + "\t" + output1 + "\t" + labelString
+      eventOccurrenceString + " " + output2 + "\t" + output1 + "\t" + labelString
     resultPr.println(finaloutPutString)
   }
 
-  def getClassLabel(v1:String,v2:String): Option[Boolean] = {
+  private def getIDString(id1: String) = {
+    if (exportEntityPropertyIDs)
+      Some(RoleLineageWithID.getDittoIDString(id1))
+    else
+      None
+  }
+
+  def getClassLabel(v1:String, v2:String): Option[Boolean] = {
     val statRow = new BasicStatRow(vertexMap(v1), vertexMap(v2), trainTimeEnd)
     val hasEvidence = statRow.isInteresting
+//    val evidence = idToChangeSetInSmallestTrainTimeEnd(e.v1.id).intersect(idToChangeSetInSmallestTrainTimeEnd(e.v2.id)).size
+//    evidence>0
     if(hasEvidence)
       Some(statRow.remainsValidFullTimeSpan)
     else

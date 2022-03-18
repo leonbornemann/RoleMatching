@@ -14,6 +14,8 @@ object GraphToDittoExport extends App with StrictLogging {
   val rolesetDir = new File(args(2))
   val trainTimeEnd = LocalDate.parse(args(3))
   val resultDir = args(4)
+  val exportIDs = args(5).toBoolean
+  val exportEvidenceCounts = args(6).toBoolean
   new File(resultDir).mkdirs()
   for (datasetDir <- configDir.listFiles()){
     logger.debug(s"Processing $datasetDir")
@@ -22,7 +24,7 @@ object GraphToDittoExport extends App with StrictLogging {
     val rolesetFile = rolesetDir.getAbsolutePath + s"/$dsName.json"
     val roleset = Roleset.fromJsonFile(rolesetFile)
     val resultFile = new File(s"$resultDir/$dsName.txt")
-    val exporter = new DittoExporter(roleset,trainTimeEnd,resultFile)
+    val exporter = new DittoExporter(roleset,trainTimeEnd,resultFile,exportIDs,exportEvidenceCounts)
     exporter.exportDataForGraph(SimpleCompatbilityGraphEdge.iterableFromEdgeIDObjectPerLineDir(graphDir,roleset))
   }
 

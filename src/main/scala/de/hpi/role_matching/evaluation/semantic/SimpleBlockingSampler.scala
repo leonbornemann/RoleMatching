@@ -51,6 +51,7 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
         .toSet
       val blockings = timestamps
         .map(ts => getBlockingAtTime(roleMap,ts))
+        .filter(_.size>0)
         .toIndexedSeq
       //draw sample:
       val sample = getSample(blockings)

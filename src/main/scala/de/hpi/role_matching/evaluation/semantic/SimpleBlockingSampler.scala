@@ -36,6 +36,7 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
       val v2 = block(j)
       val e = if(v1<v2) SimpleCompatbilityGraphEdgeID(v1,v2) else SimpleCompatbilityGraphEdgeID(v2,v1)
       sample.add(e)
+      logger.debug(s"Added new Sample - Size: ${sample.size}")
     }
     sample
   }

@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdgeID
 import de.hpi.role_matching.cbrm.data.{ReservedChangeValues, RoleLineage, Roleset}
+import de.hpi.role_matching.cbrm.sgcp.RoleMerge
 import de.hpi.role_matching.evaluation.semantic.SimpleBlockingSamplerMain.rolesetDir
 
 import java.io.{File, PrintWriter}
@@ -50,6 +51,7 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
       val timestamps = (GLOBAL_CONFIG.STANDARD_TIME_FRAME_START.toEpochDay to trainTimeEnd.toEpochDay by GLOBAL_CONFIG.granularityInDays)
         .map(l => LocalDate.ofEpochDay(l))
         .toSet
+      val stringToPosition = rolesets.positionToRoleLineage.map{case (pos,rl) => (rl.id,pos)}
       val blockings = timestamps
         .map(ts => getBlockingAtTime(roleMap,ts))
         .filter(_.size>0)
@@ -57,8 +59,14 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
       //draw sample:
       val sample = getSample(blockings)
       val outFile = new PrintWriter(outputDir + "/" + f.getName)
-      sample.foreach(e => e.appendToWriter(outFile,false,true))
+      val outFileSimpleEdge = new PrintWriter(outputDir + "/" + f.getName + "_simpleEdge.json")
+      sample.foreach(e => {
+        val roleMatch = RoleMerge(Set(e.v1,e.v2).map(s => stringToPosition(s)),1.0)
+        roleMatch.appendToWriter(outFile,false,true)
+        e.appendToWriter(outFileSimpleEdge,false,true)
+      })
       outFile.close()
+      outFileSimpleEdge.close()
     }
   }
 }

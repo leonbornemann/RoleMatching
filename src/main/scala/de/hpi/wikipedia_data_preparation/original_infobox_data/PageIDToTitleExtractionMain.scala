@@ -8,9 +8,9 @@ import java.io.{File, PrintWriter}
 
 object PageIDToTitleExtractionMain extends App with StrictLogging{
   val f = new File(args(0))
-  val resultFile = args(0)
-  new File(resultFile).mkdirs()
-  val mappingFile = new PrintWriter(resultFile + s"/${f.getName}.csv")
+  val resultDir = args(0)
+  new File(resultDir).mkdirs()
+  val mappingFile = new PrintWriter(resultDir + s"/${f.getName}.csv")
   logger.debug(s"Processing $f")
   val objects = InfoboxRevision.fromJsonObjectPerLineFile(f.getAbsolutePath)
   objects.foreach(_.checkIntegrity())

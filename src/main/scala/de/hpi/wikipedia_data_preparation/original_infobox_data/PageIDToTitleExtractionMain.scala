@@ -8,7 +8,7 @@ import java.io.{File, PrintWriter}
 
 object PageIDToTitleExtractionMain extends App with StrictLogging{
   val f = new File(args(0))
-  val resultDir = args(0)
+  val resultDir = args(1)
   new File(resultDir).mkdirs()
   val mappingFile = new PrintWriter(resultDir + s"/${f.getName}.csv")
   logger.debug(s"Processing $f")

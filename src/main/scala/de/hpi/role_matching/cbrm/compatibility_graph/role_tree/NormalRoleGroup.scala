@@ -18,5 +18,7 @@ case class NormalRoleGroup(roleIds: IndexedSeq[String]) extends RoleGroup with J
       (roleIds(i),roleIds(j))
     }
   }
+
+  override def hasCandidates: Boolean = roleIds.size>1
 }
 object NormalRoleGroup extends JsonReadable[NormalRoleGroup]

@@ -16,5 +16,7 @@ case class BipartiteRoleGroup(leftIds: IndexedSeq[String], rightIds: IndexedSeq[
     val idRight = leftIds(random.nextInt(rightIds.size))
     (idLEft,idRight)
   }
+
+  override def hasCandidates: Boolean = leftIds.size>=1 && rightIds.size>=1
 }
 object BipartiteRoleGroup extends JsonReadable[BipartiteRoleGroup]

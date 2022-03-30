@@ -14,6 +14,8 @@ abstract class RoleGroup {
 
   def getIDPair(random: Random):(String,String)
 
+  def hasCandidates:Boolean
+
   def tryDrawSample(random:Random, roleMap:Map[String, RoleLineageWithID], trainTimeEnd: LocalDate):Option[SimpleCompatbilityGraphEdgeID] = {
     val (idLeft,idRight) = getIDPair(random)
     val left = roleMap(idLeft).roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, trainTimeEnd)
@@ -47,6 +49,7 @@ object RoleGroup{
           case (e:Throwable) => BipartiteRoleGroup.fromJsonString(s)
           }
       })
+      .filter(_.hasCandidates)
   }
 
 }

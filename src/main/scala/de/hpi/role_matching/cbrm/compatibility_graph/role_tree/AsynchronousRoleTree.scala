@@ -24,8 +24,9 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
                               tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]],
                               isAsynch:Boolean=true,
                               externalRecurseDepth:Int,
-                              logProgress:Boolean=false
-  ) extends AbstractAsynchronousRoleTree(toGeneralEdgeFunction,resultDir,processName,prOption,isAsynch,externalRecurseDepth,logProgress) {
+                              logProgress:Boolean=false,
+                              serializeGroupsOnly:Boolean
+  ) extends AbstractAsynchronousRoleTree(toGeneralEdgeFunction,resultDir,processName,prOption,isAsynch,externalRecurseDepth,logProgress,serializeGroupsOnly) {
 
   override def execute() = {
     val index = new RoleTreeLevel(tuples,parentNodesTimestamps,parentNodesKeys,tuples.head.roles.wildcardValues.toSet,true)
@@ -59,7 +60,8 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
               toGeneralEdgeFunction,
               tupleToNonWcTransitions,
               externalRecurseDepth+1,
-              false
+              false,
+              serializeGroupsOnly
             )
             parallelRecurseCounter+=1
             mySubNodeFutures.put(newName,f)
@@ -78,7 +80,9 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
               toGeneralEdgeFunction,
               tupleToNonWcTransitions,
               false,
-              externalRecurseDepth+1)
+              externalRecurseDepth+1,
+              false,
+              serializeGroupsOnly)
             internalRecurseCounter+=1
           }
         } else{
@@ -107,7 +111,8 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
             toGeneralEdgeFunction,
             tupleToNonWcTransitions,
             externalRecurseDepth+1,
-            externalRecurseDepth==0)
+            externalRecurseDepth==0,
+            serializeGroupsOnly)
           parallelRecurseCounter += 1
           mySubNodeFutures.put(newName,f)
         } else {
@@ -125,7 +130,8 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
             tupleToNonWcTransitions,
             false,
             externalRecurseDepth+1,
-            externalRecurseDepth==0)
+            externalRecurseDepth==0,
+            logProgress)
         }
       } else {
         doPairwiseMatching(wildcardBucket)
@@ -155,7 +161,8 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
             newName,
             toGeneralEdgeFunction,
             tupleToNonWcTransitions,
-            externalRecurseDepth)
+            externalRecurseDepth,
+            serializeGroupsOnly)
           parallelRecurseCounter+=1
           mySubNodeFutures.put(newName,f)
         } else {
@@ -174,7 +181,9 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
             toGeneralEdgeFunction,
             tupleToNonWcTransitions,
             false,
-            externalRecurseDepth
+            externalRecurseDepth,
+            false,
+            serializeGroupsOnly
           )
         }
       }
@@ -184,48 +193,52 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
   }
 
   private def doPairwiseMatching(tuplesInNodeAsIndexedSeq: IndexedSeq[RoleReference]) = {
-    if(tuplesInNodeAsIndexedSeq.size > AbstractAsynchronousRoleTree.maxPairwiseListSizeForSingleThread){
-      val border = maxPairwiseListSizeForSingleThread
-      val intervals = partitionToIntervals(tuplesInNodeAsIndexedSeq,border)
-      for (i <- 0 until intervals.size) {
-        for (j <- i until intervals.size) {
-          val i1 = intervals(i)
-          val i2 = intervals(j)
-          AbstractAsynchronousRoleTree.startProcessIntervalsFromSameList(tuplesInNodeAsIndexedSeq,
-            i1,
-            i2,
-            resultDir,
-            context,
-            processName + s"PWM($i1,$i2)",
-            futures,
-            toGeneralEdgeFunction,
-            tupleToNonWcTransitions)
-        }
-      }
+    if(serializeGroupsOnly){
+      serializeGroup(tuplesInNodeAsIndexedSeq)
     } else {
-      //do it in this process!
-      //we construct a graph as an adjacency list:
-      //pairwise matching to find out the edge-weights:
-      var  matchChecks = 0
-      for (i <- 0 until tuplesInNodeAsIndexedSeq.size) {
-        for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
-          val ref1 = tuplesInNodeAsIndexedSeq(i)
-          val ref2 = tuplesInNodeAsIndexedSeq(j)
-          val evidence = ref1.nonWildCardChangePointsInTrainPeriod.intersect(ref2.nonWildCardChangePointsInTrainPeriod).size
-          if(evidence>1){
-//            val e = toGeneralEdgeFunction(ref1,ref2)
-//            if(e.v1.id == "infobox book||1000149||161384507-0||country" && e.v2.id == "infobox book||2730873||259414743-0||image" || e.v2.id == "infobox book||1000149||161384507-0||country" && e.v1.id == "infobox book||2730873||259414743-0||image")
-//              println()
-            serializeIfMatch(ref1,ref2,pr)
+      if(tuplesInNodeAsIndexedSeq.size > AbstractAsynchronousRoleTree.maxPairwiseListSizeForSingleThread){
+        val border = maxPairwiseListSizeForSingleThread
+        val intervals = partitionToIntervals(tuplesInNodeAsIndexedSeq,border)
+        for (i <- 0 until intervals.size) {
+          for (j <- i until intervals.size) {
+            val i1 = intervals(i)
+            val i2 = intervals(j)
+            AbstractAsynchronousRoleTree.startProcessIntervalsFromSameList(tuplesInNodeAsIndexedSeq,
+              i1,
+              i2,
+              resultDir,
+              context,
+              processName + s"PWM($i1,$i2)",
+              futures,
+              toGeneralEdgeFunction,
+              tupleToNonWcTransitions)
           }
-//          if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
-//            //we have a candidate - add it to buffer!
-//            serializeIfMatch(ref1,ref2,pr)
-//          }
-          matchChecks+=1
         }
+      } else {
+        //do it in this process!
+        //we construct a graph as an adjacency list:
+        //pairwise matching to find out the edge-weights:
+        var  matchChecks = 0
+        for (i <- 0 until tuplesInNodeAsIndexedSeq.size) {
+          for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
+            val ref1 = tuplesInNodeAsIndexedSeq(i)
+            val ref2 = tuplesInNodeAsIndexedSeq(j)
+            val evidence = ref1.nonWildCardChangePointsInTrainPeriod.intersect(ref2.nonWildCardChangePointsInTrainPeriod).size
+            if(evidence>1){
+              //            val e = toGeneralEdgeFunction(ref1,ref2)
+              //            if(e.v1.id == "infobox book||1000149||161384507-0||country" && e.v2.id == "infobox book||2730873||259414743-0||image" || e.v2.id == "infobox book||1000149||161384507-0||country" && e.v1.id == "infobox book||2730873||259414743-0||image")
+              //              println()
+              serializeIfMatch(ref1,ref2,pr)
+            }
+            //          if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
+            //            //we have a candidate - add it to buffer!
+            //            serializeIfMatch(ref1,ref2,pr)
+            //          }
+            matchChecks+=1
+          }
+        }
+        AbstractAsynchronousRoleTree.serializeMatchChecks(matchChecks)
       }
-      AbstractAsynchronousRoleTree.serializeMatchChecks(matchChecks)
     }
   }
 
@@ -256,7 +269,8 @@ object AsynchronousRoleTree extends StrictLogging {
                         toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge),
                         tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]],
                         newExternalRecurseDepth:Int,
-                        logProgress:Boolean) = {
+                        logProgress:Boolean,
+                        serializeGroupsOnly:Boolean) = {
     val f = Future {
       new AsynchronousRoleTree(tuples,
         parentNodesTimestamps,
@@ -272,7 +286,8 @@ object AsynchronousRoleTree extends StrictLogging {
         tupleToNonWcTransitions,
         true,
         newExternalRecurseDepth,
-        logProgress)
+        logProgress,
+        serializeGroupsOnly)
     }(context)
     ConcurrentCompatiblityGraphCreator.setupFuture(f,fname,futures,context)
     f

@@ -16,7 +16,8 @@ class ConcurrentCompatiblityGraphCreator(roles: IndexedSeq[RoleReference],
                                          nonInformativeValues:Set[Any] = Set(),
                                          nthreads:Int,
                                          resultDir:File,
-                                         toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge)
+                                         toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge),
+                                         serializeGroupsOnly:Boolean=false
                              ) extends StrictLogging {
 
   logger.debug("Cleanung up old files")
@@ -48,7 +49,7 @@ class ConcurrentCompatiblityGraphCreator(roles: IndexedSeq[RoleReference],
   val fname = "graph"
   logger.debug("beginning future computation")
   ConcurrentCompatiblityGraphCreator.lastReportTimestamp = System.currentTimeMillis()
-  AsynchronousRoleTree.createAsFuture(futures,roles,IndexedSeq(),IndexedSeq(),graphConfig,nonInformativeValues,context,resultDir,fname,toGeneralEdgeFunction,tupleToNonWcTransitions,0,true)
+  AsynchronousRoleTree.createAsFuture(futures,roles,IndexedSeq(),IndexedSeq(),graphConfig,nonInformativeValues,context,resultDir,fname,toGeneralEdgeFunction,tupleToNonWcTransitions,0,true,serializeGroupsOnly)
   ConcurrentCompatiblityGraphCreator.allFuturesTerminated.acquire()
   ConcurrentCompatiblityGraphCreator.closeAllPrintWriters()
   logger.debug("Finished - closing print writers and shutting down executor service")

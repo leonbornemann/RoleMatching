@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
-import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
+import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleReference, ValueTransition}
 
 import java.io.{File, PrintWriter}
 import java.util.concurrent.ConcurrentHashMap
@@ -16,7 +16,8 @@ abstract class AbstractAsynchronousRoleTree(val toGeneralEdgeFunction:((RoleRefe
                                                val prOption:Option[PrintWriter],
                                                val isAsynch:Boolean=true,
                                                val externalRecurseDepth:Int,
-                                               val loggingActive:Boolean=false
+                                               val loggingActive:Boolean=false,
+                                               val serializeGroupsOnly:Boolean
                                   ) extends StrictLogging{
 
   var totalNumTopLevelNodes = 0
@@ -68,6 +69,14 @@ abstract class AbstractAsynchronousRoleTree(val toGeneralEdgeFunction:((RoleRefe
 
   def serializeIfMatch(tr1:RoleReference, tr2:RoleReference, pr:PrintWriter) = {
     AbstractAsynchronousRoleTree.serializeIfMatch(tr1,tr2,pr,toGeneralEdgeFunction)
+  }
+
+  def serializeGroup(trs:IndexedSeq[RoleReference]) = {
+    NormalRoleGroup(trs.map(tr => tr.getRoleID)).appendToWriter(pr,false,true)
+  }
+
+  def serializeBipartiteGroup(left:IndexedSeq[RoleReference],right:IndexedSeq[RoleReference]) = {
+    BipartiteRoleGroup(left.map(tr => tr.getRoleID),right.map(tr => tr.getRoleID)).appendToWriter(pr,false,true)
   }
 
   def partitionToIntervals(inputList: IndexedSeq[RoleReference], border: Int) = {

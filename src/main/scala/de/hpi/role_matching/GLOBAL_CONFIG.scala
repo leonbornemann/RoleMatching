@@ -21,6 +21,7 @@ object GLOBAL_CONFIG extends StrictLogging{
 
   var granularityInDays = Int.MaxValue
   var trainTimeEnd = LocalDate.MIN
+  var finalWikipediaTrainTimeENd = "2016-05-07"
 
   var OPTIMIZATION_TARGET_FUNCTION_NAME: String = ""
   var ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS = false

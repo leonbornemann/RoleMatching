@@ -6,6 +6,7 @@ case class RoleReference(roles: NonCaseClassRoleset, rowIndex: Int) extends Comp
 
   def getProjectedRole = roles.posToProjectedRoleLineage(rowIndex)
 
+  def getRoleID = roles.roleset.positionToRoleLineage(rowIndex).id
 
   def getRole = {
     roles.posToRoleLineage(rowIndex)

@@ -23,6 +23,7 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
   val maxPairwiseListSizeForSingleThread = args(8).toInt
   val roleSamplingRate = args(9).toDouble
   val timestampSamplingRate = args(10).toDouble
+  val serializeGroupsOnly = args(11).toBoolean
   Seq(resultDirEdges, resultDirStats, resultDirTime).foreach(_.mkdirs())
   private val config: CompatibilityGraphCreationConfig = CompatibilityGraphCreationConfig(roleSamplingRate, timestampSamplingRate, 50)
   GLOBAL_CONFIG.INDEXING_CONFIG = config
@@ -56,7 +57,8 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
     GLOBAL_CONFIG.nonInformativeValues,
     nthreads,
     resultDirEdges,
-    toGeneralEdgeFunction)
+    toGeneralEdgeFunction,
+    serializeGroupsOnly)
   val timeAfter = System.currentTimeMillis()
   val timeInSeconds = (timeAfter - timeNow) / 1000.0
 

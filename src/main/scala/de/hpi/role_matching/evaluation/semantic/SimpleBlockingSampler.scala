@@ -3,15 +3,16 @@ package de.hpi.role_matching.evaluation.semantic
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdgeID
+import de.hpi.role_matching.cbrm.compatibility_graph.role_tree.RoleGroup
 import de.hpi.role_matching.cbrm.data.{ReservedChangeValues, RoleLineage, Roleset}
 import de.hpi.role_matching.cbrm.sgcp.RoleMerge
-import de.hpi.role_matching.evaluation.semantic.SimpleBlockingSamplerMain.rolesetDir
+import de.hpi.role_matching.evaluation.semantic.SimpleBlockingSamplerMain.{compatibilityGroupDataDir, rolesetDir}
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import scala.util.Random
 
-class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:LocalDate,seed:Long) extends StrictLogging{
+class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:LocalDate,seed:Long,compatibilityGroupDataDirs:Option[IndexedSeq[File]]) extends StrictLogging{
 
   def getBlockingAtTime(roleMap: Map[String, RoleLineage], ts: LocalDate) = {
     roleMap.groupBy{case (id,r) => r.valueAt(ts)}
@@ -42,22 +43,46 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
     sample
   }
 
+  def useGivenBlocking: Boolean = compatibilityGroupDataDir.isDefined
+
+  def parseRoleCompatibilityGroup(f: File) = {
+
+  }
+
+  def getSampleFromGivenBlocking(roleset: Roleset, dsName:String): collection.Set[SimpleCompatbilityGraphEdgeID] = {
+    val dir = new File(compatibilityGroupDataDir.get.find(f => f.getName == dsName).get.getAbsolutePath + "/edges/")
+    val groups = dir.listFiles().flatMap(f => RoleGroup.parseRoleCompatibilityGroupsFromFile(f))
+    val sample = collection.mutable.HashSet[SimpleCompatbilityGraphEdgeID]()
+    while(sample.size<sampleSizePerDataset){
+      val sampledGroup = groups(random.nextInt(groups.size))
+      val curDraw = sampledGroup.tryDrawSample(random,roleset.getStringToLineageMap,trainTimeEnd)
+      if(curDraw.isDefined) sample.add(curDraw.get)
+    }
+    sample
+  }
+
   def runSampling() = {
     rolesetDir.listFiles().foreach{ f =>
       logger.debug(s"Processing ${f}")
-      val rolesets = Roleset.fromJsonFile(f.getAbsolutePath)
-      //get rid of artificial wildcards:
-      val roleMap = rolesets.getStringToLineageMap.map{case (id,rl) => (id,rl.roleLineage.toRoleLineage.removeDECAYED(ReservedChangeValues.DECAYED).projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
-      val timestamps = (GLOBAL_CONFIG.STANDARD_TIME_FRAME_START.toEpochDay to trainTimeEnd.toEpochDay by GLOBAL_CONFIG.granularityInDays)
-        .map(l => LocalDate.ofEpochDay(l))
-        .toSet
-      val stringToPosition = rolesets.positionToRoleLineage.map{case (pos,rl) => (rl.id,pos)}
-      val blockings = timestamps
-        .map(ts => getBlockingAtTime(roleMap,ts))
-        .filter(_.size>0)
-        .toIndexedSeq
-      //draw sample:
-      val sample = getSample(blockings)
+      val roleset = Roleset.fromJsonFile(f.getAbsolutePath)
+      val stringToPosition = roleset.positionToRoleLineage.map{case (pos,rl) => (rl.id,pos)}
+      val sample = if(useGivenBlocking){
+        getSampleFromGivenBlocking(roleset,f.getName.split("\\.")(0))
+      } else {
+        //get rid of artificial wildcards:
+        val roleMap = roleset.getStringToLineageMap.map{case (id,rl) => (id,rl.roleLineage.toRoleLineage.removeDECAYED(ReservedChangeValues.DECAYED).projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
+        val timestamps = (GLOBAL_CONFIG.STANDARD_TIME_FRAME_START.toEpochDay to trainTimeEnd.toEpochDay by GLOBAL_CONFIG.granularityInDays)
+          .map(l => LocalDate.ofEpochDay(l))
+          .toSet
+        val blockings = timestamps
+          .map(ts => getBlockingAtTime(roleMap,ts))
+          .filter(_.size>0)
+          .toIndexedSeq
+        //draw sample:
+        val sample = getSample(blockings)
+        sample
+      }
+
       val outFile = new PrintWriter(outputDir + "/" + f.getName)
       val outFileSimpleEdge = new PrintWriter(outputDir + "/" + f.getName + "_simpleEdge.json")
       sample.foreach(e => {

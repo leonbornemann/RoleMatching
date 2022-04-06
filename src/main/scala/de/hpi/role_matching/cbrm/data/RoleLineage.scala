@@ -3,15 +3,30 @@ package de.hpi.role_matching.cbrm.data
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.data.RoleLineage.{WILDCARD_VALUES, isWildcard}
 import de.hpi.role_matching.cbrm.data.RoleLineageWithID.digitRegex
+import de.hpi.role_matching.cbrm.relaxed_compatibility.RoleAsDomain
 import de.hpi.role_matching.evaluation.tuning.RemainsValidVariant
 import de.hpi.role_matching.evaluation.tuning.RemainsValidVariant.RemainsValidVariant
 
-import java.time.LocalDate
+import java.time.{Duration, LocalDate}
 import java.time.temporal.ChronoUnit
 import scala.collection.mutable
 
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
+
+  def toRoleAsDomain(id:String, STANDARD_TIME_FRAME_START: LocalDate, traintTimeEnd: LocalDate) = {
+    val daysAsEpochDays = STANDARD_TIME_FRAME_START.toEpochDay to traintTimeEnd.toEpochDay by GLOBAL_CONFIG.granularityInDays
+    val values = daysAsEpochDays.map(l => {
+      val date = LocalDate.ofEpochDay(l)
+      val v = this.valueAt(date)
+      if(isWildcard(v))
+        ReservedChangeValues.NOT_EXISTANT_COL + "_" + l
+      else
+        Util.nullSafeToString(v) + "_" +  l
+    })
+    RoleAsDomain(id,values)
+  }
+
   def removeDECAYED(DECAYED: String) = {
     val lineageNew = lineage.toIndexedSeq
       .filter(_._2!=DECAYED)
@@ -384,6 +399,34 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
 
   //=GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS
   def getOverlapEvidenceMultiSet(other: RoleLineage): collection.Map[ValueTransition, Int] = getOverlapEvidenceMultiSet(other, GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS)
+
+  def getCompatibilityTimePercentage(other:RoleLineage,timeEnd:LocalDate) = {
+    val absCompatibleTime = getAbsCompatibleTime(other,timeEnd)
+    absCompatibleTime.toDouble / ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,timeEnd).toDouble
+  }
+
+  def getAbsCompatibleTime(other:RoleLineage,timeEnd:LocalDate) = {
+    val changePoints = new CommonPointOfInterestIterator(this, other)
+      .toIndexedSeq
+      .filter(cp => cp.pointInTime.isBefore(timeEnd))
+    var compatibleTimes = changePoints
+      .map(cp => {
+        if(cp.prevWasCompatible){
+          ChronoUnit.DAYS.between(cp.prevPointInTime,cp.pointInTime)
+        } else {
+          0
+        }
+      })
+    if(changePoints.isEmpty)
+      println() //TODO!
+    if(changePoints.last.pointInTime.isBefore(timeEnd) && changePoints.last.isCompatible){
+      compatibleTimes = compatibleTimes ++ Seq(ChronoUnit.DAYS.between(changePoints.last.pointInTime,timeEnd))
+    }
+    if(compatibleTimes.size==0)
+      0
+    else
+      compatibleTimes.sum
+  }
 
   def getOverlapEvidenceCount(other: RoleLineage): Int = getOverlapEvidenceCount(other, GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS)
 

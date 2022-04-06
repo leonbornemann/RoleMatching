@@ -1,0 +1,31 @@
+package de.hpi.role_matching.cbrm.relaxed_compatibility
+
+import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.cbrm.data.Roleset
+
+import java.io.{File, PrintWriter}
+import java.time.LocalDate
+
+object RoleAsDomainExport extends App {
+  GLOBAL_CONFIG.setSettingsForDataSource(args(0))
+  val rolesetDir = args(1)
+  val rolesetFiles = new File(rolesetDir).listFiles()
+  val traintTimeEnd = LocalDate.parse(args(2))
+  val resultDir = new File(args(3))
+  resultDir.mkdirs()
+  rolesetFiles.foreach(rolesetFile => {
+    val resultFileWriter = new PrintWriter(resultDir.getAbsolutePath + s"/${rolesetFile.getName}")
+    val roleset = Roleset.fromJsonFile(rolesetFile.getAbsolutePath)
+    roleset.getStringToLineageMap
+      .values
+      .toIndexedSeq
+      .map(rl => (rl.id,rl.roleLineage.toRoleLineage))
+      .sortBy(_._1)
+      .foreach{case (k,rl) => {
+        val roleAsDomain = rl.toRoleAsDomain(k,GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,traintTimeEnd)
+        roleAsDomain.appendToWriter(resultFileWriter,false,true)
+      }}
+    resultFileWriter.close()
+  })
+
+}

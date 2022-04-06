@@ -9,5 +9,8 @@ case class ChangePoint(prevValueA: Any,
                        pointInTime: LocalDate,
                        prevPointInTime: LocalDate,
                        var isLast:Boolean) {
+  def prevWasCompatible: Boolean = prevValueA==prevValueB || RoleLineage.isWildcard(prevValueA) || RoleLineage.isWildcard(prevValueB)
+
+  def isCompatible: Boolean = curValueA == curValueB || RoleLineage.isWildcard(curValueA) || RoleLineage.isWildcard(curValueB)
 
 }

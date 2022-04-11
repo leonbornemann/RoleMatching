@@ -12,7 +12,9 @@ import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import scala.util.Random
 
-class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:LocalDate,seed:Long,compatibilityGroupDataDirs:Option[IndexedSeq[File]]) extends StrictLogging{
+class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:LocalDate,seed:Long,
+                            sampleTargetCount:SampleTargetCount,
+                            compatibilityGroupDataDirs:Option[IndexedSeq[File]]) extends StrictLogging{
 
   def getBlockingAtTime(roleMap: Map[String, RoleLineage], ts: LocalDate) = {
     roleMap.groupBy{case (id,r) => r.valueAt(ts)}
@@ -24,9 +26,9 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
   val sampleSizePerDataset = 500
   new File(outputDir).mkdirs()
 
-  def getSample(blockings: IndexedSeq[IndexedSeq[(Any, IndexedSeq[String])]]) = {
+  def getSample(blockings: IndexedSeq[IndexedSeq[(Any, IndexedSeq[String])]],roleMap: Map[String, RoleLineage]) = {
     val sample = collection.mutable.HashSet[SimpleCompatbilityGraphEdgeID]()
-    while(sample.size<sampleSizePerDataset){
+    while(sampleTargetCount.needsMoreSamples){
       val blocking = blockings(random.nextInt(blockings.size))
       val (key,block) = blocking(random.nextInt(blocking.size))
       val i = random.nextInt(block.size)
@@ -37,7 +39,12 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
       val v1 = block(i)
       val v2 = block(j)
       val e = if(v1<v2) SimpleCompatbilityGraphEdgeID(v1,v2) else SimpleCompatbilityGraphEdgeID(v2,v1)
-      sample.add(e)
+      //get compatibility percentage:
+      val percentage = roleMap(v1).getCompatibilityTimePercentage(roleMap(v2),trainTimeEnd)
+      if(sampleTargetCount.stillNeeds(percentage)){
+        sample.add(e)
+        sampleTargetCount.reduceNeededCount(percentage)
+      }
       logger.debug(s"Added new Sample - Size: ${sample.size}")
     }
     sample
@@ -79,7 +86,7 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
           .filter(_.size>0)
           .toIndexedSeq
         //draw sample:
-        val sample = getSample(blockings)
+        val sample = getSample(blockings,roleMap)
         sample
       }
 

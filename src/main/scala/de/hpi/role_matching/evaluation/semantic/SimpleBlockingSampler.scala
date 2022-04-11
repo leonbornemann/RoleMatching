@@ -45,7 +45,7 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
         sample.add(e)
         sampleTargetCount.reduceNeededCount(percentage)
       }
-      logger.debug(s"Added new Sample - Size: ${sample.size}")
+      logger.debug(s"Added new Sample - Size: ${sample.size}, cur sampletarget count: $sampleTargetCount")
     }
     sample
   }

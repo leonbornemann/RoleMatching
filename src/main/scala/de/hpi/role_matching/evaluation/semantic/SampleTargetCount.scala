@@ -1,6 +1,6 @@
 package de.hpi.role_matching.evaluation.semantic
 
-class SampleTargetCount(var below80:Int,var below100:Int,var fullCompatibility:Int){
+case class SampleTargetCount(var below80:Int,var below100:Int,var fullCompatibility:Int){
 
   def reduceNeededCount(compatibility: Double) = {
     if(compatibility < firstThreshold)

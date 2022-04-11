@@ -46,7 +46,7 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
       val e = if(v1<v2) SimpleCompatbilityGraphEdgeID(v1,v2) else SimpleCompatbilityGraphEdgeID(v2,v1)
       //get compatibility percentage:
       val percentage = roleMap(v1).getCompatibilityTimePercentage(roleMap(v2),trainTimeEnd)
-      if(sampleTargetCount.stillNeeds(percentage) && !existingSampleList.contains(e)){
+      if(sampleTargetCount.stillNeeds(percentage) && !existingSampleList.contains(e) && !sample.contains(e)){
         sample.add(e)
         sampleTargetCount.reduceNeededCount(percentage)
       }

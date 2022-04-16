@@ -10,6 +10,7 @@ import de.hpi.role_matching.evaluation.semantic.SimpleBlockingSamplerMain.{compa
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
+import scala.collection.mutable
 import scala.io.Source
 import scala.util.Random
 
@@ -43,16 +44,25 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
         j = random.nextInt(block.size) //reroll until it is not the same element
       val v1 = block(i)
       val v2 = block(j)
-      val e = if(v1<v2) SimpleCompatbilityGraphEdgeID(v1,v2) else SimpleCompatbilityGraphEdgeID(v2,v1)
-      //get compatibility percentage:
-      val percentage = roleMap(v1).getCompatibilityTimePercentage(roleMap(v2),trainTimeEnd)
-      if(sampleTargetCount.stillNeeds(percentage) && !existingSampleList.contains(e) && !sample.contains(e)){
-        sample.add(e)
-        sampleTargetCount.reduceNeededCount(percentage)
-      }
+      addSampleIfValid(roleMap, sampleTargetCount, existingSampleList, sample, v1, v2)
       logger.debug(s"Added new Sample - Size: ${sample.size}, cur sampletarget count: $sampleTargetCount")
     }
     sample
+  }
+
+  def addSampleIfValid(roleMap: Map[String, RoleLineage],
+                               sampleTargetCount: SampleTargetCount,
+                               existingSampleList: Set[SimpleCompatbilityGraphEdgeID],
+                               sample: mutable.HashSet[SimpleCompatbilityGraphEdgeID],
+                               v1: String,
+                               v2: String) = {
+    val e = if (v1 < v2) SimpleCompatbilityGraphEdgeID(v1, v2) else SimpleCompatbilityGraphEdgeID(v2, v1)
+    //get compatibility percentage:
+    val percentage = roleMap(v1).getCompatibilityTimePercentage(roleMap(v2), trainTimeEnd)
+    if (sampleTargetCount.stillNeeds(percentage) && !existingSampleList.contains(e) && !sample.contains(e)) {
+      sample.add(e)
+      sampleTargetCount.reduceNeededCount(percentage)
+    }
   }
 
   def useGivenBlocking: Boolean = compatibilityGroupDataDir.isDefined
@@ -103,7 +113,7 @@ class SimpleBlockingSampler(rolesetDir: File, outputDir: String,trainTimeEnd:Loc
         getSampleFromGivenBlocking(roleset,dsName)
       } else {
         //get rid of artificial wildcards:
-        val roleMap = roleset.getStringToLineageMap.map{case (id,rl) => (id,rl.roleLineage.toRoleLineage.removeDECAYED(ReservedChangeValues.DECAYED).projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
+        val roleMap = roleset.getStringToLineageMap.map{case (id,rl) => (id,rl.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
         val timestamps = (GLOBAL_CONFIG.STANDARD_TIME_FRAME_START.toEpochDay to trainTimeEnd.toEpochDay by GLOBAL_CONFIG.granularityInDays)
           .map(l => LocalDate.ofEpochDay(l))
           .toSet

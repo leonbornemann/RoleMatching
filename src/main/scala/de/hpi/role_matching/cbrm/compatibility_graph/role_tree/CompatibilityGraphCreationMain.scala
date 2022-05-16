@@ -11,6 +11,7 @@ import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 object CompatibilityGraphCreationMain extends App with StrictLogging {
+  val timeNow = System.currentTimeMillis()
   println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource(args(0))
   val rolsetFile = args(1)
@@ -42,7 +43,6 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
       RoleLineageWithID(t._2.id,newLineage.toSerializationHelper)
     })
   println(lineages.size)
-  val timeNow = System.currentTimeMillis()
   val graphConfig = GraphConfig(1: Int, GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, endDateTrainPhase)
 
   val references = RoleLineageWithID.toReferences(lineages,endDateTrainPhase)
@@ -69,5 +69,8 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
   logger.debug(s"Finished in time $timeAfter")
   private val edgeFiles: Array[File] = resultDirEdges.listFiles()
   logger.debug(s"Finished compatibility graph creation, found ${edgeFiles.size} edge files")
-
+  val endTime = System.currentTimeMillis()
+  val dataset = new File(rolsetFile).getName.split("\\.")(0)
+  println("dataset,nThreads,thresholdForFork,maxPairwiseListSizeForSingleThread,roleSamplingRate,timestampSamplingRate,runtimeInSeconds")
+  println(s"$dataset,$nthreads,$thresholdForFork,$maxPairwiseListSizeForSingleThread,$roleSamplingRate,$timestampSamplingRate,$timeInSeconds")
 }

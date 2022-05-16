@@ -32,7 +32,7 @@ object GLOBAL_CONFIG extends StrictLogging{
   var STANDARD_TIME_FRAME_END = LocalDate.parse("2020-04-30")
   val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
-  def STANDARD_TIME_RANGE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay).map(LocalDate.ofEpochDay(_))
+  def STANDARD_TIME_RANGE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay by granularityInDays).map(LocalDate.ofEpochDay(_))
 
   def STANDARD_TIME_RANGE_SIZE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay).size
 

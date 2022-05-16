@@ -14,6 +14,29 @@ import scala.collection.mutable
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
 
+  def exactMatchesWithoutWildcardPercentage(rl2Projected: RoleLineage, until: LocalDate) = {
+    val results = exactlyMatchesWithoutWildcard(rl2Projected,until)
+    results.filter(b => b).size / results.size.toDouble
+  }
+
+  def exactlyMatchesWithoutWildcard(rl2Projected: RoleLineage, until: LocalDate) = {
+    val meWithoutDecay = RoleLineage(lineage.filter(_._2!=ReservedChangeValues.DECAYED))
+    val otherWithoutDecay = RoleLineage(rl2Projected.lineage.filter(_._2!=ReservedChangeValues.DECAYED))
+    val timeRange = GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(until))
+    timeRange
+      .map(ld => {
+        val myVal = meWithoutDecay.valueAt(ld)
+        val otherVal = otherWithoutDecay.valueAt(ld)
+        myVal == otherVal
+      })
+  }
+
+
+  def exactlyMatchesWithoutDecay(rl2Projected: RoleLineage,until:LocalDate) = {
+    exactlyMatchesWithoutWildcard(rl2Projected,until).forall(b => b)
+  }
+
+
   def toRoleAsDomain(id:String, STANDARD_TIME_FRAME_START: LocalDate, traintTimeEnd: LocalDate) = {
     val daysAsEpochDays = STANDARD_TIME_FRAME_START.toEpochDay to traintTimeEnd.toEpochDay by GLOBAL_CONFIG.granularityInDays
     val values = daysAsEpochDays.map(l => {
@@ -81,7 +104,8 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     var curElem = iterator.nextOption()
     val valueSet = collection.mutable.HashSet[Any]()
     while(curElem.isDefined && curElem.get._1.isBefore(trainTimeEnd)){
-      valueSet.add(curElem.get._2)
+      if(!isWildcard(curElem.get._2))
+        valueSet.add(curElem.get._2)
       curElem = iterator.nextOption()
     }
     valueSet

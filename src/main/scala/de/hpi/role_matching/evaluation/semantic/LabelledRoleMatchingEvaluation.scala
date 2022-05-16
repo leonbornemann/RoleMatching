@@ -32,7 +32,61 @@ object LabelledRoleMatchingEvaluation extends App {
     (SimpleCompatbilityGraphEdge(rl1,rl2),SimpleCompatbilityGraphEdge(rl1NoDecay,rl2NoDecay),isTrueMatch)
   }
 
-  resultPR.println("dataset,isInStrictBlockingDecay,isInStrictBlockingNoDecay,isSemanticRoleMatch,compatibilityPercentageDecay,compatibilityPercentageNoDecay")
+  resultPR.println("dataset,isInStrictBlockingDecay,isInStrictBlockingNoDecay,isInValueSetBlocking,isInSequenceBlocking,isInExactMatchBlocking,isSemanticRoleMatch,compatibilityPercentageDecay,compatibilityPercentageNoDecay,exactSequenceMatchPercentage")
+
+  def serializeSample(dataset:String,groundTruthExamples: Array[(SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdge, Boolean)]) = {
+    var countBelow80 = 0
+    var countBelow100 = 0
+    var count100 = 0
+    groundTruthExamples
+      //.filter(_._2)
+      .foreach{case (edgeDecay,edgeNoDecay,label)=> {
+        val rl1 = edgeDecay.v1.roleLineage.toRoleLineage
+        val rl2 = edgeDecay.v2.roleLineage.toRoleLineage
+        val rl1Projected = rl1.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
+        val rl2Projected = rl2.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
+        val isInValueSetBlocking = rl1Projected.nonWildcardValueSetBefore(trainTimeEnd) == rl2Projected.nonWildcardValueSetBefore(trainTimeEnd)
+        val isInSequenceBlocking = rl1Projected.nonWildcardValueSequenceBefore(trainTimeEnd) == rl2Projected.nonWildcardValueSequenceBefore(trainTimeEnd)
+        val isInExactSequenceBlocking = rl1Projected.exactlyMatchesWithoutDecay(rl2Projected,trainTimeEnd)
+        val statRow = new BasicStatRow(rl1Projected,rl2Projected,trainTimeEnd)
+        val isInStrictBlocking = statRow.remainsValidFullTimeSpan
+        //no decay:
+        val rl1NoDecay = edgeNoDecay.v1.roleLineage.toRoleLineage
+        val rl2NoDecay = edgeNoDecay.v2.roleLineage.toRoleLineage
+        val rl1ProjectedNoDecay = rl1NoDecay.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
+        val rl2ProjectedNoDecay = rl2NoDecay.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
+        val statRowNoDecay = new BasicStatRow(rl1ProjectedNoDecay,rl2ProjectedNoDecay,trainTimeEnd)
+        val isInStrictBlockingNoDecay = statRowNoDecay.remainsValidFullTimeSpan
+        val map = counts.getOrElseUpdate(dataset,collection.mutable.HashMap[String,Int]())
+        val decayedCompatibilityPercentage = rl1Projected.getCompatibilityTimePercentage(rl2Projected, trainTimeEnd)
+        val exactSequenceMatchPercentage = rl1ProjectedNoDecay.exactMatchesWithoutWildcardPercentage(rl2ProjectedNoDecay,trainTimeEnd)
+        if(decayedCompatibilityPercentage < 0.8){
+          if(countBelow80<100){
+            val curCount = map.getOrElse(getSamplingGroup(decayedCompatibilityPercentage),0)
+            map.put(getSamplingGroup(decayedCompatibilityPercentage),curCount+1)
+            countBelow80+=1
+          }
+        } else if(decayedCompatibilityPercentage<1.0){
+          if(countBelow100<100){
+            val curCount = map.getOrElse(getSamplingGroup(decayedCompatibilityPercentage),0)
+            map.put(getSamplingGroup(decayedCompatibilityPercentage),curCount+1)
+            countBelow100+=1
+          }
+        } else {
+          if(count100<100){
+            val curCount = map.getOrElse(getSamplingGroup(decayedCompatibilityPercentage),0)
+            map.put(getSamplingGroup(decayedCompatibilityPercentage),curCount+1)
+            count100+=1
+          }
+        }
+        resultPR.println(s"$dataset,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
+          s"$decayedCompatibilityPercentage," +
+          s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
+          s"$exactSequenceMatchPercentage")
+      }}
+    println(countBelow80,countBelow100,count100)
+  }
+
   inputLabelDirs.foreach{case (inputLabelDir) => {
     val dataset = inputLabelDir.getName
     val roleset = Roleset.fromJsonFile(rolesetFilesDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath)
@@ -40,9 +94,7 @@ object LabelledRoleMatchingEvaluation extends App {
     val stringToLineageMapNoDecay = rolesetNoDecay.getStringToLineageMap
     val groundTruthExamples = inputLabelDir.listFiles().flatMap(f => Source.fromFile(f).getLines().toIndexedSeq.tail)
       .map(s => getEdgeFromFile(roleset, stringToLineageMapNoDecay, s))
-    groundTruthExamples
-      //.filter(_._2)
-      .foreach{case (eDecay,eNoDecay,label)=> appendToResultPr(dataset,eDecay,eNoDecay,label)}
+    serializeSample(dataset,groundTruthExamples)
   }}
   resultPR.close()
 
@@ -50,26 +102,7 @@ object LabelledRoleMatchingEvaluation extends App {
 
   def appendToResultPr(dataset:String, edgeDecay: SimpleCompatbilityGraphEdge, edgeNoDecay:SimpleCompatbilityGraphEdge, label: Boolean) = {
     //decay
-    val rl1 = edgeDecay.v1.roleLineage.toRoleLineage
-    val rl2 = edgeDecay.v2.roleLineage.toRoleLineage
-    val rl1Projected = rl1.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-    val rl2Projected = rl2.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-    val statRow = new BasicStatRow(rl1Projected,rl2Projected,trainTimeEnd)
-    val isInStrictBlocking = statRow.remainsValidFullTimeSpan
-    //no decay:
-    val rl1NoDecay = edgeNoDecay.v1.roleLineage.toRoleLineage
-    val rl2NoDecay = edgeNoDecay.v2.roleLineage.toRoleLineage
-    val rl1ProjectedNoDecay = rl1NoDecay.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-    val rl2ProjectedNoDecay = rl2NoDecay.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-    val statRowNoDecay = new BasicStatRow(rl1ProjectedNoDecay,rl2ProjectedNoDecay,trainTimeEnd)
-    val isInStrictBlockingNoDecay = statRowNoDecay.remainsValidFullTimeSpan
-    val map = counts.getOrElseUpdate(dataset,collection.mutable.HashMap[String,Int]())
-    val decayedCompatibilityPercentage = rl1Projected.getCompatibilityTimePercentage(rl2Projected, trainTimeEnd)
-    val curCount = map.getOrElse(getSamplingGroup(decayedCompatibilityPercentage),0)
-    map.put(getSamplingGroup(decayedCompatibilityPercentage),curCount+1)
-    resultPR.println(s"$dataset,$isInStrictBlocking,$isInStrictBlockingNoDecay,$label," +
-      s"$decayedCompatibilityPercentage," +
-      s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}")
+
   }
   counts.foreach{case (ds,map) => println(ds);map.foreach(println)}
 

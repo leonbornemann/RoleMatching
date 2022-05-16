@@ -26,11 +26,11 @@ abstract class AbstractAsynchronousRoleTree(val toGeneralEdgeFunction:((RoleRefe
   def logProgress: Boolean = externalRecurseDepth==0 && totalNumTopLevelNodes > 1000 && (totalNumTopLevelNodes / processedTopLvlNodes) % (totalNumTopLevelNodes / 1000)==0
 
   def maybeLogProgress() = {
-    if(loggingActive)
+    if(loggingIsActive)
       logger.debug(s"Root Process ($processName) finished ${100 * processedTopLvlNodes / totalNumTopLevelNodes.toDouble}% of top-lvl nodes")
   }
 
-  def loggingIsActive: Boolean = externalRecurseDepth==0 || loggingActive
+  def loggingIsActive: Boolean = false //externalRecurseDepth==0 || loggingActive
 
 
   def thresholdForFork = AbstractAsynchronousRoleTree.thresholdForFork

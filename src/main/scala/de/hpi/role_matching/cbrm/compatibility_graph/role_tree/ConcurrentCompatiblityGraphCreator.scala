@@ -80,7 +80,7 @@ object ConcurrentCompatiblityGraphCreator extends StrictLogging {
   }
 
   var lastReportTimestamp = System.currentTimeMillis()
-  val logTimeDistanceInMs = 10000
+  val logTimeDistanceInMs = 60000
   val reportInProgress = new AtomicBoolean(false)
   var outputFileCounter = 0
   var statFileCounter = 0
@@ -180,14 +180,14 @@ object ConcurrentCompatiblityGraphCreator extends StrictLogging {
       case Success(value) => {
         futures.remove(fname)
         maybeReport(futures)
-        logger.debug(s"$fname - terminating")
+        //logger.debug(s"$fname - terminating")
         checkTermination(futures)
       }
       case Failure(e) => {
         e.printStackTrace
         futures.remove(fname)
         maybeReport(futures)
-        logger.debug(s"$fname - terminating")
+        //logger.debug(s"$fname - terminating")
         checkTermination(futures)
       }
     }(context)

@@ -28,7 +28,10 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
                               serializeGroupsOnly:Boolean
   ) extends AbstractAsynchronousRoleTree(toGeneralEdgeFunction,resultDir,processName,prOption,isAsynch,externalRecurseDepth,logProgress,serializeGroupsOnly) {
 
+  var matchingTaskList:NormalPairwiseMatchingTaskList = null
+
   override def execute() = {
+    matchingTaskList = NormalPairwiseMatchingTaskList()
     val index = new RoleTreeLevel(tuples,parentNodesTimestamps,parentNodesKeys,tuples.head.roles.wildcardValues.toSet,true)
     if(loggingIsActive) {
       totalNumTopLevelNodes = if(!index.indexBuildWasSuccessfull) 0 else  index.tupleGroupIterator(true).size
@@ -196,16 +199,17 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
     if(serializeGroupsOnly){
       serializeGroup(tuplesInNodeAsIndexedSeq)
     } else {
-      if(tuplesInNodeAsIndexedSeq.size > AbstractAsynchronousRoleTree.maxPairwiseListSizeForSingleThread){
-        val border = maxPairwiseListSizeForSingleThread
-        val intervals = partitionToIntervals(tuplesInNodeAsIndexedSeq,border)
-        for (i <- 0 until intervals.size) {
-          for (j <- i until intervals.size) {
-            val i1 = intervals(i)
-            val i2 = intervals(j)
-            AbstractAsynchronousRoleTree.startProcessIntervalsFromSameList(tuplesInNodeAsIndexedSeq,
-              i1,
-              i2,
+      var BATCH_SIZE = maxPairwiseListSizeForSingleThread*maxPairwiseListSizeForSingleThread
+      val border = maxPairwiseListSizeForSingleThread
+      val intervals = partitionToIntervals(tuplesInNodeAsIndexedSeq,border)
+      for (i <- 0 until intervals.size) {
+        for (j <- i until intervals.size) {
+          val i1 = intervals(i)
+          val i2 = intervals(j)
+          val newTask = NormalPairwiseMatchingTask(tuplesInNodeAsIndexedSeq,i1,i2)
+          matchingTaskList.appendTask(newTask)
+          if(matchingTaskList.exceedsThreshold(BATCH_SIZE)){
+            AbstractAsynchronousRoleTree.startProcessIntervalsFromSameList(matchingTaskList,
               resultDir,
               context,
               processName + s"PWM($i1,$i2)",
@@ -213,31 +217,8 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
               toGeneralEdgeFunction,
               tupleToNonWcTransitions)
           }
+          matchingTaskList = NormalPairwiseMatchingTaskList()
         }
-      } else {
-        //do it in this process!
-        //we construct a graph as an adjacency list:
-        //pairwise matching to find out the edge-weights:
-        var  matchChecks = 0
-        for (i <- 0 until tuplesInNodeAsIndexedSeq.size) {
-          for (j <- i + 1 until tuplesInNodeAsIndexedSeq.size) {
-            val ref1 = tuplesInNodeAsIndexedSeq(i)
-            val ref2 = tuplesInNodeAsIndexedSeq(j)
-            val evidence = ref1.nonWildCardChangePointsInTrainPeriod.intersect(ref2.nonWildCardChangePointsInTrainPeriod).size
-            if(evidence>1){
-              //            val e = toGeneralEdgeFunction(ref1,ref2)
-              //            if(e.v1.id == "infobox book||1000149||161384507-0||country" && e.v2.id == "infobox book||2730873||259414743-0||image" || e.v2.id == "infobox book||1000149||161384507-0||country" && e.v1.id == "infobox book||2730873||259414743-0||image")
-              //              println()
-              serializeIfMatch(ref1,ref2,pr)
-            }
-            //          if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
-            //            //we have a candidate - add it to buffer!
-            //            serializeIfMatch(ref1,ref2,pr)
-            //          }
-            matchChecks+=1
-          }
-        }
-        AbstractAsynchronousRoleTree.serializeMatchChecks(matchChecks)
       }
     }
   }
@@ -254,6 +235,10 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
   }
 
   override def getGraphConfig: GraphConfig = graphConfig
+
+  override def finishLastTaskList(): Unit = {
+    AbstractAsynchronousRoleTree.doPairwiseMatchingSingleList(matchingTaskList,toGeneralEdgeFunction,tupleToNonWcTransitions,pr)
+  }
 }
 object AsynchronousRoleTree extends StrictLogging {
 

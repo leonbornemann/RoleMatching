@@ -54,10 +54,13 @@ abstract class AbstractAsynchronousRoleTree(val toGeneralEdgeFunction:((RoleRefe
   var internalRecurseCounter = 0
   init()
 
+  def finishLastTaskList()
+
   def init() = {
     if(isAsynch && loggingIsActive)
       logger.debug(s"Created new Asynchronously running process $processName")
     execute()
+    finishLastTaskList()
     if(prOption.isEmpty)
       ConcurrentCompatiblityGraphCreator.releasePrintWriter(pr,fnameOfWriter.get)
       //pr.close()
@@ -119,35 +122,37 @@ object AbstractAsynchronousRoleTree {
   }
 
   //end borders are exclusive
-  def startProcessIntervalsFromSameList(tuplesInNodeAsIndexedSeq: IndexedSeq[RoleReference],
-                                           i1: (Int, Int),
-                                           i2: (Int, Int),
-                                           resultDir:File,
-                                           context:ExecutionContextExecutor,
-                                           processName:String,
-                                           futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
-                                           toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge),
-                                           tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]]
+  def startProcessIntervalsFromSameList(tasks:NormalPairwiseMatchingTaskList,
+                                        resultDir:File,
+                                        context:ExecutionContextExecutor,
+                                        processName:String,
+                                        futures:java.util.concurrent.ConcurrentHashMap[String,Future[Any]],
+                                        toGeneralEdgeFunction:((RoleReference,RoleReference) => SimpleCompatbilityGraphEdge),
+                                        tupleToNonWcTransitions:Option[Map[RoleReference, Set[ValueTransition]]]
                                           ) = {
     val f = Future{
       val (pr,fname) = ConcurrentCompatiblityGraphCreator.getOrCreateNewPrintWriter(resultDir)
-      val (firstBorderStart,firstBorderEnd) = i1
-      val (secondBorderStart,secondBorderEnd) = i2
-      var matchChecks = 0
-      for(i <- firstBorderStart until firstBorderEnd){
-        for(j <- secondBorderStart until secondBorderEnd){
-          val ref1 = tuplesInNodeAsIndexedSeq(i)
-          val ref2 = tuplesInNodeAsIndexedSeq(j)
-          if(i<j && (!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t)))){
-            serializeIfMatch(ref1,ref2,pr,toGeneralEdgeFunction)
-          }
-          matchChecks+=1
-        }
-      }
-      serializeMatchChecks(matchChecks)
+      doPairwiseMatchingSingleList(tasks, toGeneralEdgeFunction, tupleToNonWcTransitions, pr)
       ConcurrentCompatiblityGraphCreator.releasePrintWriter(pr,fname)
     }(context)
     ConcurrentCompatiblityGraphCreator.setupFuture(f,processName,futures,context)
+  }
+
+  def doPairwiseMatchingSingleList(tasks: NormalPairwiseMatchingTaskList, toGeneralEdgeFunction: (RoleReference, RoleReference) => SimpleCompatbilityGraphEdge, tupleToNonWcTransitions: Option[Map[RoleReference, Set[ValueTransition]]], pr: PrintWriter) = {
+    var matchChecks = 0
+    for (task <- tasks.taskList) {
+      for (i <- task.firstBorderStart until task.firstBorderEnd) {
+        for (j <- task.secondBorderStart until task.secondBorderEnd) {
+          val ref1 = task.tuplesInNodeAsIndexedSeq(i)
+          val ref2 = task.tuplesInNodeAsIndexedSeq(j)
+          if (i < j && (!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t)))) {
+            serializeIfMatch(ref1, ref2, pr, toGeneralEdgeFunction)
+          }
+          matchChecks += 1
+        }
+      }
+    }
+    serializeMatchChecks(matchChecks)
   }
 
   def serializeMatchChecks(matchChecks: Int) = {
@@ -158,26 +163,36 @@ object AbstractAsynchronousRoleTree {
     }
   }
 
-  def startProcessIntervalsFromBipariteList(tuplesLeft: IndexedSeq[RoleReference], tuplesRight: IndexedSeq[RoleReference], i1: (Int, Int), i2: (Int, Int), resultDir: File, context: ExecutionContextExecutor, processName: String, futures: ConcurrentHashMap[String, Future[Any]], toGeneralEdgeFunction: (RoleReference, RoleReference) => SimpleCompatbilityGraphEdge, tupleToNonWcTransitions: Option[Map[RoleReference, Set[ValueTransition]]]) = {
+  def startProcessIntervalsFromBipariteList(tasks:BipartitePairwiseMatchingTaskList,
+                                            resultDir: File,
+                                            context: ExecutionContextExecutor,
+                                            processName: String,
+                                            futures: ConcurrentHashMap[String, Future[Any]],
+                                            toGeneralEdgeFunction: (RoleReference, RoleReference) => SimpleCompatbilityGraphEdge,
+                                            tupleToNonWcTransitions: Option[Map[RoleReference, Set[ValueTransition]]]) = {
     val f = Future{
       val (pr,fname) = ConcurrentCompatiblityGraphCreator.getOrCreateNewPrintWriter(resultDir)
-      val (firstBorderStart,firstBorderEnd) = i1
-      val (secondBorderStart,secondBorderEnd) = i2
-      var matchChecks = 0
-      for(i <- firstBorderStart until firstBorderEnd){
-        for(j <- secondBorderStart until secondBorderEnd){
-          val ref1 = tuplesLeft(i)
-          val ref2 = tuplesRight(j)
-          if(!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))){
-            serializeIfMatch(ref1,ref2,pr,toGeneralEdgeFunction)
-          }
-          matchChecks+=1
-        }
-      }
-      serializeMatchChecks(matchChecks)
+      doPairwiseMatchingBipartiteList(tasks, toGeneralEdgeFunction, tupleToNonWcTransitions, pr)
       ConcurrentCompatiblityGraphCreator.releasePrintWriter(pr,fname)
     }(context)
     ConcurrentCompatiblityGraphCreator.setupFuture(f,processName,futures,context)
+  }
+
+  def doPairwiseMatchingBipartiteList(tasks: BipartitePairwiseMatchingTaskList, toGeneralEdgeFunction: (RoleReference, RoleReference) => SimpleCompatbilityGraphEdge, tupleToNonWcTransitions: Option[Map[RoleReference, Set[ValueTransition]]], pr: PrintWriter) = {
+    var matchChecks = 0
+    for (task <- tasks.taskList) {
+      for (i <- task.firstBorderStart until task.firstBorderEnd) {
+        for (j <- task.secondBorderStart until task.secondBorderEnd) {
+          val ref1 = task.tuplesLeft(i)
+          val ref2 = task.tuplesRight(j)
+          if (!tupleToNonWcTransitions.isDefined || tupleToNonWcTransitions.get(ref1).exists(t => tupleToNonWcTransitions.get(ref2).contains(t))) {
+            serializeIfMatch(ref1, ref2, pr, toGeneralEdgeFunction)
+          }
+          matchChecks += 1
+        }
+      }
+    }
+    serializeMatchChecks(matchChecks)
   }
 
   var thresholdForFork = 2000

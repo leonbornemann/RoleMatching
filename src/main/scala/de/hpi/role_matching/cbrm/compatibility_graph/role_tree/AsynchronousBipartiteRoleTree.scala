@@ -31,10 +31,10 @@ class AsynchronousBipartiteRoleTree(tuplesLeft: IndexedSeq[RoleReference],
                                        serializeGroupsOnly:Boolean
                                   ) extends AbstractAsynchronousRoleTree(toGeneralEdgeFunction,resultDir, processName,prOption, isAsynch,externalRecurseDepth,logProgress,serializeGroupsOnly) {
 
+  var taskList:BipartitePairwiseMatchingTaskList = null
+
   override def execute() = {
-    if(externalRecurseDepth==0){
-      println()
-    }
+    taskList = BipartitePairwiseMatchingTaskList()
     val index = new BipartiteRoleTreeLevel(tuplesLeft,tuplesRight,parentNodesTimestamps,parentNodesKeys,true)
     if(loggingIsActive) {
       totalNumTopLevelNodes = if(index.indexFailed) 0 else  index.getBipartiteTupleGroupIterator().size
@@ -134,47 +134,37 @@ class AsynchronousBipartiteRoleTree(tuplesLeft: IndexedSeq[RoleReference],
     if(serializeGroupsOnly){
       serializeBipartiteGroup(tuplesLeft,tuplesRight)
     } else {
-      if(tuplesLeft.size*tuplesRight.size > maxPairwiseListSizeForSingleThread*maxPairwiseListSizeForSingleThread){
-        val maxSize = maxPairwiseListSizeForSingleThread
-        val intervals1 = partitionToIntervals(tuplesLeft,maxSize)
-        val intervals2 = partitionToIntervals(tuplesRight,maxSize)
-        for (i <- 0 until intervals1.size) {
-          for (j <- 0 until intervals2.size) {
-            val i1 = intervals1(i)
-            val i2 = intervals2(j)
-            AbstractAsynchronousRoleTree.startProcessIntervalsFromBipariteList(tuplesLeft,
-              tuplesRight,
-              i1,
-              i2,
+      val BATCH_SIZE = maxPairwiseListSizeForSingleThread * maxPairwiseListSizeForSingleThread
+      val maxSize = maxPairwiseListSizeForSingleThread
+      val intervals1 = partitionToIntervals(tuplesLeft,maxSize)
+      val intervals2 = partitionToIntervals(tuplesRight,maxSize)
+      for (i <- 0 until intervals1.size) {
+        for (j <- 0 until intervals2.size) {
+          val i1 = intervals1(i)
+          val i2 = intervals2(j)
+          val newTask = BipartitePairwiseMatchingTask(tuplesLeft,tuplesRight,i1,i2)
+          taskList.append(newTask)
+          if(taskList.exceedsThreshold(BATCH_SIZE )){
+            AbstractAsynchronousRoleTree.startProcessIntervalsFromBipariteList(taskList,
               resultDir,
               context,
               processName + s"PWM($i1,$i2)",
               futures,
               toGeneralEdgeFunction,
               tupleToNonWcTransitions)
+            taskList = BipartitePairwiseMatchingTaskList()
           }
-        }
-      } else {
-        if (tuplesLeft.size > 0 && tuplesRight.size > 0) {
-          var matchChecks=0
-          for (i <- 0 until tuplesLeft.size) {
-            for (j <- 0 until tuplesRight.size) {
-              val ref1 = tuplesLeft(i)
-              val ref2 = tuplesRight(j)
-              val evidence = ref1.nonWildCardChangePointsInTrainPeriod.intersect(ref2.nonWildCardChangePointsInTrainPeriod).size
-              if (evidence>1) {
-                serializeIfMatch(ref1, ref2, pr)
-              }
-              matchChecks+=1
-            }
-          }
-          AbstractAsynchronousRoleTree.serializeMatchChecks(matchChecks)
         }
       }
     }
   }
 
   override def getGraphConfig: GraphConfig = graphConfig
+
+  override def finishLastTaskList(): Unit = {
+    assert(!taskList.exceedsThreshold(BATCH_SIZE = maxPairwiseListSizeForSingleThread * maxPairwiseListSizeForSingleThread))
+    AbstractAsynchronousRoleTree.doPairwiseMatchingBipartiteList(taskList,toGeneralEdgeFunction,tupleToNonWcTransitions,pr)
+  }
 }
 object AsynchronousBipartiteRoleTree extends StrictLogging {
   def createAsFuture(futures: ConcurrentHashMap[String,Future[Any]],

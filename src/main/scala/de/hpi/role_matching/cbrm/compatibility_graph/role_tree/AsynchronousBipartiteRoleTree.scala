@@ -28,13 +28,11 @@ class AsynchronousBipartiteRoleTree(tuplesLeft: IndexedSeq[RoleReference],
                                        isAsynch:Boolean=true,
                                        externalRecurseDepth:Int,
                                        logProgress:Boolean=false,
-                                       serializeGroupsOnly:Boolean
+                                       serializeGroupsOnly:Boolean,
+                                       var taskList:BipartitePairwiseMatchingTaskList = BipartitePairwiseMatchingTaskList()
                                   ) extends AbstractAsynchronousRoleTree(toGeneralEdgeFunction,resultDir, processName,prOption, isAsynch,externalRecurseDepth,logProgress,serializeGroupsOnly) {
 
-  var taskList:BipartitePairwiseMatchingTaskList = null
-
   override def execute() = {
-    taskList = BipartitePairwiseMatchingTaskList()
     val index = new BipartiteRoleTreeLevel(tuplesLeft,tuplesRight,parentNodesTimestamps,parentNodesKeys,true)
     if(loggingIsActive) {
       totalNumTopLevelNodes = if(index.indexFailed) 0 else  index.getBipartiteTupleGroupIterator().size
@@ -120,7 +118,9 @@ class AsynchronousBipartiteRoleTree(tuplesLeft: IndexedSeq[RoleReference],
           false,
           externalRecurseDepth+1,
           false,
-          serializeGroupsOnly)
+          serializeGroupsOnly,
+          taskList)
+        taskList = BipartitePairwiseMatchingTaskList()
         internalRecurseCounter+=1
       }
     } else {

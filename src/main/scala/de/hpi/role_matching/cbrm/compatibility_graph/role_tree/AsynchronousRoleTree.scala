@@ -25,13 +25,11 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
                               isAsynch:Boolean=true,
                               externalRecurseDepth:Int,
                               logProgress:Boolean=false,
-                              serializeGroupsOnly:Boolean
+                              serializeGroupsOnly:Boolean,
+                              var matchingTaskList:NormalPairwiseMatchingTaskList = NormalPairwiseMatchingTaskList()
   ) extends AbstractAsynchronousRoleTree(toGeneralEdgeFunction,resultDir,processName,prOption,isAsynch,externalRecurseDepth,logProgress,serializeGroupsOnly) {
 
-  var matchingTaskList:NormalPairwiseMatchingTaskList = null
-
   override def execute() = {
-    matchingTaskList = NormalPairwiseMatchingTaskList()
     val index = new RoleTreeLevel(tuples,parentNodesTimestamps,parentNodesKeys,tuples.head.roles.wildcardValues.toSet,true)
     if(loggingIsActive) {
       totalNumTopLevelNodes = if(!index.indexBuildWasSuccessfull) 0 else  index.tupleGroupIterator(true).size
@@ -85,7 +83,9 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
               false,
               externalRecurseDepth+1,
               false,
-              serializeGroupsOnly)
+              serializeGroupsOnly,
+              matchingTaskList)
+            matchingTaskList = NormalPairwiseMatchingTaskList()
             internalRecurseCounter+=1
           }
         } else{
@@ -134,7 +134,9 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
             false,
             externalRecurseDepth+1,
             externalRecurseDepth==0,
-            logProgress)
+            logProgress,
+            matchingTaskList)
+            matchingTaskList = NormalPairwiseMatchingTaskList()
         }
       } else {
         doPairwiseMatching(wildcardBucket)
@@ -148,10 +150,6 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
           println()
         }
         if(wildcardBucket.size + nonWildcards.size > thresholdForFork){
-          //create future:
-          if(externalRecurseDepth==0){
-            println()
-          }
           val f = AsynchronousBipartiteRoleTree.createAsFuture(futures,
             wildcardBucket,
             nonWildcards.toIndexedSeq,

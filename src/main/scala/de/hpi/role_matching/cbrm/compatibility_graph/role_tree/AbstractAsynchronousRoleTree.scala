@@ -55,7 +55,7 @@ abstract class AbstractAsynchronousRoleTree(val toGeneralEdgeFunction:((RoleRefe
   init()
 
   def init() = {
-    if(isAsynch)
+    if(isAsynch && loggingIsActive)
       logger.debug(s"Created new Asynchronously running process $processName")
     execute()
     if(prOption.isEmpty)

@@ -66,7 +66,7 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
   pr.println("NThreads,RolesampleRate,TimestampSampleRate,Time [s]")
   pr.println(s"$nthreads,${config.samplingRateRoles},${config.samplingRateTimestamps},$timeInSeconds")
   pr.close()
-  logger.debug(s"Finished in time $timeAfter")
+  logger.debug(s"Finished in time $timeInSeconds")
   private val edgeFiles: Array[File] = resultDirEdges.listFiles()
   logger.debug(s"Finished compatibility graph creation, found ${edgeFiles.size} edge files")
   val endTime = System.currentTimeMillis()

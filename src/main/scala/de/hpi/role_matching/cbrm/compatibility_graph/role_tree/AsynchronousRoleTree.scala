@@ -214,16 +214,11 @@ class AsynchronousRoleTree(tuples: IndexedSeq[RoleReference],
               futures,
               toGeneralEdgeFunction,
               tupleToNonWcTransitions)
+            matchingTaskList = NormalPairwiseMatchingTaskList()
           }
-          matchingTaskList = NormalPairwiseMatchingTaskList()
         }
       }
     }
-  }
-
-  private def fulfillsFIlter(ref1: RoleReference, ref2: RoleReference) = {
-    ref1.getRole.lineage.values.toIndexedSeq.exists(s => s.toString.contains("[[File:The Machine Gunners cover.jpg|200px]]")) &&
-      ref2.getRole.lineage.values.toIndexedSeq.exists(s => s.toString.contains("[[United States]]"))
   }
 
   def gaussSum(n: Int) = n*n+1/2

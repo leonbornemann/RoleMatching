@@ -25,9 +25,9 @@ class RoleTreeLevel(private var tuples: IndexedSeq[RoleReference],
 
   if(!indexableTimestamps.isEmpty){
     if(tuples.size>1){
-      val (bestIndexTimestamp,numValues) = getBestTimestamp(indexableTimestamps)
-      if(numValues>=1) {
-        indexTimestamp = bestIndexTimestamp
+      val timestampOption = getBestTimestamp(indexableTimestamps)
+      if(timestampOption.isDefined) {
+        indexTimestamp = timestampOption.get._1
         index = tuples
           .groupBy(getField(_).valueAt(indexTimestamp))
         iterableKeys = index.keySet.diff(wildcardKeyValues)
@@ -41,11 +41,26 @@ class RoleTreeLevel(private var tuples: IndexedSeq[RoleReference],
   def getBestTimestamp(relevantTimestamps: Set[LocalDate]) = {
     val tupleSample:IndexedSeq[RoleReference] = getRandomSample(tuples,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateRoles)
     val timestampSample:IndexedSeq[LocalDate] = getRandomSample(relevantTimestamps.toIndexedSeq,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateTimestamps)
-    timestampSample.map(ts => {
-      val values = tupleSample.map(getField(_).valueAt(ts)).toSet
-      (ts,values.size)
-    }).sortBy(-_._2)
+    val priorCombinations = tuples.size * tuples.size
+    val bestTimestamp = timestampSample.map(ts => {
+      val groups = tupleSample.groupBy(getField(_).valueAt(ts))
+      val wildcards = tupleSample.head.roles.wildcardValues.toSet
+      val wildcardBucketSize = wildcards.map(wc => groups.getOrElse(wc,IndexedSeq()).size).sum
+      val sizeOfNonWildcards = tupleSample.size - wildcardBucketSize
+      val allIndividualSizes = groups
+        .withFilter{case (k,_) => !wildcards.contains(k)}
+        .map{case (_,v) => v.size*v.size}
+        .sum
+      val totalAfterSplit = wildcardBucketSize * (wildcardBucketSize + sizeOfNonWildcards) + allIndividualSizes
+      assert(totalAfterSplit <=priorCombinations)
+      (ts,totalAfterSplit)
+    }).sortBy(_._2)
       .head
+    val compressionRate = 1.0 - bestTimestamp._2 / priorCombinations.toDouble
+    if(compressionRate < 0.1 )
+      None
+    else
+      Some(bestTimestamp)
   }
 
   def getWildcardBucket = wildcardKeyValues.toIndexedSeq

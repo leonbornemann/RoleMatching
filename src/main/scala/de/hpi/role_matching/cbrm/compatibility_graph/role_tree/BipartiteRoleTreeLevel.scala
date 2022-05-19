@@ -25,7 +25,6 @@ class BipartiteRoleTreeLevel(tuplesLeftUnfiltered: IndexedSeq[RoleReference],
   val tuplesRight = getFilteredTuples(tuplesRightUnfiltered)
   val unusedTimestamps = getRelevantTimestamps(tuplesLeft).union(getRelevantTimestamps(tuplesRight)).diff(parentTimestamps.toSet)
   var indexFailed = false
-  var compressionRation = 0.0
 
   def getPriorEntropy(tuplesLeft: IndexedSeq[RoleReference], tuplesRight: IndexedSeq[RoleReference]) = {
     val pLeft = tuplesLeft.size / (tuplesLeft.size +tuplesRight.size).toDouble
@@ -69,7 +68,6 @@ class BipartiteRoleTreeLevel(tuplesLeftUnfiltered: IndexedSeq[RoleReference],
         .sortBy(_._2)
         .head
       val compressionRate = 1.0 - bestTimestamp._2 / priorCombinations.toDouble
-      compressionRation = 1.0 - bestTimestamp._2 / priorCombinations.toDouble
       if(bestTimestamp._2>=priorCombinations || compressionRate < 0.1) {
         None
       } else {

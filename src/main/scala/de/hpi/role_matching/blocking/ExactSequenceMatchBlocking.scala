@@ -7,5 +7,6 @@ import java.time.LocalDate
 class ExactSequenceMatchBlocking(roleset: Roleset, trainTimeEnd:LocalDate) extends SimpleGroupBlocker{
 
   val groups = roleset.posToRoleLineage.values.groupBy(_.toExactValueSequence(trainTimeEnd))
+  println()
 
 }

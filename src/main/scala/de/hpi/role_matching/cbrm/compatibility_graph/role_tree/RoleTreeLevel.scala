@@ -41,7 +41,7 @@ class RoleTreeLevel(private var tuples: IndexedSeq[RoleReference],
   def getBestTimestamp(relevantTimestamps: Set[LocalDate]) = {
     val tupleSample:IndexedSeq[RoleReference] = getRandomSample(tuples,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateRoles)
     val timestampSample:IndexedSeq[LocalDate] = getRandomSample(relevantTimestamps.toIndexedSeq,GLOBAL_CONFIG.INDEXING_CONFIG.samplingRateTimestamps)
-    val priorCombinations = tuples.size * tuples.size
+    val priorCombinations = tuples.size.toLong * tuples.size.toLong
     val bestTimestamp = timestampSample.map(ts => {
       val groups = tupleSample.groupBy(getField(_).valueAt(ts))
       val wildcards = tupleSample.head.roles.wildcardValues.toSet
@@ -49,9 +49,11 @@ class RoleTreeLevel(private var tuples: IndexedSeq[RoleReference],
       val sizeOfNonWildcards = tupleSample.size - wildcardBucketSize
       val allIndividualSizes = groups
         .withFilter{case (k,_) => !wildcards.contains(k)}
-        .map{case (_,v) => v.size*v.size}
+        .map{case (_,v) => v.size.toLong*v.size.toLong}
         .sum
-      val totalAfterSplit = wildcardBucketSize * (wildcardBucketSize + sizeOfNonWildcards) + allIndividualSizes
+      val totalAfterSplit = wildcardBucketSize.toLong * (wildcardBucketSize.toLong + sizeOfNonWildcards.toLong) + allIndividualSizes
+      if(!(totalAfterSplit <=priorCombinations))
+        println()
       assert(totalAfterSplit <=priorCombinations)
       (ts,totalAfterSplit)
     }).sortBy(_._2)

@@ -1,0 +1,5 @@
+go run Test.go /data/changedata/roleMerging/final_experiments/relaxedExactMatch/inputs/politics.json /data/changedata/roleMerging/final_experiments/relaxedExactMatch/results/politics.csv "Full blocking" > ../logs/politics.log 2>&1
+go run Test.go /data/changedata/roleMerging/final_experiments/relaxedExactMatch/inputs/education.json /data/changedata/roleMerging/final_experiments/relaxedExactMatch/results/education.csv "Full blocking" > ../logs/education.log 2>&1
+go run Test.go /data/changedata/roleMerging/final_experiments/relaxedExactMatch/inputs/military.json /data/changedata/roleMerging/final_experiments/relaxedExactMatch/results/military.csv "Full blocking" > ../logs/military.log 2>&1
+go run Test.go /data/changedata/roleMerging/final_experiments/relaxedExactMatch/inputs/tv_and_film.json /data/changedata/roleMerging/final_experiments/relaxedExactMatch/results/tv_and_film.csv "Full blocking" > ../logs/tv_and_film.log 2>&1
+go run Test.go /data/changedata/roleMerging/final_experiments/relaxedExactMatch/inputs/football.json /data/changedata/roleMerging/final_experiments/relaxedExactMatch/results/football.csv "Full blocking" > ../logs/football.log 2>&1

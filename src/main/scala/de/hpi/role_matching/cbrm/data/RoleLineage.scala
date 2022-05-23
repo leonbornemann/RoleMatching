@@ -19,6 +19,16 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     results.filter(b => b).size / results.size.toDouble
   }
 
+  def toExactValueSequence(endTime:LocalDate) = {
+    val timeRange = GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(endTime))
+    val representativeWildcardValue = RoleLineage.WILDCARD_VALUES.head
+    timeRange
+      .map(ld => {
+        val myVal = valueAt(ld)
+        if(isWildcard(myVal)) representativeWildcardValue else myVal
+      })
+  }
+
   def exactlyMatchesWithoutWildcard(rl2Projected: RoleLineage, until: LocalDate) = {
     val meWithoutDecay = RoleLineage(lineage.filter(_._2!=ReservedChangeValues.DECAYED))
     val otherWithoutDecay = RoleLineage(rl2Projected.lineage.filter(_._2!=ReservedChangeValues.DECAYED))

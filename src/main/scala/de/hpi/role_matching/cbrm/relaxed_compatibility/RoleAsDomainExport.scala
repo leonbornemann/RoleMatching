@@ -22,7 +22,6 @@ object RoleAsDomainExport extends App {
       val roleset = Roleset.fromJsonFile(rolesetFile.getAbsolutePath)
       roleset.getStringToLineageMap
         .values
-        .take(100)
         .toIndexedSeq
         .map(rl => (rl.id,rl.roleLineage.toRoleLineage))
         .sortBy(_._1)

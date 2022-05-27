@@ -14,6 +14,25 @@ import scala.collection.mutable
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
 
+  def toCBRBDomain(id: String, STANDARD_TIME_FRAME_START: LocalDate, traintTimeEnd: LocalDate, isQuery: Boolean) = {
+    val daysAsEpochDays = STANDARD_TIME_FRAME_START.toEpochDay to traintTimeEnd.toEpochDay by GLOBAL_CONFIG.granularityInDays
+    val queryWildcard = ReservedChangeValues.NOT_EXISTANT_COL + "Q"
+    val indexWildcard = ReservedChangeValues.NOT_EXISTANT_COL + "I"
+    val dummyValue = "\u00A6\u00A9\u0F02\u0FCC"
+    val values = daysAsEpochDays.flatMap(l => {
+      val date = LocalDate.ofEpochDay(l)
+      val v = this.valueAt(date)
+      (isQuery,isWildcard(v)) match {
+        case (false,false) => Seq(l + "." + Util.nullSafeToString(v),l+ "." + queryWildcard)
+        case (false,true) => Seq(l + "." + indexWildcard,l+ "." + dummyValue)
+        case (true,false) => Seq(l + "." + Util.nullSafeToString(v),l+ "." + indexWildcard)
+        case (true,true) => Seq(l + "." + indexWildcard,l+ "." + queryWildcard)
+      }
+    })
+    RoleAsDomain(id,values)
+  }
+
+
   def exactMatchesWithoutWildcardPercentage(rl2Projected: RoleLineage, until: LocalDate) = {
     val results = exactlyMatchesWithoutWildcard(rl2Projected,until)
     results.filter(b => b).size / results.size.toDouble

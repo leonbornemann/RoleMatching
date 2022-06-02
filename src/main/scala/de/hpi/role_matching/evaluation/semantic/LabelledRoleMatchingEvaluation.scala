@@ -2,7 +2,7 @@ package de.hpi.role_matching.evaluation.semantic
 
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
-import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
+import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithID, Roleset}
 import de.hpi.role_matching.evaluation.tuning.BasicStatRow
 
 import java.io.{File, PrintWriter}
@@ -32,15 +32,25 @@ object LabelledRoleMatchingEvaluation extends App {
     (SimpleCompatbilityGraphEdge(rl1,rl2),SimpleCompatbilityGraphEdge(rl1NoDecay,rl2NoDecay),isTrueMatch)
   }
 
-  resultPR.println("dataset,isInStrictBlockingDecay,isInStrictBlockingNoDecay,isInValueSetBlocking,isInSequenceBlocking,isInExactMatchBlocking,isSemanticRoleMatch,compatibilityPercentageDecay,compatibilityPercentageNoDecay,exactSequenceMatchPercentage")
+  resultPR.println("dataset,id1,id2,isInStrictBlockingDecay,isInStrictBlockingNoDecay,isInValueSetBlocking,isInSequenceBlocking," +
+    "isInExactMatchBlocking,isSemanticRoleMatch,compatibilityPercentageDecay,compatibilityPercentageNoDecay,exactSequenceMatchPercentage," +
+    "hasTransitionOverlapNoDecay,hasTransitionOverlapDecay,hasValueSetOverlap,isInSVABlockingNoDecay,isInSVABlockingDecay")
 
   def serializeSample(dataset:String,groundTruthExamples: Array[(SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdge, Boolean)]) = {
     var countBelow80 = 0
     var countBelow100 = 0
     var count100 = 0
+    val roles = groundTruthExamples
+      .flatMap(e => Set(e._2.v1.roleLineage.toRoleLineage,e._1.v1.roleLineage.toRoleLineage))
+      .toSet
+    val tupleToNonWcTransitions = roles
+      .map(r => (r,r.informativeValueTransitions))
+      .toMap
     groundTruthExamples
       //.filter(_._2)
       .foreach{case (edgeDecay,edgeNoDecay,label)=> {
+        val id1 = edgeDecay.v1.csvSafeID
+        val id2 = edgeDecay.v2.csvSafeID
         val rl1 = edgeDecay.v1.roleLineage.toRoleLineage
         val rl2 = edgeDecay.v2.roleLineage.toRoleLineage
         val rl1Projected = rl1.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
@@ -48,14 +58,24 @@ object LabelledRoleMatchingEvaluation extends App {
         val isInValueSetBlocking = rl1Projected.nonWildcardValueSetBefore(trainTimeEnd) == rl2Projected.nonWildcardValueSetBefore(trainTimeEnd)
         val isInSequenceBlocking = rl1Projected.nonWildcardValueSequenceBefore(trainTimeEnd) == rl2Projected.nonWildcardValueSequenceBefore(trainTimeEnd)
         val isInExactSequenceBlocking = rl1Projected.exactlyMatchesWithoutDecay(rl2Projected,trainTimeEnd)
+        val hasTransitionOverlapDecay = rl1Projected.informativeValueTransitions.intersect(rl2Projected.informativeValueTransitions).size>=1
         val statRow = new BasicStatRow(rl1Projected,rl2Projected,trainTimeEnd)
-        val isInStrictBlocking = statRow.remainsValidFullTimeSpan
+        val hasValueSetOverlap = rl1Projected.nonWildcardValueSetBefore(trainTimeEnd.plusDays(1)).exists(v => rl2Projected.nonWildcardValueSetBefore(trainTimeEnd.plusDays(1)).contains(v))
+        val isInSVABlockingDecay = GLOBAL_CONFIG.STANDARD_TIME_RANGE
+          .filter(!_.isAfter(trainTimeEnd))
+          .exists(t => rl1Projected.valueAt(t) == rl2Projected.valueAt(t) && !RoleLineage.isWildcard(rl1Projected.valueAt(t)))
         //no decay:
         val rl1NoDecay = edgeNoDecay.v1.roleLineage.toRoleLineage
         val rl2NoDecay = edgeNoDecay.v2.roleLineage.toRoleLineage
         val rl1ProjectedNoDecay = rl1NoDecay.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
         val rl2ProjectedNoDecay = rl2NoDecay.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
+        val hasTransitionOverlapNoDecay = rl1ProjectedNoDecay.informativeValueTransitions.intersect(rl2ProjectedNoDecay.informativeValueTransitions).size>=1
         val statRowNoDecay = new BasicStatRow(rl1ProjectedNoDecay,rl2ProjectedNoDecay,trainTimeEnd)
+        val isInSVABlockingNoDecay = GLOBAL_CONFIG.STANDARD_TIME_RANGE
+          .filter(!_.isAfter(trainTimeEnd))
+          .exists(t => rl1ProjectedNoDecay.valueAt(t) == rl2ProjectedNoDecay.valueAt(t) && !RoleLineage.isWildcard(rl1ProjectedNoDecay.valueAt(t)))
+        //csv fields:
+        val isInStrictBlocking = statRow.remainsValidFullTimeSpan
         val isInStrictBlockingNoDecay = statRowNoDecay.remainsValidFullTimeSpan
         val map = counts.getOrElseUpdate(dataset,collection.mutable.HashMap[String,Int]())
         val decayedCompatibilityPercentage = rl1Projected.getCompatibilityTimePercentage(rl2Projected, trainTimeEnd)
@@ -79,10 +99,15 @@ object LabelledRoleMatchingEvaluation extends App {
             count100+=1
           }
         }
-        resultPR.println(s"$dataset,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
+        if(!hasValueSetOverlap) {
+          edgeDecay.printTabularEventLineageString
+          edgeNoDecay.printTabularEventLineageString
+          println()
+        }
+        resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
           s"$decayedCompatibilityPercentage," +
           s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
-          s"$exactSequenceMatchPercentage")
+          s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay")
       }}
     println(countBelow80,countBelow100,count100)
   }

@@ -14,6 +14,11 @@ import scala.collection.mutable
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
 
+  def informativeValueTransitions = {
+    valueTransitions(false, true)
+      .filter(t => !GLOBAL_CONFIG.nonInformativeValues.contains(t.prev) && !GLOBAL_CONFIG.nonInformativeValues.contains(t.after))
+  }
+
   def toCBRBDomain(id: String, STANDARD_TIME_FRAME_START: LocalDate, traintTimeEnd: LocalDate, isQuery: Boolean) = {
     val daysAsEpochDays = STANDARD_TIME_FRAME_START.toEpochDay to traintTimeEnd.toEpochDay by GLOBAL_CONFIG.granularityInDays
     val queryWildcard = ReservedChangeValues.NOT_EXISTANT_COL + "Q"

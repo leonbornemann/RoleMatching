@@ -35,15 +35,9 @@ class ConcurrentCompatiblityGraphCreator(roles: IndexedSeq[RoleReference],
     tupleToNonWcTransitions = Some(roles
       .map(t => {
         i+=1
-        val role = t.getRole
-        val valueTransitions = role
-          .valueTransitions(false, true)
-        val valueTransitionsFiltered = valueTransitions
-          .filter(t => !nonInformativeValues.contains(t.prev) && !nonInformativeValues.contains(t.after))
-        (t,valueTransitionsFiltered
-        )
+        (t,t.getRole.informativeValueTransitions)
       })
-      .toMap)
+    .toMap)
   }
 
   val fname = "graph"

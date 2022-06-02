@@ -25,6 +25,7 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
   val roleSamplingRate = args(9).toDouble
   val timestampSamplingRate = args(10).toDouble
   val serializeGroupsOnly = args(11).toBoolean
+  val filterByCommonTransition = args(12).toBoolean
   Seq(resultDirEdges, resultDirStats, resultDirTime).foreach(_.mkdirs())
   private val config: CompatibilityGraphCreationConfig = CompatibilityGraphCreationConfig(roleSamplingRate, timestampSamplingRate, 50)
   GLOBAL_CONFIG.INDEXING_CONFIG = config
@@ -53,7 +54,7 @@ object CompatibilityGraphCreationMain extends App with StrictLogging {
 
   new ConcurrentCompatiblityGraphCreator(references,
     graphConfig,
-    true,
+    filterByCommonTransition,
     GLOBAL_CONFIG.nonInformativeValues,
     nthreads,
     resultDirEdges,

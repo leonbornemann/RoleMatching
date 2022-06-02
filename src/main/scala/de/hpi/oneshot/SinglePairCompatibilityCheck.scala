@@ -10,10 +10,13 @@ import java.time.LocalDate
 object SinglePairCompatibilityCheck extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val rs = Roleset.fromJsonFile("/home/leon/data/dataset_versioning/finalExperiments/rolesets/military.json")
-  val id1 = "infobox military conflict||10039822||114916240-0||combatant2"
-  val id2 = "infobox military conflict||23278974||299908088-0||combatant1_\uD83D\uDD17_extractedLink1"
+  val id1 = "infobox weapon||11446814||178219904-0||origin"
+  val id2 = "infobox weapon||9774757||374746808-0||origin"
   val trainTimeEnd = LocalDate.parse("2016-05-07")
   private val map = rs.getStringToLineageMap
+  println(map.keySet.filter(_.contains("|11446814||178219904-0||origin")))
+    println(map.keySet.filter(_.contains("|9774757||374746808-0||origin")))
+  //println(map.get("infobox weapon||9774757||374746808-0||origin"))
   printForIds(id1, id2)
   println()
 

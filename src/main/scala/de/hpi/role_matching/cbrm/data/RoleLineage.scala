@@ -14,6 +14,32 @@ import scala.collection.mutable
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
 
+  def applyDecay(decayThreshold: Double,trainTimeEnd:LocalDate) = {
+    val withIndex = lineage.toIndexedSeq.zipWithIndex
+    val durationsInTrainTime = withIndex.tail
+      .withFilter{ case ((ld, _), i) => !ld.isAfter(trainTimeEnd)}
+      .map { case ((ld, _), i) => ChronoUnit.DAYS.between(withIndex(i - 1)._1._1, ld) }
+      .sorted
+    val indexOfCutoff = math.ceil(decayThreshold * durationsInTrainTime.size).toInt -1
+    if(!durationsInTrainTime.isEmpty){
+      val decayTimeInDays = durationsInTrainTime(indexOfCutoff)
+      assert((decayTimeInDays % GLOBAL_CONFIG.granularityInDays) == 0)
+      val lineage = withIndex
+        .flatMap { case ((ld, v), i) =>
+          val endDate = if (i == withIndex.size-1) GLOBAL_CONFIG.STANDARD_TIME_FRAME_END else withIndex(i + 1)._1._1
+          val duration = ChronoUnit.DAYS.between(ld, endDate)
+          if (duration > decayTimeInDays && !RoleLineage.isWildcard(v))
+            Seq((ld, v), (ld.plusDays(decayTimeInDays), ReservedChangeValues.DECAYED))
+          else
+            Seq((ld, v))
+        }
+      RoleLineage(collection.mutable.TreeMap[LocalDate,Any]() ++ lineage)
+    } else {
+      RoleLineage(collection.mutable.TreeMap[LocalDate,Any]() ++ withIndex.map(_._1))
+    }
+  }
+
+
   def informativeValueTransitions = {
     valueTransitions(false, true)
       .filter(t => !GLOBAL_CONFIG.nonInformativeValues.contains(t.prev) && !GLOBAL_CONFIG.nonInformativeValues.contains(t.after))

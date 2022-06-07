@@ -55,7 +55,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
       val v = this.valueAt(date)
       (isQuery,isWildcard(v)) match {
         case (false,false) => Seq(l + "." + Util.nullSafeToString(v),l+ "." + queryWildcard)
-        case (false,true) => Seq(l + "." + indexWildcard,l+ "." + dummyValue)
+        case (false,true) => Seq(l + "." + indexWildcard)
         case (true,false) => Seq(l + "." + Util.nullSafeToString(v),l+ "." + indexWildcard)
         case (true,true) => Seq(l + "." + indexWildcard,l+ "." + queryWildcard)
       }

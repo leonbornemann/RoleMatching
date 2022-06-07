@@ -36,20 +36,19 @@ object RoleAsDomainExport extends App {
     })
   } else {
     assert(mode=="rm")
+    rolesetFiles.foreach(rolesetFile => {
+      val resultFileWriter = new PrintWriter(resultDir.getAbsolutePath + s"/${rolesetFile.getName}")
+      val roleset = Roleset.fromJsonFile(rolesetFile.getAbsolutePath)
+      roleset.getStringToLineageMap
+        .values
+        .toIndexedSeq
+        .map(rl => (rl.id,rl.roleLineage.toRoleLineage))
+        .sortBy(_._1)
+        .foreach{case (k,rl) => {
+          val roleAsDomain = rl.toRoleAsDomain(k,GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,traintTimeEnd)
+          roleAsDomain.appendToWriter(resultFileWriter,false,true)
+        }}
+      resultFileWriter.close()
+    })
   }
-  rolesetFiles.foreach(rolesetFile => {
-    val resultFileWriter = new PrintWriter(resultDir.getAbsolutePath + s"/${rolesetFile.getName}")
-    val roleset = Roleset.fromJsonFile(rolesetFile.getAbsolutePath)
-    roleset.getStringToLineageMap
-      .values
-      .toIndexedSeq
-      .map(rl => (rl.id,rl.roleLineage.toRoleLineage))
-      .sortBy(_._1)
-      .foreach{case (k,rl) => {
-        val roleAsDomain = rl.toRoleAsDomain(k,GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,traintTimeEnd)
-        roleAsDomain.appendToWriter(resultFileWriter,false,true)
-      }}
-    resultFileWriter.close()
-  })
-
 }

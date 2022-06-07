@@ -1,22 +1,22 @@
 package de.hpi.role_matching.evaluation.semantic
 
-case class SampleTargetCount(var below80:Int,var below100:Int,var fullCompatibility:Int){
+case class SampleTargetCount(var below70:Int, var below100:Int, var fullCompatibility:Int){
 
   def reduceNeededCount(compatibility: Double) = {
     if(compatibility < firstThreshold)
-      below80-=1
+      below70-=1
     else if(compatibility<secondThreshold)
       below100-=1
     else
       fullCompatibility-=1
   }
 
-  val firstThreshold = 0.8
+  val firstThreshold = 0.7
   val secondThreshold = 1.0
 
   def stillNeeds(compatibility: Double): Boolean = {
     if(compatibility < firstThreshold)
-      below80>0
+      below70>0
     else if(compatibility<secondThreshold)
       below100>0
     else
@@ -24,7 +24,7 @@ case class SampleTargetCount(var below80:Int,var below100:Int,var fullCompatibil
   }
 
 
-  def needsMoreSamples = below80 > 0 || below100 > 0 || fullCompatibility > 0
+  def needsMoreSamples = below70 > 0 || below100 > 0 || fullCompatibility > 0
 }
 
 object SampleTargetCount {

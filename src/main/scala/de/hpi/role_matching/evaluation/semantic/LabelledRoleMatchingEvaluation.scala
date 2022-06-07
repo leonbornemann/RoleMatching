@@ -16,9 +16,13 @@ object LabelledRoleMatchingEvaluation extends App {
   val rolesetFilesNoneDecayed = new File(args(2)).listFiles()
   //val rolesets = rolesetFiles.map(f => Roleset.fromJsonFile(f.getAbsolutePath))
   val resultPR = new PrintWriter(args(3))
+  val resultPRDecay = new PrintWriter(args(4))
   val trainTimeEnd = LocalDate.parse("2016-05-07")
   var counts = collection.mutable.HashMap[String,collection.mutable.HashMap[String,Int]]()
+  val runDecayEvaluation = true
   inputLabelDirs.map(_.getName).foreach(n => counts.put(n,collection.mutable.HashMap[String,Int]()))
+
+  val DECAY_THRESHOLD = 0.7
 
   def getEdgeFromFile(rolesetDecay:Roleset,stringToLineageMapNoDecay: Map[String, RoleLineageWithID], s: String) = {
     val tokens = s.split(",")
@@ -36,7 +40,14 @@ object LabelledRoleMatchingEvaluation extends App {
     "isInExactMatchBlocking,isSemanticRoleMatch,compatibilityPercentageDecay,compatibilityPercentageNoDecay,exactSequenceMatchPercentage," +
     "hasTransitionOverlapNoDecay,hasTransitionOverlapDecay,hasValueSetOverlap,isInSVABlockingNoDecay,isInSVABlockingDecay")
 
-  def serializeSample(dataset:String,groundTruthExamples: Array[(SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdge, Boolean)]) = {
+  def getDecayedEdgeFromUndecayedEdge(edgeNoDecay: SimpleCompatbilityGraphEdge,beta:Double):SimpleCompatbilityGraphEdge = {
+    val rl1WithDecay = edgeNoDecay.v1.roleLineage.toRoleLineage.applyDecay(beta,trainTimeEnd)
+    val rl2WithDecay = edgeNoDecay.v2.roleLineage.toRoleLineage.applyDecay(beta,trainTimeEnd)
+    SimpleCompatbilityGraphEdge(RoleLineageWithID(edgeNoDecay.v1.id,rl1WithDecay.toSerializationHelper),RoleLineageWithID(edgeNoDecay.v2.id,rl2WithDecay.toSerializationHelper))
+  }
+
+  def serializeSample(dataset:String, groundTruthExamples: Array[(SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdge, Boolean)]) = {
+    val retainedSamples = collection.mutable.ArrayBuffer[(SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdge, Boolean)]()
     var countBelow80 = 0
     var countBelow100 = 0
     var count100 = 0
@@ -48,7 +59,8 @@ object LabelledRoleMatchingEvaluation extends App {
       .toMap
     groundTruthExamples
       //.filter(_._2)
-      .foreach{case (edgeDecay,edgeNoDecay,label)=> {
+      .foreach{case (edgeDecayOld,edgeNoDecay,label)=> {
+        val edgeDecay = getDecayedEdgeFromUndecayedEdge(edgeNoDecay,DECAY_THRESHOLD)
         val id1 = edgeDecay.v1.csvSafeID
         val id2 = edgeDecay.v2.csvSafeID
         val rl1 = edgeDecay.v1.roleLineage.toRoleLineage
@@ -79,39 +91,54 @@ object LabelledRoleMatchingEvaluation extends App {
         val isInStrictBlockingNoDecay = statRowNoDecay.remainsValidFullTimeSpan
         val map = counts.getOrElseUpdate(dataset,collection.mutable.HashMap[String,Int]())
         val decayedCompatibilityPercentage = rl1Projected.getCompatibilityTimePercentage(rl2Projected, trainTimeEnd)
+        val nonDecayCompatibilityPercentage = rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)
         val exactSequenceMatchPercentage = rl1ProjectedNoDecay.exactMatchesWithoutWildcardPercentage(rl2ProjectedNoDecay,trainTimeEnd)
-        if(decayedCompatibilityPercentage < 0.8){
+        if(nonDecayCompatibilityPercentage < 0.7){
           if(countBelow80<100){
-            val curCount = map.getOrElse(getSamplingGroup(decayedCompatibilityPercentage),0)
-            map.put(getSamplingGroup(decayedCompatibilityPercentage),curCount+1)
+            val curCount = map.getOrElse(getSamplingGroup(nonDecayCompatibilityPercentage),0)
+            map.put(getSamplingGroup(nonDecayCompatibilityPercentage),curCount+1)
             countBelow80+=1
+            retainedSamples.append((edgeDecayOld,edgeNoDecay,label))
+            resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
+              s"$decayedCompatibilityPercentage," +
+              s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
+              s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay")
+          } else {
+            println(s"Skipping record in $dataset")
           }
-        } else if(decayedCompatibilityPercentage<1.0){
+        } else if(nonDecayCompatibilityPercentage<1.0){
           if(countBelow100<100){
-            val curCount = map.getOrElse(getSamplingGroup(decayedCompatibilityPercentage),0)
-            map.put(getSamplingGroup(decayedCompatibilityPercentage),curCount+1)
+            val curCount = map.getOrElse(getSamplingGroup(nonDecayCompatibilityPercentage),0)
+            map.put(getSamplingGroup(nonDecayCompatibilityPercentage),curCount+1)
             countBelow100+=1
+            retainedSamples.append((edgeDecayOld,edgeNoDecay,label))
+            resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
+              s"$decayedCompatibilityPercentage," +
+              s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
+              s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay")
+          } else {
+            println(s"Skipping record in $dataset")
           }
         } else {
           if(count100<100){
-            val curCount = map.getOrElse(getSamplingGroup(decayedCompatibilityPercentage),0)
-            map.put(getSamplingGroup(decayedCompatibilityPercentage),curCount+1)
+            val curCount = map.getOrElse(getSamplingGroup(nonDecayCompatibilityPercentage),0)
+            map.put(getSamplingGroup(nonDecayCompatibilityPercentage),curCount+1)
             count100+=1
+            retainedSamples.append((edgeDecayOld,edgeNoDecay,label))
+            resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
+              s"$decayedCompatibilityPercentage," +
+              s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
+              s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay")
+          } else {
+            println(s"Skipping record in $dataset")
           }
         }
-        if(!hasValueSetOverlap) {
-          edgeDecay.printTabularEventLineageString
-          edgeNoDecay.printTabularEventLineageString
-          println()
-        }
-        resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
-          s"$decayedCompatibilityPercentage," +
-          s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
-          s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay")
       }}
     println(countBelow80,countBelow100,count100)
+    retainedSamples
   }
 
+  val decayEvaluator = new DecayEvaluator(resultPRDecay);
   inputLabelDirs.foreach{case (inputLabelDir) => {
     val dataset = inputLabelDir.getName
     val roleset = Roleset.fromJsonFile(rolesetFilesDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath)
@@ -119,16 +146,17 @@ object LabelledRoleMatchingEvaluation extends App {
     val stringToLineageMapNoDecay = rolesetNoDecay.getStringToLineageMap
     val groundTruthExamples = inputLabelDir.listFiles().flatMap(f => Source.fromFile(f).getLines().toIndexedSeq.tail)
       .map(s => getEdgeFromFile(roleset, stringToLineageMapNoDecay, s))
-    serializeSample(dataset,groundTruthExamples)
+    val retainedEdges = serializeSample(dataset,groundTruthExamples)
+    if(runDecayEvaluation) {
+      decayEvaluator.addRecords(dataset, retainedEdges, trainTimeEnd)
+    }
   }}
+  resultPRDecay.close()
   resultPR.close()
 
-  def getSamplingGroup(decayedCompatibilityPercentage: Double) = if(decayedCompatibilityPercentage<0.8) "[0.0,0.8)" else if(decayedCompatibilityPercentage < 1.0) "[0.8,1.0)" else "1.0"
 
-  def appendToResultPr(dataset:String, edgeDecay: SimpleCompatbilityGraphEdge, edgeNoDecay:SimpleCompatbilityGraphEdge, label: Boolean) = {
-    //decay
+  def getSamplingGroup(decayedCompatibilityPercentage: Double) = if(decayedCompatibilityPercentage<0.7) "[0.0,0.7)" else if(decayedCompatibilityPercentage < 1.0) "[0.7,1.0)" else "1.0"
 
-  }
   counts.foreach{case (ds,map) => println(ds);map.foreach(println)}
 
 

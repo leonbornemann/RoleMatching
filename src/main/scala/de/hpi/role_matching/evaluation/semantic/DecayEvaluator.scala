@@ -8,8 +8,8 @@ import java.time.LocalDate
 
 class DecayEvaluator(resultPRDecay: PrintWriter) {
 
-  val decayValues = (1 to 50).map(i => 1.0 - i/100.0)
-  val compatibilityValues = (1 to 50).map(i => 1.0 - i/100.0)
+  val decayValues = (0 to 50).map(i => 1.0 - i/100.0)
+  val compatibilityValues = (0 to 50).map(i => 1.0 - i/100.0)
 
 
   def addRecords(dataset: String, groundTruthExamples: Iterable[(SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdge, Boolean)], trainTimeEnd: LocalDate) = {
@@ -18,8 +18,8 @@ class DecayEvaluator(resultPRDecay: PrintWriter) {
         val rl1 = edgeNoDecay.v1
         val rl2 = edgeNoDecay.v2
         decayValues.foreach(beta => {
-          val rl1WithDecay = rl1.roleLineage.toRoleLineage.applyDecay(beta,trainTimeEnd)
-          val rl2WithDecay = rl2.roleLineage.toRoleLineage.applyDecay(beta,trainTimeEnd)
+          val rl1WithDecay = if(beta<1.0) rl1.roleLineage.toRoleLineage.applyDecay(beta,trainTimeEnd) else rl1.roleLineage.toRoleLineage
+          val rl2WithDecay = if(beta<1.0) rl2.roleLineage.toRoleLineage.applyDecay(beta,trainTimeEnd) else rl2.roleLineage.toRoleLineage
           val compatibility = rl1WithDecay.getCompatibilityTimePercentage(rl2WithDecay,trainTimeEnd)
           compatibilityValues.foreach(gamma => {
             val isInCBRB = compatibility>=gamma

@@ -13,7 +13,9 @@ import java.time.LocalDate
 object CompatibilityGraphCreationMain extends App with StrictLogging {
   val timeNow = System.currentTimeMillis()
   println(s"Called with ${args.toIndexedSeq}")
-  GLOBAL_CONFIG.setSettingsForDataSource(args(0))
+  private val source: String = args(0).split(",")(0)
+  private val timeFactor: Double = args(0).split(",")(1).toDouble
+  GLOBAL_CONFIG.setSettingsForDataSource(source,timeFactor)
   val rolsetFile = args(1)
   val resultDirEdges = new File(args(2))
   val resultDirStats = new File(args(3))

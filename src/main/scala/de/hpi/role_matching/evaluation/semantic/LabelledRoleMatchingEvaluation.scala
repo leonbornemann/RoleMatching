@@ -22,7 +22,7 @@ object LabelledRoleMatchingEvaluation extends App {
   val runDecayEvaluation = true
   inputLabelDirs.map(_.getName).foreach(n => counts.put(n,collection.mutable.HashMap[String,Int]()))
 
-  val DECAY_THRESHOLD = 0.7
+  val DECAY_THRESHOLD = 0.94
 
   def getEdgeFromFile(rolesetDecay:Roleset,stringToLineageMapNoDecay: Map[String, RoleLineageWithID], s: String) = {
     val tokens = s.split(",")

@@ -7,12 +7,15 @@ import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 object RoleAsDomainExport extends App {
-  GLOBAL_CONFIG.setSettingsForDataSource(args(0))
+  private val source: String = args(0).split(",")(0)
+  private val timeFactor: Double = args(0).split(",")(1).toDouble
+  GLOBAL_CONFIG.setSettingsForDataSource(source,timeFactor)
   val rolesetDir = args(1)
   val rolesetFiles = new File(rolesetDir).listFiles()
   val traintTimeEnd = LocalDate.parse(args(2))
-  val resultDir = new File(args(3))
-  val mode = args(4)
+  val decayThreshold = args(3).toDouble
+  val resultDir = new File(args(4))
+  val mode = args(5)
   resultDir.mkdirs()
   if(mode == "cbrb"){
     rolesetFiles.foreach(rolesetFile => {
@@ -23,7 +26,7 @@ object RoleAsDomainExport extends App {
       roleset.getStringToLineageMap
         .values
         .toIndexedSeq
-        .map(rl => (rl.id,rl.roleLineage.toRoleLineage))
+        .map(rl => (rl.id,rl.roleLineage.toRoleLineage.applyDecay(decayThreshold,traintTimeEnd)))
         .sortBy(_._1)
         .foreach{case (k,rl) => {
           val roleAsDomainQuery = rl.toCBRBDomain(k,GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,traintTimeEnd,true)
@@ -42,7 +45,7 @@ object RoleAsDomainExport extends App {
       roleset.getStringToLineageMap
         .values
         .toIndexedSeq
-        .map(rl => (rl.id,rl.roleLineage.toRoleLineage))
+        .map(rl => (rl.id,rl.roleLineage.toRoleLineage.applyDecay(decayThreshold,traintTimeEnd)))
         .sortBy(_._1)
         .foreach{case (k,rl) => {
           val roleAsDomain = rl.toRoleAsDomain(k,GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,traintTimeEnd)

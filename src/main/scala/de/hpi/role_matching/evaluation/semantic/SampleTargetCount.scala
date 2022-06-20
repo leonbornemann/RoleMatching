@@ -23,7 +23,6 @@ case class SampleTargetCount(var below70:Int, var below100:Int, var fullCompatib
       fullCompatibility>0
   }
 
-
   def needsMoreSamples = below70 > 0 || below100 > 0 || fullCompatibility > 0
 }
 

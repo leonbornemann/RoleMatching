@@ -11,16 +11,9 @@ object SimpleBlockingSamplerMain extends App {
   val rolesetDir = new File(args(1))
   val outputDir = args(2)
   val trainTimeEnd = LocalDate.parse(args(3))
-  val remainingNeededSamples = args(4).split("-")
-    .map(s => {
-      val tokens = s.split(",")
-      (tokens(0),SampleTargetCount.fromArray(tokens.tail.map(_.toInt)))
-    })
-    .toMap
-  val existingSamplePath = args(5)
-  val compatibilityGroupDataDir = if(args.size==7) Some(new File(args(6)).listFiles().toIndexedSeq) else None
-  val useCompatibilityBlockedData = compatibilityGroupDataDir.isDefined
+  val minVACount = 95
+  val minDVACount = 2
   val seed = 13
-  val simpleBlockingSampler = new SimpleBlockingSampler(rolesetDir,outputDir,trainTimeEnd,13,remainingNeededSamples,new File(existingSamplePath),compatibilityGroupDataDir)
+  val simpleBlockingSampler = new SimpleBlockingSampler(rolesetDir,outputDir,trainTimeEnd,13,minVACount,minDVACount)
   simpleBlockingSampler.runSampling()
 }

@@ -14,6 +14,18 @@ import scala.collection.mutable
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
 
+  def exactDistinctMatchWithoutWildcardCount(rl2Projected: RoleLineage, until: LocalDate) = {
+    val meWithoutDecay = RoleLineage(lineage.filter(_._2!=ReservedChangeValues.DECAYED))
+    val otherWithoutDecay = RoleLineage(rl2Projected.lineage.filter(_._2!=ReservedChangeValues.DECAYED))
+    val count = new CommonPointOfInterestIterator(meWithoutDecay,otherWithoutDecay)
+      .filter(cp => cp.curValueA==cp.curValueB && !isWildcard(cp.curValueA) && !isWildcard(cp.curValueB))
+      .map(cp => cp.curValueA)
+      .toSet
+      .size
+    count
+  }
+
+
   def toNewTimeScale(d: Double): RoleLineage = {
     val startOld = GLOBAL_CONFIG.STANDARD_TIME_FRAME_START
     val newLineage = lineage
@@ -82,6 +94,9 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     results.filter(b => b).size / results.size.toDouble
   }
 
+  def exactMatchWithoutWildcardCount(other:RoleLineage,until:LocalDate,ignoreWildcardInCount:Boolean = false) =
+    exactlyMatchesWithoutWildcard(other,until,ignoreWildcardInCount).filter(b => b).size
+
   def toExactValueSequence(endTime:LocalDate) = {
     val timeRange = GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(endTime))
     val representativeWildcardValue = RoleLineage.WILDCARD_VALUES.head
@@ -92,7 +107,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
       })
   }
 
-  def exactlyMatchesWithoutWildcard(rl2Projected: RoleLineage, until: LocalDate) = {
+  def exactlyMatchesWithoutWildcard(rl2Projected: RoleLineage, until: LocalDate,ignoreWildcardInCount:Boolean = false) = {
     val meWithoutDecay = RoleLineage(lineage.filter(_._2!=ReservedChangeValues.DECAYED))
     val otherWithoutDecay = RoleLineage(rl2Projected.lineage.filter(_._2!=ReservedChangeValues.DECAYED))
     val timeRange = GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(until))
@@ -100,7 +115,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
       .map(ld => {
         val myVal = meWithoutDecay.valueAt(ld)
         val otherVal = otherWithoutDecay.valueAt(ld)
-        myVal == otherVal
+        myVal == otherVal && (!ignoreWildcardInCount || !isWildcard(myVal))
       })
   }
 

@@ -11,9 +11,10 @@ object SimpleBlockingSamplerMain extends App {
   val rolesetDir = new File(args(1))
   val outputDir = args(2)
   val trainTimeEnd = LocalDate.parse(args(3))
+  val sampleGroundTruth = args(4).toBoolean
   val minVACount = 95
   val minDVACount = 2
   val seed = 13
-  val simpleBlockingSampler = new SimpleBlockingSampler(rolesetDir,outputDir,trainTimeEnd,13,minVACount,minDVACount)
+  val simpleBlockingSampler = new SimpleBlockingSampler(rolesetDir,outputDir,trainTimeEnd,13,minVACount,minDVACount,sampleGroundTruth)
   simpleBlockingSampler.runSampling()
 }

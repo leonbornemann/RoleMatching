@@ -36,9 +36,7 @@ object LabelledRoleMatchingEvaluation extends App {
     (SimpleCompatbilityGraphEdge(rl1,rl2),SimpleCompatbilityGraphEdge(rl1NoDecay,rl2NoDecay),isTrueMatch)
   }
 
-  resultPR.println("dataset,id1,id2,isInStrictBlockingDecay,isInStrictBlockingNoDecay,isInValueSetBlocking,isInSequenceBlocking," +
-    "isInExactMatchBlocking,isSemanticRoleMatch,compatibilityPercentageDecay,compatibilityPercentageNoDecay,exactSequenceMatchPercentage," +
-    "hasTransitionOverlapNoDecay,hasTransitionOverlapDecay,hasValueSetOverlap,isInSVABlockingNoDecay,isInSVABlockingDecay,VACount,DVACount")
+  RoleMatchStatistics.appendSchema(resultPR)
 
   def getDecayedEdgeFromUndecayedEdge(edgeNoDecay: SimpleCompatbilityGraphEdge,beta:Double):SimpleCompatbilityGraphEdge = {
     val rl1WithDecay = edgeNoDecay.v1.roleLineage.toRoleLineage.applyDecay(beta,trainTimeEnd)
@@ -61,80 +59,35 @@ object LabelledRoleMatchingEvaluation extends App {
     groundTruthExamples
       //.filter(_._2)
       .foreach{case (edgeDecayOld,edgeNoDecay,label)=> {
-        val edgeDecay = getDecayedEdgeFromUndecayedEdge(edgeNoDecay,DECAY_THRESHOLD)
-        val id1 = edgeDecay.v1.csvSafeID
-        val id2 = edgeDecay.v2.csvSafeID
-        val rl1 = edgeDecay.v1.roleLineage.toRoleLineage
-        val rl2 = edgeDecay.v2.roleLineage.toRoleLineage
-        val rl1Projected = rl1.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-        val rl2Projected = rl2.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-        val isInValueSetBlocking = rl1Projected.nonWildcardValueSetBefore(trainTimeEnd) == rl2Projected.nonWildcardValueSetBefore(trainTimeEnd)
-        val isInSequenceBlocking = rl1Projected.nonWildcardValueSequenceBefore(trainTimeEnd) == rl2Projected.nonWildcardValueSequenceBefore(trainTimeEnd)
-        val isInExactSequenceBlocking = rl1Projected.exactlyMatchesWithoutDecay(rl2Projected,trainTimeEnd)
-        val hasTransitionOverlapDecay = rl1Projected.informativeValueTransitions.intersect(rl2Projected.informativeValueTransitions).size>=1
-        val statRow = new BasicStatRow(rl1Projected,rl2Projected,trainTimeEnd)
-        val hasValueSetOverlap = rl1Projected.nonWildcardValueSetBefore(trainTimeEnd.plusDays(1)).exists(v => rl2Projected.nonWildcardValueSetBefore(trainTimeEnd.plusDays(1)).contains(v))
-        val isInSVABlockingDecay = GLOBAL_CONFIG.STANDARD_TIME_RANGE
-          .filter(!_.isAfter(trainTimeEnd))
-          .exists(t => rl1Projected.valueAt(t) == rl2Projected.valueAt(t) && !RoleLineage.isWildcard(rl1Projected.valueAt(t)))
-        //no decay:
-        val rl1NoDecay = edgeNoDecay.v1.roleLineage.toRoleLineage
-        val rl2NoDecay = edgeNoDecay.v2.roleLineage.toRoleLineage
-        val rl1ProjectedNoDecay = rl1NoDecay.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-        val rl2ProjectedNoDecay = rl2NoDecay.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-        val hasTransitionOverlapNoDecay = rl1ProjectedNoDecay.informativeValueTransitions.intersect(rl2ProjectedNoDecay.informativeValueTransitions).size>=1
-        val statRowNoDecay = new BasicStatRow(rl1ProjectedNoDecay,rl2ProjectedNoDecay,trainTimeEnd)
-        val isInSVABlockingNoDecay = GLOBAL_CONFIG.STANDARD_TIME_RANGE
-          .filter(!_.isAfter(trainTimeEnd))
-          .exists(t => rl1ProjectedNoDecay.valueAt(t) == rl2ProjectedNoDecay.valueAt(t) && !RoleLineage.isWildcard(rl1ProjectedNoDecay.valueAt(t)))
-        //csv fields:
-        val isInStrictBlocking = statRow.remainsValidFullTimeSpan
-        val isInStrictBlockingNoDecay = statRowNoDecay.remainsValidFullTimeSpan
+        val roleMatchStatistics = new RoleMatchStatistics(dataset,edgeNoDecay,label,DECAY_THRESHOLD,trainTimeEnd)
         val map = counts.getOrElseUpdate(dataset,collection.mutable.HashMap[String,Int]())
-        val decayedCompatibilityPercentage = rl1Projected.getCompatibilityTimePercentage(rl2Projected, trainTimeEnd)
-        val nonDecayCompatibilityPercentage = rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)
-        val exactSequenceMatchPercentage = rl1ProjectedNoDecay.exactMatchesWithoutWildcardPercentage(rl2ProjectedNoDecay,trainTimeEnd)
-        val vaCOunt = rl1Projected.exactMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd,true)
-        val daCount = rl1Projected.exactDistinctMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd)
-        if(nonDecayCompatibilityPercentage < 0.7){
+        if(roleMatchStatistics.nonDecayCompatibilityPercentage < 0.7){
           if(countBelow80<100){
-            val curCount = map.getOrElse(getSamplingGroup(nonDecayCompatibilityPercentage),0)
-            map.put(getSamplingGroup(nonDecayCompatibilityPercentage),curCount+1)
+            val curCount = map.getOrElse(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),0)
+            map.put(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),curCount+1)
             countBelow80+=1
             retainedSamples.append((edgeDecayOld,edgeNoDecay,label))
-            resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
-              s"$decayedCompatibilityPercentage," +
-              s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
-              s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay,"+
-              s"$vaCOunt,$daCount")
+            roleMatchStatistics.appendStatRow(resultPR)
           } else {
             println(s"Skipping record in $dataset")
           }
-        } else if(nonDecayCompatibilityPercentage<1.0){
+        } else if(roleMatchStatistics.nonDecayCompatibilityPercentage<1.0){
           if(countBelow100<100){
-            val curCount = map.getOrElse(getSamplingGroup(nonDecayCompatibilityPercentage),0)
-            map.put(getSamplingGroup(nonDecayCompatibilityPercentage),curCount+1)
+            val curCount = map.getOrElse(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),0)
+            map.put(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),curCount+1)
             countBelow100+=1
             retainedSamples.append((edgeDecayOld,edgeNoDecay,label))
-            resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
-              s"$decayedCompatibilityPercentage," +
-              s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
-              s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay,"+
-              s"$vaCOunt,$daCount")
+            roleMatchStatistics.appendStatRow(resultPR)
           } else {
             println(s"Skipping record in $dataset")
           }
         } else {
           if(count100<100){
-            val curCount = map.getOrElse(getSamplingGroup(nonDecayCompatibilityPercentage),0)
-            map.put(getSamplingGroup(nonDecayCompatibilityPercentage),curCount+1)
+            val curCount = map.getOrElse(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),0)
+            map.put(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),curCount+1)
             count100+=1
             retainedSamples.append((edgeDecayOld,edgeNoDecay,label))
-            resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
-              s"$decayedCompatibilityPercentage," +
-              s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
-              s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay,"+
-              s"$vaCOunt,$daCount")
+            roleMatchStatistics.appendStatRow(resultPR)
           } else {
             println(s"Skipping record in $dataset")
           }

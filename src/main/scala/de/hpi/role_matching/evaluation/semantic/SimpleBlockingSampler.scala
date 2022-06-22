@@ -2,9 +2,9 @@ package de.hpi.role_matching.evaluation.semantic
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdgeID
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
 import de.hpi.role_matching.cbrm.compatibility_graph.role_tree.RoleGroup
-import de.hpi.role_matching.cbrm.data.{ReservedChangeValues, RoleLineage, Roleset}
+import de.hpi.role_matching.cbrm.data.{ReservedChangeValues, RoleLineage, RoleLineageWithID, Roleset}
 import de.hpi.role_matching.cbrm.sgcp.RoleMerge
 
 import java.io.{File, PrintWriter}
@@ -18,10 +18,12 @@ class SimpleBlockingSampler(rolesetDir: File,
                             trainTimeEnd:LocalDate,
                             seed:Long,
                             minVACount:Int,
-                            minDVACount:Int) extends StrictLogging{
+                            minDVACount:Int,
+                            sampleGroundTruth:Boolean) extends StrictLogging{
 
   def getBlockingAtTime(roleMap: Map[String, RoleLineage], ts: LocalDate) = {
     val blocking = new TimestampBlocking(roleMap,ts)
+    logger.debug(s"Finished blocking at $ts")
     blocking
   }
   val random = new Random(seed)
@@ -31,9 +33,9 @@ class SimpleBlockingSampler(rolesetDir: File,
     blockings.maxBefore(chosenPair).get
   }
 
-  def getSample(blockings: collection.mutable.TreeMap[Long,TimestampBlocking],
-                roleMap: Map[String, RoleLineage],
-                sampleTargetCount:SampleTargetCount) = {
+  def getSampleForCompatibilityRanges(blockings: collection.mutable.TreeMap[Long,TimestampBlocking],
+                                      roleMap: Map[String, RoleLineage],
+                                      sampleTargetCount:SampleTargetCount) = {
     val sample = collection.mutable.HashSet[SimpleCompatbilityGraphEdgeID]()
     val totalPairCount = blockings.values.map(_.nPairsInBlocking).sum
     while(sampleTargetCount.needsMoreSamples){
@@ -42,7 +44,10 @@ class SimpleBlockingSampler(rolesetDir: File,
       val (startBlockingID,blocking) = blockings.maxBefore(chosenPair+1).get
       val (startBlockID,block) = blocking.getBlockOfPair(chosenPair-startBlockingID)
       val (v1,v2) = block.getPair(chosenPair-startBlockingID-startBlockID)
-      addSampleIfValid(roleMap, sampleTargetCount, sample, v1, v2)
+      if(v1 == v2){
+        println()
+      }
+      addSampleIfValid(roleMap, Some(sampleTargetCount), sample, v1, v2)
       logger.debug(s"Added new Sample - Size: ${sample.size}, cur sampletarget count: $sampleTargetCount")
     }
     sample
@@ -57,22 +62,42 @@ class SimpleBlockingSampler(rolesetDir: File,
   }
 
   def addSampleIfValid(roleMap: Map[String, RoleLineage],
-                       sampleTargetCount: SampleTargetCount,
+                       sampleTargetCount: Option[SampleTargetCount],
                        sample: mutable.HashSet[SimpleCompatbilityGraphEdgeID],
                        v1: String,
                        v2: String) = {
     //dva filter:
     val rl1 = roleMap(v1)
+    if(!roleMap.contains(v2)){
+      println()
+    }
     val rl2 = roleMap(v2)
     if(passedMinDVAFilter(rl1,rl2) && passesMinVAFilter(rl1,rl2)){
       val e = if (v1 < v2) SimpleCompatbilityGraphEdgeID(v1, v2) else SimpleCompatbilityGraphEdgeID(v2, v1)
       //get compatibility percentage:
       val percentage = roleMap(v1).getCompatibilityTimePercentage(roleMap(v2), trainTimeEnd)
-      if (sampleTargetCount.stillNeeds(percentage) && !sample.contains(e)) {
+      if (! sample.contains(e) && (sampleTargetCount.isEmpty ||  sampleTargetCount.get.stillNeeds(percentage))) {
         sample.add(e)
-        sampleTargetCount.reduceNeededCount(percentage)
+        if(sampleTargetCount.isDefined)
+          sampleTargetCount.get.reduceNeededCount(percentage)
       }
     }
+  }
+
+  def getUniformSample(blockings: mutable.TreeMap[Long, TimestampBlocking],
+                       roleMap: Map[String, RoleLineage],
+                       targetCount: Int): collection.Set[SimpleCompatbilityGraphEdgeID] = {
+    val sample = collection.mutable.HashSet[SimpleCompatbilityGraphEdgeID]()
+    val totalPairCount = blockings.values.map(_.nPairsInBlocking).sum
+    while(sample.size<targetCount){
+      //now we need to draw a weighted sample:
+      val chosenPair = random.nextLong(totalPairCount)
+      val (startBlockingID,blocking) = blockings.maxBefore(chosenPair+1).get
+      val (startBlockID,block) = blocking.getBlockOfPair(chosenPair-startBlockingID)
+      val (v1,v2) = block.getPair(chosenPair-startBlockingID-startBlockID)
+      addSampleIfValid(roleMap, None, sample, v1, v2)
+    }
+    sample
   }
 
   def runSampling() = {
@@ -82,11 +107,12 @@ class SimpleBlockingSampler(rolesetDir: File,
       val dsName = f.getName.split("\\.")(0)
       val sampleTargetCount = SampleTargetCount(100,100,100)
       val stringToPosition = roleset.positionToRoleLineage.map{case (pos,rl) => (rl.id,pos)}
-      //get rid of artificial wildcards:
       val roleMap = roleset.getStringToLineageMap.map{case (id,rl) => (id,rl.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
       val timestamps = (GLOBAL_CONFIG.STANDARD_TIME_FRAME_START.toEpochDay to trainTimeEnd.toEpochDay by GLOBAL_CONFIG.granularityInDays)
         .map(l => LocalDate.ofEpochDay(l))
         .toSet
+        .toIndexedSeq
+        .sorted
       val blockings = timestamps
         .map(ts => getBlockingAtTime(roleMap,ts))
         .filter(_.nPairsInBlocking>0)
@@ -98,16 +124,37 @@ class SimpleBlockingSampler(rolesetDir: File,
         blockingsAsTreeMap.put(curSum,b)
         curSum +=b.nPairsInBlocking
       })
-      val sample = getSample(blockingsAsTreeMap,roleMap,sampleTargetCount)
-      val outFile = new PrintWriter(outputDir + "/" + f.getName)
-      val outFileSimpleEdge = new PrintWriter(outputDir + "/" + f.getName + "_simpleEdge.json")
-      sample.foreach(e => {
-        val roleMatch = RoleMerge(Set(e.v1,e.v2).map(s => stringToPosition(s)),1.0)
-        roleMatch.appendToWriter(outFile,false,true)
-        e.appendToWriter(outFileSimpleEdge,false,true)
-      })
-      outFile.close()
-      outFileSimpleEdge.close()
+      if(sampleGroundTruth){
+        val sample = getSampleForCompatibilityRanges(blockingsAsTreeMap,roleMap,sampleTargetCount)
+        val outFile = new PrintWriter(outputDir + "/" + f.getName)
+        val outFileSimpleEdge = new PrintWriter(outputDir + "/" + f.getName + "_simpleEdge.json")
+        sample.foreach(e => {
+          if(e.v1==e.v2){
+            println()
+          }
+          val roleMatch = RoleMerge(Set(e.v1,e.v2).map(s => stringToPosition(s)),1.0)
+          roleMatch.appendToWriter(outFile,false,true)
+          e.appendToWriter(outFileSimpleEdge,false,true)
+        })
+        outFile.close()
+        outFileSimpleEdge.close()
+      } else {
+        val sample = getUniformSample(blockingsAsTreeMap,roleMap,100000)
+        val outFileEdges = new PrintWriter(outputDir + "/" + f.getName)
+        val outFileStats = new PrintWriter(outputDir + "/" + f.getName + ".csv")
+        val dsName = f.getName.split("\\.")(0)
+        val DECAY_THRESHOLD = 0.5
+        sample.foreach(e => {
+          e.appendToWriter(outFileEdges,false,true)
+          val simpleEdge = SimpleCompatbilityGraphEdge(RoleLineageWithID(e.v1,roleMap(e.v1).toSerializationHelper),
+            RoleLineageWithID(e.v2,roleMap(e.v2).toSerializationHelper))
+          val stats = new RoleMatchStatistics(dsName,simpleEdge,false,DECAY_THRESHOLD,trainTimeEnd)
+          stats.appendStatRow(outFileStats)
+        })
+        outFileStats.close()
+        outFileEdges.close()
+      }
+
     }
   }
 }

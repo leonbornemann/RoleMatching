@@ -10,18 +10,28 @@ class Block(val key: Any, val roleIDSInBlock: IndexedSeq[String]) {
       println(nPairs)
     }
     assert(pairID< nPairs)
-    //find first match partner first:
-    var curFirstMatchPartnerIndex = 0
-    var curMatchPartnerCount = roleIDSInBlock.size-1
-    var secondMatchPartnerIndex = pairID
-    while(secondMatchPartnerIndex>curMatchPartnerCount){
-      assert(curMatchPartnerCount>0)
-      secondMatchPartnerIndex -= curMatchPartnerCount
-      curMatchPartnerCount -= 1
-      curFirstMatchPartnerIndex +=1
+    if(pairID<roleIDSInBlock.size-1){
+      (roleIDSInBlock(0), roleIDSInBlock(pairID.toInt+1))
+    } else {
+      //find first match partner first:
+      var curFirstMatchPartnerIndex = 0
+      var curMatchPartnerCount = roleIDSInBlock.size-1
+      var secondMatchPartnerIndex = pairID
+      while(secondMatchPartnerIndex>curMatchPartnerCount){
+        assert(curMatchPartnerCount>0)
+        secondMatchPartnerIndex -= curMatchPartnerCount
+        curMatchPartnerCount -= 1
+        curFirstMatchPartnerIndex +=1
+      }
+      assert(secondMatchPartnerIndex<roleIDSInBlock.size)
+      val actualSecondIndex = curFirstMatchPartnerIndex + secondMatchPartnerIndex.toInt
+      if(curFirstMatchPartnerIndex==actualSecondIndex){
+        println("WHAAAAT?")
+        println(curFirstMatchPartnerIndex,actualSecondIndex)
+        println(roleIDSInBlock(curFirstMatchPartnerIndex),roleIDSInBlock(actualSecondIndex))
+      }
+      (roleIDSInBlock(curFirstMatchPartnerIndex),roleIDSInBlock(actualSecondIndex))
     }
-    assert(secondMatchPartnerIndex<roleIDSInBlock.size)
-    (roleIDSInBlock(curFirstMatchPartnerIndex),roleIDSInBlock(secondMatchPartnerIndex.toInt))
   }
 
 

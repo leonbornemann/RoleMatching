@@ -19,15 +19,14 @@ class SimpleBlockingSampler(rolesetDir: File,
                             seed:Long,
                             minVACount:Int,
                             minDVACount:Int,
-                            sampleGroundTruth:Boolean) extends StrictLogging{
+                            sampleGroundTruth:Boolean,
+                            nonGroundTruthSampleCount:Option[Int]) extends Sampler(outputDir,seed,trainTimeEnd) with StrictLogging{
 
   def getBlockingAtTime(roleMap: Map[String, RoleLineage], ts: LocalDate) = {
     val blocking = new TimestampBlocking(roleMap,ts)
     logger.debug(s"Finished blocking at $ts")
     blocking
   }
-  val random = new Random(seed)
-  new File(outputDir).mkdirs()
 
   def getBlockingOfPair(blockings: collection.mutable.TreeMap[Long,TimestampBlocking], chosenPair: Long) = {
     blockings.maxBefore(chosenPair).get
@@ -58,7 +57,7 @@ class SimpleBlockingSampler(rolesetDir: File,
   }
 
   def passesMinVAFilter(rl1: RoleLineage, rl2: RoleLineage): Boolean = {
-    rl1.exactMatchWithoutWildcardCount(rl2,trainTimeEnd) >= minVACount
+    rl1.exactMatchWithoutWildcardCount(rl2,trainTimeEnd,true) >= minVACount
   }
 
   def addSampleIfValid(roleMap: Map[String, RoleLineage],
@@ -96,6 +95,9 @@ class SimpleBlockingSampler(rolesetDir: File,
       val (startBlockID,block) = blocking.getBlockOfPair(chosenPair-startBlockingID)
       val (v1,v2) = block.getPair(chosenPair-startBlockingID-startBlockID)
       addSampleIfValid(roleMap, None, sample, v1, v2)
+      if(sample.size%100==0){
+        logger.debug(s"Current sample Size: ${sample.size}/$targetCount ( ${100*sample.size/targetCount.toDouble}%")
+      }
     }
     sample
   }
@@ -139,22 +141,11 @@ class SimpleBlockingSampler(rolesetDir: File,
         outFile.close()
         outFileSimpleEdge.close()
       } else {
-        val sample = getUniformSample(blockingsAsTreeMap,roleMap,100000)
-        val outFileEdges = new PrintWriter(outputDir + "/" + f.getName)
-        val outFileStats = new PrintWriter(outputDir + "/" + f.getName + ".csv")
-        val dsName = f.getName.split("\\.")(0)
-        val DECAY_THRESHOLD = 0.5
-        sample.foreach(e => {
-          e.appendToWriter(outFileEdges,false,true)
-          val simpleEdge = SimpleCompatbilityGraphEdge(RoleLineageWithID(e.v1,roleMap(e.v1).toSerializationHelper),
-            RoleLineageWithID(e.v2,roleMap(e.v2).toSerializationHelper))
-          val stats = new RoleMatchStatistics(dsName,simpleEdge,false,DECAY_THRESHOLD,trainTimeEnd)
-          stats.appendStatRow(outFileStats)
-        })
-        outFileStats.close()
-        outFileEdges.close()
+        val sample = getUniformSample(blockingsAsTreeMap,roleMap,nonGroundTruthSampleCount.get)
+        serializeSampleAndStats(dsName, sample,roleMap)
       }
 
     }
   }
+
 }

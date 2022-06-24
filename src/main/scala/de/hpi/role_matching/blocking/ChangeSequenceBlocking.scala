@@ -8,5 +8,5 @@ class ChangeSequenceBlocking(roleset: Roleset, trainTimeEnd: LocalDate) extends 
   override val groups: Map[Any, Iterable[RoleLineage]] = roleset
     .posToRoleLineage
     .values
-    .groupBy(rl => rl.nonWildcardValueSequenceBefore(trainTimeEnd))
+    .groupBy(rl => rl.valueSequenceBefore(trainTimeEnd))
 }

@@ -174,13 +174,13 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
   }
 
 
-  def nonWildcardValueSequenceBefore(trainTimeEnd: LocalDate) = {
+  def valueSequenceBefore(trainTimeEnd: LocalDate, includeWildcard:Boolean=true) = {
     val iterator = lineage.iterator
     var curElem = iterator.nextOption()
     val valueSequence = collection.mutable.ArrayBuffer[Any]()
     while(curElem.isDefined && curElem.get._1.isBefore(trainTimeEnd)){
       val value = curElem.get._2
-      if((valueSequence.isEmpty || valueSequence.last != value) && !isWildcard(value))
+      if((valueSequence.isEmpty || valueSequence.last != value) && (includeWildcard || !isWildcard(value)))
         valueSequence += value
       curElem = iterator.nextOption()
     }

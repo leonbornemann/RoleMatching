@@ -35,9 +35,6 @@ class RoleMatchStatistics(dataset:String,
   val rl2 = edgeDecay.v2.roleLineage.toRoleLineage
   val rl1Projected = rl1.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
   val rl2Projected = rl2.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-  val isInValueSetBlocking = rl1Projected.nonWildcardValueSetBefore(trainTimeEnd) == rl2Projected.nonWildcardValueSetBefore(trainTimeEnd)
-  val isInSequenceBlocking = rl1Projected.nonWildcardValueSequenceBefore(trainTimeEnd) == rl2Projected.nonWildcardValueSequenceBefore(trainTimeEnd)
-  val isInExactSequenceBlocking = rl1Projected.exactlyMatchesWithoutDecay(rl2Projected,trainTimeEnd)
   val hasTransitionOverlapDecay = rl1Projected.informativeValueTransitions.intersect(rl2Projected.informativeValueTransitions).size>=1
   val statRow = new BasicStatRow(rl1Projected,rl2Projected,trainTimeEnd)
   val hasValueSetOverlap = rl1Projected.nonWildcardValueSetBefore(trainTimeEnd.plusDays(1)).exists(v => rl2Projected.nonWildcardValueSetBefore(trainTimeEnd.plusDays(1)).contains(v))
@@ -55,12 +52,15 @@ class RoleMatchStatistics(dataset:String,
     .filter(!_.isAfter(trainTimeEnd))
     .exists(t => rl1ProjectedNoDecay.valueAt(t) == rl2ProjectedNoDecay.valueAt(t) && !RoleLineage.isWildcard(rl1ProjectedNoDecay.valueAt(t)))
   //csv fields:
+  val isInValueSetBlocking = rl1ProjectedNoDecay.nonWildcardValueSetBefore(trainTimeEnd) == rl2ProjectedNoDecay.nonWildcardValueSetBefore(trainTimeEnd)
+  val isInSequenceBlocking = rl1ProjectedNoDecay.valueSequenceBefore(trainTimeEnd) == rl2ProjectedNoDecay.valueSequenceBefore(trainTimeEnd)
+  val isInExactSequenceBlocking = rl1ProjectedNoDecay.exactlyMatchesWithoutDecay(rl2ProjectedNoDecay,trainTimeEnd)
   val isInStrictBlocking = statRow.remainsValidFullTimeSpan
   val isInStrictBlockingNoDecay = statRowNoDecay.remainsValidFullTimeSpan
   val decayedCompatibilityPercentage = rl1Projected.getCompatibilityTimePercentage(rl2Projected, trainTimeEnd)
   val nonDecayCompatibilityPercentage = rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)
   val exactSequenceMatchPercentage = rl1ProjectedNoDecay.exactMatchesWithoutWildcardPercentage(rl2ProjectedNoDecay,trainTimeEnd)
-  val vaCOunt = rl1Projected.exactMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd,true)
+  val vaCOunt = rl1Projected.exactMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd,false)
   val daCount = rl1Projected.exactDistinctMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd)
 
 }

@@ -33,7 +33,7 @@ object BaselineMain extends App with StrictLogging{
     if(methodIsValueSet)
       ifl._2.roleLineage.toRoleLineage.nonWildcardValueSetBefore(trainTimeEnd)
     else
-      ifl._2.roleLineage.toRoleLineage.nonWildcardValueSequenceBefore(trainTimeEnd)
+      ifl._2.roleLineage.toRoleLineage.valueSequenceBefore(trainTimeEnd)
   })(_._1)
   val edgesInMaxRecall = Source.fromFile(maxRecallEdgeSetFile)
     .getLines()

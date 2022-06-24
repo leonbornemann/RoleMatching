@@ -101,7 +101,7 @@ class DittoExporter(vertices: Roleset,
 
   def blocking(): IndexedSeq[IndexedSeq[String]] = {
     val grouped = vertexMapOnlyTrainWithID
-      .groupBy(t => vertexMapOnlyTrain(t._1).nonWildcardValueSequenceBefore(trainTimeEnd))
+      .groupBy(t => vertexMapOnlyTrain(t._1).valueSequenceBefore(trainTimeEnd))
     val blocks = grouped
       .map{case (k,v) => v.values.map(_.id).toIndexedSeq}
       .toIndexedSeq

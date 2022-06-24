@@ -12,9 +12,9 @@ class DecayEvaluator(resultPRDecay: PrintWriter) {
   val compatibilityValues = (0 to 50).map(i => 1.0 - i/100.0)
 
 
-  def addRecords(dataset: String, groundTruthExamples: Iterable[(SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdge, Boolean)], trainTimeEnd: LocalDate) = {
+  def addRecords(dataset: String, groundTruthExamples: Iterable[(SimpleCompatbilityGraphEdge, Boolean)], trainTimeEnd: LocalDate) = {
     groundTruthExamples
-      .foreach{case (edgeDecay,edgeNoDecay,label) =>
+      .foreach{case (edgeNoDecay,label) =>
         val rl1 = edgeNoDecay.v1
         val rl2 = edgeNoDecay.v2
         val noDecayCompatobility = rl1.roleLineage.toRoleLineage.getCompatibilityTimePercentage(rl2.roleLineage.toRoleLineage,trainTimeEnd)

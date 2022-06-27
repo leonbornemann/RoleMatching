@@ -1,5 +1,6 @@
 package de.hpi.role_matching.evaluation.semantic
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
 
@@ -7,28 +8,33 @@ import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import scala.io.Source
 
-class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) {
+class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLogging{
 
-  def executeForSimpleEdgeFile(inputEdgeFiles: Array[File],
-                               resultPR: PrintWriter,
-                               resultPRDecay: PrintWriter,
-                               decayThreshold:Double
+  def reexecuteForStatCSVFile(inputCSVFiles: Array[File],
+                              resultDir: File,
+                              decayThreshold:Double
                               ) = {
     DECAY_THRESHOLD = decayThreshold
-    RoleMatchStatistics.appendSchema(resultPR)
-    val decayEvaluator = new DecayEvaluator(resultPRDecay);
-    inputEdgeFiles.foreach(f => {
+    resultDir.mkdirs()
+    inputCSVFiles.foreach(f => {
+      logger.debug(s"Processing ${f}")
       val dataset = f.getName.split("\\.")(0)
+      val resultPr = new PrintWriter(resultDir + s"/$dataset.csv")
+      RoleMatchStatistics.appendSchema(resultPr)
       val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(dataset)).get.getAbsolutePath)
       val stringToLineageMap = rolesetNoDecay.getStringToLineageMap
-      val groundTruthExamples = SimpleCompatbilityGraphEdgeID.iterableFromJsonObjectPerLineFile(f.getAbsolutePath)
+      val groundTruthExamplIterator = Source.fromFile(f)
+        .getLines()
+        .map(l => {
+          val tokens = l.split(",")
+          SimpleCompatbilityGraphEdgeID(tokens(1),tokens(2))
+        })
+      //skip schema line
+      groundTruthExamplIterator.next()
+      val groundTruthExamples = groundTruthExamplIterator
         .map(e => (SimpleCompatbilityGraphEdge(stringToLineageMap(e.v1),stringToLineageMap(e.v2)),false))
-      val retainedEdges = serializeSample(dataset,groundTruthExamples,None,resultPR)
-      if(runDecayEvaluation) {
-        decayEvaluator.addRecords(dataset, retainedEdges, trainTimeEnd)
-      }
-    resultPRDecay.close()
-    resultPR.close()
+      serializeSample(dataset,groundTruthExamples,None,resultPr)
+      resultPr.close()
     })
   }
 

@@ -22,6 +22,11 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
     }
   }
 
+  def isIn1DVA(rl1: RoleLineage, rl2: RoleLineage): Boolean = {
+    val daCount = rl1.exactDistinctMatchWithoutWildcardCount(rl2,trainTimeEnd)
+    daCount>=1
+  }
+
   def runSampling() = {
     rolesetDir.listFiles().foreach { f =>
       logger.debug(s"Processing ${f}")
@@ -41,14 +46,14 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
         val i = random.nextInt(roleList.size)
         val j = random.nextInt(roleList.size)
         if(i!=j){
-          if(isIn95Va2DVA(roleList(i)._2,roleList(j)._2)){
+          if(isIn1DVA(roleList(i)._2,roleList(j)._2)){
             val roleMatchCandidate = SimpleCompatbilityGraphEdgeID(roleList(i)._1, roleList(j)._1)
             if(!sample.contains(roleMatchCandidate)){
               sample.add(roleMatchCandidate)
               serializeMatch(dsName,roleMap,outFileEdges,outFileStats,DECAY_THRESHOLD,roleMatchCandidate)
               outFileStats.flush()
               outFileEdges.flush()
-              logger.debug(s"Cur Sample Size:${sample.size} with misses: $countMissed")
+              logger.debug(s"Dataset $dsName Cur Sample Size:${sample.size} with misses: $countMissed")
             }
           } else {
             countMissed +=1
@@ -58,7 +63,7 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
           logger.debug(s"Current sample Size: ${sample.size}/$targetCount ( ${100*sample.size/targetCount.toDouble}%), missed: $countMissed")
         }
       }
-      logger.debug(s"Finished with count missed: $countMissed")
+      logger.debug(s"Finshed $dsName with sample size:${sample.size} with misses: $countMissed")
       outFileStats.close()
       outFileEdges.close()
       //serializeSampleAndStats(dsName,sample,roleMap)

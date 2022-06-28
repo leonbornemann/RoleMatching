@@ -22,9 +22,14 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
     }
   }
 
-  def isIn1DVA(rl1: RoleLineage, rl2: RoleLineage): Boolean = {
-    val daCount = rl1.exactDistinctMatchWithoutWildcardCount(rl2,trainTimeEnd)
-    daCount>=1
+  def isIn1VA(rl1: RoleLineage, rl2: RoleLineage): Boolean = {
+    val dvaCount = rl1.exactDistinctMatchWithoutWildcardCount(rl2,trainTimeEnd)
+    if(dvaCount>=1){
+      val daCount = rl1.exactMatchWithoutWildcardCount(rl2,trainTimeEnd,false)
+      daCount>=1
+    } else {
+      false
+    }
   }
 
   def runSampling() = {
@@ -46,7 +51,7 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
         val i = random.nextInt(roleList.size)
         val j = random.nextInt(roleList.size)
         if(i!=j){
-          if(isIn1DVA(roleList(i)._2,roleList(j)._2)){
+          if(isIn1VA(roleList(i)._2,roleList(j)._2)){
             val roleMatchCandidate = SimpleCompatbilityGraphEdgeID(roleList(i)._1, roleList(j)._1)
             if(!sample.contains(roleMatchCandidate)){
               sample.add(roleMatchCandidate)

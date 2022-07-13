@@ -1,6 +1,7 @@
 package de.hpi.oneshot
 
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdgeID
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
 import de.hpi.role_matching.evaluation.tuning.BasicStatRow
 
@@ -119,7 +120,8 @@ class DittoExporterFromRM(inputDir: File,
         if(vertexMap.contains(v1)&& vertexMap.contains(v2) && satisfiesTransitionFilter(v1,v2)){
           val label:Option[Boolean] = getClassLabel(v1,v2)
           if(label.isDefined){
-            outputRecord(v1,v2,label.get)
+            SimpleCompatbilityGraphEdgeID(v1,v2).appendToWriter(resultPr,false,true)
+            //outputRecord(v1,v2,label.get)
             serialized +=1
           }
         }

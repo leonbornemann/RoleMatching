@@ -18,19 +18,20 @@ abstract class Sampler(outputDir: String, seed: Long,trainTimeEnd:LocalDate) {
     val outFileEdges = new PrintWriter(outputDir + "/" + dsName + ".json")
     val outFileStats = new PrintWriter(outputDir + "/" + dsName + ".csv")
     val DECAY_THRESHOLD = 0.57
+    val DECAY_THRESHOLD_SCB = 0.5
     RoleMatchStatistics.appendSchema(outFileStats)
     sample.foreach(e => {
-      serializeMatch(dsName, roleMap, outFileEdges, outFileStats, DECAY_THRESHOLD, e)
+      serializeMatch(dsName, roleMap, outFileEdges, outFileStats, DECAY_THRESHOLD,DECAY_THRESHOLD_SCB, e)
     })
     outFileStats.close()
     outFileEdges.close()
   }
 
-  def serializeMatch(dsName: String, roleMap: Map[String, RoleLineage], outFileEdges: PrintWriter, outFileStats: PrintWriter, DECAY_THRESHOLD: Double, e: SimpleCompatbilityGraphEdgeID) = {
+  def serializeMatch(dsName: String, roleMap: Map[String, RoleLineage], outFileEdges: PrintWriter, outFileStats: PrintWriter, DECAY_THRESHOLD: Double,DECAY_THRESHOLD_SCB:Double, e: SimpleCompatbilityGraphEdgeID) = {
     e.appendToWriter(outFileEdges, false, true)
     val simpleEdge = SimpleCompatbilityGraphEdge(RoleLineageWithID(e.v1, roleMap(e.v1).toSerializationHelper),
       RoleLineageWithID(e.v2, roleMap(e.v2).toSerializationHelper))
-    val stats = new RoleMatchStatistics(dsName, simpleEdge, false, DECAY_THRESHOLD, trainTimeEnd)
+    val stats = new RoleMatchStatistics(dsName, simpleEdge, false, DECAY_THRESHOLD,DECAY_THRESHOLD_SCB, trainTimeEnd)
     stats.appendStatRow(outFileStats)
   }
 }

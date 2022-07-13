@@ -9,7 +9,7 @@ import java.time.LocalDate
 
 class BasicStatRow(val fl1:RoleLineage,val fl2:RoleLineage,val trainTimeEnd:LocalDate) extends StatComputer{
 
-  def isInteresting = getPointInTimeOfRealChangeAfterTrainPeriod(fl1, trainTimeEnd).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(fl2, trainTimeEnd).isDefined
+  def isInterestingInEvaluation = getPointInTimeOfRealChangeAfterTrainPeriod(fl1, trainTimeEnd).isDefined || getPointInTimeOfRealChangeAfterTrainPeriod(fl2, trainTimeEnd).isDefined
 
   def remainsValidFullTimeSpan = fl1.tryMergeWithConsistent(fl2, RemainsValidVariant.STRICT).isDefined
 

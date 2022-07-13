@@ -12,15 +12,20 @@ class RoleMatchStatistics(dataset:String,
                           edgeNoDecay: SimpleCompatbilityGraphEdge,
                           label: Boolean,
                           DECAY_THRESHOLD: Double,
+                          DECAY_THRESHOLD_SCB: Double,
                           trainTimeEnd:LocalDate) {
+
+  val decayThresholds = (0 to 200 )
+    .map(i => i / 200.0)
+    .reverse
+
   def appendStatRow(resultPR: PrintWriter) = {
     resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
       s"$decayedCompatibilityPercentage," +
       s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
       s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay,"+
-      s"$vaCOunt,$daCount")
+      s"$vaCOunt,$daCount,$isInTSMBlockingNoWildcard,$isInTSMBlockingWithWildcard,$strictlyCompatiblePercentage,$decayScore")
   }
-
 
   def getDecayedEdgeFromUndecayedEdge(edgeNoDecay: SimpleCompatbilityGraphEdge,beta:Double):SimpleCompatbilityGraphEdge = {
     val rl1WithDecay = edgeNoDecay.v1.roleLineage.toRoleLineage.applyDecay(beta,trainTimeEnd)
@@ -62,7 +67,14 @@ class RoleMatchStatistics(dataset:String,
   val exactSequenceMatchPercentage = rl1ProjectedNoDecay.exactMatchesWithoutWildcardPercentage(rl2ProjectedNoDecay,trainTimeEnd)
   val vaCOunt = rl1Projected.exactMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd,false)
   val daCount = rl1Projected.exactDistinctMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd)
-
+  val isInTSMBlockingNoWildcard = rl1Projected.getValueTransitionSet(true,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd)) == rl2Projected.getValueTransitionSet(true,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd))
+  val isInTSMBlockingWithWildcard = rl1Projected.getValueTransitionSet(false,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd)) == rl2Projected.getValueTransitionSet(false,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd))
+  val strictlyCompatiblePercentage = rl1ProjectedNoDecay.getStrictCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)
+  val edgeDecaySCB = getDecayedEdgeFromUndecayedEdge(edgeNoDecay,DECAY_THRESHOLD_SCB)
+  val rl1ProjectedSCBDecay = edgeDecaySCB.v1.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
+  val rl2ProjectedSCBDecay = edgeDecaySCB.v2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
+  val strictlyCompatiblePercentageWithDecay = rl1ProjectedSCBDecay.getStrictCompatibilityTimePercentage(rl2ProjectedSCBDecay,trainTimeEnd)
+  val decayScore = RoleMatchStatistics.getDecayScore(rl1ProjectedNoDecay,rl2ProjectedNoDecay,decayThresholds,trainTimeEnd)
 }
 
 object RoleMatchStatistics{
@@ -70,7 +82,28 @@ object RoleMatchStatistics{
   def appendSchema(resultPr:PrintWriter) = {
     resultPr.println("dataset,id1,id2,isInStrictBlockingDecay,isInStrictBlockingNoDecay,isInValueSetBlocking,isInSequenceBlocking," +
       "isInExactMatchBlocking,isSemanticRoleMatch,compatibilityPercentageDecay,compatibilityPercentageNoDecay,exactSequenceMatchPercentage," +
-      "hasTransitionOverlapNoDecay,hasTransitionOverlapDecay,hasValueSetOverlap,isInSVABlockingNoDecay,isInSVABlockingDecay,VACount,DVACount")
+      "hasTransitionOverlapNoDecay,hasTransitionOverlapDecay,hasValueSetOverlap,isInSVABlockingNoDecay,isInSVABlockingDecay,VACount,DVACount,"+
+      "isInTSMBlockingNoWildcard,isInTSMBlockingWithWildcard,strictlyCompatiblePercentage,decayScore")
+  }
+
+  //decay thresholds must be descending!
+  def getDecayScore(rl1: RoleLineage, rl2: RoleLineage,decayThresholds:IndexedSeq[Double],trainTimeEnd:LocalDate) = {
+    val it = decayThresholds.iterator
+    var curThreshold = -2.0
+    while(curThreshold == -2.0){
+      if(it.hasNext){
+        val cur = it.next()
+        val rl1Decayed = rl1.applyDecay(cur,trainTimeEnd)
+        val rl2Decayed = rl2.applyDecay(cur,trainTimeEnd)
+        val statRow = new BasicStatRow(rl1Decayed,rl2Decayed,trainTimeEnd)
+        if(statRow.remainsValidFullTimeSpan) {
+          curThreshold=cur
+        }
+      } else {
+        curThreshold = -1.0
+      }
+    }
+    curThreshold
   }
 
 }

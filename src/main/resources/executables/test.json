@@ -1,0 +1,40 @@
+{
+  "name": "education_final",
+  "task_type": "classification",
+  "vocab": ["0", "1"],
+  "trainset": "../../data/dittoExport/wikipedia/final/education.json.txt_train.txt",
+  "validset": "../../data/dittoExport/wikipedia/final/education.json.txt_validation.txt",
+  "testset": "../../data/dittoExport/wikipedia/final/education.json.txt_test.txt"
+},
+{
+"name": "politics_final",
+"task_type": "classification",
+"vocab": ["0", "1"],
+"trainset": "../../data/dittoExport/wikipedia/final/politics.json.txt_train.txt",
+"validset": "../../data/dittoExport/wikipedia/final/politics.json.txt_validation.txt",
+"testset": "../../data/dittoExport/wikipedia/final/politics.json.txt_test.txt"
+},
+{
+"name": "tv_and_film_final",
+"task_type": "classification",
+"vocab": ["0", "1"],
+"trainset": "../../data/dittoExport/wikipedia/final/tv_and_film.json.txt_train.txt",
+"validset": "../../data/dittoExport/wikipedia/final/tv_and_film.json.txt_validation.txt",
+"testset": "../../data/dittoExport/wikipedia/final/tv_and_film.json.txt_test.txt"
+},
+{
+"name": "military_final",
+"task_type": "classification",
+"vocab": ["0", "1"],
+"trainset": "../../data/dittoExport/wikipedia/final/military.json.txt_train.txt",
+"validset": "../../data/dittoExport/wikipedia/final/military.json.txt_validation.txt",
+"testset": "../../data/dittoExport/wikipedia/final/military.json.txt_test.txt"
+},
+{
+"name": "football_final",
+"task_type": "classification",
+"vocab": ["0", "1"],
+"trainset": "../../data/dittoExport/wikipedia/final/football.json.txt_train.txt",
+"validset": "../../data/dittoExport/wikipedia/final/football.json.txt_validation.txt",
+"testset": "../../data/dittoExport/wikipedia/final/football.json.txt_test.txt"
+},

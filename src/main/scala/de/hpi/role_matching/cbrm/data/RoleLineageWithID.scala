@@ -8,6 +8,16 @@ import de.hpi.util.TableFormatter
 import java.time.LocalDate
 
 case class RoleLineageWithID(id:String, roleLineage: RoleLineageWithHashMap) extends JsonWritable[RoleLineageWithID] {
+  def property = {
+    id.split("\\|\\|").last
+  }
+
+  def wikipediaURL = {
+    val pageID = id
+      .split("\\|\\|")(1)
+    s"https://en.wikipedia.org/?curid=$pageID"
+  }
+
 
   def csvSafeID = Util.toCSVSafe(id)
 
@@ -20,7 +30,7 @@ case class RoleLineageWithID(id:String, roleLineage: RoleLineageWithHashMap) ext
 object RoleLineageWithID extends JsonReadable[RoleLineageWithID] {
   def getDittoIDString(id1: String): String = {
     if(id1.contains("||")) {
-      val tokens = id1.split("||")
+      val tokens = id1.split("\\|\\|")
       val template = Util.toDittoSaveString(tokens(0))
       val pageID = Util.toDittoSaveString(tokens(1))
       val propertyID = Util.toDittoSaveString(tokens.last)

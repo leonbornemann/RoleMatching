@@ -2,6 +2,7 @@ package de.hpi.role_matching.ditto
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.blocking.TransitionSetBlocking
 import de.hpi.role_matching.cbrm.data.Roleset
 
 import java.io.{File, PrintWriter}
@@ -11,25 +12,28 @@ import scala.sys.process._
 
 object DittoExport extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")
-  val datasources = args(0).split(";")
-  val rolesetDirs = args(1).split(";")
-  val trainTimeEnds = args(2).split(";").map(LocalDate.parse(_))
+  val datasource = args(0)
+  val rolesetDir = args(1)
+  val trainTimeEnd = LocalDate.parse(args(2))
   val resultRootDir = new File(args(3))
   val exportEntityPropertyIDs = args(4).toBoolean
-  val exportEvidenceCounts = args(5).toBoolean
-  assert(rolesetDirs.size==datasources.size)
-  for(((source,rolesetDir),trainTimeEnd) <- datasources.zip(rolesetDirs).zip(trainTimeEnds)){
-    logger.debug("Running ",source,rolesetDir)
-    GLOBAL_CONFIG.setSettingsForDataSource(source)
-    val rolesetFiles = new File(rolesetDir).listFiles()
-    for(rolesetFile <- rolesetFiles){
-      logger.debug("Running {}",rolesetFile)
-      val resultDir = new File(resultRootDir.getAbsolutePath + s"/${new File(rolesetDir).getName}")
-      val resultFile = new File(s"${resultDir.getAbsolutePath}/${rolesetFile.getName}.txt")
-      resultDir.mkdir()
+  val exportSampleOnly = args(5).toBoolean
+  val dsNames = args(6).split(",")
+  val maxSampleSize = args(7).toInt
+  logger.debug("Running ",rolesetDir)
+  GLOBAL_CONFIG.setSettingsForDataSource(datasource)
+  val rolesetFiles = new File(rolesetDir).listFiles()
+  for(rolesetFile <- rolesetFiles){
+    val dsName = rolesetFile.getName.split("\\.")(0)
+    if(dsNames.contains(dsName)) {
+      logger.debug("Running {}", rolesetFile)
+      val resultFile = new File(s"$resultRootDir/${rolesetFile.getName}.txt")
       val vertices = Roleset.fromJsonFile(rolesetFile.getAbsolutePath)
-      val exporter = new DittoExporter(vertices,trainTimeEnd,resultFile,exportEntityPropertyIDs,exportEvidenceCounts)
+      val blocker = new TransitionSetBlocking(vertices, trainTimeEnd)
+      val exporter = new DittoExporter(vertices, trainTimeEnd, Some(blocker), resultFile, exportEntityPropertyIDs, false, exportSampleOnly, maxSampleSize)
       exporter.exportDataWithSimpleBlocking()
+    } else {
+      logger.debug(s"Skipping $dsName")
     }
   }
 }

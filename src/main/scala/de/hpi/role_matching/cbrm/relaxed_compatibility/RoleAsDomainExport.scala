@@ -7,9 +7,8 @@ import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
 object RoleAsDomainExport extends App {
-  private val source: String = args(0).split(",")(0)
-  private val timeFactor: Double = args(0).split(",")(1).toDouble
-  GLOBAL_CONFIG.setSettingsForDataSource(source,timeFactor)
+  private val source: String = args(0)
+  GLOBAL_CONFIG.setSettingsForDataSource(source)
   val rolesetDir = args(1)
   val rolesetFiles = new File(rolesetDir).listFiles()
   val traintTimeEnd = LocalDate.parse(args(2))

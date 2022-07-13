@@ -13,6 +13,14 @@ import java.time.LocalDate
 //not very memory efficient but can easily be written in parallel
 case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithID) extends JsonWritable[SimpleCompatbilityGraphEdge] {
 
+  def firstNonWildcardValueOverlap = {
+    new CommonPointOfInterestIterator(v1.roleLineage.toRoleLineage,v2.roleLineage.toRoleLineage)
+      .withFilter(cp => cp.curValueA==cp.curValueB && !RoleLineage.isWildcard(cp.curValueA))
+      .next()
+      .curValueA
+  }
+
+
   def eventOccurrences(trainTimeEnd:LocalDate):EventOccurrenceStatistics = {
     val commonPointOfInterestIterator = new CommonPointOfInterestIterator(v1.roleLineage.toRoleLineage, v2.roleLineage.toRoleLineage)
     val eventCounts = EventOccurrenceStatistics(trainTimeEnd)

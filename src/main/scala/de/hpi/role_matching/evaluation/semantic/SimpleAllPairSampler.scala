@@ -46,7 +46,9 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
       val outFileEdges = new PrintWriter(outputDir + "/" + dsName + ".json")
       val outFileStats = new PrintWriter(outputDir + "/" + dsName + ".csv")
       val DECAY_THRESHOLD = 0.57
+      val DECAY_THRESHOLD_SCB = 0.5
       RoleMatchStatistics.appendSchema(outFileStats)
+      var logged = false
       while(sample.size<targetCount){
         val i = random.nextInt(roleList.size)
         val j = random.nextInt(roleList.size)
@@ -55,17 +57,19 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
             val roleMatchCandidate = SimpleCompatbilityGraphEdgeID(roleList(i)._1, roleList(j)._1)
             if(!sample.contains(roleMatchCandidate)){
               sample.add(roleMatchCandidate)
-              serializeMatch(dsName,roleMap,outFileEdges,outFileStats,DECAY_THRESHOLD,roleMatchCandidate)
+              serializeMatch(dsName,roleMap,outFileEdges,outFileStats,DECAY_THRESHOLD,DECAY_THRESHOLD_SCB,roleMatchCandidate)
               outFileStats.flush()
               outFileEdges.flush()
-              logger.debug(s"Dataset $dsName Cur Sample Size:${sample.size} with misses: $countMissed")
+              logged=false
+              //logger.debug(s"Dataset $dsName Cur Sample Size:${sample.size} with misses: $countMissed")
             }
           } else {
             countMissed +=1
           }
         }
-        if(sample.size%100==0){
+        if(sample.size%100==0 && !logged){
           logger.debug(s"Current sample Size: ${sample.size}/$targetCount ( ${100*sample.size/targetCount.toDouble}%), missed: $countMissed")
+          logged=true
         }
       }
       logger.debug(s"Finshed $dsName with sample size:${sample.size} with misses: $countMissed")

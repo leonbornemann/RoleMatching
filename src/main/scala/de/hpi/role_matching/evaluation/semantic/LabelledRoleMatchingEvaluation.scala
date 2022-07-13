@@ -17,9 +17,6 @@ object LabelledRoleMatchingEvaluation extends App {
   val resultPR = new PrintWriter(args(2))
   val resultPRDecay = new PrintWriter(args(3))
   val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFilesNoneDecayed)
+  //RoleMatchEvaluator.executeLabelGrouping(inputLabelDirs)
   RoleMatchEvaluator.executeEvaluation(inputLabelDirs,resultPR,resultPRDecay)
-
-
-
-
 }

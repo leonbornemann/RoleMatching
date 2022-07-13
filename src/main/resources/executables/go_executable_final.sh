@@ -1,0 +1,5 @@
+go run Test.go ../../roleAsDomains//politics.json ../../roleAsDomains//politics.json /san2/data/change-exploration/roleMerging/finalExperiments/rmFinalOutput/politics/ 0.88 rm > logs/politicsLog.txt 2>&1
+go run Test.go ../../roleAsDomains//military.json ../../roleAsDomains//military.json /san2/data/change-exploration/roleMerging/finalExperiments/rmFinalOutput/military/ 0.88 rm > logs/militaryLog.txt 2>&1
+go run Test.go ../../roleAsDomains//education.json ../../roleAsDomains//education.json /san2/data/change-exploration/roleMerging/finalExperiments/rmFinalOutput/education/ 0.88 rm > logs/educationLog.txt 2>&1
+go run Test.go ../../roleAsDomains//tv_and_film.json ../../roleAsDomains//tv_and_film.json /san2/data/change-exploration/roleMerging/finalExperiments/rmFinalOutput/tv_and_film/ 0.88 rm > logs/tv_and_filmLog.txt 2>&1
+go run Test.go ../../roleAsDomains//football.json ../../roleAsDomains//football.json /san2/data/change-exploration/roleMerging/finalExperiments/rmFinalOutput/football/ 0.88 rm > logs/footballLog.txt 2>&1

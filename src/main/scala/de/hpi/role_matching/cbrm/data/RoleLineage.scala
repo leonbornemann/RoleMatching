@@ -9,6 +9,7 @@ import de.hpi.role_matching.evaluation.tuning.RemainsValidVariant.RemainsValidVa
 
 import java.time.{Duration, LocalDate}
 import java.time.temporal.ChronoUnit
+import javax.print.attribute.standard.MediaSize.Other
 import scala.collection.mutable
 
 @SerialVersionUID(3L)
@@ -43,7 +44,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
         .sorted
       val indexOfCutoff = math.ceil(decayThreshold * durationsInTrainTime.size).toInt -1
       if(!durationsInTrainTime.isEmpty){
-        val decayTimeInDays = durationsInTrainTime(indexOfCutoff)
+        val decayTimeInDays = if(indexOfCutoff<0) GLOBAL_CONFIG.granularityInDays else durationsInTrainTime(indexOfCutoff)
         assert((decayTimeInDays % GLOBAL_CONFIG.granularityInDays) == 0)
         val lineage = withIndex
           .flatMap { case ((ld, v), i) =>
@@ -90,12 +91,12 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
 
 
   def exactMatchesWithoutWildcardPercentage(rl2Projected: RoleLineage, until: LocalDate) = {
-    val results = exactlyMatchesWithoutWildcard(rl2Projected,until)
+    val results = exactlyMatchesWithoutWildcard(rl2Projected,GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(until)))
     results.filter(b => b).size / results.size.toDouble
   }
 
   def exactMatchWithoutWildcardCount(other:RoleLineage,until:LocalDate,ignoreWildcardInCount:Boolean = false) =
-    exactlyMatchesWithoutWildcard(other,until,ignoreWildcardInCount).filter(b => b).size
+    exactlyMatchesWithoutWildcard(other,GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(until)),ignoreWildcardInCount).filter(b => b).size
 
   def toExactValueSequence(endTime:LocalDate) = {
     val timeRange = GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(endTime))
@@ -107,10 +108,9 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
       })
   }
 
-  def exactlyMatchesWithoutWildcard(rl2Projected: RoleLineage, until: LocalDate,ignoreWildcardInCount:Boolean = false) = {
+  def exactlyMatchesWithoutWildcard(rl2Projected: RoleLineage, timeRange:IndexedSeq[LocalDate], ignoreWildcardInCount:Boolean = false) = {
     val meWithoutDecay = RoleLineage(lineage.filter(_._2!=ReservedChangeValues.DECAYED))
     val otherWithoutDecay = RoleLineage(rl2Projected.lineage.filter(_._2!=ReservedChangeValues.DECAYED))
-    val timeRange = GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(until))
     timeRange
       .map(ld => {
         val myVal = meWithoutDecay.valueAt(ld)
@@ -119,9 +119,12 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
       })
   }
 
-
   def exactlyMatchesWithoutDecay(rl2Projected: RoleLineage,until:LocalDate) = {
-    exactlyMatchesWithoutWildcard(rl2Projected,until).forall(b => b)
+    exactlyMatchesWithoutWildcard(rl2Projected,GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(until))).forall(b => b)
+  }
+
+  def exactlyMatchesWithoutDecayInTimePeriod(rl2Projected: RoleLineage,timePeriod:IndexedSeq[LocalDate]) = {
+    exactlyMatchesWithoutWildcard(rl2Projected,timePeriod).forall(b => b)
   }
 
 
@@ -340,8 +343,10 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
 
 
 
-  def getValueTransitionSet(ignoreWildcards: Boolean, granularityInDays: Int) = {
-    val vl = if (ignoreWildcards) getValueLineage.filter { case (k, v) => !isWildcard(v) }.toIndexedSeq else getValueLineage.toIndexedSeq
+  def getValueTransitionSet(ignoreWildcards: Boolean, granularityInDays: Int,trainTimeEnd:Option[LocalDate]=None) = {
+    val vl = (if (ignoreWildcards) getValueLineage.filter { case (k, v) => !isWildcard(v) }.toIndexedSeq else getValueLineage.toIndexedSeq)
+      .filter(t => t._1.isBefore(trainTimeEnd.getOrElse(LocalDate.MAX)))
+    val end = if(trainTimeEnd.isDefined) trainTimeEnd.get else GLOBAL_CONFIG.STANDARD_TIME_FRAME_END
     val transitions = (1 until vl.size)
       .flatMap(i => {
         val prev = vl(i - 1)
@@ -354,7 +359,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
         }
         res += ValueTransition(prev._2, cur._2)
         //handle last:
-        if (i == vl.size - 1 && cur._1.isBefore(GLOBAL_CONFIG.STANDARD_TIME_FRAME_END)) {
+        if (i == vl.size - 1 && cur._1.isBefore(end)) {
           res += ValueTransition(cur._2, cur._2)
         }
         res
@@ -512,9 +517,49 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
   //=GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS
   def getOverlapEvidenceMultiSet(other: RoleLineage): collection.Map[ValueTransition, Int] = getOverlapEvidenceMultiSet(other, GLOBAL_CONFIG.ALLOW_INTERLEAVED_WILDCARDS_BETWEEN_EVIDENCE_TRANSITIONS)
 
+  def getStrictCompatibilityTimePercentage(other:RoleLineage,timeEnd:LocalDate) = {
+    val absCompatibleTime = getAbsStrictCompatibleTime(other,timeEnd)
+    absCompatibleTime.toDouble / ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,timeEnd).toDouble
+  }
+
   def getCompatibilityTimePercentage(other:RoleLineage,timeEnd:LocalDate) = {
     val absCompatibleTime = getAbsCompatibleTime(other,timeEnd)
     absCompatibleTime.toDouble / ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,timeEnd).toDouble
+  }
+
+  def nonWildcardValueAtOrBefore(ld: LocalDate) = {
+    val toReturn = lineage
+      .filter(d => !d._1.isAfter(ld))
+      .toIndexedSeq
+      .reverse
+      .find{case (_,v) => !isWildcard(v)}
+      .map(_._2)
+    toReturn
+  }
+
+  def nonWildcardValueAtOrAfter(ld: LocalDate) = {
+    val toReturn = lineage
+      .iteratorFrom(ld)
+      .find{case (_,v) => !isWildcard(v)}
+      .map(_._2)
+    toReturn
+  }
+
+  def getAbsStrictCompatibleTime(other: RoleLineage, until:LocalDate) = {
+    val timeRange = GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(_.isBefore(until))
+    timeRange
+      .map(ld => {
+        val myVal = valueAt(ld)
+        val otherVal = other.valueAt(ld)
+        (isWildcard(myVal),isWildcard(otherVal)) match {
+          case (true,true) => true
+          case (true,false) => nonWildcardValueAtOrBefore(ld).getOrElse(None) == otherVal || nonWildcardValueAtOrAfter(ld).getOrElse(None) == otherVal
+          case (false,true) => other.nonWildcardValueAtOrBefore(ld).getOrElse(None) == myVal || other.nonWildcardValueAtOrAfter(ld).getOrElse(None) == myVal
+          case (false,false) => myVal == otherVal
+        }
+      })
+      .map(b => if(b) GLOBAL_CONFIG.granularityInDays else 0)
+      .sum
   }
 
   def getAbsCompatibleTime(other:RoleLineage,timeEnd:LocalDate) = {

@@ -30,7 +30,7 @@ case class EdgeStatRowForTuning(e: SimpleCompatbilityGraphEdge,
 
   def getStatRow = {
     Seq(e.v1.csvSafeID, e.v2.csvSafeID,
-      scoreStats.trainTimeEnd, remainsValidFullTimeSpan,isValidSuperStrict,isValidFirstChangeAfter, isInteresting, interestingnessEvidence,
+      scoreStats.trainTimeEnd, remainsValidFullTimeSpan,isValidSuperStrict,isValidFirstChangeAfter, isInterestingInEvaluation, interestingnessEvidence,
       //evalEndDateOneTimeUnitAfterTrain,remainsValidOneTimeUnitAfterTrain,isInterestingOneTimeUnitAfterTrain,interestingnessEvidenceOneTimeUnitAfterTrain,
       scoreStats.strongPositive, scoreStats.weakPositive, scoreStats.neutral, scoreStats.weakNegative, scoreStats.strongNegative) ++ scoreStats.summedScores.get
   }

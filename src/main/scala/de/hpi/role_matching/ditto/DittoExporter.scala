@@ -2,27 +2,36 @@ package de.hpi.role_matching.ditto
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
+import de.hpi.role_matching.blocking.{SimpleGroupBlocker, TransitionSetBlocking}
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset, ValueTransition}
 import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics
+import de.hpi.role_matching.evaluation.semantic.Block
 import de.hpi.role_matching.evaluation.tuning.BasicStatRow
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import scala.io.Source
 import scala.sys.process._
+import scala.util.Random
 
 
 class DittoExporter(vertices: Roleset,
                     trainTimeEnd: LocalDate,
+                    blocker:Option[TransitionSetBlocking],
                     resultFile:File,
                     exportEntityPropertyIDs:Boolean,
-                    exportEvidenceCounts:Boolean) extends StrictLogging{
+                    exportEvidenceCounts:Boolean,
+                    exportSampleOnly:Boolean,
+                    maxCandidatePairs:Int = Integer.MAX_VALUE) extends DittoDataExporter with StrictLogging{
 
+  val random = new Random(13)
   val vertexMap = vertices.getStringToLineageMap.map{case (k,v) => (k,v.roleLineage.toRoleLineage)}
   val vertexMapOnlyTrain = vertexMap.map{case (k,v) => (k,v.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
   val vertexMapOnlyTrainWithID = vertices.getStringToLineageMap.map{case (k,v) => (k,RoleLineageWithID(v.id,v.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd).toSerializationHelper))}
+  val vertexMapOnlyEvaluation = vertexMap.map{case (k,v) => (k,v.projectToTimeRange(trainTimeEnd,GLOBAL_CONFIG.STANDARD_TIME_FRAME_END))}
   val tfIDFMap = RoleLineageWithID.getTransitionHistogramForTFIDFFromVertices(vertexMapOnlyTrainWithID.values.toSeq, GLOBAL_CONFIG.granularityInDays)
+  val evaluationPeriod = GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(_.isAfter(trainTimeEnd))
 
   val idToRoleLineageSmallestTrainTimeEnd = vertexMap.map{case (id,rl) => (id,rl.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd))}
   val idToChangeSetInSmallestTrainTimeEnd = idToRoleLineageSmallestTrainTimeEnd.map{case (id,rl) => (id,rl.allNonWildcardTimestamps.toSet)}
@@ -81,40 +90,53 @@ class DittoExporter(vertices: Roleset,
   def exportDataWithSimpleBlocking() = {
     val blocks:IndexedSeq[IndexedSeq[String]] = blocking()
     var exportedLines = 0
-    blocks.foreach{ block =>
-      for(i <- 0 until block.size){
-        for(j <- i until block.size){
-          val v1 = block(i)
-          val v2 = block(j)
+    var blockI = 0
+    if(!exportSampleOnly){
+      while(exportedLines<maxCandidatePairs && blockI!=blocks.size){
+        var pairI = 0
+        val curBlock = blocks(blockI)
+        while(exportedLines<maxCandidatePairs  && pairI<curBlock.size-1){
+          var pairJ = pairI+1
+          while(exportedLines<maxCandidatePairs  && pairJ<curBlock.size){
+            val v1 = curBlock(pairI)
+            val v2 = curBlock(pairJ)
+            val label:Option[Boolean] = getClassLabel(v1,v2)
+            if(label.isDefined){
+              outputRecord(v1,v2,label.get)
+              exportedLines +=1
+            }
+            pairJ+=1
+          }
+          pairI+=1
+        }
+        blockI+=1
+      }
+    } else {
+      val sampledPairs = collection.mutable.HashSet[(String,String)]()
+      val asBlocks = new SimpleBlocking(blocks.map(b => new Block(None,b)))
+      val maxCount = asBlocks.nPairsInBlocking
+      while(sampledPairs.size<maxCandidatePairs){
+        val chosenPair = random.nextLong(maxCount)
+        val (startBlockID,block) = asBlocks.getBlockOfPair(chosenPair)
+        val (v1,v2) = block.getPair(chosenPair-startBlockID)
+        if(!sampledPairs.contains((v1,v2))){
           val label:Option[Boolean] = getClassLabel(v1,v2)
           if(label.isDefined){
             outputRecord(v1,v2,label.get)
             exportedLines +=1
+            sampledPairs.add((v1,v2))
           }
         }
       }
     }
     resultPr.close()
-    exportedLines
     executeTrainTestSplit(exportedLines)
   }
 
   def blocking(): IndexedSeq[IndexedSeq[String]] = {
-    val grouped = vertexMapOnlyTrainWithID
-      .groupBy(t => vertexMapOnlyTrain(t._1).valueSequenceBefore(trainTimeEnd))
-    val blocks = grouped
-      .map{case (k,v) => v.values.map(_.id).toIndexedSeq}
+    blocker.get.idGroups
+      .map(_._2)
       .toIndexedSeq
-    val totalNumberOfEdges = blocks.map(b => (b.size*(b.size-1))/2).sum
-    logger.debug(s"Will create $totalNumberOfEdges")
-    //val exampleProbability = if(totalNumberOfEdges<maxTrainingExampleCount)
-    val topBlocks = grouped
-      .map{case (k,v) => (k,v.size)}
-      .toIndexedSeq
-      .sortBy(-_._2)
-      .take(20)
-    topBlocks.foreach{case (k,v) => logger.debug(s"$v: $k")}
-    blocks
   }
 
   def getStatisticsForEdge(id1: String, id2: String) :EventOccurrenceStatistics = {
@@ -148,11 +170,11 @@ class DittoExporter(vertices: Roleset,
 
   def getClassLabel(v1:String, v2:String): Option[Boolean] = {
     val statRow = new BasicStatRow(vertexMap(v1), vertexMap(v2), trainTimeEnd)
-    val hasEvidence = statRow.isInteresting
+    val hasEvidence = statRow.isInterestingInEvaluation
 //    val evidence = idToChangeSetInSmallestTrainTimeEnd(e.v1.id).intersect(idToChangeSetInSmallestTrainTimeEnd(e.v2.id)).size
 //    evidence>0
     if(hasEvidence)
-      Some(statRow.remainsValidFullTimeSpan)
+      Some(vertexMap(v1).exactlyMatchesWithoutDecayInTimePeriod(vertexMap(v2),evaluationPeriod))
     else
       None
   }

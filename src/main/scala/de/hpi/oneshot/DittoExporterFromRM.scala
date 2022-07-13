@@ -95,7 +95,7 @@ class DittoExporterFromRM(inputDir: File,
 
   def prepareSample() = {
     val shuffledInputFile = s"${tmpOutputDir.getAbsolutePath}/${inputDir.getName}.csv"
-    val command1 = Seq("/bin/sh", "-c", s"cat ${inputDir.getAbsolutePath}/* > $shuffledInputFile")
+    val command1 = Seq("/bin/sh", "-c", "sed '1d;$d'"+ s"${inputDir.getAbsolutePath}/* > $shuffledInputFile")
     //val command1 = s"cat ${inputDir.getAbsolutePath}/* > $shuffledInputFile"
     val command2 = s"shuf $shuffledInputFile -o $shuffledInputFile"
     val outputConcat = command1.!

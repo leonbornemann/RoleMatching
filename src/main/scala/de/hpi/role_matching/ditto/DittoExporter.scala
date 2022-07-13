@@ -3,7 +3,7 @@ package de.hpi.role_matching.ditto
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.blocking.{SimpleGroupBlocker, TransitionSetBlocking}
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset, ValueTransition}
 import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics
 import de.hpi.role_matching.evaluation.semantic.Block
@@ -43,6 +43,20 @@ class DittoExporter(vertices: Roleset,
     None
 
   val resultPr = new PrintWriter(resultFile)
+
+  def exportDataForMatchFile(e:Iterator[SimpleCompatbilityGraphEdgeID]) = {
+    var exportedLines =0
+    e.foreach(e => {
+      val (v1,v2) = (e.v1,e.v2)
+      val label:Option[Boolean] = getClassLabel(v1,v2)
+      if(label.isDefined){
+        outputRecord(v1,v2,label.get)
+        exportedLines +=1
+      }
+    })
+    resultPr.close()
+    executeTrainTestSplit(exportedLines)
+  }
 
   //val maxTrainingExampleCount = approximateSampleSize.getOrElse(Int.MaxValue)
 

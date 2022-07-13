@@ -16,14 +16,17 @@ object DittoExporterFromRMMain extends App {
   val exportSampleOnly = args(5).toBoolean
   val maxSampleSize = args(6).toInt
   val runSamplePreparation = args(7).toBoolean
+  val toExclude = args(8).split(",")
   inputDir.listFiles().foreach(f => {
     println("processing",f)
-    val outputFile = new File(outputDir.getAbsolutePath + s"/${f.getName}.json.txt")
-    val rolesetFile = rolesetDir + s"/${f.getName}.json"
-    val expoeter = new DittoExporterFromRM(f,outputFile,tmpOutputDir,rolesetFile,trainTimeEnd,exportEntityPropertyIDs,exportSampleOnly,maxSampleSize)
-    if(runSamplePreparation)
-      expoeter.prepareSample()
-    expoeter.exportSample()
+    if(!toExclude.contains(s"${f.getName}")){
+      val outputFile = new File(outputDir.getAbsolutePath + s"/${f.getName}.json.txt")
+      val rolesetFile = rolesetDir + s"/${f.getName}.json"
+      val expoeter = new DittoExporterFromRM(f,outputFile,tmpOutputDir,rolesetFile,trainTimeEnd,exportEntityPropertyIDs,exportSampleOnly,maxSampleSize)
+      if(runSamplePreparation)
+        expoeter.prepareSample()
+      expoeter.exportSample()
+    }
   })
 
 

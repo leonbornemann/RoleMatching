@@ -24,7 +24,7 @@ class RoleMatchStatistics(dataset:String,
       s"$decayedCompatibilityPercentage," +
       s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
       s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay,"+
-      s"$vaCOunt,$daCount,$isInTSMBlockingNoWildcard,$isInTSMBlockingWithWildcard,$strictlyCompatiblePercentage,$decayScore")
+      s"$vaCOunt,$daCount,$isInTSMBlockingNoWildcard,$isInTSMBlockingWithWildcard,$strictlyCompatiblePercentage,$decayScore,$hasNonOverlap")
   }
 
   def getDecayedEdgeFromUndecayedEdge(edgeNoDecay: SimpleCompatbilityGraphEdge,beta:Double):SimpleCompatbilityGraphEdge = {
@@ -75,6 +75,7 @@ class RoleMatchStatistics(dataset:String,
   val rl2ProjectedSCBDecay = edgeDecaySCB.v2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
   val strictlyCompatiblePercentageWithDecay = rl1ProjectedSCBDecay.getStrictCompatibilityTimePercentage(rl2ProjectedSCBDecay,trainTimeEnd)
   val decayScore = RoleMatchStatistics.getDecayScore(rl1ProjectedNoDecay,rl2ProjectedNoDecay,decayThresholds,trainTimeEnd)
+  val hasNonOverlap = rl1ProjectedNoDecay.presenceTimeDoesNotExactlyMatch(rl2ProjectedNoDecay,trainTimeEnd)
 }
 
 object RoleMatchStatistics{
@@ -83,7 +84,7 @@ object RoleMatchStatistics{
     resultPr.println("dataset,id1,id2,isInStrictBlockingDecay,isInStrictBlockingNoDecay,isInValueSetBlocking,isInSequenceBlocking," +
       "isInExactMatchBlocking,isSemanticRoleMatch,compatibilityPercentageDecay,compatibilityPercentageNoDecay,exactSequenceMatchPercentage," +
       "hasTransitionOverlapNoDecay,hasTransitionOverlapDecay,hasValueSetOverlap,isInSVABlockingNoDecay,isInSVABlockingDecay,VACount,DVACount,"+
-      "isInTSMBlockingNoWildcard,isInTSMBlockingWithWildcard,strictlyCompatiblePercentage,decayScore")
+      "isInTSMBlockingNoWildcard,isInTSMBlockingWithWildcard,strictlyCompatiblePercentage,decayScore,hasNonOverlap")
   }
 
   //decay thresholds must be descending!

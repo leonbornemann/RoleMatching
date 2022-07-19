@@ -9,4 +9,15 @@ class ExactSequenceMatchBlocking(roleset: Roleset, trainTimeEnd:LocalDate) exten
   val groups = roleset.posToRoleLineage.values.groupBy(_.toExactValueSequence(trainTimeEnd))
   println()
 
+  def idGroups:Map[IndexedSeq[Any], IndexedSeq[String]] = {
+    roleset
+      .getStringToLineageMap
+      .groupBy { case (k, rlWID) =>
+        rlWID.roleLineage
+          .toRoleLineage
+          .toExactValueSequence(trainTimeEnd)
+      }
+      .map(t => (t._1, t._2.keySet.toIndexedSeq.sorted))
+  }
+
 }

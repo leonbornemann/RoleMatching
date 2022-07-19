@@ -12,12 +12,14 @@ object ComputeBlockingSizes extends App {
   val trainTimeEnd = LocalDate.parse(args(2))
   println("dataset,EM,QSM,TSM,VSM")
   rolesetDir.listFiles().foreach(f => {
-    val roleset = Roleset.fromJsonFile(f.getAbsolutePath)
-    val emCount = new ExactSequenceMatchBlocking(roleset, trainTimeEnd).getMatchCount()
-    val csmCount = new ChangeSequenceBlocking(roleset, trainTimeEnd).getMatchCount()
-    val vsCount = new ValueSetBlocking(roleset, trainTimeEnd).getMatchCount()
-    val tsmCount = new TransitionSetBlocking(roleset,trainTimeEnd).getMatchCount()
-    println(f.getName.split("\\.")(0), emCount, csmCount, tsmCount,vsCount)
+    if(f.getName.contains("football")){
+      val roleset = Roleset.fromJsonFile(f.getAbsolutePath)
+      val emCount = new ExactSequenceMatchBlocking(roleset, trainTimeEnd).getMatchCount()
+      val csmCount = new ChangeSequenceBlocking(roleset, trainTimeEnd).getMatchCount()
+      val vsCount = new ValueSetBlocking(roleset, trainTimeEnd).getMatchCount()
+      val tsmCount = new TransitionSetBlocking(roleset,trainTimeEnd).getMatchCount()
+      println(f.getName.split("\\.")(0), emCount, csmCount, tsmCount,vsCount)
+    }
   })
 
 }

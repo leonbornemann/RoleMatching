@@ -10,7 +10,7 @@ case class DittoResult(left:String,right:String,_match:Int,match_confidence:Doub
 
   def normalizedScore = if(_match==1) match_confidence else 1.0 -match_confidence
 
-  def toCSVLine(isTrueMatch:Boolean) = s"$isTrueMatch,${_match==1},$match_confidence,$normalizedScore"
+  def toCSVLine(id1:Option[String],id2:Option[String],isTrueMatch:Boolean) = s"${id1.getOrElse("NA")},${id2.getOrElse("NA")},$isTrueMatch,${_match==1},$match_confidence,$normalizedScore"
 
   override implicit def formats = super.formats + FieldSerializer[Int](
     renameTo("_match", "match"),
@@ -25,6 +25,6 @@ object DittoResult extends JsonReadable[DittoResult] {
     renameFrom("match","_match")
   )
 
-  def appendSchema(resultPR: PrintWriter) = resultPR.println("isTrueMatch,isPredictedMatch,matchConfidence,normalizedScore")
+  def appendSchema(resultPR: PrintWriter) = resultPR.println("id1,id2,isTrueMatch,isPredictedMatch,matchConfidence,normalizedScore")
 
 }

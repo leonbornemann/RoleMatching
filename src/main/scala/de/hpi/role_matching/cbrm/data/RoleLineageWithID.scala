@@ -28,6 +28,12 @@ case class RoleLineageWithID(id:String, roleLineage: RoleLineageWithHashMap) ext
 }
 
 object RoleLineageWithID extends JsonReadable[RoleLineageWithID] {
+
+  def getPageIDFromID(id:String) = {
+    val tokens = id.split("\\|\\|")
+    tokens(1)
+  }
+
   def getDittoIDString(id1: String): String = {
     if(id1.contains("||")) {
       val tokens = id1.split("\\|\\|")

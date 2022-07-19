@@ -15,6 +15,22 @@ import scala.collection.mutable
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
 
+  def presenceTimeDoesNotExactlyMatch(rl2ProjectedNoDecay: RoleLineage, trainTimeEnd: LocalDate): Boolean = {
+    val me = toExactValueSequence(trainTimeEnd)
+    val other = rl2ProjectedNoDecay.toExactValueSequence(trainTimeEnd)
+    assert(me.size == other.size)
+    me.zip(other)
+      .exists { case (v, w) =>
+        (isWildcard(v), isWildcard(w)) match {
+          case (true, false) => true
+          case (false, true) => true
+          case _ => false
+        }
+      }
+  }
+
+
+
   def exactDistinctMatchWithoutWildcardCount(rl2Projected: RoleLineage, until: LocalDate) = {
     val meWithoutDecay = RoleLineage(lineage.filter(_._2!=ReservedChangeValues.DECAYED))
     val otherWithoutDecay = RoleLineage(rl2Projected.lineage.filter(_._2!=ReservedChangeValues.DECAYED))

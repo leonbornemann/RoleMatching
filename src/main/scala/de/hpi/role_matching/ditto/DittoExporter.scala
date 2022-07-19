@@ -2,7 +2,7 @@ package de.hpi.role_matching.ditto
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.blocking.{SimpleGroupBlocker, TransitionSetBlocking}
+import de.hpi.role_matching.blocking.{ExactSequenceMatchBlocking, SimpleGroupBlocker, TransitionSetBlocking}
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset, ValueTransition}
 import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics
@@ -18,7 +18,7 @@ import scala.util.Random
 
 class DittoExporter(vertices: Roleset,
                     trainTimeEnd: LocalDate,
-                    blocker:Option[TransitionSetBlocking],
+                    blocker:Option[ExactSequenceMatchBlocking],
                     resultFile:File,
                     exportEntityPropertyIDs:Boolean,
                     exportEvidenceCounts:Boolean,
@@ -127,21 +127,21 @@ class DittoExporter(vertices: Roleset,
       }
     } else {
       val sampledPairs = collection.mutable.HashSet[(String,String)]()
-      val asBlocks = new SimpleBlocking(blocks.map(b => new Block(None,b)))
-      val maxCount = asBlocks.nPairsInBlocking
-      while(sampledPairs.size<maxCandidatePairs){
-        val chosenPair = random.nextLong(maxCount)
-        val (startBlockID,block) = asBlocks.getBlockOfPair(chosenPair)
-        val (v1,v2) = block.getPair(chosenPair-startBlockID)
-        if(!sampledPairs.contains((v1,v2))){
-          val label:Option[Boolean] = getClassLabel(v1,v2)
-          if(label.isDefined){
-            outputRecord(v1,v2,label.get)
-            exportedLines +=1
-            sampledPairs.add((v1,v2))
+      blocks
+        .foreach(b => {
+          for (i <- 0 until b.size){
+            for (j <- i+1 until b.size){
+              val v1 = b(i)
+              val v2 = b(j)
+              val label:Option[Boolean] = getClassLabel(v1,v2)
+              if(label.isDefined){
+                outputRecord(v1,v2,label.get)
+                exportedLines +=1
+                sampledPairs.add((v1,v2))
+              }
+            }
           }
-        }
-      }
+        })
     }
     resultPr.close()
     executeTrainTestSplit(exportedLines)

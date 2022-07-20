@@ -1,13 +1,10 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.representation.simple
 
-import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
 import de.hpi.role_matching.cbrm.data._
 import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
-import de.hpi.role_matching.evaluation.tuning
 import de.hpi.util.TableFormatter
 
 import java.io.File
-import java.time.LocalDate
 
 //not very memory efficient but can easily be written in parallel
 case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithID) extends JsonWritable[SimpleCompatbilityGraphEdge] {

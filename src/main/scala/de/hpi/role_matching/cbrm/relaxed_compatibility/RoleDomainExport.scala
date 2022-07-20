@@ -6,7 +6,7 @@ import de.hpi.role_matching.cbrm.data.Roleset
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
-object RoleAsDomainExport extends App {
+object RoleDomainExport extends App {
   private val source: String = args(0)
   GLOBAL_CONFIG.setSettingsForDataSource(source)
   val rolesetDir = args(1)

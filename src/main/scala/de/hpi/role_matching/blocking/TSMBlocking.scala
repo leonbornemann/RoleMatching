@@ -5,7 +5,7 @@ import de.hpi.role_matching.cbrm.data.{RoleLineage, Roleset, ValueTransition}
 
 import java.time.LocalDate
 
-class TransitionSetBlocking(roleset: Roleset, trainTimeEnd: LocalDate) extends SimpleGroupBlocker {
+class TSMBlocking(roleset: Roleset, trainTimeEnd: LocalDate) extends SimpleGroupByBlocker {
 
   override val groups: Map[Any, Iterable[RoleLineage]] = {
     roleset

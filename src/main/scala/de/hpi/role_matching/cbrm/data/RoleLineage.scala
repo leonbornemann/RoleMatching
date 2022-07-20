@@ -3,7 +3,7 @@ package de.hpi.role_matching.cbrm.data
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.data.RoleLineage.WILDCARD_VALUES
 import de.hpi.role_matching.cbrm.data.RoleLineageWithID.digitRegex
-import de.hpi.role_matching.cbrm.relaxed_compatibility.RoleAsDomain
+import de.hpi.role_matching.cbrm.relaxed_compatibility.RoleDomain
 import de.hpi.role_matching.evaluation.tuning.RemainsValidVariant
 import de.hpi.role_matching.evaluation.tuning.RemainsValidVariant.RemainsValidVariant
 
@@ -101,7 +101,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
         case (true,true) => Seq(l + "." + indexWildcard,l+ "." + queryWildcard)
       }
     })
-    RoleAsDomain(id,values)
+    RoleDomain(id,values)
   }
 
 
@@ -153,7 +153,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
       else
         Util.nullSafeToString(v) + "_" +  l
     })
-    RoleAsDomain(id,values)
+    RoleDomain(id,values)
   }
 
   def removeDECAYED(DECAYED: String) = {

@@ -2,10 +2,9 @@ package de.hpi.role_matching.ditto
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.blocking.ExactSequenceMatchBlocking
+import de.hpi.role_matching.blocking.EMBlocking
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
-import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics
 import de.hpi.role_matching.evaluation.tuning.BasicStatRow
 
 import java.io.{File, PrintWriter}
@@ -17,7 +16,7 @@ import scala.util.Random
 
 class DittoExporter(vertices: Roleset,
                     trainTimeEnd: LocalDate,
-                    blocker:Option[ExactSequenceMatchBlocking],
+                    blocker:Option[EMBlocking],
                     resultFile:File,
                     exportEntityPropertyIDs:Boolean,
                     exportEvidenceCounts:Boolean,
@@ -152,25 +151,17 @@ class DittoExporter(vertices: Roleset,
       .toIndexedSeq
   }
 
-  def getStatisticsForEdge(id1: String, id2: String) :EventOccurrenceStatistics = {
-    EventOccurrenceStatistics.extractForEdge(id1,id2,vertexMapOnlyTrain(id1),vertexMapOnlyTrain(id2),trainTimeEnd,transitionSets.get,tfIDFMap)
-  }
 
   def outputRecord(id1:String, id2:String, label: Boolean) = {
     val idString1 = getIDString(id1)
     val idString2 = getIDString(id2)
-    val eventOccurrenceString = if(exportEvidenceCounts){
-      val eventOccurrenceStatistics = getStatisticsForEdge(id1,id2)
-      eventOccurrenceStatistics.toDittoString
-    } else
-      ""
     val output1 = vertexMapOnlyTrain(id1).dittoString(trainTimeEnd,idString1)
     val output2 = vertexMapOnlyTrain(id2).dittoString(trainTimeEnd,idString2)
     val labelString = if(label) "1" else "0"
     val finaloutPutString = if(id1 < id2)
-      eventOccurrenceString + " " + output1 + "\t" + output2 + "\t" + labelString
+      " " + output1 + "\t" + output2 + "\t" + labelString
     else
-      eventOccurrenceString + " " + output2 + "\t" + output1 + "\t" + labelString
+      " " + output2 + "\t" + output1 + "\t" + labelString
     resultPr.println(finaloutPutString)
   }
 

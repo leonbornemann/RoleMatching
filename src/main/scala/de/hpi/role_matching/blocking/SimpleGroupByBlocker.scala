@@ -2,7 +2,7 @@ package de.hpi.role_matching.blocking
 
 import de.hpi.role_matching.cbrm.data.RoleLineage
 
-trait SimpleGroupBlocker {
+trait SimpleGroupByBlocker {
 
   val groups: Map[Any, Iterable[RoleLineage]]
 

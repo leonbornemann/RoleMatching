@@ -6,7 +6,10 @@ import de.hpi.role_matching.cbrm.data.Roleset
 import java.io.File
 import java.time.LocalDate
 
-object ComputeBlockingSizes extends App {
+/***
+ * Prints sizes of blocking methods EM,QSM,TSM,VSM
+ */
+object PrintBlockingResultSetSizesMain extends App {
   GLOBAL_CONFIG.setSettingsForDataSource(args(0))
   val rolesetDir = new File(args(1))
   val trainTimeEnd = LocalDate.parse(args(2))
@@ -14,10 +17,10 @@ object ComputeBlockingSizes extends App {
   rolesetDir.listFiles().foreach(f => {
     if(f.getName.contains("football")){
       val roleset = Roleset.fromJsonFile(f.getAbsolutePath)
-      val emCount = new ExactSequenceMatchBlocking(roleset, trainTimeEnd).getMatchCount()
-      val csmCount = new ChangeSequenceBlocking(roleset, trainTimeEnd).getMatchCount()
-      val vsCount = new ValueSetBlocking(roleset, trainTimeEnd).getMatchCount()
-      val tsmCount = new TransitionSetBlocking(roleset,trainTimeEnd).getMatchCount()
+      val emCount = new EMBlocking(roleset, trainTimeEnd).getMatchCount()
+      val csmCount = new QSMBlocking(roleset, trainTimeEnd).getMatchCount()
+      val vsCount = new VSMBlocking(roleset, trainTimeEnd).getMatchCount()
+      val tsmCount = new TSMBlocking(roleset,trainTimeEnd).getMatchCount()
       println(f.getName.split("\\.")(0), emCount, csmCount, tsmCount,vsCount)
     }
   })

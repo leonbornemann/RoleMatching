@@ -3,7 +3,6 @@ package de.hpi.role_matching.cbrm.compatibility_graph.representation.simple
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
 import de.hpi.role_matching.cbrm.data._
 import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
-import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics
 import de.hpi.role_matching.evaluation.tuning
 import de.hpi.util.TableFormatter
 
@@ -20,42 +19,12 @@ case class SimpleCompatbilityGraphEdge(v1:RoleLineageWithID, v2:RoleLineageWithI
       .curValueA
   }
 
-
-  def eventOccurrences(trainTimeEnd:LocalDate):EventOccurrenceStatistics = {
-    val commonPointOfInterestIterator = new CommonPointOfInterestIterator(v1.roleLineage.toRoleLineage, v2.roleLineage.toRoleLineage)
-    val eventCounts = EventOccurrenceStatistics(trainTimeEnd)
-    commonPointOfInterestIterator
-      .withFilter(cp => !cp.prevPointInTime.isAfter(trainTimeEnd))
-      .foreach(cp => {
-        //val eventCounts = getEventCounts(cp, firstNode, secondNode)
-
-      })
-    ???
-  }
-
   def getEdgeID = {
     if(v1.csvSafeID < v2.csvSafeID){
       v1.csvSafeID + "||" + v2.csvSafeID
     } else {
       v2.csvSafeID + "||" + v1.csvSafeID
     }
-  }
-
-
-  def toGeneralEdgeStatRow(granularityInDays: Int,
-                           trainGraphConfig: GraphConfig,
-                           nonInformativeValues:Set[Any],
-                           transitionHistogramForTFIDF:Map[ValueTransition,Int],
-                           lineageCount:Int) = {
-    tuning.EdgeStatRow(granularityInDays,
-      trainGraphConfig,
-      v1.csvSafeID,
-      v2.csvSafeID,
-      v1.roleLineage.toRoleLineage,
-      v2.roleLineage.toRoleLineage,
-      nonInformativeValues,
-      transitionHistogramForTFIDF,
-      lineageCount)
   }
 
   def printTabularEventLineageString = {

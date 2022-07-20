@@ -2,7 +2,7 @@ package de.hpi.role_matching.ditto
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.blocking.ExactSequenceMatchBlocking
+import de.hpi.role_matching.blocking.EMBlocking
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdgeID
 import de.hpi.role_matching.cbrm.data.Roleset
 
@@ -29,7 +29,7 @@ object DittoExport extends App with StrictLogging{
       logger.debug("Running {}", rolesetFile)
       val resultFile = new File(s"$resultRootDir/${rolesetFile.getName}.txt")
       val vertices = Roleset.fromJsonFile(rolesetFile.getAbsolutePath)
-      val blocker = new ExactSequenceMatchBlocking(vertices, trainTimeEnd)
+      val blocker = new EMBlocking(vertices, trainTimeEnd)
       val exporter = new DittoExporter(vertices, trainTimeEnd, Some(blocker), resultFile, exportEntityPropertyIDs, false, exportSampleOnly, maxSampleSize)
       if(inputCandidateDir.isEmpty)
         exporter.exportDataWithSimpleBlocking()

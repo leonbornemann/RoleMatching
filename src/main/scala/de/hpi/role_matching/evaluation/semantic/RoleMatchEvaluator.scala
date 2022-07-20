@@ -43,7 +43,6 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLog
   val trainTimeEnd = LocalDate.parse("2016-05-07")
   var DECAY_THRESHOLD = 0.57
   var DECAY_THRESHOLD_SCB = 0.50
-  val runDecayEvaluation = false
 
   def getEdgeFromFile(rolesetNoDecay:Roleset,s: String) = {
     val tokens = s.split(",")
@@ -117,22 +116,19 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLog
     }}
   }
 
-  def executeEvaluation(inputLabelDirs: Array[File], resultPR: PrintWriter, resultPRDecay: PrintWriter) = {
+  def executeEvaluation(inputLabelDirs: Array[File], resultPR: PrintWriter) = {
     val counts = collection.mutable.HashMap[String,collection.mutable.HashMap[String,Int]]()
     inputLabelDirs.map(_.getName).foreach(n => counts.put(n,collection.mutable.HashMap[String,Int]()))
     RoleMatchStatistics.appendSchema(resultPR)
-    val decayEvaluator = new DecayEvaluator(resultPRDecay);
     inputLabelDirs.foreach{case (inputLabelDir) => {
+      logger.debug(inputLabelDir.getAbsolutePath)
       val dataset = inputLabelDir.getName
       val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath)
       val groundTruthExamples = inputLabelDir.listFiles().flatMap(f => Source.fromFile(f).getLines().toIndexedSeq.tail)
         .map(s => getEdgeFromFile(rolesetNoDecay, s))
+
       val retainedEdges = serializeSample(dataset,groundTruthExamples.iterator,Some(counts),resultPR)
-      if(runDecayEvaluation) {
-        decayEvaluator.addRecords(dataset, retainedEdges, trainTimeEnd)
-      }
     }}
-    resultPRDecay.close()
     resultPR.close()
     counts.foreach{case (ds,map) => println(ds);map.foreach(println)}
   }
@@ -160,7 +156,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLog
             retainedSamples.append((edgeNoDecay,label))
             roleMatchStatistics.appendStatRow(resultPR)
           } else {
-            println(s"Skipping record in $dataset")
+            //println(s"Skipping record in $dataset")
           }
         } else if(roleMatchStatistics.nonDecayCompatibilityPercentage<1.0){
           if(countBelow100<100 || map.isEmpty){
@@ -172,7 +168,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLog
             retainedSamples.append((edgeNoDecay,label))
             roleMatchStatistics.appendStatRow(resultPR)
           } else {
-            println(s"Skipping record in $dataset")
+            //println(s"Skipping record in $dataset")
           }
         } else {
           if(count100<100 || map.isEmpty){
@@ -184,7 +180,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLog
             retainedSamples.append((edgeNoDecay,label))
             roleMatchStatistics.appendStatRow(resultPR)
           } else {
-            println(s"Skipping record in $dataset")
+            //println(s"Skipping record in $dataset")
           }
         }
       }}

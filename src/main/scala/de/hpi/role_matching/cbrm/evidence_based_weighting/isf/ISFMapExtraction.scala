@@ -2,7 +2,6 @@ package de.hpi.role_matching.cbrm.evidence_based_weighting.isf
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
 
 import java.io.File

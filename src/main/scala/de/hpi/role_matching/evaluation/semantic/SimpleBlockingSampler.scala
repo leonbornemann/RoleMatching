@@ -2,16 +2,13 @@ package de.hpi.role_matching.evaluation.semantic
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
-import de.hpi.role_matching.cbrm.compatibility_graph.role_tree.RoleGroup
-import de.hpi.role_matching.cbrm.data.{ReservedChangeValues, RoleLineage, RoleLineageWithID, Roleset}
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdgeID
+import de.hpi.role_matching.cbrm.data.{RoleLineage, Roleset}
 import de.hpi.role_matching.cbrm.sgcp.RoleMerge
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import scala.collection.mutable
-import scala.io.Source
-import scala.util.Random
 
 class SimpleBlockingSampler(rolesetDir: File,
                             outputDir: String,

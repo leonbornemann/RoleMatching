@@ -1,7 +1,6 @@
 package de.hpi.oneshot
 
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.data.RoleLineage.isWildcard
 import de.hpi.role_matching.cbrm.data.{RoleLineage, Roleset}
 

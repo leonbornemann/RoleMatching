@@ -1,7 +1,6 @@
 package de.hpi.role_matching.evaluation.semantic
 
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
-import de.hpi.role_matching.cbrm.data.RoleLineageWithID
 
 import java.io.PrintWriter
 import java.time.LocalDate

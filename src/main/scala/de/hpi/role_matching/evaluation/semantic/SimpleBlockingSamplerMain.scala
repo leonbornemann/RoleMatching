@@ -1,7 +1,6 @@
 package de.hpi.role_matching.evaluation.semantic
 
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.data.Roleset
 
 import java.io.File
 import java.time.LocalDate

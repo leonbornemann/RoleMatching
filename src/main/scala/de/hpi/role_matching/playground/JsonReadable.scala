@@ -1,7 +1,6 @@
 package de.hpi.role_matching.playground
 
-import org.json4s.FieldSerializer.{renameFrom, renameTo}
-import org.json4s.{DefaultFormats, FieldSerializer}
+import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 
 import java.io.{File, FileInputStream}

@@ -1,13 +1,8 @@
 package de.hpi.role_matching.evaluation.semantic
 
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
-import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithID, Roleset}
-import de.hpi.role_matching.evaluation.tuning.BasicStatRow
 
 import java.io.{File, PrintWriter}
-import java.time.LocalDate
-import scala.io.Source
 
 object LabelledRoleMatchingEvaluation extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")

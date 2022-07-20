@@ -2,7 +2,6 @@ package de.hpi.wikipedia_data_preparation.original_infobox_data
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.cbrm.data.Util
-import de.hpi.wikipedia_data_preparation.transformed.WikipediaRoleLineage
 
 import java.io.{File, PrintWriter}
 

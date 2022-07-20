@@ -2,11 +2,10 @@ package de.hpi.role_matching.ditto
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.blocking.{ExactSequenceMatchBlocking, SimpleGroupBlocker, TransitionSetBlocking}
+import de.hpi.role_matching.blocking.ExactSequenceMatchBlocking
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
-import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset, ValueTransition}
+import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
 import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics
-import de.hpi.role_matching.evaluation.semantic.Block
 import de.hpi.role_matching.evaluation.tuning.BasicStatRow
 
 import java.io.{File, PrintWriter}

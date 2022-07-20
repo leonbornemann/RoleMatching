@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.GraphConfig
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
-import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleReference, ValueTransition}
+import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
 
 import java.io.{File, PrintWriter}
 import java.util.concurrent.ConcurrentHashMap

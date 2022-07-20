@@ -1,10 +1,8 @@
 package de.hpi.role_matching.cbrm.compatibility_graph
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.{MemoryEfficientCompatiblityGraphSet, MemoryEfficientCompatiblityGraphWithoutEdgeWeight}
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.MemoryEfficientCompatiblityGraphSet
 import de.hpi.role_matching.cbrm.sgcp.ScoreConfig
-import de.hpi.role_matching.cbrm.sgcp.SparseGraphCliquePartitioningMain.args
 
 import java.io.File
 import java.time.LocalDate

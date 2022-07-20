@@ -4,7 +4,6 @@ import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.Simpl
 import de.hpi.role_matching.cbrm.data.RoleLineage
 import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics
 import de.hpi.role_matching.cbrm.evidence_based_weighting.EventOccurrenceStatistics.{NEUTRAL, STRONGNEGATIVE, STRONGPOSTIVE, WEAKNEGATIVE, WEAKPOSTIVE}
-import de.hpi.role_matching.evaluation.matching.StatComputer
 
 import java.time.LocalDate
 

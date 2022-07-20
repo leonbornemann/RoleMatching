@@ -1,9 +1,8 @@
 package de.hpi.oneshot
 
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.data.{RoleLineage, Roleset}
+import de.hpi.role_matching.cbrm.data.Roleset
 import de.hpi.role_matching.evaluation.semantic.RoleMatchStatistics
-import de.hpi.role_matching.evaluation.tuning.BasicStatRow
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate

@@ -1,11 +1,8 @@
 package de.hpi.wikipedia_data_preparation.transformed
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.data.RoleLineage.isWildcard
 import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
-import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithHashMap, RoleLineageWithID, UpdateChangeCounter}
-import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory
+import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithHashMap, RoleLineageWithID}
 
 import java.io.File
 import java.time.LocalDate

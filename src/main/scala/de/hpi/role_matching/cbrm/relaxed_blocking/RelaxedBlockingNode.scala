@@ -4,7 +4,6 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleReference}
 
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 import scala.util.Random
 
 class RelaxedBlockingNode(references: IndexedSeq[RoleReference], trainTimeEnd:LocalDate,targetPercentage:Double,random:Random) {

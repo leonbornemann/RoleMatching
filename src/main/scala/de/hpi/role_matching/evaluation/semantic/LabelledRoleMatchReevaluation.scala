@@ -2,7 +2,7 @@ package de.hpi.role_matching.evaluation.semantic
 
 import de.hpi.role_matching.GLOBAL_CONFIG
 
-import java.io.{File, PrintWriter}
+import java.io.File
 
 object LabelledRoleMatchReevaluation extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")

@@ -2,8 +2,6 @@ package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
 import de.hpi.role_matching.cbrm.data.RoleReference
 
-import scala.collection.mutable.ArrayBuffer
-
 case class NormalPairwiseMatchingTask(tuplesInNodeAsIndexedSeq: IndexedSeq[RoleReference],
                                       firstBorders: (Int, Int),
                                       secondBorders: (Int, Int)) {

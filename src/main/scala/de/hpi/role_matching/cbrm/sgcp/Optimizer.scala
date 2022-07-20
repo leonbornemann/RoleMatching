@@ -1,7 +1,5 @@
 package de.hpi.role_matching.cbrm.sgcp
 
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.SubGraph
-
 abstract class Optimizer(c: NewSubgraph) {
 
   def getEdgeWeight(v:Int,w:Int):Double = {

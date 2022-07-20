@@ -1,7 +1,7 @@
 package de.hpi.role_matching.cbrm.compatibility_graph.role_tree
 
-import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
 import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
+import de.hpi.role_matching.cbrm.data.{RoleReference, ValueTransition}
 
 case class CompatibilityGraphEdge(tupleReferenceA: RoleReference,
                                   tupleReferenceB: RoleReference,

@@ -3,7 +3,6 @@ package de.hpi.oneshot
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdgeID
 
 import java.io.File
-import scala.io.Source
 
 object ResultComparisonMain extends App {
   val dir1 = "/home/leon/data/dataset_versioning/finalExperiments/scalabilityImprovement/oldVersion/Edges_n2/"

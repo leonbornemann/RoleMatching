@@ -2,14 +2,12 @@ package de.hpi.role_matching.ditto
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.blocking.{ExactSequenceMatchBlocking, TransitionSetBlocking}
+import de.hpi.role_matching.blocking.ExactSequenceMatchBlocking
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdgeID
 import de.hpi.role_matching.cbrm.data.Roleset
 
-import java.io.{File, PrintWriter}
+import java.io.File
 import java.time.LocalDate
-import scala.io.Source
-import scala.sys.process._
 
 object DittoExport extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")

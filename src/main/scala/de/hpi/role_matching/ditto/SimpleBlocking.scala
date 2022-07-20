@@ -1,7 +1,5 @@
 package de.hpi.role_matching.ditto
 
-import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.data.RoleLineage
 import de.hpi.role_matching.evaluation.semantic.Block
 
 class SimpleBlocking(inputBlocks: IndexedSeq[Block]) {

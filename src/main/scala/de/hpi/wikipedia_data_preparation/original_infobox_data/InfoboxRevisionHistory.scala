@@ -3,7 +3,7 @@ package de.hpi.wikipedia_data_preparation.original_infobox_data
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.cbrm.data.{ReservedChangeValues, RoleLineage}
 import de.hpi.role_matching.cbrm.sgcp.Histogram
-import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, TIME_AXIS, lineageCreationMode, lowestGranularityInDays}
+import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory.{EARLIEST_HISTORY_TIMESTAMP, LATEST_HISTORY_TIMESTAMP, TIME_AXIS, lowestGranularityInDays}
 import de.hpi.wikipedia_data_preparation.original_infobox_data.WikipediaLineageCreationMode.{WILDCARD_BETWEEN_ALL_CONFIRMATIONS, WILDCARD_BETWEEN_CHANGE, WILDCARD_OUTSIDE_OF_GRACE_PERIOD, WikipediaLineageCreationMode}
 import de.hpi.wikipedia_data_preparation.transformed.{TimeRangeToSingleValueReducer, WikipediaRoleLineage}
 

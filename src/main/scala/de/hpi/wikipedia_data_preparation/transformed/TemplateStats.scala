@@ -2,8 +2,6 @@ package de.hpi.wikipedia_data_preparation.transformed
 
 import de.hpi.role_matching.playground.{JsonReadable, JsonWritable}
 
-import scala.collection.mutable
-
 case class TemplateStats(nameToCount:collection.mutable.HashMap[String,Int]) extends JsonWritable[TemplateStats] {
 
   def add(stats: TemplateStats) = {

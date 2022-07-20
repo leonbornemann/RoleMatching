@@ -4,7 +4,6 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, Roleset}
 
 import java.io.File
-import java.time.temporal.ChronoUnit
 
 object RolesetDurationExtender extends App {
   GLOBAL_CONFIG.setSettingsForDataSource(args(0))

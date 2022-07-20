@@ -2,7 +2,7 @@ package de.hpi.role_matching.ditto
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.{SimpleCompatbilityGraphEdge, SimpleCompatbilityGraphEdgeID}
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.data.Roleset
 
 import java.io.File

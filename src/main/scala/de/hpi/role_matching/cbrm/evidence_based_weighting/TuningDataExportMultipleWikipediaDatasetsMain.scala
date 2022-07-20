@@ -2,14 +2,13 @@ package de.hpi.role_matching.cbrm.evidence_based_weighting
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.RunConfig
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.MemoryEfficientCompatiblityGraphWithoutEdgeWeight
 import de.hpi.role_matching.cbrm.data.Roleset
 
-import scala.collection.parallel.CollectionConverters._
 import java.io.File
 import java.time.LocalDate
+import scala.collection.parallel.CollectionConverters._
 import scala.util.control.NonFatal
 
 object TuningDataExportMultipleWikipediaDatasetsMain extends App with StrictLogging{

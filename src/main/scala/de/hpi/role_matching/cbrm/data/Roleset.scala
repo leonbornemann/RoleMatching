@@ -1,7 +1,6 @@
 package de.hpi.role_matching.cbrm.data
 
-import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable, LocalDateKeySerializer, LocalDateSerializer}
-import org.json4s.DefaultFormats
+import de.hpi.role_matching.cbrm.data.json_serialization.{JsonReadable, JsonWritable}
 
 import java.time.LocalDate
 

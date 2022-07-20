@@ -2,10 +2,9 @@ package de.hpi.wikipedia_data_preparation
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.data.{RoleLineage, RoleLineageWithID, Roleset}
+import de.hpi.role_matching.cbrm.data.Roleset
 import de.hpi.wikipedia_data_preparation.transformed.WikipediaRoleLineage
 
-import scala.collection.parallel.CollectionConverters._
 import java.io.File
 import java.time.LocalDate
 import scala.io.Source

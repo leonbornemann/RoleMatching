@@ -5,7 +5,6 @@ import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.compatibility_graph.{CompatibilityGraphCreationConfig, GraphConfig}
 import de.hpi.role_matching.cbrm.data.{RoleLineageWithID, RoleReference, Roleset}
-import de.hpi.wikipedia_data_preparation.original_infobox_data.InfoboxRevisionHistory
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate

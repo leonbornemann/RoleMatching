@@ -1,7 +1,6 @@
 package de.hpi.role_matching.cbrm.sgcp
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.SubGraph
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 

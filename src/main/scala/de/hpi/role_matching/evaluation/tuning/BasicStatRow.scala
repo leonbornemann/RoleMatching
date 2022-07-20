@@ -1,7 +1,5 @@
 package de.hpi.role_matching.evaluation.tuning
 
-import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.data.RoleLineage
 import de.hpi.role_matching.evaluation.matching.StatComputer
 

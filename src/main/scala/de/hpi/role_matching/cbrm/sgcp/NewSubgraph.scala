@@ -1,8 +1,8 @@
 package de.hpi.role_matching.cbrm.sgcp
 
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.EdgeWeightedSubGraph
+import org.jgrapht.graph.DefaultWeightedEdge
 import org.jgrapht.{Graph, Graphs}
-import org.jgrapht.graph.{AsSubgraph, DefaultWeightedEdge}
 
 import java.io.{File, PrintWriter}
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}

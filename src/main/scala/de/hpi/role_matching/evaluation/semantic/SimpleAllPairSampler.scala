@@ -7,7 +7,6 @@ import de.hpi.role_matching.cbrm.data.{RoleLineage, Roleset}
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
-import scala.util.Random
 
 class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: LocalDate, targetCount: Int, seed:Long)
   extends Sampler(outputDir,seed, trainTimeEnd)  with StrictLogging{

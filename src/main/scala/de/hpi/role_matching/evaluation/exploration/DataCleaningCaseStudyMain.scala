@@ -1,6 +1,5 @@
 package de.hpi.role_matching.evaluation.exploration
 
-import de.hpi.role_matching.cbrm.sgcp.ScoreConfig
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
 import de.hpi.role_matching.cbrm.data.Roleset
 

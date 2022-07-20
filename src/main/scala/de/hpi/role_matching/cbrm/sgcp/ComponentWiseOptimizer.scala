@@ -1,11 +1,9 @@
 package de.hpi.role_matching.cbrm.sgcp
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.SubGraph
 import org.jgrapht.Graph
 import org.jgrapht.alg.connectivity.ConnectivityInspector
-import org.jgrapht.graph.DefaultWeightedEdge
-import org.jgrapht.graph.AsSubgraph
+import org.jgrapht.graph.{AsSubgraph, DefaultWeightedEdge}
 
 import java.io.File
 

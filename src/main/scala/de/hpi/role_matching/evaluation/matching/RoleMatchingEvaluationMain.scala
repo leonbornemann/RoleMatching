@@ -2,11 +2,9 @@ package de.hpi.role_matching.evaluation.matching
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.role_matching.GLOBAL_CONFIG
-import de.hpi.role_matching.cbrm.sgcp.{NewSubgraph, RoleMerge, ScoreConfig}
-import de.hpi.role_matching.cbrm.sgcp.SparseGraphCliquePartitioningMain.args
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.SubGraph
-import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.{MemoryEfficientCompatiblityGraph, MemoryEfficientCompatiblityGraphSet}
+import de.hpi.role_matching.cbrm.compatibility_graph.representation.slim.MemoryEfficientCompatiblityGraphSet
 import de.hpi.role_matching.cbrm.data.Roleset
+import de.hpi.role_matching.cbrm.sgcp.{NewSubgraph, RoleMerge, ScoreConfig}
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate

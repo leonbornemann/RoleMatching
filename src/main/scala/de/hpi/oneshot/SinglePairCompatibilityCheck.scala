@@ -1,9 +1,8 @@
 package de.hpi.oneshot
 
-import de.hpi.oneshot.SinglePairCompatibilityCheck.{id1, id2}
 import de.hpi.role_matching.GLOBAL_CONFIG
 import de.hpi.role_matching.cbrm.compatibility_graph.representation.simple.SimpleCompatbilityGraphEdge
-import de.hpi.role_matching.cbrm.data.{RoleLineage, Roleset}
+import de.hpi.role_matching.cbrm.data.Roleset
 
 import java.time.LocalDate
 

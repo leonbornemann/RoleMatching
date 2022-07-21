@@ -1,4 +1,4 @@
-package de.hpi.role_matching.evaluation.statistics
+package de.hpi.role_matching.evaluation
 
 import de.hpi.role_matching.data.Roleset
 import de.hpi.util.GLOBAL_CONFIG
@@ -17,7 +17,7 @@ object RolesetStatisticsPrintMain extends App {
     ("tv_and_film", "TV"),
     ("football", "FO")
   )
-  println("Dataset,#roles,#DV,avgDensity")
+  println("Dataset,#roles,#pairs,#DV,avgDensity")
   val formatter = new DecimalFormat("#.##")
   dsNameToAbbrev
     .keySet
@@ -43,7 +43,7 @@ object RolesetStatisticsPrintMain extends App {
         .sum / rs.posToRoleLineage.size.toDouble
       val stdDensity = getSTDDouble(densities, avgDensity)
       val formattedAvgDensity = formatter.format(avgDensity)
-      println(s"${dsNameToAbbrev(dsName)},$size,$formattedAVGDVCount (${formatter.format(stdDV)}),$formattedAvgDensity (${formatter.format(stdDensity)})")
+      println(s"${dsNameToAbbrev(dsName)},$size,${gaussSum(size)},$formattedAVGDVCount (${formatter.format(stdDV)}),$formattedAvgDensity (${formatter.format(stdDensity)})")
     })
 
   private def getSTD(dvs: Iterable[Int], avg: Double) = {
@@ -53,4 +53,6 @@ object RolesetStatisticsPrintMain extends App {
   private def getSTDDouble(dvs: Iterable[Double], avg: Double) = {
     Math.sqrt(dvs.map(dv => Math.pow((avg - dv).abs, 2)).sum / dvs.size.toDouble)
   }
+
+  def gaussSum(n: Int) = n.toLong * (n + 1).toLong / 2
 }

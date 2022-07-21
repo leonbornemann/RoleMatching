@@ -5,7 +5,7 @@ import de.hpi.role_matching.data.{RoleLineageWithID, Roleset}
 import java.io.{File, PrintWriter}
 import scala.io.Source
 
-object DittoResultJsonToCSVMain extends App {
+object DittoResultToCSVMain extends App {
 
   val dittoResultDir = new File(args(0))
   val dittoTestFileDir = new File(args(1))

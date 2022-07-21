@@ -11,7 +11,7 @@ object AllPairSamplerMain extends App {
   val outputDir = args(2)
   val trainTimeEnd = LocalDate.parse(args(3))
   val sampleCount = args(4).toInt
-  val seed = 13
+  val seed = args(5).toInt
   new SimpleAllPairSampler(rolesetDir, outputDir, trainTimeEnd, sampleCount, seed).runSampling
 
 }

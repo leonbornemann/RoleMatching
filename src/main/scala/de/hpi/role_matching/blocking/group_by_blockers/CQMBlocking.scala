@@ -4,7 +4,7 @@ import de.hpi.role_matching.data.{RoleLineage, Roleset}
 
 import java.time.LocalDate
 
-class QSMBlocking(roleset: Roleset, trainTimeEnd: LocalDate) extends SimpleGroupByBlocker{
+class CQMBlocking(roleset: Roleset, trainTimeEnd: LocalDate) extends SimpleGroupByBlocker{
 
   override val groups: Map[Any, Iterable[RoleLineage]] = roleset
     .posToRoleLineage

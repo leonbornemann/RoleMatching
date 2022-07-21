@@ -11,10 +11,10 @@ object TVA_DVA_SamplerMain extends App {
   val outputDir = args(2)
   val trainTimeEnd = LocalDate.parse(args(3))
   val sampleGroundTruth = args(4).toBoolean
-  val sampleCount = if (args.size == 6) Some(args(5).toInt) else None
+  val seed = args(5).toLong
+  val sampleCount = if (args.size == 7) Some(args(6).toInt) else None
   val minVACount = 95
   val minDVACount = 2
-  val seed = 13
-  val simpleBlockingSampler = new SimpleBlockingSampler(rolesetDir, outputDir, trainTimeEnd, 13, minVACount, minDVACount, sampleGroundTruth, sampleCount)
+  val simpleBlockingSampler = new SimpleBlockingSampler(rolesetDir, outputDir, trainTimeEnd, seed, minVACount, minDVACount, sampleGroundTruth, sampleCount)
   simpleBlockingSampler.runSampling()
 }

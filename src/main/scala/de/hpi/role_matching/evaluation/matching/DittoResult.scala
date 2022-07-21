@@ -1,6 +1,6 @@
 package de.hpi.role_matching.evaluation.matching
 
-import de.hpi.role_matching.playground.{JsonReadable, JsonWritable}
+import de.hpi.role_matching.data.json_serialization.{JsonReadable, JsonWritable}
 import org.json4s.FieldSerializer
 import org.json4s.FieldSerializer.{renameFrom, renameTo}
 

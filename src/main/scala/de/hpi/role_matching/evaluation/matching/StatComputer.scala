@@ -1,7 +1,6 @@
 package de.hpi.role_matching.evaluation.matching
 
-
-import de.hpi.role_matching.cbrm.data.{CommonPointOfInterestIterator, RoleLineage}
+import de.hpi.role_matching.data.{CommonPointOfInterestIterator, RoleLineage}
 
 import java.time.LocalDate
 

@@ -1,0 +1,66 @@
+ Cegeben ist die Relation $R(C,A,F,B,D,E)$ mit folgenden FAs:
+
+ $B \rightarrow D,F$\\
+ $D \rightarrow E$\\
+ $A,D \rightarrow B,C$
+
+ \begin{enumerate}
+ 	\item Gegeben seien die folgenden Spaltenkombinationen: $\{A,D\}$, $\{A,F\}$, $\{B,D,E\}$, $\{A,B\}$. Welche dieser Spaltenkombinationen sind Schlüssel von $R$?
+
+ 	\punkt{1}
+
+ 	\musterloesung{
+
+ 	$\{A,D\}$ und $\{A,B\}$ sind Schlüssel, die anderen Mengen nicht
+
+ 	\bewertung{0.5P pro richtigem Schlüssel, -0.5 pro falschem.}
+ 	}{2cm}
+
+ \item Normalisieren Sie die Relation zur BCNF. Stellen Sie die dazu notwendigen Schritte und Entscheidungen nachvollziehbar dar. Kennzeichnen Sie außerdem die Schlüssel in den Relationen und geben Sie am Ende an, welche Relationen das BCNF-konforme Ergebnis der Dekomposition darstellen.
+ Beginnen Sie die Normalisierung mit der verletzenden FA $B \rightarrow FD$. \textbf{Hinweis: Alle Schlüssel der Relation kommen bereits in Teilaufgabe 1 vor.}
+ \punkte{5}
+
+ \musterloesung{
+
+ 		Die Mengen $\{A,D\}$ und $\{B,A\}$ sind Schlüssel von $R$.
+
+ 		Zerlegen nach  $B \rightarrow DF$
+ 		\begin{itemize}
+ 			\item Erweitern der rechten Seite: $B \rightarrow DEF$
+
+ 			\item $R_1 (\uline{B},D,E,F)$ $D \rightarrow E$ verletzt BCNF
+
+ 			\item $R_2 (\uline{A},\uline{B},C)$ es gibt keine verletzenden FDs, d.\,h. $R_2$ in BCNF
+ 		\end{itemize}
+
+
+ 		Zerlegen von $R_1$ nach $D \rightarrow E$:
+
+ 		\begin{itemize}
+ 			\item $R_{11} (\uline{D},E)$ es gibt keine verletzenden FDs $R_{11}$ in BCNF
+
+ 			\item $R_{12} (\uline{B},D,F)$ es gibt keine verletzenden FDs $R_{12}$ in BCNF
+ 		\end{itemize}
+
+ 		Ergebnis der Zerlegung:
+ 		\begin{itemize}
+ 			\item $R_{11} (\uline{D},E)$
+ 			\item $R_{12} (\uline{B},D,F)$
+ 			\item $R_2 (\uline{A,B},C)$
+ 		\end{itemize}
+
+
+
+ 		\bewertung{
+ 		\begin{compactitem}
+ 			\item 0.5P erweitern der rechten Seite
+ 			\item 1P erste Zerlegung ($R_1$, $R_2$)
+ 			\item 0.5P Schlüssel nach erster Zerlegung
+ 			\item 0.5P verletzende FA nach erster Zerlegung
+ 			\item 1P zweite	Zerlegung ( $R_{11}$, $R_{12}$)
+ 			\item 0.5P Schlüssel nach zweiter Zerlegung
+ 			\item 1P Angabe des Ergebnisses der Zerlegung (welche Relationen gehören zum Ergebnis?)
+ 		\end{compactitem}
+ 		}}{10cm}
+
+ \end{enumerate}

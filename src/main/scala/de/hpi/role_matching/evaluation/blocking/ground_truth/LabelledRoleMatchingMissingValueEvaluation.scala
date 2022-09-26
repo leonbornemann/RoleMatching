@@ -13,7 +13,8 @@ object LabelledRoleMatchingMissingValueEvaluation extends App {
   val targetBasename = new File(args(0)).getName
   rolesetRootDir.listFiles.foreach(d => {
     println(d)
-    val pr = new PrintWriter(resultDir + s"/${targetBasename}_$d.csv")
+    println(targetBasename)
+    val pr = new PrintWriter(resultDir.getAbsolutePath + s"/${targetBasename}_${d.getName}.csv")
     val rolesetFiles = d.listFiles()
     val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFiles)
     RoleMatchEvaluator.executeEvaluation(inputLabelDirs,pr)

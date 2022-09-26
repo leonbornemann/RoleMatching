@@ -6,12 +6,11 @@ import java.io.{File, PrintWriter}
 
 object LabelledRoleMatchingEvaluation extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
-  val inputLabelDirs = new File(args(0)).listFiles()
+  val inputLabelDir = new File(args(0)).listFiles()
   val rolesetFiles = new File(args(1)).listFiles()
   //val rolesets = rolesetFiles.map(f => Roleset.fromJsonFile(f.getAbsolutePath))
   val resultPR = new PrintWriter(args(2))
-  val additionalMissingData = if(args.size == 4) Some(args(3).toDouble) else None
-  val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFiles,additionalMissingData)
+  val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFiles)
   //RoleMatchEvaluator.executeLabelGrouping(inputLabelDirs)
-  RoleMatchEvaluator.executeEvaluation(inputLabelDirs, resultPR,Some(new File("/home/leon/data/dataset_versioning/finalExperiments/semanticAnnotation/dgs_new")))
+  RoleMatchEvaluator.executeEvaluation(inputLabelDir, resultPR)
 }

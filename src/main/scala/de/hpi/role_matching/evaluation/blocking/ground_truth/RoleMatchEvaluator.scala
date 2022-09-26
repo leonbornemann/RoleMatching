@@ -9,7 +9,7 @@ import java.time.LocalDate
 import scala.io.Source
 import scala.util.Random
 
-class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData:Option[Double]) extends StrictLogging{
+class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLogging{
 
   val random = new Random(13)
 
@@ -24,7 +24,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData
       val dataset = f.getName.split("\\.")(0)
       val resultPr = new PrintWriter(resultDir + s"/$dataset.csv")
       RoleMatchStatistics.appendSchema(resultPr)
-      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(dataset)).get.getAbsolutePath,targetMissingData,Some(trainTimeEnd),Some(random))
+      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(dataset)).get.getAbsolutePath)
       val stringToLineageMap = rolesetNoDecay.getStringToLineageMap
       val groundTruthExamplIterator = Source.fromFile(f)
         .getLines()
@@ -36,7 +36,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData
       groundTruthExamplIterator.next()
       val groundTruthExamples = groundTruthExamplIterator
         .map(e => (RoleMatchCandidate(stringToLineageMap(e.v1),stringToLineageMap(e.v2)),false))
-      val retained = serializeSample(dataset,groundTruthExamples,None,resultPr)
+      val retained = serializeSample(dataset,groundTruthExamples,resultPr)
       resultPr.close()
     })
   }
@@ -56,6 +56,12 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData
     (RoleMatchCandidate(rl1,rl2),isTrueMatch)
   }
 
+  def toLineage(stringToLineageMap:Map[String,RoleLineageWithID],s: LabelledRoleMatchCandidate) = {
+    val rl1 = stringToLineageMap(s.id1)
+    val rl2 = stringToLineageMap(s.id2)
+    (RoleMatchCandidate(rl1,rl2),s.isTrueRoleMatch)
+  }
+
   def getSamplingGroup(decayedCompatibilityPercentage: Double) = if(decayedCompatibilityPercentage<0.7) "[0.0,0.7)" else if(decayedCompatibilityPercentage < 1.0) "[0.7,1.0)" else "1.0"
 
   def getDecayedEdgeFromUndecayedEdge(edgeNoDecay: RoleMatchCandidate, beta:Double):RoleMatchCandidate = {
@@ -68,7 +74,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData
     inputLabelDirs.foreach{case (inputLabelDir) => {
       val dataset = inputLabelDir.getName
       println(dataset)
-      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath,targetMissingData,Some(trainTimeEnd),Some(random))
+      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath)
       val groundTruthExamples = inputLabelDir
         .listFiles()
         .flatMap(f => {
@@ -118,18 +124,16 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData
     }}
   }
 
-  def executeEvaluation(inputLabelDirs: Array[File], resultPR: PrintWriter,resultDirRetained:Option[File]=None) = {
-    val counts = collection.mutable.HashMap[String,collection.mutable.HashMap[String,Int]]()
-    inputLabelDirs.map(_.getName).foreach(n => counts.put(n,collection.mutable.HashMap[String,Int]()))
+  def executeEvaluation(inputDir: Array[File], resultPR: PrintWriter,resultDirRetained:Option[File]=None) = {
     RoleMatchStatistics.appendSchema(resultPR)
-    inputLabelDirs.foreach{case (inputLabelDir) => {
-      logger.debug(inputLabelDir.getAbsolutePath)
-      val dataset = inputLabelDir.getName
-      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath,targetMissingData,Some(trainTimeEnd),Some(random))
-      val groundTruthExamples = inputLabelDir.listFiles().flatMap(f => Source.fromFile(f).getLines().toIndexedSeq.tail)
-        .map(s => getEdgeFromFile(rolesetNoDecay, s))
-
-      val retainedEdges = serializeSample(dataset,groundTruthExamples.iterator,Some(counts),resultPR)
+    inputDir.foreach{case (inputLabelFile) => {
+      logger.debug("Processing" + inputLabelFile)
+      val dataset = inputLabelFile.getName.split("\\.")(0)
+      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(dataset)).get.getAbsolutePath)
+      val map = rolesetNoDecay.getStringToLineageMap
+      val groundTruthExamples = LabelledRoleMatchCandidate.fromJsonObjectPerLineFile(inputLabelFile.getAbsolutePath)
+        .map(lc => toLineage(map,lc))
+      val retainedEdges = serializeSample(dataset,groundTruthExamples.iterator,resultPR)
       if(resultDirRetained.isDefined){
         resultDirRetained.get.mkdirs()
         val pr = new PrintWriter(resultDirRetained.get.getAbsolutePath + s"/$dataset.json")
@@ -141,61 +145,20 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData
 
     }}
     resultPR.close()
-    counts.foreach{case (ds,map) => println(ds);map.foreach(println)}
   }
 
   def serializeSample(dataset:String,
                       groundTruthExamples: Iterator[(RoleMatchCandidate, Boolean)],
-                      counts:Option[collection.mutable.HashMap[String,collection.mutable.HashMap[String,Int]]],
                       resultPR:PrintWriter) = {
     val retainedSamples = collection.mutable.ArrayBuffer[(RoleMatchCandidate, Boolean)]()
-    var countBelow80 = 0
-    var countBelow100 = 0
-    var count100 = 0
     groundTruthExamples
       //.filter(_._2)
       .foreach{case (edgeNoDecay,label)=> {
         val roleMatchStatistics = new RoleMatchStatistics(dataset,edgeNoDecay,label,DECAY_THRESHOLD,DECAY_THRESHOLD_SCB,trainTimeEnd)
-        val map = counts.map(_.getOrElseUpdate(dataset,collection.mutable.HashMap[String,Int]()))
-        if(roleMatchStatistics.nonDecayCompatibilityPercentage < 0.7){
-          if(countBelow80<100 || map.isEmpty){
-            if(map.isDefined){
-              val curCount = map.get.getOrElse(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),0)
-              map.get.put(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),curCount+1)
-            }
-            countBelow80+=1
-            retainedSamples.append((edgeNoDecay,label))
-            roleMatchStatistics.appendStatRow(resultPR)
-          } else {
-            //println(s"Skipping record in $dataset")
-          }
-        } else if(roleMatchStatistics.nonDecayCompatibilityPercentage<1.0){
-          if(countBelow100<100 || map.isEmpty){
-            if(map.isDefined){
-              val curCount = map.get.getOrElse(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),0)
-              map.get.put(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage),curCount+1)
-            }
-            countBelow100+=1
-            retainedSamples.append((edgeNoDecay,label))
-            roleMatchStatistics.appendStatRow(resultPR)
-          } else {
-            //println(s"Skipping record in $dataset")
-          }
-        } else {
-          if(count100<100 || map.isEmpty){
-            if(map.isDefined) {
-              val curCount = map.get.getOrElse(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage), 0)
-              map.get.put(getSamplingGroup(roleMatchStatistics.nonDecayCompatibilityPercentage), curCount + 1)
-            }
-            count100+=1
-            retainedSamples.append((edgeNoDecay,label))
-            roleMatchStatistics.appendStatRow(resultPR)
-          } else {
-            //println(s"Skipping record in $dataset")
-          }
+        retainedSamples.append((edgeNoDecay,label))
+        roleMatchStatistics.appendStatRow(resultPR)
         }
-      }}
-    println(countBelow80,countBelow100,count100)
+      }
     retainedSamples
   }
 

@@ -15,7 +15,7 @@ object LabelledRoleMatchingMissingValueEvaluation extends App {
     println(d)
     val pr = new PrintWriter(resultDir + s"/${targetBasename}_$d")
     val rolesetFiles = d.listFiles()
-    val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFiles,None)
+    val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFiles)
     RoleMatchEvaluator.executeEvaluation(inputLabelDirs,pr)
   })
 }

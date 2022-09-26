@@ -6,6 +6,8 @@ import de.hpi.util.GLOBAL_CONFIG
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
+//java -ea -Xmx64g -cp DatasetVersioning-assembly-0.1.jar de.hpi.role_matching.blocking.rm.RoleDomainExportMain wikipedia /data/changedata/roleMerging/final_experiments/scalability_experiments/
+// 2016-05-07 1.0 /data/changedata/roleMerging/final_experiments/scalability_experiments_for_rm/ rm
 object RoleDomainExportMain extends App {
   private val source: String = args(0)
   GLOBAL_CONFIG.setSettingsForDataSource(source)

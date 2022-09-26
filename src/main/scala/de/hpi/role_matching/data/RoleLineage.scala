@@ -3,15 +3,81 @@ package de.hpi.role_matching.data
 import de.hpi.role_matching.blocking.rm.RoleDomain
 import de.hpi.role_matching.data.RemainsValidVariant.RemainsValidVariant
 import de.hpi.role_matching.data.RoleLineage.WILDCARD_VALUES
-import de.hpi.role_matching.data.RoleLineageWithID.digitRegex
+import de.hpi.role_matching.data.RoleLineageWithID.{digitRegex, printTabularEventLineageString}
 import de.hpi.util.GLOBAL_CONFIG
 
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import scala.collection.mutable
+import scala.util.Random
 
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
+
+  def dataDensity(trainTimeEnd: LocalDate) = {
+    nonWildcardDuration(trainTimeEnd.plusDays(1)) / ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, trainTimeEnd.plusDays(1)).toDouble
+  }
+
+  def valueToNonWildcardTimestamps(timePeriodEnd:LocalDate) = {
+    val withIndex = lineage
+      .toIndexedSeq
+      .filter(t => t._1.isBefore(timePeriodEnd))
+      .zipWithIndex
+    val res = withIndex
+      .withFilter(t => !isWildcard(t._1._2))
+      .map{case ((ld,v),i) => {
+        val end = if(i==withIndex.size-1) timePeriodEnd else withIndex(i+1)._1._1
+        val dateRange = (ld.toEpochDay until end.toEpochDay by GLOBAL_CONFIG.granularityInDays)
+          .map(l => LocalDate.ofEpochDay(l))
+        (v,dateRange)
+      }}
+    res
+
+  }
+
+  def addSyntheticallyMissingData(targetShareOfAbsentValues: Double,
+                                  timePeriodEnd:LocalDate,
+                                  random:Random):RoleLineage = {
+    val currentDensity = dataDensity(timePeriodEnd)
+    val curWildcardShare = 1.0 - currentDensity
+    if(curWildcardShare>= targetShareOfAbsentValues){
+      this
+    } else {
+      val totalTimestamps = ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, timePeriodEnd) / GLOBAL_CONFIG.granularityInDays
+      val missingNumberOfTimestamps = ((targetShareOfAbsentValues - curWildcardShare)*totalTimestamps).toInt
+      val nonWCTS = valueToNonWildcardTimestamps(timePeriodEnd)
+      //randomly choose missingNumberOfTimestamps
+      val setToWildcard = random.shuffle(nonWCTS
+        .flatMap(t => t._2.tail)) //only take tail so we never replace the first insert with missing data, this does not really impact the result, but gets rid of unwanted side-effects on the value distribution by replacing things with missing values
+        .take(missingNumberOfTimestamps)
+        .sorted
+      val newLineage = collection.mutable.TreeMap[LocalDate,Any]() ++ lineage
+      for (elem <- setToWildcard) {
+        newLineage.put(elem,ReservedChangeValues.DECAYED)
+        if(!lineage.contains(elem.plusDays(GLOBAL_CONFIG.granularityInDays))) {
+          //change it back at the next timestamp:
+          newLineage.put(elem.plusDays(GLOBAL_CONFIG.granularityInDays),lineage.maxBefore(elem).get._2)
+        }
+      }
+      //eliminate subsequentDuplicates
+      val newLineageWithIndex = newLineage
+        .toIndexedSeq
+        .zipWithIndex
+      val newLineageFiltered = collection.mutable.TreeMap[LocalDate,Any]() ++ newLineageWithIndex
+        .filter{case ((ld,v),i) => i==0 || v != newLineageWithIndex(i-1)._1._2}
+        .map(_._1)
+      val newRL = RoleLineage(newLineageFiltered)
+      val newDensity = newRL.dataDensity(timePeriodEnd)
+      val newTargetShareOfAbsentValues = 1.0-newDensity
+//      if(!(newTargetShareOfAbsentValues <= targetShareOfAbsentValues+0.01 && newTargetShareOfAbsentValues >= targetShareOfAbsentValues-0.01))
+//        println()
+      assert(lineage.size>20 || newTargetShareOfAbsentValues <= targetShareOfAbsentValues+0.01 && newTargetShareOfAbsentValues >= targetShareOfAbsentValues-0.01)
+      assert(newRL.nonWildCardValues.toSet == nonWildCardValues.toSet)
+      newRL
+    }
+
+  }
+
 
   def presenceTimeDoesNotExactlyMatch(rl2ProjectedNoDecay: RoleLineage, trainTimeEnd: LocalDate): Boolean = {
     val me = toExactValueSequence(trainTimeEnd)
@@ -226,11 +292,12 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     val withIndex = lineage
       .zipWithIndex
       .toIndexedSeq
+      .filter(_._1._1.isBefore(timeRangeEnd))
     var period:Long = 0
     //if(begin.isDefined) period += Period.between(begin.get,withIndex.head._1)
     withIndex.map{case ((ld,v),i) => {
       val curBegin = ld
-      val end = if(i!=withIndex.size-1) withIndex(i+1)._1._1 else timeRangeEnd
+      val end = if(i!=withIndex.size-1 && withIndex(i+1)._1._1.isBefore(timeRangeEnd)) withIndex(i+1)._1._1 else timeRangeEnd
       if(!isWildcard(v))
         period = period + (ChronoUnit.DAYS.between(curBegin,end))
     }}
@@ -754,31 +821,9 @@ object RoleLineage{
     ReservedChangeValues.NOT_KNOWN_DUE_TO_NO_VISIBLE_CHANGE,
     ReservedChangeValues.DECAYED)
 
-  def tryMergeAll(toMerge: IndexedSeq[RoleLineage]) = {
-    var res = Option(toMerge.head)
-    (1 until toMerge.size).foreach(i => {
-      if(res.isDefined)
-        res = res.get.tryMergeWithConsistent(toMerge(i))
-    })
-    res
-  }
-
-
   def fromSerializationHelper(valueLineageWithHashMap: RoleLineageWithHashMap) = RoleLineage(mutable.TreeMap[LocalDate,Any]() ++ valueLineageWithHashMap.lineage)
 
   def isWildcard(value: Any) = WILDCARD_VALUES.contains(value)
 
-  def mergeAll(refs:Seq[RoleReference]):RoleLineage = {
-    if(refs.size==1)
-      refs.head.getRole
-    else {
-      val toMerge = refs.tail.map(tr => tr.getRole)
-      var res = refs.head.getRole
-      (1 until toMerge.size).foreach(i => {
-        res = res.mergeWithConsistent(toMerge(i))
-      })
-      res
-    }
-  }
 
 }

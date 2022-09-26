@@ -43,7 +43,7 @@ class RolesetStatisticsPrinter() {
     val formattedAVGDVCount = formatter.format(avgDVCount)
     val densities = rs.posToRoleLineage
       .values
-      .map(rl => rl.nonWildcardDuration(GLOBAL_CONFIG.STANDARD_TIME_FRAME_END.plusDays(1)) / ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, GLOBAL_CONFIG.STANDARD_TIME_FRAME_END).toDouble)
+      .map(rl => rl.dataDensity(GLOBAL_CONFIG.STANDARD_TIME_FRAME_END))
     val avgDensity = densities
       .sum / rs.posToRoleLineage.size.toDouble
     val stdDensity = getSTDDouble(densities, avgDensity)

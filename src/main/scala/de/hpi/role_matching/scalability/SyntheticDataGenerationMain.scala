@@ -8,8 +8,9 @@ import java.io.File
 import java.time.temporal.ChronoUnit
 import scala.util.Random
 
-object SyntheticDataGenerationMain extends App {
+//java -ea -Xmx64g -cp DatasetVersioning-assembly-0.1.jar de.hpi.role_matching.scalability.SyntheticDataGenerationMain /data/changedata/roleMerging/final_experiments/allRolesets/wikipedia/noDecay/football.json 500000 /data/changedata/roleMerging/final_experiments/scalability_experiments/
 
+object SyntheticDataGenerationMain extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   //get the distributions of the input dataset:
   private val inputPath = args(0)
@@ -17,19 +18,10 @@ object SyntheticDataGenerationMain extends App {
   val n = args(2).toInt
   resultDir.mkdirs()
   val rs = Roleset.fromJsonFile(inputPath)
-  val densities = rs.posToRoleLineage
-    .values
-    .map(rl => rl.nonWildcardDuration(GLOBAL_CONFIG.STANDARD_TIME_FRAME_END.plusDays(1)) / ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, GLOBAL_CONFIG.STANDARD_TIME_FRAME_END).toDouble)
-  private val distinctValueCounts = rs
-    .posToRoleLineage
-    .values
-    .map(_.nonWildCardValues.size)
-  val distinctValueCountDistribution = ValueDistribution.fromIterable(distinctValueCounts)
-  val densityDistribution = ValueDistribution.fromIterable(densities)
   val valueInLineageDistribution = rs.valueAppearanceInLineageDistribution
   val random = new Random(13)
   //create the data generator:
-  val roleDataGenerator = new RoleDataGenerator(distinctValueCountDistribution,densityDistribution,valueInLineageDistribution,random)
+  val roleDataGenerator = new RoleDataGenerator(rs,valueInLineageDistribution,random)
   val result = roleDataGenerator.generate(n)
   val generated = Roleset.fromRoles(result)
   generated.toJsonFile(new File(resultDir.getAbsolutePath + s"/${n}.json"))

@@ -10,6 +10,7 @@ object LabelledRoleMatchReevaluation extends App {
   val rolesetFilesNoneDecayed = new File(args(1)).listFiles()
   //val rolesets = rolesetFiles.map(f => Roleset.fromJsonFile(f.getAbsolutePath))
   val resultDir = new File(args(2))
-  val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFilesNoneDecayed)
+  val targetMissingDataShare = if(args.size == 4) Some(args(3).toDouble) else None
+  val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFilesNoneDecayed,targetMissingDataShare)
   RoleMatchEvaluator.reexecuteForStatCSVFile(inputEdgeFiles, resultDir, 0.57)
 }

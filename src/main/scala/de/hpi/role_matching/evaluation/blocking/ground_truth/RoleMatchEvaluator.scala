@@ -7,8 +7,11 @@ import de.hpi.util.GLOBAL_CONFIG
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import scala.io.Source
+import scala.util.Random
 
-class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLogging{
+class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData:Option[Double]) extends StrictLogging{
+
+  val random = new Random(13)
 
   def reexecuteForStatCSVFile(inputCSVFiles: Array[File],
                               resultDir: File,
@@ -21,7 +24,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLog
       val dataset = f.getName.split("\\.")(0)
       val resultPr = new PrintWriter(resultDir + s"/$dataset.csv")
       RoleMatchStatistics.appendSchema(resultPr)
-      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(dataset)).get.getAbsolutePath)
+      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(dataset)).get.getAbsolutePath,targetMissingData,Some(trainTimeEnd),Some(random))
       val stringToLineageMap = rolesetNoDecay.getStringToLineageMap
       val groundTruthExamplIterator = Source.fromFile(f)
         .getLines()
@@ -65,7 +68,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLog
     inputLabelDirs.foreach{case (inputLabelDir) => {
       val dataset = inputLabelDir.getName
       println(dataset)
-      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath)
+      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath,targetMissingData,Some(trainTimeEnd),Some(random))
       val groundTruthExamples = inputLabelDir
         .listFiles()
         .flatMap(f => {
@@ -122,7 +125,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLog
     inputLabelDirs.foreach{case (inputLabelDir) => {
       logger.debug(inputLabelDir.getAbsolutePath)
       val dataset = inputLabelDir.getName
-      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath)
+      val rolesetNoDecay = Roleset.fromJsonFile(rolesetFilesNoneDecayed.find(f => f.getName.contains(inputLabelDir.getName)).get.getAbsolutePath,targetMissingData,Some(trainTimeEnd),Some(random))
       val groundTruthExamples = inputLabelDir.listFiles().flatMap(f => Source.fromFile(f).getLines().toIndexedSeq.tail)
         .map(s => getEdgeFromFile(rolesetNoDecay, s))
 

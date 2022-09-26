@@ -63,4 +63,15 @@ object Roleset extends JsonReadable[Roleset]{
     Roleset(roleIdsSorted,posToLineage)
   }
 
+  def fromJsonFile(path: String,syntheticMissingDataShare:Option[Double],trainTimeEnd:Option[LocalDate],random:Option[Random])(implicit m: Manifest[Roleset]): Roleset = {
+    if(syntheticMissingDataShare.isEmpty) {
+      super.fromJsonFile(path)
+    } else {
+      val rs = super.fromJsonFile(path)
+      val rolesNew = rs.positionToRoleLineage
+        .map{ case (id,rl) => (id,rl.roleLineage.toRoleLineage.addSyntheticallyMissingData(syntheticMissingDataShare.get,trainTimeEnd.get,random.get).toIdentifiedRoleLineage(rl.id))}
+      Roleset(rs.rolesSortedByID,rolesNew)
+    }
+  }
+
 }

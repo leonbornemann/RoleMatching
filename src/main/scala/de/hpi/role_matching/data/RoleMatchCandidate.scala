@@ -8,6 +8,11 @@ import java.io.File
 //not very memory efficient but can easily be written in parallel
 case class RoleMatchCandidate(v1:RoleLineageWithID, v2:RoleLineageWithID) extends JsonWritable[RoleMatchCandidate] {
 
+  def toLabelledCandidate(isTrueMatch: Boolean) = {
+    LabelledRoleMatchCandidate(v1.id,v2.id,isTrueMatch)
+  }
+
+
   def firstNonWildcardValueOverlap = {
     new CommonPointOfInterestIterator(v1.roleLineage.toRoleLineage,v2.roleLineage.toRoleLineage)
       .withFilter(cp => cp.curValueA==cp.curValueB && !RoleLineage.isWildcard(cp.curValueA))

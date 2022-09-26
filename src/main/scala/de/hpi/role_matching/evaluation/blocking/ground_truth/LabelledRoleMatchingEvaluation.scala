@@ -13,5 +13,5 @@ object LabelledRoleMatchingEvaluation extends App {
   val additionalMissingData = if(args.size == 4) Some(args(3).toDouble) else None
   val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFiles,additionalMissingData)
   //RoleMatchEvaluator.executeLabelGrouping(inputLabelDirs)
-  RoleMatchEvaluator.executeEvaluation(inputLabelDirs, resultPR)
+  RoleMatchEvaluator.executeEvaluation(inputLabelDirs, resultPR,Some(new File("/home/leon/data/dataset_versioning/finalExperiments/semanticAnnotation/dgs_new")))
 }

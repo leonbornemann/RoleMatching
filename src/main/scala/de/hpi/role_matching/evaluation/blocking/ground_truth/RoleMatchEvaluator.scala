@@ -36,7 +36,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData
       groundTruthExamplIterator.next()
       val groundTruthExamples = groundTruthExamplIterator
         .map(e => (RoleMatchCandidate(stringToLineageMap(e.v1),stringToLineageMap(e.v2)),false))
-      serializeSample(dataset,groundTruthExamples,None,resultPr)
+      val retained = serializeSample(dataset,groundTruthExamples,None,resultPr)
       resultPr.close()
     })
   }
@@ -118,7 +118,7 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData
     }}
   }
 
-  def executeEvaluation(inputLabelDirs: Array[File], resultPR: PrintWriter) = {
+  def executeEvaluation(inputLabelDirs: Array[File], resultPR: PrintWriter,resultDirRetained:Option[File]=None) = {
     val counts = collection.mutable.HashMap[String,collection.mutable.HashMap[String,Int]]()
     inputLabelDirs.map(_.getName).foreach(n => counts.put(n,collection.mutable.HashMap[String,Int]()))
     RoleMatchStatistics.appendSchema(resultPR)
@@ -130,6 +130,15 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File], targetMissingData
         .map(s => getEdgeFromFile(rolesetNoDecay, s))
 
       val retainedEdges = serializeSample(dataset,groundTruthExamples.iterator,Some(counts),resultPR)
+      if(resultDirRetained.isDefined){
+        resultDirRetained.get.mkdirs()
+        val pr = new PrintWriter(resultDirRetained.get.getAbsolutePath + s"/$dataset.json")
+        retainedEdges
+          .map(t => t._1.toLabelledCandidate(t._2))
+          .foreach(_.appendToWriter(pr,false,true))
+        pr.close()
+      }
+
     }}
     resultPR.close()
     counts.foreach{case (ds,map) => println(ds);map.foreach(println)}

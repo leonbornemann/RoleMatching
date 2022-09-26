@@ -6,7 +6,7 @@ import de.hpi.util.GLOBAL_CONFIG
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import scala.util.Random
-
+//de.hpi.role_matching.data.Roleset.MissingDataRolesetGenerator /san2/data/change-exploration/roleMerging/finalExperiments/finalRolesets/ /san2/data/change-exploration/roleMerging/finalExperiments/rolesetsWithSyntheticMissingData/
 object MissingDataRolesetGenerator extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val rolesetFiles = new File(args(0)).listFiles()

@@ -23,7 +23,7 @@ object MissingDataRolesetGenerator extends App {
       println(f)
       val random = new Random(13)
       val rs = Roleset.fromJsonFile(f.getAbsolutePath,Some(d),Some(trainTimeEnd),Some(random))
-      rs.toJsonFile(new File(resultDirThis.getAbsolutePath + f.getName))
+      rs.toJsonFile(new File(resultDirThis.getAbsolutePath + "/" + f.getName))
     })
   })
 }

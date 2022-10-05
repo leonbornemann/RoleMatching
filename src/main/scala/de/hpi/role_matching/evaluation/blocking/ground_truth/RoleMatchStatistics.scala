@@ -9,9 +9,7 @@ import java.time.LocalDate
 class RoleMatchStatistics(dataset:String,
                           edgeNoDecay: RoleMatchCandidate,
                           label: Boolean,
-                          trainTimeEnd:LocalDate,
-                          DECAY_THRESHOLD: Double = 0.0,
-                          DECAY_THRESHOLD_SCB: Double = 0.0
+                          trainTimeEnd:LocalDate
                           ) {
 
   val decayThresholds = (0 to 200 )
@@ -19,10 +17,9 @@ class RoleMatchStatistics(dataset:String,
     .reverse
 
   def appendStatRow(resultPR: PrintWriter) = {
-    resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlocking,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
-      s"$decayedCompatibilityPercentage," +
+    resultPR.println(s"$dataset,$id1,$id2,$isInStrictBlockingNoDecay,$isInValueSetBlocking,$isInSequenceBlocking,$isInExactSequenceBlocking,$label," +
       s"${rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)}," +
-      s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$hasTransitionOverlapDecay,$hasValueSetOverlap,$isInSVABlockingNoDecay,$isInSVABlockingDecay,"+
+      s"$exactSequenceMatchPercentage,$hasTransitionOverlapNoDecay,$isInSVABlockingNoDecay,"+
       s"$vaCOunt,$daCount,$isInTSMBlockingNoWildcard,$isInTSMBlockingWithWildcard,$strictlyCompatiblePercentage,$decayScore,$hasNonOverlap")
   }
 
@@ -32,19 +29,8 @@ class RoleMatchStatistics(dataset:String,
     RoleMatchCandidate(RoleLineageWithID(edgeNoDecay.v1.id,rl1WithDecay.toSerializationHelper),RoleLineageWithID(edgeNoDecay.v2.id,rl2WithDecay.toSerializationHelper))
   }
 
-  val edgeDecay = getDecayedEdgeFromUndecayedEdge(edgeNoDecay,DECAY_THRESHOLD)
-  val id1 = edgeDecay.v1.csvSafeID
-  val id2 = edgeDecay.v2.csvSafeID
-  val rl1 = edgeDecay.v1.roleLineage.toRoleLineage
-  val rl2 = edgeDecay.v2.roleLineage.toRoleLineage
-  val rl1Projected = rl1.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-  val rl2Projected = rl2.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-  val hasTransitionOverlapDecay = rl1Projected.informativeValueTransitions.intersect(rl2Projected.informativeValueTransitions).size>=1
-  val statRow = new BasicStatRow(rl1Projected,rl2Projected,trainTimeEnd)
-  val hasValueSetOverlap = rl1Projected.nonWildcardValueSetBefore(trainTimeEnd.plusDays(1)).exists(v => rl2Projected.nonWildcardValueSetBefore(trainTimeEnd.plusDays(1)).contains(v))
-  val isInSVABlockingDecay = GLOBAL_CONFIG.STANDARD_TIME_RANGE
-    .filter(!_.isAfter(trainTimeEnd))
-    .exists(t => rl1Projected.valueAt(t) == rl2Projected.valueAt(t) && !RoleLineage.isWildcard(rl1Projected.valueAt(t)))
+  val id1 = edgeNoDecay.v1.csvSafeID
+  val id2 = edgeNoDecay.v2.csvSafeID
   //no decay:
   val rl1NoDecay = edgeNoDecay.v1.roleLineage.toRoleLineage
   val rl2NoDecay = edgeNoDecay.v2.roleLineage.toRoleLineage
@@ -59,20 +45,14 @@ class RoleMatchStatistics(dataset:String,
   val isInValueSetBlocking = rl1ProjectedNoDecay.nonWildcardValueSetBefore(trainTimeEnd) == rl2ProjectedNoDecay.nonWildcardValueSetBefore(trainTimeEnd)
   val isInSequenceBlocking = rl1ProjectedNoDecay.valueSequenceBefore(trainTimeEnd) == rl2ProjectedNoDecay.valueSequenceBefore(trainTimeEnd)
   val isInExactSequenceBlocking = rl1ProjectedNoDecay.exactlyMatchesWithoutDecay(rl2ProjectedNoDecay,trainTimeEnd)
-  val isInStrictBlocking = statRow.remainsValidFullTimeSpan
   val isInStrictBlockingNoDecay = statRowNoDecay.remainsValidFullTimeSpan
-  val decayedCompatibilityPercentage = rl1Projected.getCompatibilityTimePercentage(rl2Projected, trainTimeEnd)
   val nonDecayCompatibilityPercentage = rl1ProjectedNoDecay.getCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)
   val exactSequenceMatchPercentage = rl1ProjectedNoDecay.exactMatchesWithoutWildcardPercentage(rl2ProjectedNoDecay,trainTimeEnd)
-  val vaCOunt = rl1Projected.exactMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd,false)
-  val daCount = rl1Projected.exactDistinctMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd)
-  val isInTSMBlockingNoWildcard = rl1Projected.getValueTransitionSet(true,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd)) == rl2Projected.getValueTransitionSet(true,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd))
-  val isInTSMBlockingWithWildcard = rl1Projected.getValueTransitionSet(false,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd)) == rl2Projected.getValueTransitionSet(false,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd))
+  val vaCOunt = rl1ProjectedNoDecay.exactMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd,false)
+  val daCount = rl1ProjectedNoDecay.exactDistinctMatchWithoutWildcardCount(rl2ProjectedNoDecay,trainTimeEnd)
+  val isInTSMBlockingNoWildcard = rl1ProjectedNoDecay.getValueTransitionSet(true,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd)) == rl2ProjectedNoDecay.getValueTransitionSet(true,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd))
+  val isInTSMBlockingWithWildcard = rl1ProjectedNoDecay.getValueTransitionSet(false,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd)) == rl2ProjectedNoDecay.getValueTransitionSet(false,GLOBAL_CONFIG.granularityInDays,Some(trainTimeEnd))
   val strictlyCompatiblePercentage = rl1ProjectedNoDecay.getStrictCompatibilityTimePercentage(rl2ProjectedNoDecay,trainTimeEnd)
-  val edgeDecaySCB = getDecayedEdgeFromUndecayedEdge(edgeNoDecay,DECAY_THRESHOLD_SCB)
-  val rl1ProjectedSCBDecay = edgeDecaySCB.v1.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-  val rl2ProjectedSCBDecay = edgeDecaySCB.v2.roleLineage.toRoleLineage.projectToTimeRange(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START,trainTimeEnd)
-  val strictlyCompatiblePercentageWithDecay = rl1ProjectedSCBDecay.getStrictCompatibilityTimePercentage(rl2ProjectedSCBDecay,trainTimeEnd)
   val decayScore = RoleMatchStatistics.getDecayScore(rl1ProjectedNoDecay,rl2ProjectedNoDecay,decayThresholds,trainTimeEnd)
   val hasNonOverlap = rl1ProjectedNoDecay.presenceTimeDoesNotExactlyMatch(rl2ProjectedNoDecay,trainTimeEnd)
 }
@@ -80,9 +60,9 @@ class RoleMatchStatistics(dataset:String,
 object RoleMatchStatistics{
 
   def appendSchema(resultPr:PrintWriter) = {
-    resultPr.println("dataset,id1,id2,isInStrictBlockingDecay,isInStrictBlockingNoDecay,isInValueSetBlocking,isInSequenceBlocking," +
-      "isInExactMatchBlocking,isSemanticRoleMatch,compatibilityPercentageDecay,compatibilityPercentageNoDecay,exactSequenceMatchPercentage," +
-      "hasTransitionOverlapNoDecay,hasTransitionOverlapDecay,hasValueSetOverlap,isInSVABlockingNoDecay,isInSVABlockingDecay,VACount,DVACount,"+
+    resultPr.println("dataset,id1,id2,isInStrictBlockingNoDecay,isInValueSetBlocking,isInSequenceBlocking," +
+      "isInExactMatchBlocking,isSemanticRoleMatch,compatibilityPercentageNoDecay,exactSequenceMatchPercentage," +
+      "hasTransitionOverlapNoDecay,isInSVABlockingNoDecay,VACount,DVACount,"+
       "isInTSMBlockingNoWildcard,isInTSMBlockingWithWildcard,strictlyCompatiblePercentage,decayScore,hasNonOverlap")
   }
 

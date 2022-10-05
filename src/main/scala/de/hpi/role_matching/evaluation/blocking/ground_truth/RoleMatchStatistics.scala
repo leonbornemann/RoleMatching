@@ -9,9 +9,10 @@ import java.time.LocalDate
 class RoleMatchStatistics(dataset:String,
                           edgeNoDecay: RoleMatchCandidate,
                           label: Boolean,
-                          DECAY_THRESHOLD: Double,
-                          DECAY_THRESHOLD_SCB: Double,
-                          trainTimeEnd:LocalDate) {
+                          trainTimeEnd:LocalDate,
+                          DECAY_THRESHOLD: Double = 0.0,
+                          DECAY_THRESHOLD_SCB: Double = 0.0
+                          ) {
 
   val decayThresholds = (0 to 200 )
     .map(i => i / 200.0)

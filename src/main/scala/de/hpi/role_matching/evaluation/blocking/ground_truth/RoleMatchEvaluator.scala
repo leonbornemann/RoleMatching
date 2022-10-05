@@ -1,7 +1,11 @@
 package de.hpi.role_matching.evaluation.blocking.ground_truth
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.role_matching
 import de.hpi.role_matching.data._
+import de.hpi.role_matching.evaluation
+import de.hpi.role_matching.evaluation.blocking
+import de.hpi.role_matching.evaluation.blocking.ground_truth
 import de.hpi.util.GLOBAL_CONFIG
 
 import java.io.{File, PrintWriter}
@@ -10,6 +14,23 @@ import scala.io.Source
 import scala.util.Random
 
 class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLogging{
+
+  def executeEvaluationForIterator(candidates: Iterator[DatasetAndIDJson], resultPR: PrintWriter) = {
+    RoleMatchStatistics.appendSchema(resultPR)
+    val dsToRoleset = rolesetFilesNoneDecayed
+      .map(f => (f.getName.split("\\.")(0),Roleset.fromJsonFile(f.getAbsolutePath).getStringToLineageMap))
+      .toMap
+    var processed = 0
+    candidates.foreach{case c => {
+      if(processed % 10000 == 0)
+        logger.debug(s"Processed $processed")
+      val candidate = toLineage(dsToRoleset(c.dataset),c.toLabelledCandidate(false))
+      serializeCanidate(c.dataset,candidate,resultPR)
+      processed+=1
+    }}
+    resultPR.close()
+  }
+
 
   val random = new Random(13)
 
@@ -147,17 +168,24 @@ class RoleMatchEvaluator(rolesetFilesNoneDecayed: Array[File]) extends StrictLog
     resultPR.close()
   }
 
+  def serializeCanidate(dataset:String,
+                        groundTruthExample: (RoleMatchCandidate, Boolean),
+                        resultPR:PrintWriter) = {
+    val roleMatchStatistics = new RoleMatchStatistics(dataset,groundTruthExample._1,groundTruthExample._2,trainTimeEnd)
+    roleMatchStatistics.appendStatRow(resultPR)
+  }
+
   def serializeSample(dataset:String,
                       groundTruthExamples: Iterator[(RoleMatchCandidate, Boolean)],
                       resultPR:PrintWriter) = {
     val retainedSamples = collection.mutable.ArrayBuffer[(RoleMatchCandidate, Boolean)]()
     groundTruthExamples
       //.filter(_._2)
-      .foreach{case (edgeNoDecay,label)=> {
-        val roleMatchStatistics = new RoleMatchStatistics(dataset,edgeNoDecay,label,DECAY_THRESHOLD,DECAY_THRESHOLD_SCB,trainTimeEnd)
+      .foreach{case t => {
+        val (edgeNoDecay,label) = t
+        serializeCanidate(dataset,t,resultPR)
         retainedSamples.append((edgeNoDecay,label))
-        roleMatchStatistics.appendStatRow(resultPR)
-        }
+      }
       }
     retainedSamples
   }

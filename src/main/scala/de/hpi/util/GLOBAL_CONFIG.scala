@@ -37,7 +37,7 @@ object GLOBAL_CONFIG extends StrictLogging {
 
   def STANDARD_TIME_RANGE_SIZE = (STANDARD_TIME_FRAME_START.toEpochDay to STANDARD_TIME_FRAME_END.toEpochDay).size
 
-  def setSettingsForDataSource(dataSource: String, timeFactor: Double = 1.0) = {
+  def setSettingsForDataSource(dataSource: String, timeFactor: Int = 1) = {
     if (dataSource == "wikipedia") {
       STANDARD_TIME_FRAME_START = LocalDate.parse("2003-01-04")
       STANDARD_TIME_FRAME_END = LocalDate.parse("2019-09-07")
@@ -52,7 +52,7 @@ object GLOBAL_CONFIG extends StrictLogging {
       logger.debug("Unknown data source specified!")
       assert(false)
     }
-    if (timeFactor != 1.0) {
+    if (timeFactor != 1) {
       STANDARD_TIME_FRAME_END = STANDARD_TIME_FRAME_START
         .plusDays((ChronoUnit.DAYS.between(STANDARD_TIME_FRAME_START, STANDARD_TIME_FRAME_END) * timeFactor).toInt)
     }

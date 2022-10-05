@@ -44,8 +44,6 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
       val dsName = f.getName.split("\\.")(0)
       val outFileEdges = new PrintWriter(outputDir + "/" + dsName + ".json")
       val outFileStats = new PrintWriter(outputDir + "/" + dsName + ".csv")
-      val DECAY_THRESHOLD = 0.57
-      val DECAY_THRESHOLD_SCB = 0.5
       RoleMatchStatistics.appendSchema(outFileStats)
       var logged = false
       while(sample.size<targetCount){
@@ -56,7 +54,7 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
             val roleMatchCandidate = RoleMatchCandidateIds(roleList(i)._1, roleList(j)._1)
             if(!sample.contains(roleMatchCandidate)){
               sample.add(roleMatchCandidate)
-              serializeMatch(dsName,roleMap,outFileEdges,outFileStats,DECAY_THRESHOLD,DECAY_THRESHOLD_SCB,roleMatchCandidate)
+              serializeMatch(dsName,roleMap,outFileEdges,outFileStats,roleMatchCandidate)
               outFileStats.flush()
               outFileEdges.flush()
               logged=false

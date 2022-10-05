@@ -12,7 +12,7 @@ object CBRBMain extends App with StrictLogging {
   val timeNow = System.currentTimeMillis()
   println(s"Called with ${args.toIndexedSeq}")
   private val source: String = args(0).split(",")(0)
-  private val timeFactor: Double = args(0).split(",")(1).toDouble
+  private val timeFactor: Int = args(0).split(",")(1).toInt
   GLOBAL_CONFIG.setSettingsForDataSource(source, timeFactor)
   val rolsetFile = args(1)
   val resultDirEdges = new File(args(2))

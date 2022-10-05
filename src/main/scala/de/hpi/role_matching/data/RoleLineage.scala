@@ -14,6 +14,18 @@ import scala.util.Random
 @SerialVersionUID(3L)
 case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[LocalDate,Any]()) extends Serializable{
 
+  def removeSubsequentDuplicates() = {
+    val withIndex = lineage
+      .toIndexedSeq
+      .zipWithIndex
+    val toFilterOut = withIndex
+      .filter{case ((ld,v),i) => i!=0 && v == withIndex(i-1)._1._2}
+      .map(_._1._1)
+    toFilterOut
+      .foreach(ld => lineage.remove(ld))
+  }
+
+
   def dataDensity(trainTimeEnd: LocalDate) = {
     nonWildcardDuration(trainTimeEnd.plusDays(1)) / ChronoUnit.DAYS.between(GLOBAL_CONFIG.STANDARD_TIME_FRAME_START, trainTimeEnd.plusDays(1)).toDouble
   }
@@ -107,7 +119,7 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
   }
 
 
-  def toNewTimeScale(d: Double): RoleLineage = {
+  def toNewTimeScale(d: Int): RoleLineage = {
     val startOld = GLOBAL_CONFIG.STANDARD_TIME_FRAME_START
     val newLineage = lineage
       .map{case (ld,v) => (GLOBAL_CONFIG.STANDARD_TIME_FRAME_START.plusDays((ChronoUnit.DAYS.between(startOld,ld)*d).toInt),v)}
@@ -168,7 +180,6 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     })
     RoleDomain(id,values)
   }
-
 
   def exactMatchesWithoutWildcardPercentage(rl2Projected: RoleLineage, until: LocalDate) = {
     val results = exactlyMatchesWithoutWildcard(rl2Projected,GLOBAL_CONFIG.STANDARD_TIME_RANGE.filter(!_.isAfter(until)))

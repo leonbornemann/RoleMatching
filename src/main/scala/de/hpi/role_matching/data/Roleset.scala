@@ -24,6 +24,15 @@ case class Roleset(rolesSortedByID: IndexedSeq[String], positionToRoleLineage:Ma
       .map{case (v,arr) => (v,arr.size)})
   }
 
+  def exportWithProlongedTime(factor:Int) = {
+    val result = Roleset(rolesSortedByID,positionToRoleLineage
+      .map(t => {
+        val newRl = t._2.roleLineage.toRoleLineage.toNewTimeScale(factor)
+        (t._1,newRl.toIdentifiedRoleLineage(t._2.id))
+      }))
+    result
+  }
+
 
   def subsample(downsamplingRatio: Double,random:Random) = {
     val map = getStringToLineageMap

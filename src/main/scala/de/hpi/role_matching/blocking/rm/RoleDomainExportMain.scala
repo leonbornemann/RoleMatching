@@ -10,13 +10,14 @@ import java.time.LocalDate
 // 2016-05-07 1.0 /data/changedata/roleMerging/final_experiments/scalability_experiments_for_rm/ rm
 object RoleDomainExportMain extends App {
   private val source: String = args(0)
-  GLOBAL_CONFIG.setSettingsForDataSource(source)
   val rolesetDir = args(1)
-  val rolesetFiles = new File(rolesetDir).listFiles()
+  val rolesetFiles = if(new File(rolesetDir).isDirectory) new File(rolesetDir).listFiles().toIndexedSeq else IndexedSeq(new File(rolesetDir))
   val traintTimeEnd = LocalDate.parse(args(2))
   val decayThreshold = args(3).toDouble
   val resultDir = new File(args(4))
   val mode = args(5)
+  val timeFactor = args(6).toInt
+  GLOBAL_CONFIG.setSettingsForDataSource(source,timeFactor)
   resultDir.mkdirs()
   if (mode == "cbrb") {
     rolesetFiles.foreach(rolesetFile => {

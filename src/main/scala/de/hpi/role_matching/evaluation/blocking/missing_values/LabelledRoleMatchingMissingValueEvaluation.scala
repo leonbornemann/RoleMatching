@@ -1,5 +1,6 @@
-package de.hpi.role_matching.evaluation.blocking.ground_truth
+package de.hpi.role_matching.evaluation.blocking.missing_values
 
+import de.hpi.role_matching.evaluation.blocking.ground_truth.RoleMatchEvaluator
 import de.hpi.util.GLOBAL_CONFIG
 
 import java.io.{File, PrintWriter}
@@ -17,6 +18,6 @@ object LabelledRoleMatchingMissingValueEvaluation extends App {
     val pr = new PrintWriter(resultDir.getAbsolutePath + s"/${targetBasename}_${d.getName}.csv")
     val rolesetFiles = d.listFiles()
     val RoleMatchEvaluator = new RoleMatchEvaluator(rolesetFiles)
-    RoleMatchEvaluator.executeEvaluation(inputLabelDirs,pr)
+    RoleMatchEvaluator.executeEvaluation(inputLabelDirs, pr)
   })
 }

@@ -1,0 +1,1 @@
+java -ea -Xmx200g -cp DatasetVersioning-assembly-0.1.jar de.hpi.role_matching.evaluation.blocking.missing_values.AllPairSampleReEvaluation allPairSample/football.json nodecayrolesets_wikipedia/football.json allPairSampleCSV/

@@ -6,12 +6,14 @@ import java.io.File
 import java.time.LocalDate
 
 object AllPairSamplerMain extends App {
-  GLOBAL_CONFIG.setSettingsForDataSource(args(0))
-  val rolesetDir = new File(args(1))
-  val outputDir = args(2)
-  val trainTimeEnd = LocalDate.parse(args(3))
-  val sampleCount = args(4).toInt
-  val seed = args(5).toInt
-  new SimpleAllPairSampler(rolesetDir, outputDir, trainTimeEnd, sampleCount, seed).runSampling
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
+  val rolesetDir = new File(args(0))
+  val outputDir = args(1)
+  new File(outputDir).mkdirs()
+  val trainTimeEnd = LocalDate.parse(GLOBAL_CONFIG.finalWikipediaTrainTimeENd)
+  val sampleCount = args(2).toInt
+  val seed = 13
+  val jsonOnly = args(3).toBoolean
+  new SimpleAllPairSampler(rolesetDir, outputDir, trainTimeEnd, sampleCount, seed,jsonOnly).runSampling
 
 }

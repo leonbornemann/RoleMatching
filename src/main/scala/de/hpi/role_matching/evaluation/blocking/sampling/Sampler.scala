@@ -17,8 +17,6 @@ abstract class Sampler(outputDir: String, seed: Long,trainTimeEnd:LocalDate) {
                               roleMap:Map[String,RoleLineage]) = {
     val outFileEdges = new PrintWriter(outputDir + "/" + dsName + ".json")
     val outFileStats = new PrintWriter(outputDir + "/" + dsName + ".csv")
-    val DECAY_THRESHOLD = 0.57
-    val DECAY_THRESHOLD_SCB = 0.5
     RoleMatchStatistics.appendSchema(outFileStats)
     sample.foreach(e => {
       serializeMatch(dsName, roleMap, outFileEdges, outFileStats, e)
@@ -27,11 +25,13 @@ abstract class Sampler(outputDir: String, seed: Long,trainTimeEnd:LocalDate) {
     outFileEdges.close()
   }
 
-  def serializeMatch(dsName: String, roleMap: Map[String, RoleLineage], outFileEdges: PrintWriter, outFileStats: PrintWriter, e: RoleMatchCandidateIds) = {
+  def serializeMatch(dsName: String, roleMap: Map[String, RoleLineage], outFileEdges: PrintWriter, outFileStats: PrintWriter, e: RoleMatchCandidateIds,jsonOnly:Boolean=false) = {
     e.appendToWriter(outFileEdges, false, true)
-    val simpleEdge = RoleMatchCandidate(RoleLineageWithID(e.v1, roleMap(e.v1).toSerializationHelper),
-      RoleLineageWithID(e.v2, roleMap(e.v2).toSerializationHelper))
-    val stats = new RoleMatchStatistics(dsName, simpleEdge, false, trainTimeEnd)
-    stats.appendStatRow(outFileStats)
+    if(!jsonOnly){
+      val simpleEdge = RoleMatchCandidate(RoleLineageWithID(e.v1, roleMap(e.v1).toSerializationHelper),
+        RoleLineageWithID(e.v2, roleMap(e.v2).toSerializationHelper))
+      val stats = new RoleMatchStatistics(dsName, simpleEdge, false, trainTimeEnd)
+      stats.appendStatRow(outFileStats)
+    }
   }
 }

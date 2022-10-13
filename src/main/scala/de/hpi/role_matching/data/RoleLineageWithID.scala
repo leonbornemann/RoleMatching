@@ -11,6 +11,14 @@ case class RoleLineageWithID(id:String, roleLineage: RoleLineageWithHashMap) ext
     id.split("\\|\\|").last
   }
 
+  def template = {
+    id.split("\\|\\|").head
+  }
+
+  def pageID = {
+    id.split("\\|\\|")(1)
+  }
+
   def wikipediaURL = {
     val pageID = id
       .split("\\|\\|")(1)

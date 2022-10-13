@@ -8,7 +8,7 @@ import de.hpi.util.GLOBAL_CONFIG
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 
-class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: LocalDate, targetCount: Int, seed:Long)
+class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: LocalDate, targetCount: Int, seed:Long,jsonOnly:Boolean)
   extends Sampler(outputDir,seed, trainTimeEnd)  with StrictLogging{
 
   def isIn95Va2DVA(rl1: RoleLineage, rl2: RoleLineage): Boolean = {
@@ -54,7 +54,7 @@ class SimpleAllPairSampler(rolesetDir: File, outputDir: String, trainTimeEnd: Lo
             val roleMatchCandidate = RoleMatchCandidateIds(roleList(i)._1, roleList(j)._1)
             if(!sample.contains(roleMatchCandidate)){
               sample.add(roleMatchCandidate)
-              serializeMatch(dsName,roleMap,outFileEdges,outFileStats,roleMatchCandidate)
+              serializeMatch(dsName,roleMap,outFileEdges,outFileStats,roleMatchCandidate,jsonOnly)
               outFileStats.flush()
               outFileEdges.flush()
               logged=false

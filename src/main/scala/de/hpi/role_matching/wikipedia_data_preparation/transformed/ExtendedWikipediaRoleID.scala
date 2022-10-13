@@ -17,7 +17,24 @@ object ExtendedWikipediaRoleID {
       ExtendedWikipediaRoleID(None,BigInt(tokens(0)),tokens(1),tokens(2))
     } else {
       val tokens = str.split(Pattern.quote(separator))
+      if(tokens.size<4) {
+        println()
+      }
       ExtendedWikipediaRoleID(Some(tokens(0)),BigInt(tokens(1)),tokens(2),tokens(3))
+    }
+  }
+
+  def Optionfrom(str: String) = {
+    if(str.startsWith(separator)){
+      val tokens = str.substring(separator.length).split(Pattern.quote(separator))
+      Some(ExtendedWikipediaRoleID(None,BigInt(tokens(0)),tokens(1),tokens(2)))
+    } else {
+      val tokens = str.split(Pattern.quote(separator))
+      if(tokens.size<4) {
+        None
+      } else {
+        Some(ExtendedWikipediaRoleID(Some(tokens(0)),BigInt(tokens(1)),tokens(2),tokens(3)))
+      }
     }
   }
 

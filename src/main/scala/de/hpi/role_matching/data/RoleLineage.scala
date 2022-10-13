@@ -250,6 +250,26 @@ case class RoleLineage(lineage:mutable.TreeMap[LocalDate,Any] = mutable.TreeMap[
     valueSetTrain.size>1 && valueSetTest.size>0
   }
 
+  def changeFeaturesAsCSVString(endTime:LocalDate, featureCount:Int):String = {
+    val withIndex = lineage
+      .toIndexedSeq
+      .zipWithIndex
+    val features = withIndex
+      .map{case ((date,value),i) =>
+        val curEndTime = if(i==lineage.size-1) endTime else withIndex(i+1)._1._1
+        val duration = ChronoUnit.DAYS.between(date,curEndTime)
+        val valueToSerialize = Util.toCSVSafe(Util.nullSafeToString(value))
+        //old: val res = s"COL V$i VAL $valueToSerialize COL T$i VAL ${date.toString} COL D$i VAL $duration"
+        val res = s"${date.toString},$valueToSerialize,$duration"
+        res
+      }
+      .take(featureCount)
+    if(features.size<featureCount)
+      (features ++ List.fill(featureCount-features.size)(",,")).mkString(",")
+    else
+      features.mkString(",")
+  }
+
   def dittoString(endTime: LocalDate,idString:Option[String]):String = {
     assert(!lineage.lastKey.isAfter(endTime))
     val withIndex = lineage
